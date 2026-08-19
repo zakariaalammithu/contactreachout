@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     // Test AI Connection
     if (action === 'test_ai') {
-      const response = await AIService.generatePersonalizedMessage({
+      const response = await (AIService as any).generatePersonalizedMessage({
         lead: {
           id: 'test-lead-01',
           companyName: 'Acme Cloud Dynamics',
