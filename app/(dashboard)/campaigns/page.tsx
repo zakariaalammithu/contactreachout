@@ -792,7 +792,7 @@ export default function CampaignsPage() {
                         </div>
                       )}
                       {camp.status === 'draft' && (
-                        <Edit2 className="h-3.5 w-3.5 text-slate-400" title="Draft" />
+                        <Edit2 className="h-3.5 w-3.5 text-slate-400" />
                       )}
                     </div>
 
