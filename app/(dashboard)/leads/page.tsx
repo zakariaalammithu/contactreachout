@@ -75,7 +75,7 @@ export default function LeadsPage() {
       const importResult = processImportRows(preview.rawRows, suggestedMapping as any, {
         sourceFileName: fileName,
         listName: listName,
-      });
+      } as any);
 
       const validLeads = importResult.validLeads.map((ld: any, idx: number) => ({
         id: `direct-lead-${Date.now()}-${idx}`,
@@ -452,7 +452,7 @@ export default function LeadsPage() {
                     <input
                       type="checkbox"
                       checked={selectedLeadIds.includes(lead.id)}
-                      onChange={(e) => toggleSelectLead(lead.id, e)}
+                      onChange={(e) => toggleSelectLead(lead.id, e as any)}
                       className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                   </td>
