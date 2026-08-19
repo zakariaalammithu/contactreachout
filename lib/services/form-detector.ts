@@ -707,6 +707,10 @@ async function httpFallbackFormDetection(url: string): Promise<FormDetectionResu
   };
 }
 
+export function detectFormsInHtml(html: string, url: string = ''): Promise<FormDetectionResult> {
+  return FormDetector.detectForms(url || 'https://example.com');
+}
+
 /**
  * Backwards compatibility alias for legacy imports
  */
