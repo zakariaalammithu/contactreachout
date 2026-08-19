@@ -15,8 +15,9 @@ import {
 } from 'lucide-react';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'outline';
+  variant?: any;
   status?: string;
+  size?: string;
 }
 
 export function Badge({ children, variant, status, className, ...props }: BadgeProps) {
