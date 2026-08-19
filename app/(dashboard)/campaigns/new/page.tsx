@@ -1,57 +1,182 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { AuthStore } from '@/lib/auth/auth-store';
-import { EmailVerificationService } from '@/lib/auth/email-verification-service';
+'use client';
 
-const verifyOtpSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  code: z.string().length(6, 'Verification code must be 6 digits'),
-});
+import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  ArrowLeft,
+  Play,
+  Plus,
+  Zap,
+  Mail,
+  Sparkles,
+  Search,
+  Bold,
+  Italic,
+  Underline,
+  Bot,
+  AlignLeft,
+  List,
+  Link as LinkIcon,
+  PenTool,
+  Undo,
+  Redo,
+  Code,
+  MoreVertical,
+  Trash2,
+  Edit3,
+  Settings,
+  Clock,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  Save,
+  FileCheck,
+  Building2,
+  Globe,
+  Sliders,
+  Check,
+  Eye,
+  ShieldAlert,
+  Database,
+  Filter,
+  UploadCloud,
+  FileSpreadsheet,
+  Share2,
+  TrendingUp,
+  Download,
+  Calendar,
+  Layers,
+  ChevronDown,
+  UserCheck,
+  AlertCircle,
+  ExternalLink,
+  MessageSquare,
+  ThumbsUp,
+  DollarSign,
+  Ban,
+  Inbox,
+  RotateCcw,
+  FolderOpen,
+  X,
+} from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { CampaignSequenceStep, LeadList } from '@/types';
+import { SAMPLE_DATASETS } from '@/lib/services/sample-templates';
+import { parseSpreadsheetPreview, processImportRows, suggestColumnMappings } from '@/lib/services/import-service';
+import { MatchDataModal } from '@/components/leads/MatchDataModal';
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
+export default function ManyreachCampaignEditorPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const editIdParam = searchParams ? searchParams.get('id') || searchParams.get('edit') : null;
 
-    // 1. Validate fields
-    const parsed = verifyOtpSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  // CSV Column Mapping Modal State
+  const [csvPreviewData, setCsvPreviewData] = useState<{
+    fileName: string;
+    detectedHeaders: string[];
+    sampleRows: any[];
+    suggestedMapping: Record<string, string>;
+  } | null>(null);
+
+  const [activeMapping, setActiveMapping] = useState<Record<string, string>>({
+    website: '',
+    company_name: '',
+    first_name: '',
+    last_name: '',
+    title: '',
+    email: '',
+    personalized_opening_line: '',
+    pitch: '',
+    cta: '',
+  });
+
+  // Campaign Meta State
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(editIdParam);
+  const [campaignName, setCampaignName] = useState('new');
+  const [activeTab, setActiveTab] = useState<'steps' | 'prospects' | 'settings' | 'report' | 'unibox'>('steps');
+  const [campaignStatus, setCampaignStatus] = useState<'draft' | 'running' | 'paused'>('draft');
+  const [isSaving, setIsSaving] = useState(false);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+
+  // Sync campaign name updated from top header input
+  useEffect(() => {
+    const handleNameChange = (e: any) => {
+      if (e.detail) setCampaignName(e.detail);
+    };
+    window.addEventListener('campaign_name_updated', handleNameChange);
+    return () => window.removeEventListener('campaign_name_updated', handleNameChange);
+  }, []);
+
+  // Load target campaign for editing or name from query params
+  const [showNamePromptModal, setShowNamePromptModal] = useState(false);
+  const [promptInputName, setPromptInputName] = useState('');
+
+  useEffect(() => {
+    const tabParam = searchParams ? searchParams.get('tab') : null;
+    if (tabParam && ['steps', 'prospects', 'settings', 'report', 'unibox'].includes(tabParam)) {
+      setActiveTab(tabParam as any);
     }
 
-    const { email, code } = parsed.data;
-    const cleanEmail = email.toLowerCase().trim();
+    const nameParam = searchParams ? searchParams.get('name') : null;
 
-    // 2. Verify code
-    const verification = EmailVerificationService.verifyCode(cleanEmail, code, 'signup');
-    if (!verification.success) {
-      return NextResponse.json({ error: verification.message }, { status: 400 });
+    if (nameParam) {
+      setCampaignName(nameParam);
+      window.dispatchEvent(new CustomEvent('campaign_name_updated', { detail: nameParam }));
+      return;
     }
 
-    // Create user profile
-    const newUser = AuthStore.createUser({
-      fullName: 'New Outreach Member',
-      email: cleanEmail,
-      passwordHash: 'hashed_password_placeholder',
-    });
+    if (!editIdParam) {
+      setShowNamePromptModal(true);
+      return;
+    }
 
-    // Generate JWT token
-    const token = AuthStore.createAuthToken(newUser);
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('user_campaigns');
+        const parsed = stored ? JSON.parse(stored) : [];
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: newUser.id,
-        fullName: newUser.fullName,
-        email: newUser.email,
-        plan: newUser.plan,
-      },
-      token,
-      message: 'Account verified successfully!',
-    });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || 'Verification failed.' },
-      { status: 500 }
-    );
-  }
+        const found = parsed.find(
+          (c: any) =>
+            String(c.id).toLowerCase() === String(editIdParam).toLowerCase() ||
+            String(c.name).toLowerCase() === String(editIdParam).toLowerCase()
+        );
+
+        if (found) {
+          setEditingCampaignId(found.id || editIdParam);
+          setCampaignName(found.name || 'Campaign');
+          setCampaignStatus(found.status || 'draft');
+
+          if (Array.isArray(found.sequences) && found.sequences.length > 0) {
+            setSequences(found.sequences);
+          }
+        }
+      } catch (e) {}
+    }
+  }, [editIdParam, searchParams]);
+
+  const [prospects, setProspects] = useState<any[]>([]);
+
+  const [activeImportModal, setActiveImportModal] = useState<'csv' | 'manual' | 'sheet' | 'map_columns' | null>(null);
+
+  const [sequences, setSequences] = useState<CampaignSequenceStep[]>([
+    {
+      id: 'seq-1',
+      sequenceNumber: 1,
+      stepType: 'initial_email',
+      subject: '',
+      body: '',
+      delayDays: 0,
+      condition: 'to prospects that did NOT REPLY',
+    },
+  ]);
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans p-8">
+      <h1 className="text-2xl font-bold">Campaign Editor</h1>
+      <p className="text-sm text-slate-500">ContactReachout Automated Campaign Builder</p>
+    </div>
+  );
 }
