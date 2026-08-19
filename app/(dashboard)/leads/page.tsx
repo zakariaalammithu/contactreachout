@@ -72,7 +72,7 @@ export default function LeadsPage() {
       const fileName = selectedFile.name;
       const listName = fileName.replace(/\.[^/.]+$/, '');
 
-      const importResult = processImportRows(preview.rawRows, suggestedMapping, {
+      const importResult = processImportRows(preview.rawRows, suggestedMapping as any, {
         sourceFileName: fileName,
         listName: listName,
       });
