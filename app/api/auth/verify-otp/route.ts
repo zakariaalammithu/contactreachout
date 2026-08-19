@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
-import { SessionManager } from '@/lib/auth/session';
-import { getPendingSignup, clearPendingSignup } from '../signup/route';
+
 
 export async function POST(req: Request) {
   try {
@@ -25,25 +24,12 @@ export async function POST(req: Request) {
     let user = AuthStore.getUserByEmail(cleanEmail);
 
     if (!user) {
-      // Check if this was a pending signup
-      const pending = getPendingSignup(cleanEmail);
-      if (pending) {
-        user = AuthStore.createUser({
-          name: pending.fullName,
-          email: pending.email,
-          phone: pending.phone,
-          password: pending.password,
-          isEmailVerified: true,
-        });
-        clearPendingSignup(cleanEmail);
-      } else {
-        // First-time direct creation
-        user = AuthStore.createUser({
-          name: cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' '),
-          email: cleanEmail,
-          isEmailVerified: true,
-        });
-      }
+      // First-time direct creation
+      user = AuthStore.createUser({
+        name: cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' '),
+        email: cleanEmail,
+        isEmailVerified: true,
+      });
     } else {
       // Existing user -> Mark email verified if not already
       if (!user.isEmailVerified) {
