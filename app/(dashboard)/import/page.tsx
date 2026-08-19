@@ -313,7 +313,7 @@ export default function ImportLeadsPage() {
       }
 
       result.validLeads = filteredValid;
-      result.validCount = filteredValid.length;
+      (result as any).validCount = filteredValid.length;
 
       // 3. Save Named Lead List and Leads to localStorage
       if (typeof window !== 'undefined') {
