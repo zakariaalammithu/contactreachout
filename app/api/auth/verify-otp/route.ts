@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
-
+import { SessionManager } from '@/lib/auth/session';
 
 export async function POST(req: Request) {
   try {
