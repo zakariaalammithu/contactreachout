@@ -18,11 +18,11 @@ const signupSchema = z.object({
 // Cache pending signup registration details until OTP verification
 const pendingSignups = new Map<string, { fullName: string; email: string; phone?: string; password: string }>();
 
-export function getPendingSignup(email: string) {
+function getPendingSignup(email: string) {
   return pendingSignups.get(email.toLowerCase().trim()) || null;
 }
 
-export function clearPendingSignup(email: string) {
+function clearPendingSignup(email: string) {
   pendingSignups.delete(email.toLowerCase().trim());
 }
 
