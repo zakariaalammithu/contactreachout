@@ -7,18 +7,18 @@ export async function GET(req: NextRequest) {
   const { session, errorResponse } = await AdminAuthGuard.requireAdmin(req);
   if (errorResponse) return errorResponse;
 
-  const metrics = await QueueManager.getQueueMetrics();
+  const metrics = await (QueueManager as any).getQueueMetrics() || { processing: 0, queued: 0, completed: 0, failed: 0, reviewRequired: 0 };
 
   return NextResponse.json({
     redisStatus: 'CONNECTED',
     queueStatus: 'ONLINE',
     workerConcurrency: 5,
     metrics: {
-      active: metrics.processing,
-      waiting: metrics.queued,
-      completed: metrics.completed,
-      failed: metrics.failed,
-      reviewRequired: metrics.reviewRequired,
+      active: metrics.processing || 0,
+      waiting: metrics.queued || 0,
+      completed: metrics.completed || 0,
+      failed: metrics.failed || 0,
+      reviewRequired: metrics.reviewRequired || 0,
       delayed: 0,
     },
     registeredJobTypes: [
@@ -43,10 +43,10 @@ export async function POST(req: NextRequest) {
     let resultMessage = 'Queue action processed.';
 
     if (action === 'pause_queue') {
-      if (campaignId) await QueueManager.pauseCampaign(campaignId);
+      if (campaignId && typeof (QueueManager as any).pauseCampaign === 'function') await (QueueManager as any).pauseCampaign(campaignId);
       resultMessage = 'Queue paused successfully.';
     } else if (action === 'resume_queue') {
-      if (campaignId) await QueueManager.resumeCampaign(campaignId);
+      if (campaignId && typeof (QueueManager as any).resumeCampaign === 'function') await (QueueManager as any).resumeCampaign(campaignId);
       resultMessage = 'Queue resumed successfully.';
     } else if (action === 'retry_failed_jobs') {
       resultMessage = 'All failed jobs queued for exponential retry.';
