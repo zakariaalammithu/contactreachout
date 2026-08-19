@@ -41,7 +41,7 @@ export default function AdminPricingPage() {
   };
 
   const freePlan = config?.freePlan || PricingService.getPricingConfig().freePlan;
-  const paidPackage = config?.paidPackage || PricingService.getPricingConfig().paidPackage;
+  const paidPackage = (config as any)?.paidPackage || (PricingService.getPricingConfig() as any).paidPackage;
   const package5000 = config?.package5000 || PricingService.getPricingConfig().package5000;
   const package10000 = config?.package10000 || PricingService.getPricingConfig().package10000;
 
@@ -133,7 +133,7 @@ export default function AdminPricingPage() {
             <input
               type="text"
               value={paidPackage.name}
-              onChange={(e) => setConfig({ ...config, paidPackage: { ...paidPackage, name: e.target.value } })}
+              onChange={(e) => setConfig({ ...(config as any), paidPackage: { ...paidPackage, name: e.target.value } })}
               className="w-full p-2.5 rounded-xl border border-slate-300 font-semibold focus:outline-none"
             />
           </div>
@@ -143,7 +143,7 @@ export default function AdminPricingPage() {
             <input
               type="number"
               value={paidPackage.credits}
-              onChange={(e) => setConfig({ ...config, paidPackage: { ...paidPackage, credits: Number(e.target.value) } })}
+              onChange={(e) => setConfig({ ...(config as any), paidPackage: { ...paidPackage, credits: Number(e.target.value) } })}
               className="w-full p-2.5 rounded-xl border border-slate-300 font-mono font-bold focus:outline-none"
             />
           </div>
@@ -153,7 +153,7 @@ export default function AdminPricingPage() {
             <input
               type="number"
               value={paidPackage.price}
-              onChange={(e) => setConfig({ ...config, paidPackage: { ...paidPackage, price: Number(e.target.value) } })}
+              onChange={(e) => setConfig({ ...(config as any), paidPackage: { ...paidPackage, price: Number(e.target.value) } })}
               className="w-full p-2.5 rounded-xl border border-slate-300 font-mono font-bold text-blue-700 focus:outline-none"
             />
           </div>
