@@ -284,7 +284,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Badge variant={camp.status === 'running' ? 'running' : 'paused'} size="sm">
+                      <Badge variant={(camp.status === 'running' ? 'running' : 'paused') as any} size="sm">
                         {camp.status.toUpperCase()}
                       </Badge>
                       <Button
