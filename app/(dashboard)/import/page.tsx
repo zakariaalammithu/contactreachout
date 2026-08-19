@@ -236,7 +236,7 @@ export default function ImportLeadsPage() {
   const handleAutoDetectMappings = () => {
     if (headers.length === 0) return;
     const autoMapped = suggestColumnMappings(headers);
-    setMapping(autoMapped);
+    setMapping(autoMapped as any);
   };
 
   // Add a new custom personalized column
