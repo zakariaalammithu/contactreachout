@@ -735,7 +735,7 @@ export default function ImportLeadsPage() {
                     Lead List &quot;{listName}&quot; Saved & Ingested Successfully!
                   </h3>
                   <p className="text-xs text-emerald-800">
-                    {importResult.validCount} valid leads ready with 12 standard fields + {customColumns.length} custom AI message columns.
+                    {(importResult as any)?.validCount || importResult?.validLeads?.length || 0} valid leads ready with 12 standard fields + {customColumns.length} custom AI message columns.
                   </p>
                 </div>
               </div>
