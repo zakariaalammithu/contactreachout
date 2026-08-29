@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beacon Healthcare — Accessible Contact</title>
+</head>
+<body>
+  <h1>Inquire with Beacon Healthcare</h1>
+  <form id="accessible-inquiry" action="/api/v1/inquire" method="POST">
+    <div class="field-group">
+      <label for="contact-person-name">Full Legal Name</label>
+      <input type="text" id="contact-person-name" name="person_fullname" />
+    </div>
+
+    <div class="field-group">
+      <label for="contact-person-email">Corporate Work Email</label>
+      <input type="email" id="contact-person-email" name="person_email" />
+    </div>
+
+    <div class="field-group">
+      <label for="contact-organization">Hospital / Provider Organization</label>
+      <input type="text" id="contact-organization" name="person_org" />
+    </div>
+
+    <div class="field-group">
+      <label for="contact-note">Clinical Inquiry Details</label>
+      <textarea id="contact-note" name="person_note" rows="5"></textarea>
+    </div>
+
+    <button type="submit">Submit Clinical Inquiry</button>
+  </form>
+</body>
+</html>

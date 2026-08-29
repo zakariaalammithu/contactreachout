@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OmniMedia Network — Multi-Form Portal</title>
+</head>
+<body>
+  <!-- Header Search -->
+  <header>
+    <form id="global-search" action="/search" method="GET">
+      <input type="search" name="q" placeholder="Search news & articles..." />
+      <button type="submit">Search</button>
+    </form>
+  </header>
+
+  <div class="content-wrapper" style="display:flex;">
+    <!-- Main Center Contact Form -->
+    <main style="flex:3;">
+      <h1>Contact Editorial Staff</h1>
+      <form id="editorial-contact" action="/api/editor" method="POST">
+        <div>
+          <label for="editor_author">Author / Sender Name</label>
+          <input type="text" id="editor_author" name="editor_author" />
+        </div>
+        <div>
+          <label for="editor_email">Sender Email</label>
+          <input type="email" id="editor_email" name="editor_email" />
+        </div>
+        <div>
+          <label for="editor_pitch">Story Pitch / Message</label>
+          <textarea id="editor_pitch" name="editor_pitch" rows="5"></textarea>
+        </div>
+        <button type="submit">Send Pitch</button>
+      </form>
+    </main>
+
+    <!-- Sidebar Newsletter -->
+    <aside style="flex:1;">
+      <form id="sidebar-newsletter" action="/newsletter/join" method="POST">
+        <h3>Weekly Digest</h3>
+        <input type="email" name="sub_email" placeholder="Join 50k readers" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </aside>
+  </div>
+</body>
+</html>

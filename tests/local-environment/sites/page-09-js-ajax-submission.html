@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NextGen Cloud — SPA JavaScript Contact</title>
+</head>
+<body>
+  <div id="root">
+    <h1>Contact NextGen Cloud Support</h1>
+    <form id="spa-contact-form" data-testid="contact-form" onsubmit="return false;">
+      <div data-testid="field-name">
+        <label for="client_name">Client Full Name</label>
+        <input type="text" id="client_name" name="client_name" data-field-type="name" required />
+      </div>
+
+      <div data-testid="field-email">
+        <label for="client_email">Account Email</label>
+        <input type="email" id="client_email" name="client_email" data-field-type="email" required />
+      </div>
+
+      <div data-testid="field-company">
+        <label for="client_company">Organization</label>
+        <input type="text" id="client_company" name="client_company" data-field-type="company" />
+      </div>
+
+      <div data-testid="field-msg">
+        <label for="client_msg">Issue / Request</label>
+        <textarea id="client_msg" name="client_msg" data-field-type="message" required></textarea>
+      </div>
+
+      <button type="button" id="async-submit-btn" onclick="console.log('AJAX submit');">
+        Send Asynchronous Request
+      </button>
+    </form>
+  </div>
+</body>
+</html>

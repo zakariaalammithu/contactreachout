@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vanguard Cyber — Strict Required Form</title>
+</head>
+<body>
+  <h1>Security Audit Inquiry</h1>
+  <form id="strict-audit-form" action="/audit-request" method="POST">
+    <div>
+      <label for="contact_name">Primary Contact *</label>
+      <input type="text" id="contact_name" name="contact_name" required />
+    </div>
+
+    <div>
+      <label for="contact_email">Business Email *</label>
+      <input type="email" id="contact_email" name="contact_email" required />
+    </div>
+
+    <div>
+      <label for="org_industry">Industry Vertical *</label>
+      <select id="org_industry" name="org_industry" required>
+        <option value="">Select industry</option>
+        <option value="fintech">FinTech</option>
+        <option value="healthcare">Healthcare</option>
+        <option value="saas">SaaS</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="audit_scope">Infrastructure Scope *</label>
+      <textarea id="audit_scope" name="audit_scope" required></textarea>
+    </div>
+
+    <div>
+      <input type="checkbox" id="terms_agree" name="terms_agree" required />
+      <label for="terms_agree">I agree to the outreach privacy terms *</label>
+    </div>
+
+    <button type="submit">Submit Request</button>
+  </form>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Security Protected Contact Form</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+  <h1>Secure Contact Portal</h1>
+  <form id="secure-form" action="/contact" method="POST">
+    <div>
+      <label for="usr_name">Name</label>
+      <input type="text" id="usr_name" name="name" />
+    </div>
+
+    <div>
+      <label for="usr_email">Email</label>
+      <input type="email" id="usr_email" name="email" />
+    </div>
+
+    <div>
+      <label for="usr_message">Message</label>
+      <textarea id="usr_message" name="message"></textarea>
+    </div>
+
+    <!-- Google reCAPTCHA v2 / v3 Widget -->
+    <div class="g-recaptcha" data-sitekey="6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-"></div>
+
+    <!-- Cloudflare Turnstile Widget -->
+    <div class="cf-turnstile" data-sitekey="0x4AAAAAAABkLu7x9wE1XYZ"></div>
+
+    <button type="submit">Send Message</button>
+  </form>
+</body>
+</html>

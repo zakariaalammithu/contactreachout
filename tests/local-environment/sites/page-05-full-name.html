@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CloudScale API — Full Name Form</title>
+</head>
+<body>
+  <h1>Speak to API Solutions</h1>
+  <form id="api-contact-form" action="/v1/leads" method="POST">
+    <div>
+      <label for="full_name">Full Name</label>
+      <input type="text" id="full_name" name="full_name" placeholder="John Doe" />
+    </div>
+
+    <div>
+      <label for="email_address">Work Email</label>
+      <input type="email" id="email_address" name="email_address" placeholder="john@enterprise.com" />
+    </div>
+
+    <div>
+      <label for="inquiry_body">Message</label>
+      <textarea id="inquiry_body" name="inquiry_body" placeholder="Describe your API workload"></textarea>
+    </div>
+
+    <button type="submit">Submit Request</button>
+  </form>
+</body>
+</html>

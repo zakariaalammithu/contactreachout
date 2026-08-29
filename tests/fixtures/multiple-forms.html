@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Company Portal — Multiple Forms Page</title>
+</head>
+<body>
+  <!-- Header Search Form (Should be ignored by detector) -->
+  <header>
+    <form id="header-search" action="/search" method="GET">
+      <input type="text" name="q" placeholder="Search documentation..." />
+      <button type="submit">Search</button>
+    </form>
+  </header>
+
+  <main>
+    <h1>Contact Our Advisors</h1>
+
+    <!-- Real Contact Form (Should be selected by detector with highest score) -->
+    <form id="primary-contact" action="/api/contact" method="POST">
+      <h2>General Inquiry</h2>
+      <div>
+        <label for="contact_name">Full Name</label>
+        <input type="text" id="contact_name" name="contact_name" />
+      </div>
+
+      <div>
+        <label for="contact_email">Email Address</label>
+        <input type="email" id="contact_email" name="contact_email" />
+      </div>
+
+      <div>
+        <label for="contact_company">Organization</label>
+        <input type="text" id="contact_company" name="contact_company" />
+      </div>
+
+      <div>
+        <label for="contact_body">Message</label>
+        <textarea id="contact_body" name="contact_body"></textarea>
+      </div>
+
+      <button type="submit">Send Message</button>
+    </form>
+  </main>
+
+  <!-- Footer Newsletter Signup (Should be ranked lower than primary contact form) -->
+  <footer>
+    <form id="newsletter-signup" action="/newsletter/subscribe" method="POST">
+      <h3>Subscribe to our Newsletter</h3>
+      <input type="email" name="subscriber_email" placeholder="Enter your email" />
+      <button type="submit">Subscribe</button>
+    </form>
+  </footer>
+</body>
+</html>

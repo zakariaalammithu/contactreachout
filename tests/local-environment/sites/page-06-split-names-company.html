@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DataSphere Analytics — Enterprise Inquiry</title>
+</head>
+<body>
+  <h1>Schedule an Enterprise Consultation</h1>
+  <form id="enterprise-lead-gen" action="/leads" method="POST">
+    <div>
+      <label for="first_name">First Name</label>
+      <input type="text" id="first_name" name="first_name" />
+    </div>
+
+    <div>
+      <label for="last_name">Last Name</label>
+      <input type="text" id="last_name" name="last_name" />
+    </div>
+
+    <div>
+      <label for="corporate_email">Corporate Email</label>
+      <input type="email" id="corporate_email" name="corporate_email" />
+    </div>
+
+    <div>
+      <label for="company_name">Company / Organization</label>
+      <input type="text" id="company_name" name="company_name" />
+    </div>
+
+    <div>
+      <label for="phone_num">Direct Phone</label>
+      <input type="tel" id="phone_num" name="phone_num" />
+    </div>
+
+    <div>
+      <label for="project_notes">Project Notes</label>
+      <textarea id="project_notes" name="project_notes"></textarea>
+    </div>
+
+    <button type="submit">Submit Consultation Request</button>
+  </form>
+</body>
+</html>

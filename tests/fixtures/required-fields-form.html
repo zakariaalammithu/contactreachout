@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Strict Registration & Enterprise Inquiry</title>
+</head>
+<body>
+  <h1>Enterprise Sales Inquiry</h1>
+  <form id="enterprise-form" action="/submit-lead" method="POST">
+    <div>
+      <label for="f_name">First Name *</label>
+      <input type="text" id="f_name" name="first_name" required />
+    </div>
+
+    <div>
+      <label for="l_name">Last Name *</label>
+      <input type="text" id="l_name" name="last_name" required />
+    </div>
+
+    <div>
+      <label for="b_email">Work Email *</label>
+      <input type="email" id="b_email" name="email" required />
+    </div>
+
+    <div>
+      <label for="b_phone">Direct Telephone *</label>
+      <input type="tel" id="b_phone" name="phone_number" required />
+    </div>
+
+    <div>
+      <label for="corp_size">Company Employee Size *</label>
+      <select id="corp_size" name="company_size" required>
+        <option value="">Select size</option>
+        <option value="1-10">1-10</option>
+        <option value="11-50">11-50</option>
+        <option value="51-200">51-200</option>
+        <option value="201+">201+</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="inquiry_msg">Detailed Scope *</label>
+      <textarea id="inquiry_msg" name="message" required></textarea>
+    </div>
+
+    <button type="submit" id="submit-btn">Submit Enterprise Inquiry</button>
+  </form>
+</body>
+</html>
