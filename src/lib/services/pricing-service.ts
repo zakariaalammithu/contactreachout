@@ -6,9 +6,9 @@
  * - Free Plan: $0/mo, 100 monthly credits (resets to 100 every billing period, non-rollover).
  * - Paid Package: 500 credits for $20 USD (One-time, non-expiring).
  * - Credit Deduction Rules:
- *   - SUCCESSFUL_SUBMISSION: 2.00 credits
- *   - AI_PERSONALIZATION: 1.00 additional credit when selected
- *   - FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT: 0.50 credit
+ *   - SUCCESSFUL_SUBMISSION: 1.00 credit per submitted message
+ *   - AI_PERSONALIZATION: 0.00 credits
+ *   - All failed/pre-submission outcomes: 0.00 credits
  *   - Zero-credit outcomes: 0 credit (WEBSITE_UNREACHABLE, NO_CONTACT_PAGE, NO_CONTACT_FORM, CAPTCHA_DETECTED, BOT_PROTECTION, BLOCKED, TIMEOUT, FORM_VALIDATION_FAILURE).
  */
 
@@ -126,18 +126,18 @@ export const DEFAULT_PRICING_CONFIG: SystemPricingConfig = {
   creditRules: {
     SUCCESSFUL_SUBMISSION: {
       resultType: 'SUCCESSFUL_SUBMISSION',
-      creditCost: 2.0,
-      description: 'Form page found, fields mapped, form filled, and successful submission confirmed.',
+      creditCost: 1.0,
+      description: 'One credit for one successfully submitted website contact-form message.',
     },
     AI_PERSONALIZATION: {
       resultType: 'AI_PERSONALIZATION',
-      creditCost: 1.0,
-      description: 'Optional AI personalization selected for a lead message.',
+      creditCost: 0.0,
+      description: 'AI Personalization is included at no credit cost on paid plans.',
     },
     FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT: {
       resultType: 'FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT',
-      creditCost: 0.5,
-      description: 'Form page found and fields mapped, but server/network submission attempt failed.',
+      creditCost: 0.0,
+      description: 'No credit is deducted when a message is not successfully submitted.',
     },
     WEBSITE_UNREACHABLE: {
       resultType: 'WEBSITE_UNREACHABLE',
@@ -210,16 +210,12 @@ export class PricingService {
    */
   public static getCreditCost(resultType: string): number {
     const clean = (resultType || '').toUpperCase().trim();
+    if (clean === 'AI_PERSONALIZATION') return 0;
+    if (clean === 'SUCCESS' || clean === 'SUBMITTED' || clean === 'SUCCESSFUL_SUBMISSION') return 1;
+    if (clean === 'FAILED' || clean === 'SUBMISSION_FAILED' || clean === 'FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT') return 0;
     const config = this.getPricingConfig();
     const rule = config.creditRules[clean];
     if (rule) return rule.creditCost;
-
-    if (clean === 'SUCCESS' || clean === 'SUBMITTED' || clean === 'SUCCESSFUL_SUBMISSION') {
-      return 2.0;
-    }
-    if (clean === 'FAILED' || clean === 'SUBMISSION_FAILED' || clean === 'FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT') {
-      return 0.5;
-    }
 
     // All protected, unattempted, or pre-submission failure statuses (CAPTCHA, BOT_PROTECTION, NO_FORM, BLOCKED, AUTHENTICATION_REQUIRED, DUPLICATE_PREVENTED, REVIEW_REQUIRED) return 0.0 credit
     return 0.0;

@@ -58,7 +58,7 @@ export default function PricingPage() {
       </section>
 
       <section className="mx-auto grid max-w-5xl grid-cols-1 gap-4 px-4 pb-8 sm:grid-cols-2 lg:grid-cols-4">
-        {[['2 credits', 'per website submission'], ['+1 credit', 'optional AI personalization'], ['Pay-as-you-go', 'buy credits when needed'], ['No subscription', 'one-time credit packages']].map(([title, detail]) => <div key={title} className="rounded-2xl border border-blue-100 bg-white p-5 text-center shadow-sm"><p className="text-lg font-black text-[#0e6de4]">{title}</p><p className="mt-1 text-xs font-semibold text-slate-500">{detail}</p></div>)}
+        {[['1 credit', 'per successful website message'], ['0 credits', 'AI Personalization on paid plans'], ['Pay-as-you-go', 'buy credits when needed'], ['No subscription', 'one-time credit packages']].map(([title, detail]) => <div key={title} className="rounded-2xl border border-blue-100 bg-white p-5 text-center shadow-sm"><p className="text-lg font-black text-[#0e6de4]">{title}</p><p className="mt-1 text-xs font-semibold text-slate-500">{detail}</p></div>)}
       </section>
       <div className="mx-auto mb-4 flex w-fit items-center gap-1 rounded-2xl border border-blue-100 bg-white p-1 shadow-sm"><button type="button" onClick={() => setBillingPeriod('monthly')} className={`rounded-xl px-5 py-2 text-sm font-black ${billingPeriod === 'monthly' ? 'bg-[#0e6de4] text-white' : 'text-slate-600'}`}>Monthly</button><button type="button" onClick={() => setBillingPeriod('yearly')} className={`rounded-xl px-5 py-2 text-sm font-black ${billingPeriod === 'yearly' ? 'bg-[#0e6de4] text-white' : 'text-slate-600'}`}>Yearly <span className="ml-1 text-[10px]">Save 20%</span></button></div>
       {billingPeriod === 'yearly' && <div className="mx-auto mb-6 grid max-w-5xl grid-cols-2 gap-3 px-4 sm:grid-cols-4"><div className="col-span-2 rounded-2xl border border-blue-200 bg-blue-50 p-3 text-center sm:col-span-4"><p className="text-xs font-black uppercase tracking-wide text-[#0e6de4]">Yearly billing — 20% saved</p><p className="mt-1 text-sm font-semibold text-slate-700">12-month totals are shown below and update instantly.</p></div>{[[5000,price5000],[10000,price10000],[100000,price100000],[300000,price300000]].map(([credits,total]) => <div key={credits} className="rounded-2xl border border-blue-100 bg-white p-3 text-center shadow-sm"><p className="text-xs font-bold text-slate-500">{Number(credits).toLocaleString()} credits</p><p className="mt-1 text-lg font-black text-[#0e6de4]">${Number(total).toLocaleString()}</p><p className="text-[10px] font-semibold text-slate-500">12-month total</p></div>)}</div>}
@@ -422,18 +422,18 @@ export default function PricingPage() {
             <tbody className="divide-y divide-slate-200 text-slate-700">
               <tr>
                 <td className="p-3.5 font-bold text-emerald-400">SUCCESSFUL_SUBMISSION</td>
-                <td className="p-3.5 text-center font-bold font-mono text-emerald-400">2.00 Credits</td>
+                <td className="p-3.5 text-center font-bold font-mono text-emerald-400">1.00 Credit</td>
                 <td className="p-3.5 text-slate-400">Form page found, fields mapped, form filled & submitted successfully.</td>
               </tr>
               <tr>
                 <td className="p-3.5 font-bold text-violet-400">AI_PERSONALIZATION (OPTIONAL)</td>
-                <td className="p-3.5 text-center font-bold font-mono text-violet-400">+1.00 Credit</td>
-                <td className="p-3.5 text-slate-400">Added only when optional AI personalization is selected.</td>
+                <td className="p-3.5 text-center font-bold font-mono text-violet-400">0.00 Credits</td>
+                <td className="p-3.5 text-slate-400">Included at no credit cost on paid plans; unavailable on the Free plan.</td>
               </tr>
               <tr>
                 <td className="p-3.5 font-bold text-amber-400">FAILED_SUBMISSION_AFTER_REAL_ATTEMPT</td>
-                <td className="p-3.5 text-center font-bold font-mono text-amber-400">0.50 Credit</td>
-                <td className="p-3.5 text-slate-400">Form found and mapped, but actual network submission attempt failed.</td>
+                <td className="p-3.5 text-center font-bold font-mono text-amber-400">0.00 Credits</td>
+                <td className="p-3.5 text-slate-400">No credit is deducted unless the website message is successfully submitted.</td>
               </tr>
               <tr>
                 <td className="p-3.5 font-bold text-slate-400">WEBSITE_UNREACHABLE / NO_FORM / CAPTCHA</td>

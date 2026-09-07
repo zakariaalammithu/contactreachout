@@ -154,6 +154,10 @@ export class CreditWalletService {
   ): { success: boolean; cost: number; source: 'FREE' | 'PAID' | 'NONE'; wallet: CreditWallet } {
     const cost = PricingService.getCreditCost(resultType);
     const wallet = this.getWallet(userId);
+    const idempotencyKey = `usage-${campaignId || 'manual'}-${leadId || 'unknown'}`;
+    if (typeof window !== 'undefined' && this.getTransactions().some((tx) => tx.idempotencyKey === idempotencyKey)) {
+      return { success: true, cost: 0, source: 'NONE', wallet };
+    }
 
     if (cost === 0) {
       return { success: true, cost: 0, source: 'NONE', wallet };
@@ -200,7 +204,7 @@ export class CreditWalletService {
       balanceBefore,
       balanceAfter: wallet.totalCreditsAvailable,
       description: `Outreach Deduction (${resultType}) ${companyName ? 'for ' + companyName : ''}`,
-      idempotencyKey: `usage-${campaignId || 'manual'}-${leadId || Date.now()}`,
+      idempotencyKey,
       createdAt: new Date().toISOString(),
     });
 
