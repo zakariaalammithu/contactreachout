@@ -23,6 +23,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    if (process.env.NODE_ENV === 'production' && code.startsWith('mock_')) {
+      return NextResponse.redirect(new URL('/login?error=Mock+Google+authentication+is+disabled+in+production', req.url));
+    }
+
     let googleEmail = url.searchParams.get('email');
     let googleName = url.searchParams.get('name');
     let googleSub = `google_sub_${Date.now()}`;
@@ -34,7 +38,7 @@ export async function GET(req: NextRequest) {
     if (googleClientId && googleClientSecret && !code.startsWith('mock_')) {
       const host = req.headers.get('host') || 'localhost:3000';
       const protocol = req.headers.get('x-forwarded-proto') || 'http';
-      const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+      const redirectUri = process.env.GOOGLE_AUTH_REDIRECT_URI || `${protocol}://${host}/api/auth/google/callback`;
 
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',

@@ -6,7 +6,8 @@
  * - Free Plan: $0/mo, 100 monthly credits (resets to 100 every billing period, non-rollover).
  * - Paid Package: 500 credits for $20 USD (One-time, non-expiring).
  * - Credit Deduction Rules:
- *   - SUCCESSFUL_SUBMISSION: 1.00 credit
+ *   - SUCCESSFUL_SUBMISSION: 2.00 credits
+ *   - AI_PERSONALIZATION: 1.00 additional credit when selected
  *   - FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT: 0.50 credit
  *   - Zero-credit outcomes: 0 credit (WEBSITE_UNREACHABLE, NO_CONTACT_PAGE, NO_CONTACT_FORM, CAPTCHA_DETECTED, BOT_PROTECTION, BLOCKED, TIMEOUT, FORM_VALIDATION_FAILURE).
  */
@@ -30,7 +31,7 @@ export interface CreditRule {
 }
 
 export interface SystemPricingConfig {
-  freePlan: PricingPlan; // 250 Credits Free
+  freePlan: PricingPlan; // 100 Credits Free each month
   package5000: PricingPlan; // 5,000 Credits ($50)
   package10000: PricingPlan; // 10,000 Credits ($99)
   package100000: PricingPlan; // 100,000 Credits ($199)
@@ -46,16 +47,16 @@ export const DEFAULT_PRICING_CONFIG: SystemPricingConfig = {
     price: 0,
     currency: 'USD',
     billingCycle: 'monthly',
-    credits: 250,
-    description: '250 free credits every month • No credit card required',
+    credits: 100,
+    description: '100 free credits every month • No credit card required',
     features: [
-      '250 monthly credits',
+      '100 monthly credits',
       'No credit card required',
       'Contact form outreach engine',
       'CSV & Excel import',
       'Basic & live results',
     ],
-    buttonText: 'Get Started Free (250 Credits)',
+    buttonText: 'Get Started Free (100 Credits)',
   },
   package5000: {
     id: 'package_5000',
@@ -125,8 +126,13 @@ export const DEFAULT_PRICING_CONFIG: SystemPricingConfig = {
   creditRules: {
     SUCCESSFUL_SUBMISSION: {
       resultType: 'SUCCESSFUL_SUBMISSION',
-      creditCost: 1.0,
+      creditCost: 2.0,
       description: 'Form page found, fields mapped, form filled, and successful submission confirmed.',
+    },
+    AI_PERSONALIZATION: {
+      resultType: 'AI_PERSONALIZATION',
+      creditCost: 1.0,
+      description: 'Optional AI personalization selected for a lead message.',
     },
     FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT: {
       resultType: 'FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT',
@@ -209,7 +215,7 @@ export class PricingService {
     if (rule) return rule.creditCost;
 
     if (clean === 'SUCCESS' || clean === 'SUBMITTED' || clean === 'SUCCESSFUL_SUBMISSION') {
-      return 1.0;
+      return 2.0;
     }
     if (clean === 'FAILED' || clean === 'SUBMISSION_FAILED' || clean === 'FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT') {
       return 0.5;
@@ -227,20 +233,22 @@ export class PricingService {
     ratePerCredit: number;
     discountPercent: number;
   } {
-    const qty = Math.max(100, Math.min(500000, Math.round(amount)));
-
-    let ratePerCredit = 0.0099; // $0.0099 per credit (up to 9,999)
-    let discountPercent = 0;
-
-    if (qty >= 100000) {
-      ratePerCredit = 0.0009; // $0.0009 per credit (100k+)
-      discountPercent = 90.9;
-    } else if (qty >= 10000) {
-      ratePerCredit = 0.0019; // $0.0019 per credit (10k-99.9k)
-      discountPercent = 80.8;
-    }
-
-    const price = Math.round(qty * ratePerCredit);
+    const qty = Math.max(1000, Math.min(500000, Math.round(amount)));
+    const anchors = [
+      { credits: 1000, price: 10 },
+      { credits: 5000, price: 50 },
+      { credits: 10000, price: 99 },
+      { credits: 100000, price: 199 },
+      { credits: 300000, price: 299 },
+      { credits: 500000, price: 450 },
+    ];
+    const upperIndex = anchors.findIndex((anchor) => qty <= anchor.credits);
+    const upper = anchors[upperIndex === -1 ? anchors.length - 1 : upperIndex];
+    const lower = anchors[Math.max(0, (upperIndex === -1 ? anchors.length - 1 : upperIndex) - 1)];
+    const progress = upper.credits === lower.credits ? 0 : (qty - lower.credits) / (upper.credits - lower.credits);
+    const price = Math.round(lower.price + (upper.price - lower.price) * progress);
+    const ratePerCredit = price / qty;
+    const discountPercent = Math.max(0, Number(((1 - ratePerCredit / 0.01) * 100).toFixed(1)));
 
     return {
       price,

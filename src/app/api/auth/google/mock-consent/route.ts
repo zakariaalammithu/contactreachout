@@ -161,26 +161,26 @@ export async function GET(req: Request) {
         </div>
 
         <h1>Choose an account</h1>
-        <p class="subtitle">to continue to <strong>freeoutreach.com</strong></p>
+        <p class="subtitle">to continue to <strong>ContactReachout</strong></p>
 
         <!-- Account Option 1: Primary Browser User -->
-        <a href="${redirectUri}?code=mock_code_alam&state=${state}&email=moumithu100@gmail.com&name=Alam" class="account-item">
+        <a href="${redirectUri}?code=mock_code_alex&state=${state}&email=alex@example.com&name=Alex" class="account-item">
           <div class="account-info">
             <div class="avatar" style="background-color: #007A55;">A</div>
             <div>
               <p class="acc-name">Alam</p>
-              <p class="acc-email">moumithu100@gmail.com</p>
+              <p class="acc-email">alex@example.com</p>
             </div>
           </div>
           <span class="acc-status">Signed out</span>
         </a>
 
         <!-- Account Option 2: Primary Super Admin -->
-        <a href="${redirectUri}?code=mock_code_superadmin&state=${state}&email=mithusquare@gmail.com&name=Zakaria%20Alam%20Mithu" class="account-item">
+        <a href="${redirectUri}?code=mock_code_superadmin&state=${state}&email=mithusquare@gmail.com&name=Ethan%20Carter" class="account-item">
           <div class="account-info">
             <div class="avatar" style="background-color: #6b21a8;">Z</div>
             <div>
-              <p class="acc-name">Zakaria Alam Mithu</p>
+              <p class="acc-name">Ethan Carter</p>
               <p class="acc-email">mithusquare@gmail.com</p>
             </div>
           </div>
@@ -194,7 +194,7 @@ export async function GET(req: Request) {
         </a>
 
         <p class="terms">
-          Before using this app, you can review FreeOutreach's <a href="#">Privacy Policy</a> and <a href="#">Terms of Service</a>.
+          Before using this app, you can review ContactReachout's <a href="#">Privacy Policy</a> and <a href="#">Terms of Service</a>.
         </p>
       </div>
 

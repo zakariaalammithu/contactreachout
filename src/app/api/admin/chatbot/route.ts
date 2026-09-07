@@ -1,0 +1,5 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { AdminAuthGuard } from '@/lib/auth/admin-auth-guard';
+import { ChatbotService, DEFAULT_CHATBOT_PROMPT } from '@/lib/services/chatbot-service';
+export async function GET(request: NextRequest) { const {errorResponse}=await AdminAuthGuard.requireAdmin(request); if(errorResponse)return errorResponse; return NextResponse.json({prompt:ChatbotService.getPrompt(),defaultPrompt:DEFAULT_CHATBOT_PROMPT}); }
+export async function POST(request: NextRequest) { const {errorResponse}=await AdminAuthGuard.requireSuperAdmin(request); if(errorResponse)return errorResponse; const {prompt}=await request.json(); if(typeof prompt!=='string'||prompt.trim().length<80)return NextResponse.json({error:'Provide a detailed chatbot prompt.'},{status:400}); if(prompt.length>200000)return NextResponse.json({error:'Prompt exceeds the 200,000 character limit.'},{status:400}); ChatbotService.setPrompt(prompt); return NextResponse.json({success:true,message:'Chatbot instructions saved.'}); }

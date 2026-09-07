@@ -1,6 +1,7 @@
 
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getEmailSenderConfig } from '@/lib/services/email/email-config';
 
 /**
  * Send Outbound Email Reply API
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
 
     const fromAddress = senderEmail || 'hello@contactreachout.com';
     const emailSubject = subject || 'Re: Outreach Inquiry';
+    const emailSender = getEmailSenderConfig();
 
     // Attempt sending via Resend API if system_api_keys has resend key
     let isLiveSent = false;
@@ -34,7 +36,8 @@ export async function POST(req: NextRequest) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: `Zakaria Outreach <onboarding@resend.dev>`,
+            from: `${emailSender.fromName} <${emailSender.fromEmail}>`,
+            reply_to: emailSender.replyToEmail,
             to: [recipientEmail],
             subject: emailSubject,
             text: replyText,

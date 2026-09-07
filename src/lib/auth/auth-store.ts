@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { AppRole } from './admin-auth-guard';
+import type { AppRole } from './admin-auth-guard';
 
 export interface UserAccount {
   id: string;
@@ -11,6 +11,11 @@ export interface UserAccount {
   googleSub?: string;
   avatarUrl?: string;
   role: AppRole;
+  referralCode: string;
+  referredByUserId?: string;
+  bonusCredits: number;
+  paidCredits: number;
+  payoutEmail?: string;
   isEmailVerified: boolean;
   isSuspended: boolean;
   createdAt: string;
@@ -38,6 +43,7 @@ export interface UserSession {
 const userRegistry = new Map<string, UserAccount>();
 const otpRegistry = new Map<string, OtpRecord>();
 const sessionRegistry = new Map<string, UserSession>();
+const pendingSignupRegistry = new Map<string, { fullName: string; email: string; phone?: string; password: string; referralCode?: string }>();
 const rateLimitTracker = new Map<string, { count: number; windowExpiresAt: number }>();
 
 export class AuthStore {
@@ -50,6 +56,10 @@ export class AuthStore {
       : developmentFallback;
   }
 
+  private static createReferralCode(email: string): string {
+    return crypto.createHash('sha256').update(`contactreachout:${email.toLowerCase().trim()}`).digest('hex').slice(0, 6).toUpperCase();
+  }
+
   /**
    * Initializes default system accounts (Super Admin & Demo Accounts)
    */
@@ -60,12 +70,15 @@ export class AuthStore {
       );
       userRegistry.set(this.PRIMARY_SUPER_ADMIN_EMAIL, {
         id: 'usr-superadmin-001',
-        name: 'Zakaria Alam Mithu',
+        name: 'Ethan Carter',
         email: this.PRIMARY_SUPER_ADMIN_EMAIL,
         phone: '+8801700000000',
         passwordHash: hash,
         salt,
         role: 'SUPER_ADMIN',
+        referralCode: this.createReferralCode(this.PRIMARY_SUPER_ADMIN_EMAIL),
+        bonusCredits: 0,
+        paidCredits: 0,
         isEmailVerified: true,
         isSuspended: false,
         createdAt: new Date().toISOString(),
@@ -83,6 +96,9 @@ export class AuthStore {
         passwordHash: hash,
         salt,
         role: 'ADMIN',
+        referralCode: this.createReferralCode('operator@bulkreach.io'),
+        bonusCredits: 0,
+        paidCredits: 0,
         isEmailVerified: true,
         isSuspended: false,
         createdAt: new Date().toISOString(),
@@ -100,6 +116,9 @@ export class AuthStore {
         passwordHash: hash,
         salt,
         role: 'USER',
+        referralCode: this.createReferralCode('user@demo.com'),
+        bonusCredits: 0,
+        paidCredits: 0,
         isEmailVerified: true,
         isSuspended: false,
         createdAt: new Date().toISOString(),
@@ -133,7 +152,7 @@ export class AuthStore {
     email: string,
     plainCode: string,
     purpose: 'signup' | 'signin' | 'google_verify',
-    ttlMs: number = 10 * 60 * 1000, // 10 mins
+    ttlMs: number = 2 * 60 * 1000, // exactly 2 minutes
     cooldownMs: number = 60 * 1000 // 60 seconds resend cooldown
   ): void {
     const key = email.toLowerCase().trim();
@@ -212,6 +231,7 @@ export class AuthStore {
     avatarUrl?: string;
     role?: AppRole;
     isEmailVerified?: boolean;
+    referredByCode?: string;
   }): UserAccount {
     this.initialize();
     const emailKey = params.email.toLowerCase().trim();
@@ -229,6 +249,7 @@ export class AuthStore {
       salt = hashed.salt;
     }
 
+    const referrer = params.referredByCode ? this.getUserByReferralCode(params.referredByCode) : null;
     const newUser: UserAccount = {
       id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       name: params.name,
@@ -239,6 +260,10 @@ export class AuthStore {
       googleSub: params.googleSub,
       avatarUrl: params.avatarUrl,
       role: params.role || (emailKey === this.PRIMARY_SUPER_ADMIN_EMAIL ? 'SUPER_ADMIN' : 'USER'),
+      referralCode: this.createReferralCode(emailKey),
+      referredByUserId: referrer?.id,
+      bonusCredits: referrer ? 50 : 0,
+      paidCredits: 0,
       isEmailVerified: params.isEmailVerified ?? false,
       isSuspended: false,
       createdAt: new Date().toISOString(),
@@ -246,7 +271,40 @@ export class AuthStore {
     };
 
     userRegistry.set(emailKey, newUser);
+    if (referrer) {
+      referrer.bonusCredits += 100;
+      referrer.updatedAt = new Date().toISOString();
+      userRegistry.set(referrer.email, referrer);
+    }
     return newUser;
+  }
+
+  public static savePendingSignup(details: { fullName: string; email: string; phone?: string; password: string; referralCode?: string }): void {
+    pendingSignupRegistry.set(details.email.toLowerCase().trim(), details);
+  }
+
+  public static getPendingSignup(email: string) {
+    return pendingSignupRegistry.get(email.toLowerCase().trim()) || null;
+  }
+
+  public static clearPendingSignup(email: string): void {
+    pendingSignupRegistry.delete(email.toLowerCase().trim());
+  }
+
+  public static getUserByReferralCode(code: string): UserAccount | null {
+    this.initialize();
+    const normalized = code.trim().toUpperCase();
+    return Array.from(userRegistry.values()).find((user) => user.referralCode === normalized) || null;
+  }
+
+  public static getReferredUsers(userId: string): UserAccount[] {
+    this.initialize();
+    return Array.from(userRegistry.values()).filter((user) => user.referredByUserId === userId);
+  }
+
+  public static getAllUsers(): UserAccount[] {
+    this.initialize();
+    return Array.from(userRegistry.values());
   }
 
   public static updateUser(email: string, updates: Partial<UserAccount>): UserAccount {
@@ -260,6 +318,23 @@ export class AuthStore {
     Object.assign(user, updates, { updatedAt: new Date().toISOString() });
     userRegistry.set(user.email, user);
     return user;
+  }
+
+  public static addPaidCredits(userId: string, credits: number): UserAccount {
+    this.initialize();
+    const user = Array.from(userRegistry.values()).find((candidate) => candidate.id === userId);
+    if (!user) throw new Error('User not found');
+    if (!Number.isSafeInteger(credits) || credits <= 0) throw new Error('Invalid credit amount');
+    user.paidCredits += credits;
+    user.updatedAt = new Date().toISOString();
+    userRegistry.set(user.email, user);
+    return user;
+  }
+
+  public static deleteUser(email: string): boolean {
+    const key = email.toLowerCase().trim();
+    if (key === this.PRIMARY_SUPER_ADMIN_EMAIL) throw new Error('Cannot delete the primary Super Admin account.');
+    return userRegistry.delete(key);
   }
 
   // --- SESSIONS & TOKENS ---

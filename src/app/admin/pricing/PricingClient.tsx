@@ -107,7 +107,7 @@ export default function PricingClient() {
       <Card className="p-6 space-y-4 border-slate-200">
         <div className="flex items-center gap-2 text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
           <Sparkles className="h-4 w-4 text-emerald-600" />
-          <span>FREE PLAN (100 Monthly Credits)</span>
+          <span>FREE PLAN</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">

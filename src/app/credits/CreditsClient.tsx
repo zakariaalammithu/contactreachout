@@ -100,7 +100,7 @@ export default function CreditsClient() {
             28 Days
           </p>
           <p className="text-[11px] text-slate-500 font-mono">
-            Next 100 free credits grant
+            Next monthly credit grant
           </p>
         </div>
       </div>

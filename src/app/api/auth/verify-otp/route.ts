@@ -23,12 +23,16 @@ export async function POST(req: Request) {
 
     // 2. Resolve or create user account
     let user = AuthStore.getUserByEmail(cleanEmail);
+    const pendingSignup = AuthStore.getPendingSignup(cleanEmail);
 
     if (!user) {
       // First-time direct creation
       user = AuthStore.createUser({
-        name: cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' '),
+        name: pendingSignup?.fullName || cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' '),
         email: cleanEmail,
+        phone: pendingSignup?.phone,
+        password: pendingSignup?.password,
+        referredByCode: pendingSignup?.referralCode,
         isEmailVerified: true,
       });
     } else {
@@ -37,6 +41,7 @@ export async function POST(req: Request) {
         user = AuthStore.updateUser(cleanEmail, { isEmailVerified: true });
       }
     }
+    AuthStore.clearPendingSignup(cleanEmail);
 
     // 3. Create server session
     const session = AuthStore.createSession(user.id, user.email, user.role);
@@ -56,6 +61,8 @@ export async function POST(req: Request) {
         phone: user.phone,
         role: user.role,
         isEmailVerified: user.isEmailVerified,
+        referralCode: user.referralCode,
+        bonusCredits: user.bonusCredits,
       },
       redirectTo,
     });

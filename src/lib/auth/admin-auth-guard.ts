@@ -87,28 +87,16 @@ export class AdminAuthGuard {
    * Extracts and validates the authenticated admin session from the request.
    */
   public static async getSession(req: NextRequest): Promise<AuthenticatedUserSession | null> {
-    // Check Authorization header or Cookie session
-    const authHeader = req.headers.get('Authorization');
-    const adminEmailHeader = req.headers.get('x-user-email');
-
-    // Super Admin bootstrap fallback matching the user's primary email
-    if (adminEmailHeader === this.SUPER_ADMIN_EMAIL || authHeader?.includes('superadmin-session')) {
-      return {
-        userId: 'usr-superadmin-001',
-        email: this.SUPER_ADMIN_EMAIL,
-        role: 'SUPER_ADMIN',
-        organizationId: 'org-root-001',
-        isSuspended: false,
-        requiresPasswordReset: false,
-      };
-    }
-
-    // Default development operator fallback
+    const sessionId = req.cookies.get('app_session')?.value;
+    if (!sessionId) return null;
+    const { AuthStore } = await import('./auth-store');
+    const session = AuthStore.getSession(sessionId);
+    if (!session) return null;
     return {
-      userId: 'usr-operator-002',
-      email: 'operator@bulkreach.io',
-      role: 'SUPER_ADMIN', // In local sandbox default to SUPER_ADMIN for full dev access
-      organizationId: 'org-001',
+      userId: session.userId,
+      email: session.email,
+      role: session.role,
+      organizationId: session.role === 'SUPER_ADMIN' ? 'org-root-001' : 'org-001',
       isSuspended: false,
       requiresPasswordReset: false,
     };

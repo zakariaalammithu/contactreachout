@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Check, KeyRound, ArrowRight, ShieldCheck, Mail, Lock, User, RefreshCw, AlertCircle, ChevronLeft } from 'lucide-react';
 
 export default function LoginClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Mode: 'signup' | 'signin' | 'google_chooser' | 'otp_verify'
@@ -20,7 +19,7 @@ export default function LoginClient() {
 
   // Google Accounts List (Matches visitor's Chrome session or device profile)
   const [googleAccounts, setGoogleAccounts] = useState([
-    { name: 'Alam', email: 'moumithu100@gmail.com', avatarBg: 'bg-emerald-700' },
+    { name: 'Alex', email: 'alex@example.com', avatarBg: 'bg-emerald-700' },
   ]);
 
   // 6-Digit OTP States
@@ -108,6 +107,7 @@ export default function LoginClient() {
   // 1. SIGN UP SUBMIT
   const handleSignUpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setErrorMsg('');
     setSuccessMsg('');
 
@@ -153,6 +153,7 @@ export default function LoginClient() {
   // 2. SIGN IN SUBMIT
   const handleSignInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setErrorMsg('');
     setSuccessMsg('');
 
@@ -170,6 +171,11 @@ export default function LoginClient() {
 
       if (!res.ok) {
         throw new Error(data.error || 'Failed to sign in.');
+      }
+
+      if (data.authenticated && data.redirectTo) {
+        window.location.replace(data.redirectTo);
+        return;
       }
 
       setMaskedEmail(data.maskedEmail || maskEmailString(email));
@@ -248,10 +254,7 @@ export default function LoginClient() {
         throw new Error(data.error || 'Invalid verification code.');
       }
 
-      setSuccessMsg('Verification successful! Redirecting...');
-      setTimeout(() => {
-        router.push(data.redirectTo || '/dashboard');
-      }, 500);
+      window.location.replace(data.redirectTo || '/dashboard');
     } catch (err: any) {
       setErrorMsg(err.message || 'Verification failed. Please check your code.');
     } finally {
@@ -290,18 +293,21 @@ export default function LoginClient() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F5F8F6] p-4 sm:p-6 font-sans">
-      <div className="w-full max-w-[460px] rounded-3xl border border-[#E2EAE5] bg-white p-7 sm:p-9 shadow-sm space-y-6">
+    <div className="flex min-h-screen items-center justify-center bg-[#f6f9ff] p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-[460px] rounded-3xl border border-blue-100 bg-white p-7 sm:p-9 shadow-xl shadow-blue-100/60 space-y-6">
         
         {/* VIEW 1 & 2: STANDARD LOGIN & SIGNUP HEADER */}
         {(activeTab === 'signup' || activeTab === 'signin') && (
-          <div className="text-left space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-sans">
-              Welcome to FreeOutreach
-            </h1>
-            <p className="text-xs text-slate-500 font-normal">
-              Bulk Website Contact Form Outreach System
-            </p>
+          <div className="flex items-center gap-3 text-left">
+            <img src="/logo-128.png" alt="ContactReachout logo" width="48" height="48" className="h-12 w-12 shrink-0 object-contain" />
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-sans">
+                Welcome to ContactReachout
+              </h1>
+              <p className="text-xs text-slate-500 font-normal">
+                Bulk Website Contact Form Outreach System
+              </p>
+            </div>
           </div>
         )}
 
@@ -369,7 +375,7 @@ export default function LoginClient() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#007A55] focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="e.g. John Doe"
               />
             </div>
@@ -383,7 +389,7 @@ export default function LoginClient() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#007A55] focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="name@company.com"
               />
             </div>
@@ -396,7 +402,7 @@ export default function LoginClient() {
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#007A55] focus:outline-none transition-colors font-mono"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors font-mono"
                 placeholder="+1 (555) 000-0000"
               />
             </div>
@@ -410,7 +416,7 @@ export default function LoginClient() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#007A55] focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="At least 6 characters"
               />
             </div>
@@ -424,7 +430,7 @@ export default function LoginClient() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#007A55] focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="Re-enter password"
               />
             </div>
@@ -432,7 +438,7 @@ export default function LoginClient() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-xl bg-[#007A55] hover:bg-[#006446] text-white py-3 text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-2"
+              className="w-full rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white py-3 text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-2"
             >
               {isLoading ? (
                 <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
@@ -472,7 +478,7 @@ export default function LoginClient() {
                   setActiveTab('signin');
                   setErrorMsg('');
                 }}
-                className="text-[#007A55] font-bold hover:underline cursor-pointer"
+                className="text-blue-600 font-bold hover:underline cursor-pointer"
               >
                 Sign In
               </button>
@@ -492,7 +498,7 @@ export default function LoginClient() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#007A55] focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="name@company.com"
               />
             </div>
@@ -506,7 +512,7 @@ export default function LoginClient() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#007A55] focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="Enter password"
               />
             </div>
@@ -514,7 +520,7 @@ export default function LoginClient() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-xl bg-[#007A55] hover:bg-[#006446] text-white py-3 text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white py-3 text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
@@ -554,7 +560,7 @@ export default function LoginClient() {
                   setActiveTab('signup');
                   setErrorMsg('');
                 }}
-                className="text-[#007A55] font-bold hover:underline cursor-pointer"
+                className="text-blue-600 font-bold hover:underline cursor-pointer"
               >
                 Sign Up
               </button>
@@ -580,7 +586,7 @@ export default function LoginClient() {
                 Choose an account
               </h2>
               <p className="text-xs text-slate-600">
-                to continue to <strong className="text-blue-600 font-medium">freeoutreach.com</strong>
+                to continue to <strong className="text-blue-600 font-medium">ContactReachout</strong>
               </p>
             </div>
 
@@ -609,7 +615,7 @@ export default function LoginClient() {
               <button
                 type="button"
                 onClick={() => {
-                  const userEmail = prompt('Enter your Google Gmail address:', 'moumithu100@gmail.com');
+                  const userEmail = prompt('Enter your Google Gmail address:', 'alex@example.com');
                   if (userEmail && userEmail.includes('@')) {
                     handleSelectGoogleAccount(userEmail.trim(), userEmail.split('@')[0]);
                   }
@@ -624,7 +630,7 @@ export default function LoginClient() {
             </div>
 
             <p className="text-[10px] text-slate-500 leading-relaxed pt-2">
-              Before using this app, you can review FreeOutreach's{' '}
+              Before using this app, you can review ContactReachout&apos;s{' '}
               <a href="#" className="text-blue-600 underline font-medium">Privacy Policy</a> and{' '}
               <a href="#" className="text-blue-600 underline font-medium">Terms of Service</a>.
             </p>
@@ -693,7 +699,7 @@ export default function LoginClient() {
                       }
                     }}
                     id={`otp-input-${idx}`}
-                    className="w-11 h-12 text-center text-lg font-bold font-mono rounded-xl border border-slate-300 bg-white focus:border-[#007A55] focus:outline-none shadow-2xs"
+                    className="w-11 h-12 text-center text-lg font-bold font-mono rounded-xl border border-slate-300 bg-white focus:border-blue-600 focus:outline-none shadow-2xs"
                   />
                 ))}
               </div>
@@ -703,7 +709,7 @@ export default function LoginClient() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full rounded-xl bg-[#007A55] hover:bg-[#006446] text-white py-3 text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
+                className="w-full rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white py-3 text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
@@ -723,7 +729,7 @@ export default function LoginClient() {
                   className={`font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                     cooldown > 0 || isLoading
                       ? 'text-slate-400 cursor-not-allowed'
-                      : 'text-[#007A55] hover:underline'
+                      : 'text-blue-600 hover:underline'
                   }`}
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />

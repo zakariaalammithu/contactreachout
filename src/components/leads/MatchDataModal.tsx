@@ -443,7 +443,7 @@ export function MatchDataModal({
                 value={listName}
                 onChange={(e) => setListName(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-blue-600 focus:outline-none shadow-2xs"
-                placeholder="e.g. check freeoutreach--CSV.csv"
+                placeholder="e.g. contactreachout-leads.csv"
               />
             </div>
 

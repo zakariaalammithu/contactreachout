@@ -5,6 +5,7 @@ import { AdminAuthGuard } from '@/lib/auth/admin-auth-guard';
 import { SecretManager } from '@/lib/security/secret-manager';
 import { ResendProvider } from '@/lib/services/email/resend-provider';
 import { AuditLogService } from '@/lib/services/audit-log-service';
+import { getEmailSenderConfig } from '@/lib/services/email/email-config';
 
 export async function GET(req: NextRequest) {
   const { session, errorResponse } = await AdminAuthGuard.requireAdmin(req);
@@ -12,15 +13,16 @@ export async function GET(req: NextRequest) {
 
   const hasKey = SecretManager.hasSecret('RESEND_API_KEY');
   const maskedKey = SecretManager.getMaskedSecret('RESEND_API_KEY');
+  const sender = getEmailSenderConfig();
 
   return NextResponse.json({
     enabled: hasKey,
     maskedApiKey: maskedKey,
-    fromEmail: 'outreach@bulkreach.io',
-    fromName: 'BulkReach Team',
-    replyToEmail: 'support@bulkreach.io',
+    fromEmail: sender.fromEmail,
+    fromName: sender.fromName,
+    replyToEmail: sender.replyToEmail,
     provider: 'Resend',
-    lastTestStatus: hasKey ? 'SUCCESS' : 'NOT_CONFIGURED',
+    lastTestStatus: hasKey ? 'CHECKING' : 'NOT_CONFIGURED',
   });
 }
 
@@ -31,6 +33,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { apiKey, fromEmail, fromName, replyToEmail, testEmailRecipient, action } = body;
+    const sender = getEmailSenderConfig();
 
     // Test Connection
     if (action === 'test_connection') {
@@ -58,13 +61,13 @@ export async function POST(req: NextRequest) {
       const provider = new ResendProvider();
       const sendResult = await provider.sendEmail({
         to: testEmailRecipient,
-        from: fromEmail || 'outreach@bulkreach.io',
-        fromName: fromName || 'BulkReach Super Admin',
-        replyTo: replyToEmail,
+        from: fromEmail || sender.fromEmail,
+        fromName: fromName || sender.fromName,
+        replyTo: replyToEmail || sender.replyToEmail,
         subject: '✓ Super Admin Test: Resend Integration Active',
         html: `
           <div style="font-family: sans-serif; padding: 20px; color: #1e293b;">
-            <h2 style="color: #4f46e5;">BulkReach AI — Email Integration Test</h2>
+            <h2 style="color: #4f46e5;">ContactReachout — Email Integration Test</h2>
             <p>Congratulations! Your Resend email integration is successfully configured and active.</p>
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
             <p style="font-size: 12px; color: #64748b;">Dispatched by Super Admin (${session.email}) at ${new Date().toISOString()}</p>

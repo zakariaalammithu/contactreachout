@@ -38,51 +38,7 @@ export default function SuperAdminOverviewPage() {
       const json = await res.json();
       setData(json);
     } catch {
-      setData({
-        stats: {
-          totalUsers: 14,
-          activeUsers: 12,
-          totalCampaigns: 28,
-          runningCampaigns: 4,
-          totalLeads: 18450,
-          pendingJobs: 124,
-          processingJobs: 8,
-          successfulSubmissions: 14210,
-          failedSubmissions: 312,
-          reviewRequired: 184,
-          captchaDetected: 98,
-          systemErrors: 0,
-          globalLiveSubmissionsEnabled: false,
-        },
-        submissionTrends: [
-          { day: 'Mon', successful: 1840, failed: 42, reviewReq: 18 },
-          { day: 'Tue', successful: 2150, failed: 38, reviewReq: 24 },
-          { day: 'Wed', successful: 2490, failed: 45, reviewReq: 31 },
-          { day: 'Thu', successful: 2210, failed: 29, reviewReq: 19 },
-          { day: 'Fri', successful: 2830, failed: 51, reviewReq: 42 },
-          { day: 'Sat', successful: 1420, failed: 20, reviewReq: 12 },
-          { day: 'Sun', successful: 1270, failed: 15, reviewReq: 9 },
-        ],
-        recentActivity: [
-          {
-            id: 'log-001',
-            userEmail: 'mithusquare@gmail.com',
-            action: 'admin_login_success',
-            resourceType: 'auth',
-            status: 'success',
-            timestamp: new Date(Date.now() - 600000).toISOString(),
-          },
-          {
-            id: 'log-002',
-            userEmail: 'mithusquare@gmail.com',
-            action: 'integration_updated',
-            resourceType: 'system_secrets',
-            resourceId: 'RESEND_API_KEY',
-            status: 'success',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-          },
-        ],
-      });
+      setData({ stats: {}, submissionTrends: [], recentActivity: [], error: 'Live platform statistics are unavailable.' });
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +60,7 @@ export default function SuperAdminOverviewPage() {
               Super Admin Overview
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
-              AIMFOX ENTERPRISE
+              CONTACTREACHOUT
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -153,8 +109,8 @@ export default function SuperAdminOverviewPage() {
               <Users className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{stats.totalUsers || 14}</div>
-          <p className="text-[10px] text-emerald-700 font-mono font-bold">12 active sessions</p>
+          <div className="text-2xl font-extrabold text-slate-900">{stats.totalUsers ?? 0}</div>
+          <p className="text-[10px] text-emerald-700 font-mono font-bold">{stats.activeUsers ?? 0} active accounts</p>
         </Card>
 
         {/* Total Campaigns */}
@@ -165,8 +121,8 @@ export default function SuperAdminOverviewPage() {
               <Send className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{stats.totalCampaigns || 28}</div>
-          <p className="text-[10px] text-purple-700 font-mono font-bold">{stats.runningCampaigns || 4} running queues</p>
+          <div className="text-2xl font-extrabold text-slate-900">{stats.totalCampaigns ?? 0}</div>
+          <p className="text-[10px] text-purple-700 font-mono font-bold">{stats.runningCampaigns ?? 0} running queues</p>
         </Card>
 
         {/* Total Leads */}
@@ -177,8 +133,8 @@ export default function SuperAdminOverviewPage() {
               <Database className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{(stats.totalLeads || 18450).toLocaleString()}</div>
-          <p className="text-[10px] text-cyan-700 font-mono font-bold">100% verified domains</p>
+          <div className="text-2xl font-extrabold text-slate-900">{(stats.totalLeads ?? 0).toLocaleString()}</div>
+          <p className="text-[10px] text-cyan-700 font-mono font-bold">Recorded leads</p>
         </Card>
 
         {/* Successful Submissions */}
@@ -189,8 +145,8 @@ export default function SuperAdminOverviewPage() {
               <FileCheck className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-emerald-700">{(stats.successfulSubmissions || 14210).toLocaleString()}</div>
-          <p className="text-[10px] text-slate-500 font-mono font-bold">97.8% deliverability</p>
+          <div className="text-2xl font-extrabold text-emerald-700">{(stats.successfulSubmissions ?? 0).toLocaleString()}</div>
+          <p className="text-[10px] text-slate-500 font-mono font-bold">Recorded successes</p>
         </Card>
 
         {/* Processing Jobs */}
@@ -201,8 +157,8 @@ export default function SuperAdminOverviewPage() {
               <Layers className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-indigo-700">{stats.processingJobs || 8} active</div>
-          <p className="text-[10px] text-slate-500 font-mono">{stats.pendingJobs || 124} pending</p>
+          <div className="text-2xl font-extrabold text-indigo-700">{stats.processingJobs ?? 0} active</div>
+          <p className="text-[10px] text-slate-500 font-mono">{stats.pendingJobs ?? 0} pending</p>
         </Card>
 
         {/* Review Required */}
@@ -213,7 +169,7 @@ export default function SuperAdminOverviewPage() {
               <AlertTriangle className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-orange-700">{stats.reviewRequired || 184}</div>
+          <div className="text-2xl font-extrabold text-orange-700">{stats.reviewRequired ?? 0}</div>
           <p className="text-[10px] text-orange-600 font-mono">Triage queue</p>
         </Card>
 
@@ -225,7 +181,7 @@ export default function SuperAdminOverviewPage() {
               <ShieldAlert className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-amber-700">{stats.captchaDetected || 98}</div>
+          <div className="text-2xl font-extrabold text-amber-700">{stats.captchaDetected ?? 0}</div>
           <p className="text-[10px] text-amber-600 font-mono">Zero-bypass halted</p>
         </Card>
 
@@ -237,7 +193,7 @@ export default function SuperAdminOverviewPage() {
               <AlertTriangle className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-rose-700">{stats.failedSubmissions || 312}</div>
+          <div className="text-2xl font-extrabold text-rose-700">{stats.failedSubmissions ?? 0}</div>
           <p className="text-[10px] text-rose-600 font-mono">2.2% retry cap</p>
         </Card>
       </div>

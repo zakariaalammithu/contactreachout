@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
+import { SessionManager } from '@/lib/auth/session';
 
 const signinSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -56,10 +57,25 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Credentials valid -> Send NEW 6-digit 2FA verification code
+    // Verified accounts sign in directly. Email verification is a one-time
+    // account-creation step, not a second factor on every login.
+    if (user.isEmailVerified) {
+      const session = AuthStore.createSession(user.id, user.email, user.role);
+      const redirectTo = (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') ? '/admin' : '/dashboard';
+      const response = NextResponse.json({
+        success: true,
+        authenticated: true,
+        redirectTo,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      });
+      SessionManager.setSessionCookie(response, session);
+      return response;
+    }
+
+    // An existing but unverified account must finish its one-time verification.
     const dispatchResult = await EmailVerificationService.sendVerificationCode({
       email: cleanEmail,
-      purpose: 'signin',
+      purpose: 'signup',
       resendApiKey,
     });
 
@@ -69,6 +85,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
+      verificationRequired: true,
       maskedEmail: dispatchResult.maskedEmail,
       message: dispatchResult.message,
       cooldownSeconds: dispatchResult.cooldownSeconds,

@@ -22,9 +22,9 @@ import { Card } from '@/components/ui/Card';
 export default function ResendEmailSettingsPage() {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [maskedApiKey, setMaskedApiKey] = useState('NOT_CONFIGURED');
-  const [fromEmail, setFromEmail] = useState('outreach@bulkreach.io');
-  const [fromName, setFromName] = useState('BulkReach Outreach Team');
-  const [replyToEmail, setReplyToEmail] = useState('support@bulkreach.io');
+  const [fromEmail, setFromEmail] = useState('hello@contactreachout.com');
+  const [fromName, setFromName] = useState('ContactReachout');
+  const [replyToEmail, setReplyToEmail] = useState('hello@contactreachout.com');
   const [testRecipient, setTestRecipient] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);

@@ -6,6 +6,7 @@
 
 import { EmailProvider, SendEmailParams, EmailSendResult, EmailConnectionTestResult } from './email-provider.interface';
 import { SecretManager } from '@/lib/security/secret-manager';
+import { getEmailSenderConfig } from './email-config';
 
 export class ResendProvider implements EmailProvider {
   private organizationId?: string | null;
@@ -92,13 +93,12 @@ export class ResendProvider implements EmailProvider {
         error: `HTTP_${response.status}`,
       };
     } catch (err: any) {
-      // Fallback for isolated networks
       return {
-        connected: true,
-        provider: 'Resend (Offline Verified)',
-        configuredEmail: 'outreach@bulkreach.io',
+        connected: false,
+        provider: 'Resend',
         latencyMs: Date.now() - startTime,
-        message: 'Resend API Key is validated and saved securely.',
+        message: 'Resend API validation could not be completed.',
+        error: 'NETWORK_OR_PROVIDER_ERROR',
       };
     }
   }
@@ -118,9 +118,10 @@ export class ResendProvider implements EmailProvider {
       };
     }
 
-    const defaultFrom = 'onboarding@resend.dev';
-    const fromEmail = params.from || defaultFrom;
-    const fromFormatted = params.fromName ? `${params.fromName} <${fromEmail}>` : `FreeOutreach <${fromEmail}>`;
+    const sender = getEmailSenderConfig();
+    const fromEmail = params.from || sender.fromEmail;
+    const fromName = params.fromName || sender.fromName;
+    const fromFormatted = `${fromName} <${fromEmail}>`;
 
     // Sandbox / Test Mode dispatch
     if (apiKey.startsWith('mock_') || apiKey.startsWith('test_') || process.env.NODE_ENV === 'test') {
@@ -142,7 +143,7 @@ export class ResendProvider implements EmailProvider {
         body: JSON.stringify({
           from: fromFormatted,
           to: Array.isArray(params.to) ? params.to : [params.to],
-          reply_to: params.replyTo,
+          reply_to: params.replyTo || sender.replyToEmail,
           subject: params.subject,
           html: params.html,
           text: params.text,

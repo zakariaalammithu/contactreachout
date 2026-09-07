@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       userId: session.userId,
       email: session.email,
       role: session.role,
-      name: 'Mithu Alam (Super Admin)',
+      name: 'Ethan Carter (Super Admin)',
       avatarUrl: null,
       twoFactorEnabled: false,
       activeSessionsCount: 1,

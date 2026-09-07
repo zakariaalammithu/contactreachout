@@ -11,21 +11,11 @@ const signupSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(6, 'Confirm password must be at least 6 characters'),
   resendApiKey: z.string().optional(),
+  referralCode: z.string().trim().max(20).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
 });
-
-// Cache pending signup registration details until OTP verification
-const pendingSignups = new Map<string, { fullName: string; email: string; phone?: string; password: string }>();
-
-function getPendingSignup(email: string) {
-  return pendingSignups.get(email.toLowerCase().trim()) || null;
-}
-
-function clearPendingSignup(email: string) {
-  pendingSignups.delete(email.toLowerCase().trim());
-}
 
 export async function POST(req: Request) {
   try {
@@ -48,7 +38,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: firstIssue.message }, { status: 400 });
     }
 
-    const { fullName, email, phone, password, resendApiKey } = parsed.data;
+    const { fullName, email, phone, password, resendApiKey, referralCode } = parsed.data;
     const cleanEmail = email.toLowerCase().trim();
 
     // 3. Check if email already exists
@@ -61,7 +51,10 @@ export async function POST(req: Request) {
     }
 
     // Store pending registration details securely
-    pendingSignups.set(cleanEmail, { fullName, email: cleanEmail, phone, password });
+    if (referralCode && !AuthStore.getUserByReferralCode(referralCode)) {
+      return NextResponse.json({ error: 'This referral code is not valid.' }, { status: 400 });
+    }
+    AuthStore.savePendingSignup({ fullName, email: cleanEmail, phone, password, referralCode });
 
     // 4. Send 6-digit verification code
     const dispatchResult = await EmailVerificationService.sendVerificationCode({

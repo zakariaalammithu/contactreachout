@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   try {
     const res = await fetch(`https://rdap.org/domain/${cleanDomain}`, {
       headers: {
-        'User-Agent': 'FreeOutreach-RDAP-Lookup/1.0',
+        'User-Agent': 'ContactReachout-RDAP-Lookup/1.0',
         'Accept': 'application/rdap+json, application/json',
       },
       next: { revalidate: 86400 }, // Cache WHOIS lookup for 24 hours

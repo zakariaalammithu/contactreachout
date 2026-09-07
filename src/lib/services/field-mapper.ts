@@ -185,7 +185,7 @@ export function mapLeadToFormFields(
           sourceLeadField = 'name';
           confidence *= 0.85;
         } else {
-          valueToFill = (lead as any).sender_name?.split(' ')[0] || 'Zakaria';
+          valueToFill = (lead as any).sender_name?.split(' ')[0] || 'Alex';
           strategy = 'direct_first_name';
           sourceLeadField = 'sender_name';
         }
@@ -203,14 +203,14 @@ export function mapLeadToFormFields(
           sourceLeadField = 'name';
           confidence *= 0.85;
         } else {
-          valueToFill = (lead as any).sender_name?.split(' ').slice(1).join(' ') || 'Mithu';
+          valueToFill = (lead as any).sender_name?.split(' ').slice(1).join(' ') || 'Morgan';
           strategy = 'direct_last_name';
           sourceLeadField = 'sender_name';
         }
         break;
 
       case 'full_name':
-        const fullName = constructFullName(lead.first_name, lead.last_name) || lead.name || (lead as any).sender_name || 'Zakaria Alam Mithu';
+        const fullName = constructFullName(lead.first_name, lead.last_name) || lead.name || (lead as any).sender_name || 'Alex Morgan';
         if (fullName) {
           valueToFill = String(fullName).trim();
           strategy = 'composite_full_name';

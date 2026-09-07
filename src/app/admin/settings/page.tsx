@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
 export default function AdminSettingsPage() {
-  const [appName, setAppName] = useState('BulkReach Outreach AI');
+  const [appName, setAppName] = useState('ContactReachout');
   const [systemContact, setSystemContact] = useState('mithusquare@gmail.com');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);

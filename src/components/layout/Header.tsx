@@ -35,6 +35,8 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; read: boolean; createdAt: string }>>([]);
   const [showNameModal, setShowNameModal] = useState(false);
   const [inputCampaignName, setInputCampaignName] = useState('');
   const [currentHeaderCampName, setCurrentHeaderCampName] = useState('new');
@@ -58,7 +60,18 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
     email: 'hello@contactreachout.com',
   });
 
+  const handleSignOut = async () => {
+    await fetch('/api/auth/signout', { method: 'POST' }).catch(() => undefined);
+    setUserMenuOpen(false);
+    router.replace('/login?tab=signin');
+    router.refresh();
+  };
+
   useEffect(() => {
+    fetch('/api/auth/session', { cache: 'no-store' }).then(response => response.json()).then(data => {
+      if (data.user) setUserProfile({ name: data.user.name, email: data.user.email });
+    }).catch(() => undefined);
+    fetch('/api/notifications', { cache: 'no-store' }).then(response => response.json()).then(data => setNotifications(data.notifications || [])).catch(() => undefined);
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem('user_sender_profile');
@@ -174,12 +187,12 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
 
         {/* Dynamic Navigation Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-          <Link href="/" className="hover:text-blue-600 flex items-center gap-1 transition-colors">
+          <Link href="/dashboard" className="hover:text-blue-600 flex items-center gap-1 transition-colors">
             <Home className="h-3.5 w-3.5" />
           </Link>
           <ChevronRight className="h-3 w-3 text-slate-300" />
           <span className="capitalize font-semibold text-slate-800">
-            {pathname === '/' ? 'Dashboard' : pathname.replace('/', '').replace(/-/g, ' ')}
+            {pathname === '/dashboard' ? 'Dashboard' : pathname.replace('/', '').replace(/-/g, ' ')}
           </span>
         </nav>
       </div>
@@ -197,7 +210,7 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
         <Link
           href="/campaigns/new"
           id="header-create-campaign-btn"
-          className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md rounded-xl px-4 py-2 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+          className="bg-[#0e6de4] hover:bg-[#0758bd] text-white font-bold text-xs shadow-md rounded-xl px-4 py-2 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
         >
           <Plus className="h-4 w-4 text-white stroke-[2.5]" />
           <span>Create Campaign</span>
@@ -207,7 +220,7 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
           variant="primary"
           size="sm"
           onClick={handleImportLeadsClick}
-          className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-md rounded-xl px-4 py-2 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+          className="bg-[#0e6de4] hover:bg-[#0758bd] text-white font-bold text-xs shadow-md rounded-xl px-4 py-2 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
         >
           <Upload className="h-4 w-4 text-white" />
           <span>Import Leads File</span>
@@ -233,6 +246,10 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
 
         {/* Profile Dropdown Badge */}
         <div className="relative">
+          <button type="button" onClick={() => setNotificationOpen(open => !open)} aria-label="Notifications" className="relative grid h-9 w-9 place-items-center rounded-full border border-blue-100 bg-white text-slate-600 hover:bg-blue-50 hover:text-[#0e6de4]"><Bell className="h-4 w-4" />{notifications.some(item => !item.read) && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />}</button>
+          {notificationOpen && <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"><div className="border-b border-slate-100 px-4 py-3"><p className="text-sm font-black text-slate-900">Notifications</p></div><div className="max-h-80 overflow-y-auto">{notifications.length ? notifications.map(item => <button key={item.id} type="button" onClick={async () => { if (!item.read) { await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id }) }); setNotifications(current => current.map(candidate => candidate.id === item.id ? {...candidate, read:true} : candidate)); } }} className={`block w-full border-b border-slate-100 px-4 py-3 text-left ${item.read ? 'bg-white' : 'bg-blue-50/70'}`}><p className="text-xs font-black text-slate-900">{item.title}</p><p className="mt-1 text-xs leading-5 text-slate-600">{item.message}</p></button>) : <p className="p-6 text-center text-sm text-slate-500">No new notifications.</p>}</div></div>}
+        </div>
+        <div className="relative">
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1 pr-3 hover:bg-slate-100 transition-colors cursor-pointer"
@@ -241,7 +258,7 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
               {(userProfile?.name || 'ContactReachout Team').split(' ').map((n) => n[0]).join('').slice(0, 2) || 'ZA'}
             </div>
             <span className="text-xs font-bold text-slate-700 hidden sm:inline-block">
-              {(userProfile?.name || 'Zakaria').split(' ')[0] || 'Zakaria'}
+              {userProfile?.name || 'Account'}
             </span>
           </button>
 
@@ -254,20 +271,20 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
               </div>
               <div className="py-1">
                 <Link
-                  href="/settings"
+                  href="/profile"
                   onClick={() => setUserMenuOpen(false)}
                   className="block px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 rounded-xl"
                 >
                   Account Settings
                 </Link>
-                <Link
-                  href="/login"
-                  onClick={() => setUserMenuOpen(false)}
+                <button
+                  type="button"
+                  onClick={handleSignOut}
                   className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   Sign Out
-                </Link>
+                </button>
               </div>
             </div>
           )}
@@ -322,7 +339,7 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
                   disabled={!inputCampaignName.trim()}
                   className={`rounded-xl px-5 py-2 text-xs font-bold text-white transition-all cursor-pointer ${
                     inputCampaignName.trim()
-                      ? 'bg-[#2563EB] hover:bg-[#1D4ED8] shadow-md shadow-blue-500/20 active:scale-95'
+                      ? 'bg-[#0e6de4] hover:bg-[#0758bd] shadow-md shadow-blue-500/20 active:scale-95'
                       : 'bg-slate-300 cursor-not-allowed'
                   }`}
                 >

@@ -41,7 +41,7 @@ export class NoneProvider implements AIProvider {
       : '';
 
     const subject = `Partnership inquiry regarding ${context.companyName}`;
-    const body = `${greeting}\n\nI came across ${context.companyName}${industryNote} and wanted to reach out regarding potential B2B collaboration opportunities.\n\nWe offer specialized software services tailored for growing organizations.\n\nWould you be open to a brief intro conversation next week?\n\nBest regards,\nAlex\n\n---\nAcme Outreach, 500 Market St, San Francisco, CA. Reply STOP to opt out.`;
+    const body = `${greeting}\n\nI came across ${context.companyName}${industryNote} and wanted to reach out regarding potential B2B collaboration opportunities.\n\nWe offer specialized software services tailored for growing organizations.\n\nWould you be open to a brief intro conversation next week?\n\nBest regards,\nContactReachout\nhello@contactreachout.com\nAustin, TX 73301, USA`;
 
     return {
       subject,

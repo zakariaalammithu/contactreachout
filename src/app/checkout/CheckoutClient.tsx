@@ -1,150 +1,60 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { CreditCard, ShieldCheck, CheckCircle2, Lock, ArrowLeft, Flame, Coins, Sparkles } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { ArrowLeft, CheckCircle2, CreditCard, Loader2, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 
 export default function CheckoutClient() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
+  const credits = Number(params?.get('credits')) || 5000;
+  const sessionId = params?.get('session_id');
+  const statusParam = params?.get('status');
+  const [busy, setBusy] = useState(false);
+  const [state, setState] = useState<'ready' | 'pending' | 'paid' | 'cancelled' | 'error'>(statusParam === 'cancelled' ? 'cancelled' : sessionId ? 'pending' : 'ready');
+  const [message, setMessage] = useState(statusParam === 'cancelled' ? 'Checkout was cancelled. No charge was made.' : '');
 
-  const creditAmount = searchParams ? Number(searchParams.get('credits')) || 500 : 500;
-  const totalPrice = searchParams ? Number(searchParams.get('price')) || 20 : 20;
+  useEffect(() => {
+    if (!sessionId) return;
+    let active = true;
+    fetch(`/api/billing/status?session_id=${encodeURIComponent(sessionId)}`, { cache: 'no-store' })
+      .then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.error); return data; })
+      .then((data) => {
+        if (!active) return;
+        if (data.status === 'paid' && data.credited) {
+          const claimKey = `stripe_checkout_claimed_${sessionId}`;
+          if (!localStorage.getItem(claimKey)) {
+            CreditWalletService.addPaidCredits(data.credits, sessionId);
+            localStorage.setItem(claimKey, 'true');
+          }
+          setState('paid'); setMessage(`${Number(data.credits).toLocaleString()} credits were added to your account.`);
+        } else { setState('pending'); setMessage('Stripe is still confirming this payment. Refresh this page in a moment.'); }
+      })
+      .catch((error) => { if (active) { setState('error'); setMessage(error.message || 'Payment could not be verified.'); } });
+    return () => { active = false; };
+  }, [sessionId]);
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-
-  // Form State
-  const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
-  const [cardHolder, setCardHolder] = useState('Zakaria Alam');
-  const [expiry, setExpiry] = useState('12/28');
-  const [cvc, setCvc] = useState('***');
-
-  const handleProcessPayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessing(true);
-
-    setTimeout(() => {
-      CreditWalletService.addPaidCredits(creditAmount, `ch_stripe_${Date.now()}`);
-
-      setIsProcessing(false);
-      setPaymentSuccess(true);
-
-      setTimeout(() => {
-        router.push('/credits');
-      }, 1800);
-    }, 1200);
+  const startCheckout = async () => {
+    setBusy(true); setMessage('');
+    try {
+      const response = await fetch('/api/billing/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credits }) });
+      const data = await response.json();
+      if (response.status === 401) { window.location.href = `/login?tab=signin&next=${encodeURIComponent(`/checkout?credits=${credits}`)}`; return; }
+      if (!response.ok || !data.url) throw new Error(data.error || 'Checkout could not be started.');
+      window.location.assign(data.url);
+    } catch (error) { setState('error'); setMessage(error instanceof Error ? error.message : 'Checkout could not be started.'); setBusy(false); }
   };
 
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-        <div>
-          <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-blue-600" />
-            <span>Secure Checkout</span>
-          </h1>
-          <p className="text-xs text-slate-500 mt-1 font-mono">
-            256-Bit Encrypted Payment Processing • Guaranteed Instant Credit Activation
-          </p>
-        </div>
-
-        <Link href="/credits">
-          <Button variant="outline" size="sm" className="text-xs">
-            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-            Back to Wallet
-          </Button>
-        </Link>
-      </div>
-
-      {paymentSuccess ? (
-        <Card className="p-8 text-center space-y-4 border-emerald-200 bg-emerald-50/20 max-w-md mx-auto">
-          <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
-            <CheckCircle2 className="h-6 w-6" />
-          </div>
-          <h2 className="text-lg font-bold text-slate-900">Payment Successful!</h2>
-          <p className="text-xs text-slate-600">
-            {creditAmount.toLocaleString()} paid credits have been added to your account. Redirecting to wallet...
-          </p>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6 space-y-4 border-slate-200">
-            <h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Order Summary</h2>
-
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-600">Selected Package</span>
-              <span className="font-bold text-slate-900 font-mono">{creditAmount.toLocaleString()} Credits</span>
-            </div>
-
-            <div className="flex items-center justify-between text-xs border-t border-slate-100 pt-3">
-              <span className="font-bold text-slate-900">Total Due Today</span>
-              <span className="text-lg font-extrabold text-blue-600 font-mono">${totalPrice} USD</span>
-            </div>
-          </Card>
-
-          <Card className="p-6 space-y-4 border-blue-200 bg-blue-50/10">
-            <h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Payment Details</h2>
-
-            <form onSubmit={handleProcessPayment} className="space-y-3 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">Card Number</label>
-                <input
-                  type="text"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
-                  required
-                  className="w-full p-2.5 rounded-xl border border-slate-300 font-mono"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Expiry (MM/YY)</label>
-                  <input
-                    type="text"
-                    value={expiry}
-                    onChange={(e) => setExpiry(e.target.value)}
-                    required
-                    className="w-full p-2.5 rounded-xl border border-slate-300 font-mono text-center"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">CVC</label>
-                  <input
-                    type="password"
-                    value={cvc}
-                    onChange={(e) => setCvc(e.target.value)}
-                    required
-                    className="w-full p-2.5 rounded-xl border border-slate-300 font-mono text-center"
-                  />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isProcessing}
-                variant="primary"
-                className="w-full font-bold bg-blue-600 hover:bg-blue-700 py-3 text-xs flex items-center justify-center gap-2 mt-4"
-              >
-                {isProcessing ? (
-                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                ) : (
-                  <>
-                    <Lock className="h-3.5 w-3.5" />
-                    <span>Pay ${totalPrice} USD Now</span>
-                  </>
-                )}
-              </Button>
-            </form>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="mx-auto max-w-2xl space-y-6 pb-16">
+    <div className="flex items-center justify-between border-b border-blue-100 pb-4"><div><h1 className="flex items-center gap-2 text-2xl font-black text-slate-950"><CreditCard className="h-6 w-6 text-[#0e6de4]" />Secure Stripe Checkout</h1><p className="mt-1 text-sm text-slate-500">Payment details are entered only on Stripe&apos;s hosted checkout.</p></div><Link href="/pricing"><Button variant="outline" size="sm"><ArrowLeft className="mr-1 h-4 w-4" />Pricing</Button></Link></div>
+    <Card className="space-y-6 border-blue-100 bg-white p-7 shadow-lg">
+      <div className="flex items-center justify-between"><div><p className="text-sm font-bold text-slate-500">Credit package</p><p className="mt-1 text-3xl font-black text-slate-950">{credits.toLocaleString()} credits</p></div><ShieldCheck className="h-10 w-10 text-[#0e6de4]" /></div>
+      {state !== 'ready' && <div className={`flex gap-3 rounded-2xl border p-4 text-sm font-semibold ${state === 'paid' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : state === 'error' ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-blue-200 bg-blue-50 text-blue-800'}`}>{state === 'paid' ? <CheckCircle2 className="h-5 w-5 shrink-0" /> : state === 'pending' ? <Loader2 className="h-5 w-5 shrink-0 animate-spin" /> : <TriangleAlert className="h-5 w-5 shrink-0" />}<span>{message}</span></div>}
+      {state === 'paid' ? <Link href="/credits" className="block"><Button className="w-full">View credit wallet</Button></Link> : <Button onClick={startCheckout} disabled={busy || state === 'pending'} className="w-full py-3">{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}Continue to Stripe</Button>}
+      <p className="text-center text-xs leading-5 text-slate-500">No card data is collected or stored by ContactReachout. Credits activate only after server-side Stripe verification.</p>
+    </Card>
+  </div>;
 }

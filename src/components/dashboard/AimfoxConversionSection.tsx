@@ -63,8 +63,8 @@ export function AimfoxConversionSection() {
               <div className="absolute left-0 top-0 h-22 w-36 rounded-[28px] border border-white/20 overflow-hidden shadow-2xl bg-black group hover:scale-105 transition-transform">
                 {/* eslint-disable-next-html-element-attributes */}
                 <img
-                  src="/client-assets/media_1786613661070.jpg"
-                  alt="Original Client - Sarah"
+                  src="/client-reviews/emily-davidson.png"
+                  alt="Emily Davidson profile"
                   className="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                 />
               </div>
@@ -72,8 +72,8 @@ export function AimfoxConversionSection() {
               {/* Capsule 2 (Top Right): Man with Glasses (media_1786613660530.jpg) */}
               <div className="absolute right-2 top-0 h-26 w-44 rounded-[32px] border border-white/20 overflow-hidden shadow-2xl bg-black group hover:scale-105 transition-transform">
                 <img
-                  src="/client-assets/media_1786613660530.jpg"
-                  alt="Original Client - Alex"
+                  src="/client-reviews/austin-smith.png"
+                  alt="Austin Smith profile"
                   className="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                 />
               </div>
@@ -81,8 +81,8 @@ export function AimfoxConversionSection() {
               {/* Capsule 3 (Bottom Left): Man in Grey Shirt (media_1786613661192.jpg) */}
               <div className="absolute left-2 bottom-0 h-28 w-52 rounded-[36px] border border-white/20 overflow-hidden shadow-2xl bg-black group hover:scale-105 transition-transform">
                 <img
-                  src="/client-assets/media_1786613661192.jpg"
-                  alt="Original Client - Jason"
+                  src="/client-reviews/michael-kokernak.jpg"
+                  alt="Michael Kokernak profile"
                   className="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                 />
               </div>
@@ -90,8 +90,8 @@ export function AimfoxConversionSection() {
               {/* Capsule 4 (Bottom Right): Man in Suit (media_1786613661195.png) */}
               <div className="absolute right-0 bottom-3 h-24 w-38 rounded-[30px] border border-white/20 overflow-hidden shadow-2xl bg-black group hover:scale-105 transition-transform">
                 <img
-                  src="/client-assets/media_1786613661195.png"
-                  alt="Original Client - Robert"
+                  src="/client-reviews/bill-bradford.jpg"
+                  alt="Dr. Bill Bradford profile"
                   className="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                 />
               </div>
@@ -99,8 +99,8 @@ export function AimfoxConversionSection() {
               {/* Background Subtle Capsule 5 (media_1786612014739.png) */}
               <div className="absolute left-1/3 top-6 h-10 w-16 rounded-full border border-white/10 overflow-hidden bg-black/80 opacity-50">
                 <img
-                  src="/client-assets/media_1786612014739.png"
-                  alt="Original Client - Elena"
+                  src="/client-reviews/paola-marinone.jpg"
+                  alt="Paola Marinone profile"
                   className="h-full w-full object-cover"
                 />
               </div>

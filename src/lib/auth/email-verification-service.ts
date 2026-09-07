@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { ResendProvider } from '@/lib/services/email/resend-provider';
 import { SecretManager } from '@/lib/security/secret-manager';
 import { AuthStore } from './auth-store';
+import { getEmailSenderConfig } from '@/lib/services/email/email-config';
 
 export class EmailVerificationService {
   /**
@@ -50,14 +51,14 @@ export class EmailVerificationService {
     // Cryptographically secure 6-digit code generation
     const plainCode = crypto.randomInt(100000, 999999).toString();
 
-    // Save SHA-256 hash in server store with 10 min TTL and 60s resend cooldown
-    AuthStore.saveOtpCode(emailKey, plainCode, params.purpose, 10 * 60 * 1000, 60 * 1000);
+    // Verification codes are single-use and expire after exactly 2 minutes.
+    AuthStore.saveOtpCode(emailKey, plainCode, params.purpose, 2 * 60 * 1000, 60 * 1000);
 
     const apiKey = params.resendApiKey || SecretManager.getSecret('RESEND_API_KEY') || process.env.RESEND_API_KEY;
     const subject = `🔑 Verification Code: ${plainCode}`;
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
-        <h2 style="color: #007A55; margin-top: 0; font-size: 20px;">FreeOutreach Account Verification</h2>
+        <h2 style="color: #007A55; margin-top: 0; font-size: 20px;">ContactReachout Account Verification</h2>
         <p style="color: #475569; font-size: 14px; line-height: 1.5;">
           Use the 6-digit code below to complete your authentication for <strong>${this.maskEmail(emailKey)}</strong>:
         </p>
@@ -65,12 +66,13 @@ export class EmailVerificationService {
           ${plainCode}
         </div>
         <p style="color: #64748b; font-size: 12px; line-height: 1.4;">
-          This code is single-use and will expire in 10 minutes. If you did not request this email, please secure your account.
+          This code is single-use and will expire in 2 minutes. If you did not request this email, please secure your account.
         </p>
       </div>
     `;
 
     let emailDelivered = false;
+    const sender = getEmailSenderConfig();
 
     // Attempt direct live fetch to Resend API if key is available
     if (apiKey && apiKey.startsWith('re_') && !apiKey.includes('Yc17d74R')) {
@@ -82,7 +84,8 @@ export class EmailVerificationService {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'FreeOutreach Auth <onboarding@resend.dev>',
+            from: `${sender.fromName} <${sender.fromEmail}>`,
+            reply_to: sender.replyToEmail,
             to: [emailKey],
             subject,
             html,
@@ -119,7 +122,16 @@ export class EmailVerificationService {
       };
     }
 
-    // If Resend API Key is invalid or unconfigured, show code preview banner so user is never blocked!
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        success: false,
+        message: 'Verification email service is unavailable. Configure RESEND_API_KEY and try again.',
+        maskedEmail: this.maskEmail(emailKey),
+        cooldownSeconds: 60,
+      };
+    }
+
+    // Development-only fallback for local authentication testing.
     return {
       success: true,
       message: `✓ 6-Digit Code generated! (Resend API Key unconfigured in Settings). Active Code: ${plainCode}`,

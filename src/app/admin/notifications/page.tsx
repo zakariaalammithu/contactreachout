@@ -1,0 +1,13 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { Bell, Send } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+
+export default function AdminNotificationsPage() {
+  const [users, setUsers] = useState<Array<{ id: string; name: string; email: string; role: string }>>([]);
+  const [target, setTarget] = useState('all'); const [title, setTitle] = useState(''); const [message, setMessage] = useState(''); const [status, setStatus] = useState(''); const [busy, setBusy] = useState(false);
+  useEffect(() => { fetch('/api/admin/users').then(r => r.json()).then(data => setUsers(data.users || data || [])).catch(() => setStatus('Users could not be loaded.')); }, []);
+  const send = async () => { setBusy(true); setStatus(''); try { const response = await fetch('/api/admin/notifications', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target:target === 'all' ? 'all' : 'user',userId:target,title,message}) }); const data=await response.json(); if(!response.ok) throw new Error(data.error); setStatus(`Notification sent to ${data.recipients} user${data.recipients === 1 ? '' : 's'}.`); setTitle(''); setMessage(''); } catch(error) { setStatus(error instanceof Error ? error.message : 'Notification could not be sent.'); } finally { setBusy(false); } };
+  return <div className="max-w-3xl space-y-6"><div><h1 className="flex items-center gap-2 text-2xl font-black text-slate-950"><Bell className="h-6 w-6 text-[#0e6de4]" />User notifications</h1><p className="mt-1 text-sm text-slate-500">Send account and system updates to one user or all standard users.</p></div><Card className="space-y-5 border-blue-100 bg-white p-6"><label className="block text-sm font-bold text-slate-700">Recipient<select value={target} onChange={e=>setTarget(e.target.value)} className="input mt-2"><option value="all">All users</option>{users.filter(u=>u.role==='USER').map(u=><option key={u.id} value={u.id}>{u.name} — {u.email}</option>)}</select></label><label className="block text-sm font-bold text-slate-700">Title<input value={title} onChange={e=>setTitle(e.target.value)} maxLength={100} className="input mt-2" /></label><label className="block text-sm font-bold text-slate-700">Message<textarea value={message} onChange={e=>setMessage(e.target.value)} maxLength={1000} rows={6} className="input mt-2" /></label>{status&&<p className="rounded-xl bg-blue-50 p-3 text-sm font-semibold text-blue-800">{status}</p>}<Button onClick={send} disabled={busy||!title.trim()||!message.trim()}><Send className="mr-2 h-4 w-4" />Send notification</Button></Card></div>;
+}

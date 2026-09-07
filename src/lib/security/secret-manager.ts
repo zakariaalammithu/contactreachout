@@ -191,6 +191,7 @@ export class SecretManager {
       'GOOGLE_CLIENT_SECRET',
       'OPENAI_API_KEY',
       'ANTHROPIC_API_KEY',
+      'STRIPE_SECRET_KEY',
       'REDIS_URL',
     ];
 

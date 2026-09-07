@@ -25,7 +25,7 @@ import {
   Sparkles,
   ArrowUpRight,
   ShieldAlert,
-  Flame,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +48,7 @@ const navSections: NavSection[] = [
     items: [
       { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
       { name: 'Users', href: '/admin/users', icon: Users, badge: '3', badgeColor: 'bg-indigo-100 text-indigo-800' },
+      { name: 'Notifications', href: '/admin/notifications', icon: Bell },
       { name: 'Campaigns', href: '/admin/campaigns', icon: Send },
       { name: 'Leads', href: '/admin/leads', icon: Database },
       { name: 'Submissions', href: '/admin/submissions', icon: FileCheck },
@@ -59,6 +60,7 @@ const navSections: NavSection[] = [
       { name: 'Email / Resend', href: '/admin/integrations/email', icon: Mail },
       { name: 'Google Sheets', href: '/admin/integrations/google-sheets', icon: FileSpreadsheet },
       { name: 'AI Providers', href: '/admin/integrations/ai', icon: Bot },
+      { name: 'AI Chatbot', href: '/admin/chatbot', icon: Bot },
       { name: 'Other APIs', href: '/admin/integrations', icon: Plug },
     ],
   },
@@ -96,12 +98,10 @@ export function AdminSidebar() {
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 pt-1">
           <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#FF8A65] flex items-center justify-center text-white shadow-md shadow-orange-500/20">
-              <Flame className="h-5 w-5" />
-            </div>
+            <img src="/logo-128.png" alt="ContactReachout logo" width="32" height="32" className="h-8 w-8 shrink-0 object-contain shadow-sm" />
             <div>
               <div className="font-extrabold tracking-tight text-slate-900 flex items-center gap-1.5 text-sm">
-                Aimfox <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 text-purple-700 font-mono font-bold">SUPER ADMIN</span>
+                ContactReachout <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-[#0e6de4] font-mono font-bold">SUPER ADMIN</span>
               </div>
               <p className="text-[10px] text-slate-400 font-mono">Enterprise Control</p>
             </div>
@@ -138,7 +138,7 @@ export function AdminSidebar() {
                       className={cn(
                         'flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150',
                         isActive
-                          ? 'bg-slate-900 text-white shadow-sm font-bold'
+                          ? 'bg-[#0e6de4] text-white shadow-sm font-bold'
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
                       )}
                     >
@@ -147,7 +147,7 @@ export function AdminSidebar() {
                         <span>{item.name}</span>
                       </div>
                       {item.badge && (
-                        <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold', isActive ? 'bg-slate-800 text-white' : item.badgeColor || 'bg-slate-100 text-slate-700')}>
+                        <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold', isActive ? 'bg-white/20 text-white' : item.badgeColor || 'bg-slate-100 text-slate-700')}>
                           {item.badge}
                         </span>
                       )}
@@ -164,15 +164,15 @@ export function AdminSidebar() {
       <div className="p-3 border-t border-slate-100 bg-slate-50/60 space-y-2">
         <Link
           href="/dashboard"
-          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-900 hover:bg-indigo-50 transition-colors border border-dashed border-slate-300"
+          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-[#0e6de4] hover:bg-blue-50 transition-colors border border-dashed border-slate-300"
         >
           <span>User Dashboard View</span>
-          <ArrowUpRight className="h-3.5 w-3.5 text-indigo-600" />
+          <ArrowUpRight className="h-3.5 w-3.5 text-[#0e6de4]" />
         </Link>
 
         <div className="flex items-center justify-between px-2 pt-1">
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-slate-900 flex items-center justify-center text-[10px] font-bold text-white shadow-xs">
+            <div className="h-7 w-7 rounded-full bg-[#0e6de4] flex items-center justify-center text-[10px] font-bold text-white shadow-xs">
               MA
             </div>
             <div>

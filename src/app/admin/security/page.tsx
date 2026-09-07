@@ -25,6 +25,9 @@ export default function AdminSecurityPage() {
   const [twoFactorReady, setTwoFactorReady] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/security')
@@ -59,6 +62,23 @@ export default function AdminSecurityPage() {
       }
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsChangingPassword(true);
+    setPasswordStatus(null);
+    try {
+      const res = await fetch('/api/admin/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(passwords) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to update the password.');
+      setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPasswordStatus({ type: 'success', message: data.message });
+    } catch (error) {
+      setPasswordStatus({ type: 'error', message: error instanceof Error ? error.message : 'Unable to update the password.' });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -162,6 +182,15 @@ export default function AdminSecurityPage() {
               Save Security Policies
             </Button>
           </div>
+        </form>
+      </Card>
+
+      <Card className="glass-panel p-6 space-y-5 border-white/[0.08]">
+        <div><h3 className="flex items-center gap-2 font-bold text-white"><KeyRound className="h-4 w-4 text-indigo-400" />Super Admin Password</h3><p className="mt-1 text-xs text-slate-400">Protected account: {`mithusquare@gmail.com`}. Enter the current password before setting a new one.</p></div>
+        {passwordStatus && <div className={`rounded-xl border p-3 text-xs font-semibold ${passwordStatus.type === 'success' ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300' : 'border-rose-500/30 bg-rose-950/20 text-rose-300'}`}>{passwordStatus.message}</div>}
+        <form onSubmit={handlePasswordChange} className="grid gap-4 sm:grid-cols-3">
+          {([['currentPassword', 'Current password'], ['newPassword', 'New password'], ['confirmPassword', 'Confirm new password']] as const).map(([key, label]) => <label key={key} className="space-y-1.5 text-xs font-semibold text-slate-300"><span>{label}</span><input type="password" autoComplete={key === 'currentPassword' ? 'current-password' : 'new-password'} required minLength={key === 'currentPassword' ? 1 : 12} value={passwords[key]} onChange={(e) => setPasswords((current) => ({ ...current, [key]: e.target.value }))} className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-white" /></label>)}
+          <div className="sm:col-span-3 flex items-center justify-between gap-4 border-t border-white/[0.08] pt-4"><p className="text-[11px] text-slate-500">Minimum 12 characters with upper/lowercase, number and symbol.</p><Button variant="primary" type="submit" isLoading={isChangingPassword}><Lock className="mr-1.5 h-4 w-4" />Change Password</Button></div>
         </form>
       </Card>
     </div>

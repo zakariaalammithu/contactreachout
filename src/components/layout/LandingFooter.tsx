@@ -1,0 +1,14 @@
+import Link from 'next/link';
+import { Facebook, Linkedin } from 'lucide-react';
+
+export function LandingFooter() {
+  return <footer className="bg-[#0e6de4] px-4 pb-8 pt-16 text-blue-50 sm:px-6"><div className="mx-auto max-w-7xl"><div className="grid gap-10 border-b border-white/20 pb-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1.15fr]"><div><div className="flex items-center gap-3"><img src="/logo-128.png" alt="ContactReachout logo" width="48" height="48" className="h-12 w-12 rounded-xl object-contain" /><span className="text-xl font-black text-white">ContactReachout</span></div><p className="mt-5 max-w-sm text-sm leading-6 text-blue-100">Find Clients Through Bulk Contact Form Submission and AI Personalization in one controlled outreach workspace.</p><div className="mt-5 flex gap-3"><SocialLink href="http://www.linkedin.com/company/ContactReachout" label="ContactReachout on LinkedIn"><Linkedin className="h-5 w-5" /></SocialLink><SocialLink href="https://web.facebook.com/ContactReachout" label="ContactReachout on Facebook"><Facebook className="h-5 w-5" /></SocialLink></div></div><FooterColumn title="Platform" links={[["How It Works", "/#how-it-works"], ["Services", "/#features"], ["Integrations", "/#integrations"], ["Features", "/#features"], ["Benefits", "/benefits"], ["Pricing", "/pricing"]]} /><FooterColumn title="Account" links={[["Start Free", "/signup"], ["Login", "/login?tab=signin"], ["Dashboard", "/dashboard"]]} /><FooterColumn title="Support" links={[["Help & Support", "/help"], ["Terms & Conditions", "/terms"], ["Privacy Policy", "/privacy"], ["Contact Us", "/contact"]]} /><div><h3 className="font-black text-white">Contact</h3><p className="mt-4 text-sm leading-6 text-blue-100">Austin, TX 73301, USA</p><a className="mt-3 inline-block text-sm font-bold text-white underline-offset-4 hover:underline" href="mailto:hello@contactreachout.com">hello@contactreachout.com</a></div></div><div className="flex flex-col gap-3 pt-7 text-xs text-blue-100 sm:flex-row sm:items-center sm:justify-between"><p>© {new Date().getFullYear()} ContactReachout. All rights reserved.</p><p>Built for accountable contact-form outreach.</p></div></div></footer>;
+}
+
+function SocialLink({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
+  return <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="grid h-10 w-10 place-items-center rounded-xl border border-white/25 text-white transition hover:bg-white hover:text-[#0e6de4]">{children}</a>;
+}
+
+function FooterColumn({ title, links }: { title: string; links: string[][] }) {
+  return <div><h3 className="font-black text-white">{title}</h3><div className="mt-4 space-y-3">{links.map(([label, href]) => <Link key={label} href={href} className="block text-sm text-blue-100 transition hover:text-white">{label}</Link>)}</div></div>;
+}

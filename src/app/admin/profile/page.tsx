@@ -123,7 +123,7 @@ export default function AdminProfilePage() {
             MA
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Mithu Alam (Root Super Admin)</h3>
+            <h3 className="text-lg font-bold text-white">Ethan Carter (Root Super Admin)</h3>
             <p className="text-xs text-slate-400 font-mono">mithusquare@gmail.com</p>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-purple-500/20 text-purple-400 border border-purple-500/30">

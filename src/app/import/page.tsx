@@ -381,7 +381,7 @@ export default function ImportLeadsPage() {
           Lead List Ingestion & AI Personalization Mapper
         </h1>
         <p className="text-xs sm:text-sm text-slate-500">
-          Upload spreadsheets, apply filters, match columns, and add custom personalized message variables for <strong>FreeOutreach</strong> (freeoutreach.com).
+          Upload spreadsheets, apply filters, match columns, and add custom personalized message variables for <strong>ContactReachout</strong>.
         </p>
       </div>
 

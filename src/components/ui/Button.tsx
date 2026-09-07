@@ -9,9 +9,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          'bg-[#0B0F19] text-white hover:bg-slate-800 shadow-md shadow-slate-950/10 rounded-full border border-slate-800',
+          'bg-[#0e6de4] text-white hover:bg-[#0758bd] shadow-md shadow-blue-600/20 rounded-xl border border-[#0e6de4]',
         gradient:
-          'bg-gradient-to-r from-[#FF5722] via-[#8B5CF6] to-[#6366F1] text-white hover:from-[#F4511E] hover:to-[#4F46E5] shadow-md shadow-indigo-500/20 rounded-full',
+          'bg-gradient-to-r from-[#0e6de4] to-[#0758bd] text-white hover:from-[#0758bd] hover:to-[#064da5] shadow-md shadow-blue-500/20 rounded-xl',
         secondary:
           'bg-white text-slate-800 hover:bg-slate-50 border border-slate-200/90 shadow-sm rounded-xl',
         outline:
@@ -23,7 +23,7 @@ const buttonVariants = cva(
         success:
           'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl shadow-xs',
         glow:
-          'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 rounded-full',
+          'bg-[#0e6de4] text-white hover:bg-[#0758bd] shadow-lg shadow-blue-500/25 rounded-full',
       },
       size: {
         sm: 'h-8 px-3.5 text-xs',

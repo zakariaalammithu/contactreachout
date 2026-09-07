@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 263 70% 50%;          /* #7C3AED Heyreach Violet */
+    --primary: 213 88% 47%;          /* #0E6DE4 ContactReachout Blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96%;        /* #F1F5F9 Soft Pearl */
@@ -22,27 +22,59 @@
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%; /* #64748B Slate */
 
-    --accent: 239 84% 67%;           /* #6366F1 Electric Indigo */
-    --accent-foreground: 210 40% 98%;
+    --accent: 213 88% 47%;           /* #0E6DE4 ContactReachout Blue */
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 350 89% 60%;      /* #F43F5E */
     --destructive-foreground: 0 0% 100%;
 
     --border: 214 32% 91%;           /* #E2E8F0 Crisp Light Border */
     --input: 214 32% 91%;
-    --ring: 263 70% 50%;
+    --ring: 213 88% 47%;
 
     --radius: 1.25rem;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 263 70% 50%;
+    --sidebar-primary: 213 88% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 263 70% 50%;
+    --sidebar-ring: 213 88% 47%;
   }
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #dbeafe;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.75rem;
+  color: #0f172a;
+  font-size: 0.875rem;
+}
+
+.input:focus {
+  border-color: #0e6de4;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14, 109, 228, 0.1);
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #dbeafe;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.75rem;
+  color: #0f172a;
+  font-size: 0.875rem;
+}
+
+.input:focus {
+  border-color: #0e6de4;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14, 109, 228, 0.1);
 }
 
 @layer base {
@@ -50,9 +82,9 @@
     @apply border-border;
   }
   body {
-    @apply bg-[#F8FAFC] text-slate-900 antialiased selection:bg-purple-500/20 selection:text-purple-900;
+    @apply bg-[#F5F8FC] text-slate-900 antialiased selection:bg-blue-500/20 selection:text-blue-950;
     font-feature-settings: "rlig" 1, "calt" 1;
-    background-color: #F8FAFC;
+    background-color: #F5F8FC;
     color: #0F172A;
   }
 }
@@ -132,16 +164,16 @@
 
 /* Heyreach & Aimfox Buttons */
 .btn-heyreach-primary {
-  background: linear-gradient(135deg, #6366F1 0%, #7C3AED 100%);
+  background: #0e6de4;
   color: #FFFFFF;
   border-radius: 9999px;
-  box-shadow: 0 4px 20px 0 rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 20px 0 rgba(14, 109, 228, 0.28);
   transition: all 0.2s ease-in-out;
 }
 
 .btn-heyreach-primary:hover {
-  background: linear-gradient(135deg, #4F46E5 0%, #6D28D9 100%);
-  box-shadow: 0 6px 25px 0 rgba(124, 58, 237, 0.5);
+  background: #0758bd;
+  box-shadow: 0 6px 25px 0 rgba(14, 109, 228, 0.38);
   transform: translateY(-1px);
 }
 
@@ -160,16 +192,16 @@
 }
 
 .btn-aimfox-gradient {
-  background: linear-gradient(135deg, #FF5722 0%, #8B5CF6 50%, #6366F1 100%);
+  background: #0e6de4;
   color: #FFFFFF;
   border-radius: 9999px;
-  box-shadow: 0 4px 18px 0 rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 18px 0 rgba(14, 109, 228, 0.28);
   transition: all 0.2s ease-in-out;
 }
 
 .btn-aimfox-gradient:hover {
-  background: linear-gradient(135deg, #F4511E 0%, #7C3AED 50%, #4F46E5 100%);
-  box-shadow: 0 6px 24px 0 rgba(139, 92, 246, 0.45);
+  background: #0758bd;
+  box-shadow: 0 6px 24px 0 rgba(14, 109, 228, 0.38);
   transform: translateY(-1px);
 }
 
@@ -183,6 +215,363 @@
   font-weight: 600;
   padding: 0.25rem 0.85rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+/* Seamless right-to-left customer-mark marquee. */
+.trusted-logo-marquee {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
+}
+
+.trusted-logo-track {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  animation: trusted-logo-scroll 34s linear infinite;
+  will-change: transform;
+}
+
+.trusted-logo-marquee:hover .trusted-logo-track {
+  animation-play-state: paused;
+}
+
+.trusted-logo-item {
+  display: flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 0.7rem;
+  padding-inline: 1.45rem;
+  color: #e2e8f0;
+}
+
+.trusted-logo-mark {
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.7rem;
+  color: white;
+  font-size: 0.76rem;
+  font-weight: 900;
+  box-shadow: 0 8px 24px rgba(76, 29, 149, 0.2);
+}
+
+@keyframes trusted-logo-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trusted-logo-track {
+    animation: none;
+  }
+}
+
+/* ContactReachout landing page: a connected, card-led SaaS layout. */
+.home-saas-main {
+  --home-brand: #0e6de4;
+  --home-brand-deep: #0758bd;
+  --home-canvas: #edf5ff;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(14, 109, 228, 0.1), transparent 24rem),
+    var(--home-canvas);
+  padding: 1rem 0 2.5rem;
+}
+
+.home-saas-main > section {
+  width: min(1280px, calc(100% - 2rem));
+  margin: 1.25rem auto;
+  overflow: hidden;
+  border: 1px solid rgba(14, 109, 228, 0.12);
+  border-radius: 2.5rem;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(14, 68, 137, 0.08);
+}
+
+.home-saas-main > section:first-child {
+  width: min(1280px, calc(100% - 2rem));
+  margin-top: 0;
+  border-radius: 3rem;
+  box-shadow: 0 28px 90px rgba(14, 68, 137, 0.1);
+}
+
+.home-saas-main > section:nth-child(2),
+.home-saas-main > section:nth-child(4),
+.home-saas-main > section:nth-child(6),
+.home-saas-main > section:nth-child(8),
+.home-saas-main > section:nth-child(10) {
+  background: linear-gradient(145deg, #f7fbff 0%, #eef6ff 100%);
+}
+
+/* Product-section components already contain their own bordered card. Flatten
+   only the redundant outer wrapper so every visible panel has one clean edge. */
+.home-saas-main > section:nth-child(n + 5):nth-child(-n + 10) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-saas-main > section:nth-child(n + 5):nth-child(-n + 10) > div {
+  border-color: rgba(14, 109, 228, 0.13) !important;
+  border-radius: 2.5rem !important;
+  box-shadow: 0 20px 60px rgba(14, 68, 137, 0.08) !important;
+}
+
+/* Keep all Home Page accents on the ContactReachout brand blue. */
+.home-saas-main .text-blue-600,
+.home-saas-main .text-violet-600,
+.home-saas-main .text-violet-700,
+.home-saas-main .text-indigo-600,
+.home-saas-main .text-indigo-700 {
+  color: var(--home-brand) !important;
+}
+
+.home-saas-main .bg-blue-600,
+.home-saas-main .bg-violet-600,
+.home-saas-main .bg-indigo-600 {
+  background-color: var(--home-brand) !important;
+}
+
+.home-saas-main h1 .text-transparent {
+  background-image: linear-gradient(90deg, var(--home-brand), #48a0ff) !important;
+}
+
+.home-saas-main > section:first-child a[href="/signup"] {
+  background: var(--home-brand) !important;
+  box-shadow: 0 14px 34px rgba(14, 109, 228, 0.24) !important;
+}
+
+.home-saas-main > section:first-child a[href="/signup"]:hover {
+  background: var(--home-brand-deep) !important;
+}
+
+.home-saas-main > section:nth-child(12) > div {
+  background: linear-gradient(135deg, var(--home-brand), #0758bd) !important;
+  box-shadow: 0 24px 70px rgba(14, 109, 228, 0.22) !important;
+}
+
+.home-saas-main .border-violet-100,
+.home-saas-main .border-violet-200,
+.home-saas-main .border-indigo-100,
+.home-saas-main .border-indigo-200,
+.home-saas-main .border-indigo-300 {
+  border-color: rgba(14, 109, 228, 0.18) !important;
+}
+
+.home-saas-main h1,
+.home-saas-main h2 {
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.home-saas-main h3,
+.home-saas-main p {
+  text-wrap: pretty;
+}
+
+.home-saas-main article {
+  box-shadow: 0 10px 32px rgba(14, 68, 137, 0.055);
+}
+
+/* Public pricing surfaces stay light while preserving every pricing value and action. */
+.pricing-public-page .pricing-plan-card {
+  color: #0f172a;
+  box-shadow: 0 16px 44px rgba(14, 68, 137, 0.08);
+}
+
+.pricing-public-page .pricing-plan-card-popular {
+  box-shadow: 0 20px 52px rgba(14, 109, 228, 0.18);
+}
+
+.pricing-public-page .pricing-plan-card .text-white {
+  color: #0f172a !important;
+}
+
+.pricing-public-page .pricing-plan-card .text-slate-200,
+.pricing-public-page .pricing-plan-card .text-slate-300,
+.pricing-public-page .pricing-plan-card .text-slate-400 {
+  color: #64748b !important;
+}
+
+.pricing-public-page .pricing-plan-card button,
+.pricing-public-page .pricing-plan-card > .absolute {
+  color: #ffffff !important;
+}
+
+.pricing-public-page .pricing-plan-card button {
+  border-color: #0e6de4 !important;
+  background: #0e6de4 !important;
+}
+
+.pricing-public-page .pricing-plan-card button:hover {
+  background: #0758bd !important;
+}
+
+.pricing-public-page .pricing-plan-card > .absolute {
+  border: 0;
+  background: #0e6de4 !important;
+}
+
+.pricing-public-page .pricing-calculator {
+  color: #0f172a;
+}
+
+.pricing-public-page .pricing-calculator .text-white {
+  color: #0f172a !important;
+}
+
+.pricing-public-page .pricing-calculator > div:nth-child(2) > div:nth-child(2),
+.pricing-public-page .pricing-calculator [class*="bg-[#0F132C]"] {
+  border-color: #dbeafe !important;
+  background: #f8fbff !important;
+}
+
+.pricing-public-page .pricing-calculator a button,
+.pricing-public-page .pricing-calculator a button .text-white {
+  color: #ffffff !important;
+}
+
+.pricing-public-page .pricing-calculator input[type="number"] {
+  border-color: #bfdbfe;
+  background: #ffffff;
+  color: #0e6de4;
+}
+
+.pricing-public-page .pricing-rules thead {
+  border-color: #dbeafe;
+  background: #eff6ff;
+  color: #334155;
+}
+
+.pricing-public-page .pricing-rules tbody {
+  color: #334155;
+}
+
+.pricing-public-page .pricing-rules tbody tr {
+  border-color: #e2e8f0;
+}
+
+.pricing-public-page .pricing-rules td.text-slate-400 {
+  color: #64748b !important;
+}
+
+/* Unified authenticated-app surfaces. These rules are deliberately scoped to
+   the two application shells so public landing content and modal backdrops keep
+   their intended behavior. */
+.app-dashboard-shell main,
+.admin-app-shell main {
+  background: #f4f8fd;
+}
+
+.app-dashboard-shell main .glass-panel,
+.admin-app-shell main .glass-panel,
+.app-dashboard-shell main [class*="rounded-3xl"][class*="border"],
+.admin-app-shell main [class*="rounded-3xl"][class*="border"] {
+  border-color: rgba(14, 109, 228, 0.12) !important;
+  border-radius: 1.5rem;
+  box-shadow: 0 12px 36px rgba(14, 68, 137, 0.07);
+}
+
+.app-dashboard-shell main [class*="bg-slate-900"]:not(button):not(a),
+.app-dashboard-shell main [class*="bg-slate-950"]:not(button):not(a),
+.admin-app-shell main [class*="bg-slate-900"]:not(button):not(a),
+.admin-app-shell main [class*="bg-slate-950"]:not(button):not(a) {
+  border-color: #dbeafe !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.app-dashboard-shell main [class*="bg-slate-900"] .text-white:not(button):not(a),
+.app-dashboard-shell main [class*="bg-slate-950"] .text-white:not(button):not(a),
+.admin-app-shell main [class*="bg-slate-900"] .text-white:not(button):not(a),
+.admin-app-shell main [class*="bg-slate-950"] .text-white:not(button):not(a) {
+  color: #0f172a !important;
+}
+
+.app-dashboard-shell main [class*="bg-slate-900"] .text-slate-300,
+.app-dashboard-shell main [class*="bg-slate-900"] .text-slate-400,
+.app-dashboard-shell main [class*="bg-slate-950"] .text-slate-300,
+.app-dashboard-shell main [class*="bg-slate-950"] .text-slate-400,
+.admin-app-shell main [class*="bg-slate-900"] .text-slate-300,
+.admin-app-shell main [class*="bg-slate-900"] .text-slate-400,
+.admin-app-shell main [class*="bg-slate-950"] .text-slate-300,
+.admin-app-shell main [class*="bg-slate-950"] .text-slate-400 {
+  color: #64748b !important;
+}
+
+.app-dashboard-shell main input[class*="bg-slate-9"],
+.app-dashboard-shell main textarea[class*="bg-slate-9"],
+.app-dashboard-shell main select[class*="bg-slate-9"],
+.admin-app-shell main input[class*="bg-slate-9"],
+.admin-app-shell main textarea[class*="bg-slate-9"],
+.admin-app-shell main select[class*="bg-slate-9"] {
+  border-color: #bfdbfe !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.app-dashboard-shell main button[class*="bg-slate-9"],
+.app-dashboard-shell main a[class*="bg-slate-9"],
+.admin-app-shell main button[class*="bg-slate-9"],
+.admin-app-shell main a[class*="bg-slate-9"] {
+  border-color: #0e6de4 !important;
+  background: #0e6de4 !important;
+  color: #ffffff !important;
+}
+
+.app-dashboard-shell main [class*="bg-[#2563EB]"],
+.admin-app-shell main [class*="bg-[#2563EB]"] {
+  background: #0e6de4 !important;
+  color: #ffffff !important;
+}
+
+.app-dashboard-shell main .text-violet-600,
+.app-dashboard-shell main .text-violet-700,
+.app-dashboard-shell main .text-indigo-600,
+.app-dashboard-shell main .text-indigo-700,
+.app-dashboard-shell main .text-purple-600,
+.app-dashboard-shell main .text-purple-700,
+.admin-app-shell main .text-violet-600,
+.admin-app-shell main .text-violet-700,
+.admin-app-shell main .text-indigo-600,
+.admin-app-shell main .text-indigo-700,
+.admin-app-shell main .text-purple-600,
+.admin-app-shell main .text-purple-700 {
+  color: #0e6de4 !important;
+}
+
+.app-dashboard-shell main .bg-violet-600,
+.app-dashboard-shell main .bg-indigo-600,
+.app-dashboard-shell main .bg-purple-600,
+.admin-app-shell main .bg-violet-600,
+.admin-app-shell main .bg-indigo-600,
+.admin-app-shell main .bg-purple-600 {
+  background: #0e6de4 !important;
+  color: #ffffff !important;
+}
+
+@media (max-width: 640px) {
+  .home-saas-main {
+    padding-top: 0.5rem;
+  }
+
+  .home-saas-main > section,
+  .home-saas-main > section:first-child {
+    width: calc(100% - 1rem);
+    margin-block: 0.75rem;
+    border-radius: 1.75rem;
+  }
+
+  .home-saas-main > section:nth-child(n + 5):nth-child(-n + 10) > div {
+    border-radius: 1.75rem !important;
+  }
 }
 
 /* Custom Sleek Scrollbar */
@@ -203,3 +592,5 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
+
+.pricing-public-page .pricing-plan-card h3,.pricing-public-page .pricing-plan-card p,.pricing-public-page .pricing-plan-card span{color:#0f172a}.pricing-public-page .pricing-plan-card button,.pricing-public-page .pricing-plan-card a.bg-slate-800,.pricing-public-page .pricing-plan-card a.bg-indigo-600,.pricing-public-page .pricing-plan-card a.bg-purple-600,.pricing-public-page .pricing-plan-card button span{color:#fff}.pricing-public-page .pricing-plan-card .bg-slate-800,.pricing-public-page .pricing-plan-card .bg-indigo-600,.pricing-public-page .pricing-plan-card .bg-purple-600{background-color:#0e6de4}.pricing-public-page .pricing-plan-card{background:#fff!important;border-color:#bfdbfe!important}

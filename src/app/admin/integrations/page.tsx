@@ -17,6 +17,8 @@ import {
   AlertCircle,
   KeyRound,
   ExternalLink,
+  CreditCard,
+  TriangleAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -32,6 +34,16 @@ export default function AdminIntegrationsPage() {
   }, []);
 
   const cards = [
+    {
+      id: 'stripe',
+      title: 'Stripe Payments',
+      desc: 'Server-side payment credential for secure credit-package checkout processing.',
+      icon: CreditCard,
+      href: '/admin/integrations/stripe',
+      status: integrations?.stripe?.status || 'NOT_CONFIGURED',
+      maskedKey: integrations?.stripe?.maskedKey || 'NOT_CONFIGURED',
+      color: 'from-violet-500 to-indigo-600',
+    },
     {
       id: 'email',
       title: 'Resend Transactional Email',
@@ -68,8 +80,8 @@ export default function AdminIntegrationsPage() {
       desc: 'Primary multi-tenant relational persistence with PostgreSQL Row-Level Security policies active.',
       icon: Database,
       href: '/admin/system/health',
-      status: 'CONNECTED',
-      maskedKey: '••••••••83fa',
+      status: integrations?.supabase?.status || 'NOT_CONFIGURED',
+      maskedKey: integrations?.supabase?.maskedKey || 'NOT_CONFIGURED',
       color: 'from-indigo-500 to-blue-600',
     },
     {
@@ -78,8 +90,8 @@ export default function AdminIntegrationsPage() {
       desc: 'In-memory BullMQ message broker governing 6 worker job types and concurrency limits.',
       icon: Layers,
       href: '/admin/system/queue',
-      status: 'CONNECTED',
-      maskedKey: '••••••••6379',
+      status: integrations?.redis?.status || 'NOT_CONFIGURED',
+      maskedKey: integrations?.redis?.maskedKey || 'NOT_CONFIGURED',
       color: 'from-rose-500 to-orange-600',
     },
   ];
@@ -103,6 +115,8 @@ export default function AdminIntegrationsPage() {
           <span>AES-256-GCM Vault Active</span>
         </div>
       </div>
+
+      <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 text-xs leading-5 text-amber-200"><TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" /><p>Dashboard-saved credentials are encrypted but runtime-only. Configure production keys in Vercel Environment Variables so they persist across serverless restarts.</p></div>
 
       {/* Integration Cards Grid */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">

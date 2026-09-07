@@ -3,7 +3,7 @@ import CampaignEditorClient from './CampaignEditorClient';
 
 export const dynamic = 'force-dynamic';
 
-export default function ManyreachCampaignEditorPage() {
+export default function CampaignEditorPage() {
   return (
     <Suspense
       fallback={

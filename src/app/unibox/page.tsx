@@ -54,12 +54,12 @@ const sampleReplies: LeadReply[] = [
     date: '10 mins ago',
     isUnread: true,
     status: 'INTERESTED',
-    forwardedToEmail: 'zakaria@outreachagency.com',
+    forwardedToEmail: 'alex@outreachagency.com',
     originalSubject: 'Idea for Acme Cloud Dynamics website contact form outreach',
     originalMessage:
-      'Hi Sarah,\n\nHope you are having a great week at Acme Cloud Dynamics.\n\nWe help teams in San Francisco reach 10,000+ target websites daily via contact forms for free.\n\nAre you open for a 5-minute call this Thursday?\n\nBest,\nZakaria Alam',
+      'Hi Sarah,\n\nHope you are having a great week at Acme Cloud Dynamics.\n\nWe help teams manage B2B contact-form outreach campaigns.\n\nAre you open for a 5-minute call this Thursday?\n\nBest,\nAlex Morgan',
     replyMessage:
-      'Hey Zakaria,\n\nThanks for reaching out! We are actually looking to expand our B2B lead generation via contact form submission this quarter.\n\nCould you share your pricing structure and a quick 5-min demo link? Thursday 2 PM PST works for me!\n\nBest regards,\nSarah Connor\nCTO, Acme Cloud Dynamics',
+      'Hey Alex,\n\nThanks for reaching out! We are actually looking to expand our B2B lead generation via contact form submission this quarter.\n\nCould you share your pricing structure and a quick 5-min demo link? Thursday 2 PM PST works for me!\n\nBest regards,\nSarah Connor\nCTO, Acme Cloud Dynamics',
   },
   {
     id: 'rep-2',
@@ -71,10 +71,10 @@ const sampleReplies: LeadReply[] = [
     date: '2 hours ago',
     isUnread: true,
     status: 'QUESTION',
-    forwardedToEmail: 'zakaria@outreachagency.com',
+    forwardedToEmail: 'alex@outreachagency.com',
     originalSubject: 'Question for John regarding DentalCare Network',
     originalMessage:
-      'Hi John,\n\nFollowing up on my previous note regarding DentalCare Network.\n\nFreeOutreach automates bulk contact form messaging with 100% free delivery.\n\nBest,\nZakaria Alam',
+      'Hi John,\n\nFollowing up on my previous note regarding DentalCare Network.\n\nContactReachout supports controlled bulk contact-form outreach.\n\nBest,\nAlex Morgan',
     replyMessage:
       'Hello,\n\nDoes your system support Google CAPTCHA v3 bypass without getting blocked by Cloudflare? If yes, we have a list of 5,000 clinic websites to test.\n\nThanks,\nJohn Vance',
   },
@@ -88,12 +88,12 @@ const sampleReplies: LeadReply[] = [
     date: 'Yesterday at 4:15 PM',
     isUnread: false,
     status: 'REPLIED',
-    forwardedToEmail: 'zakaria@outreachagency.com',
+    forwardedToEmail: 'alex@outreachagency.com',
     originalSubject: 'Sequence 2: Tailored idea for HealthTech Global',
     originalMessage:
-      'Hi Elena,\n\nScaling outreach often brings manual bottlenecks.\n\nFreeOutreach automates bulk contact form messaging with zero cost.\n\nBest,\nZakaria Alam',
+      'Hi Elena,\n\nScaling outreach often brings manual bottlenecks.\n\nContactReachout organizes bulk contact-form submission campaigns.\n\nBest,\nAlex Morgan',
     replyMessage:
-      'Hi Zakaria,\n\nOur marketing VP handles vendor inquiries. I have cc-ed him here so you can coordinate directly. Thanks!\n\nElena',
+      'Hi Alex,\n\nOur marketing VP handles vendor inquiries. I have cc-ed him here so you can coordinate directly. Thanks!\n\nElena',
     replySent: 'Thanks Elena! I will connect with your VP right away.',
   },
 ];
@@ -160,7 +160,7 @@ export default function UniboxPage() {
 
     const newReplyObj: LeadReply = {
       id: `rep-${Date.now()}`,
-      prospectName: syncProspectName.trim() || 'Zakaria Alam Mithu',
+      prospectName: syncProspectName.trim() || 'Alex Morgan',
       email: syncProspectEmail.trim(),
       companyName: syncCompanyName.trim() || 'B2B GDC',
       website: `https://${(syncCompanyName.trim() || 'b2bgdc').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
@@ -589,7 +589,7 @@ export default function UniboxPage() {
                     type="text"
                     value={syncProspectName}
                     onChange={(e) => setSyncProspectName(e.target.value)}
-                    placeholder="Zakaria Alam Mithu"
+                    placeholder="Alex Morgan"
                     className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 font-bold focus:border-blue-500 focus:outline-none"
                   />
                 </div>

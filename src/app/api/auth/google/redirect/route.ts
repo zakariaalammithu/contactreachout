@@ -6,7 +6,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const host = req.headers.get('host') || 'localhost:3000';
   const protocol = req.headers.get('x-forwarded-proto') || 'http';
-  const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+  const redirectUri = process.env.GOOGLE_AUTH_REDIRECT_URI || `${protocol}://${host}/api/auth/google/callback`;
 
   // Generate OAuth CSRF state & nonce
   const state = crypto.randomBytes(16).toString('hex');
@@ -28,6 +28,9 @@ export async function GET(req: Request) {
     googleAuthUrl.searchParams.set('prompt', 'select_account'); // Forces Google Account Chooser
     targetUrl = googleAuthUrl.toString();
   } else {
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.redirect(new URL('/login?error=Google+sign-in+is+not+configured', req.url));
+    }
     // Dev Sandbox Consent Chooser matching accounts.google.com/v3/signin/accountchooser
     const mockConsentUrl = new URL(`${protocol}://${host}/api/auth/google/mock-consent`);
     mockConsentUrl.searchParams.set('state', state);

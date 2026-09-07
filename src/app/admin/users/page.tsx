@@ -39,33 +39,7 @@ export default function AdminUsersPage() {
       const json = await res.json();
       if (json.users) setUsers(json.users);
     } catch {
-      // Offline fallback
-      setUsers([
-        {
-          id: 'usr-superadmin-001',
-          email: 'mithusquare@gmail.com',
-          role: 'SUPER_ADMIN',
-          isSuspended: false,
-          forcePasswordReset: false,
-          createdAt: '2026-08-01T00:00:00Z',
-        },
-        {
-          id: 'usr-op-002',
-          email: 'operator@bulkreach.io',
-          role: 'ADMIN',
-          isSuspended: false,
-          forcePasswordReset: false,
-          createdAt: '2026-08-05T12:00:00Z',
-        },
-        {
-          id: 'usr-user-003',
-          email: 'client-demo@enterprise.com',
-          role: 'USER',
-          isSuspended: false,
-          forcePasswordReset: false,
-          createdAt: '2026-08-10T14:30:00Z',
-        },
-      ]);
+      setUsers([]);
     }
   };
 
@@ -257,11 +231,7 @@ export default function AdminUsersPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          if (confirm(`Trigger password reset for ${user.email}?`)) {
-                            handleUpdateUser(user.email, { resetPassword: true });
-                          }
-                        }}
+                        onClick={() => alert('Password-reset email delivery is not configured yet.')}
                         className="text-[11px] h-7 px-2"
                       >
                         <KeyRound className="h-3 w-3 mr-1 text-amber-400" />
@@ -325,12 +295,14 @@ export default function AdminUsersPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Initial Password (Optional)</label>
+                <label className="text-xs font-semibold text-slate-300">Initial Password</label>
                 <input
                   type="password"
+                  required
+                  minLength={12}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Leave empty for auto-generated password"
+                  placeholder="At least 12 characters"
                   className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
                 />
               </div>
