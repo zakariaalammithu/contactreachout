@@ -18,7 +18,7 @@ export class StripeService {
     }
     const monthlyPrice = fixedPrices[credits] ?? PricingService.calculateCustomCreditPrice(credits).price;
     const price = period === 'yearly' ? Math.round(monthlyPrice * 12 * 0.8) : monthlyPrice;
-    const configuredPriceId = SecretManager.getSecret(`STRIPE_PRICE_ID_${credits}_${period.toUpperCase()}`) || SecretManager.getSecret(`STRIPE_PRICE_ID_${credits}`) || undefined;
+    const configuredPriceId = SecretManager.getSecret(`STRIPE_PRICE_ID_${credits}_${period.toUpperCase()}`) || undefined;
     return { credits, amountCents: Math.round(price * 100), priceId: configuredPriceId, period };
   }
 

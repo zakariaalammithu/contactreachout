@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const { errorResponse } = await AdminAuthGuard.requireAdmin(req);
   if (errorResponse) return errorResponse;
   const creditOptions = [5000, 10000, 100000, 300000];
-  return NextResponse.json({ configured: SecretManager.hasSecret('STRIPE_SECRET_KEY'), maskedApiKey: SecretManager.getMaskedSecret('STRIPE_SECRET_KEY'), webhookConfigured: SecretManager.hasSecret('STRIPE_WEBHOOK_SECRET'), priceIds: Object.fromEntries(creditOptions.map((credits) => [credits, SecretManager.getMaskedSecret(`STRIPE_PRICE_ID_${credits}`)])) });
+  return NextResponse.json({ configured: SecretManager.hasSecret('STRIPE_SECRET_KEY'), maskedApiKey: SecretManager.getMaskedSecret('STRIPE_SECRET_KEY'), webhookConfigured: SecretManager.hasSecret('STRIPE_WEBHOOK_SECRET'), priceIds: Object.fromEntries(creditOptions.flatMap((credits) => [[credits, SecretManager.getMaskedSecret(`STRIPE_PRICE_ID_${credits}_MONTHLY`)], [''+credits+'_MONTHLY', SecretManager.getMaskedSecret(`STRIPE_PRICE_ID_${credits}_MONTHLY`)], [''+credits+'_YEARLY', SecretManager.getMaskedSecret(`STRIPE_PRICE_ID_${credits}_YEARLY`)]])) });
 }
 
 export async function POST(req: NextRequest) {
@@ -27,11 +27,12 @@ export async function POST(req: NextRequest) {
         if (!webhookSecret.trim().startsWith('whsec_')) return NextResponse.json({ error: 'Enter a valid Stripe webhook signing secret.' }, { status: 400 });
         SecretManager.setSecret('STRIPE_WEBHOOK_SECRET', webhookSecret.trim(), null, 'Stripe webhook signing secret');
       }
-      for (const credits of [5000, 10000, 100000, 300000]) {
-        const priceId = typeof priceIds?.[credits] === 'string' ? priceIds[credits].trim() : '';
+      for (const credits of [5000, 10000, 100000, 300000]) for (const period of ['MONTHLY', 'YEARLY']) {
+        const submitted = priceIds?.[`${credits}_${period}`] ?? (period === 'MONTHLY' ? priceIds?.[credits] : '');
+        const priceId = typeof submitted === 'string' ? submitted.trim() : '';
         if (priceId) {
-          if (!priceId.startsWith('price_')) return NextResponse.json({ error: `Invalid Stripe Price ID for ${credits.toLocaleString()} credits.` }, { status: 400 });
-          SecretManager.setSecret(`STRIPE_PRICE_ID_${credits}`, priceId, null, `Stripe Price ID for ${credits} credits`);
+          if (!priceId.startsWith('price_')) return NextResponse.json({ error: `Invalid Stripe ${period.toLowerCase()} Price ID for ${credits.toLocaleString()} credits.` }, { status: 400 });
+          SecretManager.setSecret(`STRIPE_PRICE_ID_${credits}_${period}`, priceId, null, `Stripe ${period.toLowerCase()} Price ID for ${credits} credits`);
         }
       }
       AuditLogService.log({ userId: session.userId, userEmail: session.email, action: 'stripe_checkout_settings_updated', resourceType: 'integration_stripe', metadata: {} });

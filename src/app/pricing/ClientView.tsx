@@ -30,6 +30,13 @@ export default function PricingPage() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   const customPriceInfo = PricingService.calculateCustomCreditPrice(customCredits);
+  const yearlyMultiplier = billingPeriod === 'yearly' ? 0.8 * 12 : 1;
+  const displayPrice = (monthly: number) => Math.round(monthly * yearlyMultiplier);
+  const price5000 = displayPrice(50);
+  const price10000 = displayPrice(99);
+  const price100000 = displayPrice(199);
+  const price300000 = displayPrice(299);
+  const customDisplayPrice = displayPrice(customPriceInfo.price);
 
   return (
     <div className="pricing-public-page min-h-screen bg-[#f4f8fd] text-slate-950 font-sans">
@@ -54,6 +61,7 @@ export default function PricingPage() {
         {[['2 credits', 'per website submission'], ['+1 credit', 'optional AI personalization'], ['Pay-as-you-go', 'buy credits when needed'], ['No subscription', 'one-time credit packages']].map(([title, detail]) => <div key={title} className="rounded-2xl border border-blue-100 bg-white p-5 text-center shadow-sm"><p className="text-lg font-black text-[#0e6de4]">{title}</p><p className="mt-1 text-xs font-semibold text-slate-500">{detail}</p></div>)}
       </section>
       <div className="mx-auto mb-4 flex w-fit items-center gap-1 rounded-2xl border border-blue-100 bg-white p-1 shadow-sm"><button type="button" onClick={() => setBillingPeriod('monthly')} className={`rounded-xl px-5 py-2 text-sm font-black ${billingPeriod === 'monthly' ? 'bg-[#0e6de4] text-white' : 'text-slate-600'}`}>Monthly</button><button type="button" onClick={() => setBillingPeriod('yearly')} className={`rounded-xl px-5 py-2 text-sm font-black ${billingPeriod === 'yearly' ? 'bg-[#0e6de4] text-white' : 'text-slate-600'}`}>Yearly <span className="ml-1 text-[10px]">Save 20%</span></button></div>
+      {billingPeriod === 'yearly' && <div className="mx-auto mb-6 grid max-w-5xl grid-cols-2 gap-3 px-4 sm:grid-cols-4"><div className="col-span-2 rounded-2xl border border-blue-200 bg-blue-50 p-3 text-center sm:col-span-4"><p className="text-xs font-black uppercase tracking-wide text-[#0e6de4]">Yearly billing — 20% saved</p><p className="mt-1 text-sm font-semibold text-slate-700">12-month totals are shown below and update instantly.</p></div>{[[5000,price5000],[10000,price10000],[100000,price100000],[300000,price300000]].map(([credits,total]) => <div key={credits} className="rounded-2xl border border-blue-100 bg-white p-3 text-center shadow-sm"><p className="text-xs font-bold text-slate-500">{Number(credits).toLocaleString()} credits</p><p className="mt-1 text-lg font-black text-[#0e6de4]">${Number(total).toLocaleString()}</p><p className="text-[10px] font-semibold text-slate-500">12-month total</p></div>)}</div>}
 
       {/* 5 Card Pricing Grid */}
       <section className="py-8 px-4 sm:px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 items-stretch">
@@ -119,7 +127,7 @@ export default function PricingPage() {
             </div>
 
             <div className="flex items-baseline gap-1.5 py-2 border-y border-slate-800/80">
-              <span className="text-3xl font-extrabold text-white">$50</span>
+              <span className="text-3xl font-extrabold text-white">${price5000}</span>
               <span className="text-xs font-semibold text-slate-400">USD</span>
             </div>
 
@@ -139,7 +147,7 @@ export default function PricingPage() {
           <div className="pt-4">
             <Link href={`/checkout?credits=5000&price=50&period=${billingPeriod}`}>
               <Button variant="primary" className="w-full py-2.5 font-bold text-xs bg-[#2563EB] hover:bg-blue-600 text-white shadow-lg">
-                Buy 5,000 Credits ($50)
+                Buy 5,000 Credits (${price5000})
               </Button>
             </Link>
           </div>
@@ -161,7 +169,7 @@ export default function PricingPage() {
             </div>
 
             <div className="flex items-baseline gap-1.5 py-2 border-y border-slate-800/80">
-              <span className="text-3xl font-extrabold text-white">$99</span>
+              <span className="text-3xl font-extrabold text-white">${price10000}</span>
               <span className="text-xs font-semibold text-slate-400">USD</span>
             </div>
 
@@ -181,7 +189,7 @@ export default function PricingPage() {
           <div className="pt-4">
             <Link href={`/checkout?credits=10000&price=99&period=${billingPeriod}`}>
               <Button variant="primary" className="w-full py-2.5 font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg">
-                Buy 10,000 Credits ($99)
+                Buy 10,000 Credits (${price10000})
               </Button>
             </Link>
           </div>
@@ -203,7 +211,7 @@ export default function PricingPage() {
             </div>
 
             <div className="flex items-baseline gap-1.5 py-2 border-y border-slate-800/80">
-              <span className="text-3xl font-extrabold text-white">$199</span>
+              <span className="text-3xl font-extrabold text-white">${price100000}</span>
               <span className="text-xs font-semibold text-slate-400">USD</span>
             </div>
 
@@ -223,7 +231,7 @@ export default function PricingPage() {
           <div className="pt-4">
             <Link href={`/checkout?credits=100000&price=199&period=${billingPeriod}`}>
               <Button variant="primary" className="w-full py-2.5 font-bold text-xs bg-purple-600 hover:bg-purple-700 text-white shadow-lg">
-                Buy 100,000 Credits ($199)
+                Buy 100,000 Credits (${price100000})
               </Button>
             </Link>
           </div>
@@ -250,7 +258,7 @@ export default function PricingPage() {
 
             <div className="flex items-baseline gap-2 py-2 border-y border-slate-800/80">
               <span className="text-lg font-bold text-slate-400 line-through">$399</span>
-              <span className="text-3xl font-extrabold text-white">$299</span>
+              <span className="text-3xl font-extrabold text-white">${price300000}</span>
               <span className="text-xs font-semibold text-slate-400">USD</span>
             </div>
 
@@ -270,7 +278,7 @@ export default function PricingPage() {
           <div className="pt-4">
             <Link href={`/checkout?credits=300000&price=299&period=${billingPeriod}`}>
               <Button variant="primary" className="w-full py-2.5 font-bold text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white shadow-lg">
-                Buy 300,000 Credits ($299)
+                Buy 300,000 Credits (${price300000})
               </Button>
             </Link>
           </div>
@@ -362,8 +370,8 @@ export default function PricingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
               <div className="p-4 rounded-2xl bg-[#f8fbff] border border-blue-100">
                 <p className="text-[11px] font-bold text-slate-400 font-mono uppercase">Calculated Price</p>
-                <p className="text-2xl font-extrabold text-cyan-400 mt-1 font-mono">${customPriceInfo.price.toLocaleString()} USD</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">One-time purchase</p>
+                <p className="text-2xl font-extrabold text-cyan-400 mt-1 font-mono">${customDisplayPrice.toLocaleString()} USD</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">{billingPeriod === 'yearly' ? '12-month total' : 'One-time purchase'}</p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#f8fbff] border border-blue-100">
@@ -383,9 +391,9 @@ export default function PricingPage() {
 
             {/* Direct Checkout Link Button */}
             <div className="pt-2">
-              <Link href={`/checkout?credits=${customCredits}&price=${customPriceInfo.price}&period=${billingPeriod}`}>
+              <Link href={`/checkout?credits=${customCredits}&price=${customDisplayPrice}&period=${billingPeriod}`}>
                 <Button variant="primary" className="w-full py-3.5 font-extrabold text-sm bg-[#0e6de4] hover:bg-[#0758bd] text-white shadow-xl cursor-pointer">
-                  Buy {customCredits.toLocaleString()} Credits (${customPriceInfo.price.toLocaleString()} USD)
+                  Buy {customCredits.toLocaleString()} Credits (${customDisplayPrice.toLocaleString()} USD)
                 </Button>
               </Link>
             </div>
