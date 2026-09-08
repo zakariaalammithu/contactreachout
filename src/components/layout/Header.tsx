@@ -88,25 +88,14 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
     }
   }, []);
 
-  // Listen for campaign name updates from editor & prefetch routes
+  // Listen for campaign name updates from editor. Next.js will prefetch links on demand.
   useEffect(() => {
-    try {
-      router.prefetch('/campaigns/new');
-      router.prefetch('/campaigns');
-      router.prefetch('/unibox');
-      router.prefetch('/leads');
-      router.prefetch('/processing');
-      router.prefetch('/results');
-      router.prefetch('/logs');
-      router.prefetch('/settings');
-    } catch (e) {}
-
     const handleNameChange = (e: any) => {
       if (e.detail) setCurrentHeaderCampName(e.detail);
     };
     window.addEventListener('campaign_name_updated', handleNameChange);
     return () => window.removeEventListener('campaign_name_updated', handleNameChange);
-  }, [router]);
+  }, []);
 
   const handleImportLeadsClick = () => {
     if (fileInputRef.current) {

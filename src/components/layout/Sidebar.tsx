@@ -60,8 +60,6 @@ const supportItems: NavItem[] = [
   { name: 'Privacy Policy', href: '/privacy', icon: LockKeyhole },
 ];
 
-const allPrefetchItems = [...navSections.flatMap((section) => section.items), ...supportItems];
-
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -74,19 +72,6 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     router.refresh();
   };
 
-  // Instant Route Prefetching & Route Warmup
-  React.useEffect(() => {
-    allPrefetchItems.filter((item) => item.href.startsWith('/')).forEach((item) => {
-      try {
-        router.prefetch(item.href);
-      } catch (e) {}
-    });
-    try {
-      router.prefetch('/campaigns/new');
-      router.prefetch('/admin');
-    } catch (e) {}
-  }, [router]);
-
   React.useEffect(() => {
     const refreshCredits = () => setAvailableCredits(CreditWalletService.getWallet().totalCreditsAvailable);
     refreshCredits();
@@ -97,13 +82,6 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
       window.removeEventListener('focus', refreshCredits);
     };
   }, [pathname]);
-
-  React.useEffect(() => {
-    fetch('/api/auth/session', { cache: 'no-store' })
-      .then((response) => response.ok ? response.json() : Promise.reject())
-      .then((payload) => setCurrentUser({ name: payload.user.email.split('@')[0], email: payload.user.email }))
-      .catch(() => undefined);
-  }, []);
 
   return (
     <>
