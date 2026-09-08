@@ -387,6 +387,29 @@
   text-wrap: pretty;
 }
 
+/* Homepage hierarchy and restrained product accents. */
+.home-saas-main > section h2 {
+  font-size: clamp(2.25rem, 4vw, 3.25rem);
+  line-height: 1.08;
+  font-weight: 900;
+}
+.home-saas-main > section > div > div > p.leading-8,
+.home-saas-main > section > div > div > p.text-lg {
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+#control-tower h2::before,
+#features h2::before {
+  content: '✦';
+  display: inline-block;
+  margin-right: .55rem;
+  color: #0e6de4;
+  font-size: .6em;
+  vertical-align: .18em;
+}
+.features-section article h3 { font-size: 1.22rem; }
+.features-section article p { font-size: .98rem; }
+
 .home-saas-main article {
   box-shadow: 0 10px 32px rgba(14, 68, 137, 0.055);
 }
@@ -569,6 +592,13 @@
 }
 
 @media (max-width: 640px) {
+  html, body { max-width: 100%; overflow-x: hidden; }
+  .home-saas-main > section { max-width: calc(100vw - 1rem); }
+  .home-saas-main > section:first-child h1 { font-size: clamp(2rem, 10vw, 2.6rem); }
+  .home-saas-main > section:first-child h1 span { white-space: normal; }
+  .home-saas-main > section:first-child .grid { min-width: 0; }
+  .home-saas-main > section:first-child .rounded-3xl { max-width: 100%; }
+  .home-saas-main .flex.flex-col.gap-3\.5 > a { width: 100%; }
   .home-saas-main {
     padding-top: 0.5rem;
   }
