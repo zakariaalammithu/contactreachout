@@ -353,12 +353,32 @@ export class AuthStore {
 
   public static getSession(sessionId: string): UserSession | null {
     const session = sessionRegistry.get(sessionId);
-    if (!session) return null;
+    // Vercel/serverless requests can land on a different instance, so the
+    // in-memory registry may not contain a session created by a prior request.
+    // Accept a signed, self-contained cookie token as a stateless fallback.
+    if (!session) {
+      const parts = sessionId.split('.');
+      if (parts.length === 7 && parts[0] === 'v1') {
+        const payload = parts.slice(0, 6).join('.');
+        const expected = crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.RESEND_API_KEY || 'contactreachout-session-secret').update(payload).digest('base64url');
+        if (parts[6].length === expected.length && crypto.timingSafeEqual(Buffer.from(parts[6]), Buffer.from(expected))) {
+          const parsed: UserSession = { sessionId: parts[1], userId: parts[2], email: decodeURIComponent(parts[3]), role: parts[4] as AppRole, expiresAt: Number(parts[5]) };
+          if (Number.isFinite(parsed.expiresAt) && Date.now() <= parsed.expiresAt) return parsed;
+        }
+      }
+      return null;
+    }
     if (Date.now() > session.expiresAt) {
       sessionRegistry.delete(sessionId);
       return null;
     }
     return session;
+  }
+
+  public static createSignedSessionToken(session: UserSession): string {
+    const payload = `v1.${session.sessionId}.${session.userId}.${encodeURIComponent(session.email)}.${session.role}.${session.expiresAt}`;
+    const signature = crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.RESEND_API_KEY || 'contactreachout-session-secret').update(payload).digest('base64url');
+    return `${payload}.${signature}`;
   }
 
   public static deleteSession(sessionId: string): void {

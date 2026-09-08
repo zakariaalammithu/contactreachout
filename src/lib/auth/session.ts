@@ -11,7 +11,9 @@ export class SessionManager {
     const isProd = process.env.NODE_ENV === 'production';
     res.cookies.set({
       name: this.COOKIE_NAME,
-      value: session.sessionId,
+      // Keep the session valid when a later request is handled by another
+      // serverless instance; the token is signed and contains its expiry.
+      value: AuthStore.createSignedSessionToken(session),
       httpOnly: true,
       secure: isProd,
       sameSite: 'lax',
