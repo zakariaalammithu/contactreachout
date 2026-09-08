@@ -14,18 +14,10 @@ const platformFeatures = [
 ];
 
 const trustedCompanyMarks = [
-  { name: 'B2B SaaS', mark: 'BS', color: 'from-blue-500 to-cyan-400' },
-  { name: 'Agencies', mark: 'AG', color: 'from-violet-500 to-fuchsia-400' },
-  { name: 'Sales Teams', mark: 'ST', color: 'from-amber-400 to-orange-500' },
-  { name: 'GTM Teams', mark: 'GT', color: 'from-emerald-400 to-teal-500' },
-  { name: 'Professional Services', mark: 'PS', color: 'from-rose-400 to-pink-500' },
-  { name: 'Data Providers', mark: 'DP', color: 'from-sky-400 to-indigo-500' },
-  { name: 'IT Services', mark: 'IT', color: 'from-purple-400 to-violet-600' },
-  { name: 'Real Estate', mark: 'RE', color: 'from-lime-400 to-emerald-500' },
-  { name: 'Recruiting', mark: 'HR', color: 'from-orange-400 to-rose-500' },
-  { name: 'Manufacturing', mark: 'MF', color: 'from-cyan-400 to-blue-600' },
-  { name: 'Logistics', mark: 'LG', color: 'from-fuchsia-400 to-purple-600' },
-  { name: 'Local Companies', mark: 'LC', color: 'from-teal-400 to-cyan-500' },
+  { name: 'HubSpot', image: '/trusted-logos/hubspot.png' }, { name: 'Clay', image: '/trusted-logos/clay.png' }, { name: 'Instantly', image: '/trusted-logos/instantly-ai.png' },
+  { name: 'Pavilion', image: '/trusted-logos/pavilion.jpg' }, { name: 'Flip Electronics', image: '/trusted-logos/flip-electronics.jpg' }, { name: 'McKinsey', image: '/trusted-logos/mckinsey.jpg' },
+  { name: 'Indoorcare', image: '/trusted-logos/indoorcare.jpg' }, { name: 'Sandler Training', image: '/trusted-logos/sandler-training.jpg' }, { name: 'XBag', image: '/trusted-logos/xbag.jpg' },
+  { name: 'Spacebar Studios', image: '/trusted-logos/spacebar-studios.jpg' }, { name: 'LinkedIn', image: '/trusted-logos/linkedin.jpg' },
 ];
 
 export default function HomePage() {
@@ -49,7 +41,7 @@ export default function HomePage() {
               {/* Headline */}
               <h1 className="mt-6 text-[40px] font-black leading-[1.07] tracking-[-0.04em] text-[#0f172a] sm:text-[50px] lg:text-[40px] xl:text-[48px]">
                 Bulk Contact Forms, <br />
-                <span className="bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-500 bg-clip-text text-transparent">Smarter Outreach with AI</span>
+                <span className="whitespace-nowrap bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-500 bg-clip-text text-transparent">Smarter Outreach with AI</span>
               </h1>
 
               {/* Description */}
@@ -278,9 +270,9 @@ export default function HomePage() {
             </div>
             <div className="trusted-logo-marquee mt-11" aria-label="Teams served by ContactReachout">
               <div className="trusted-logo-track">
-                {[...trustedCompanyMarks, ...trustedCompanyMarks].map(({ name, mark, color }, index) => (
+                {[...trustedCompanyMarks, ...trustedCompanyMarks].map(({ name, image }, index) => (
                   <div key={`${name}-${index}`} className="trusted-logo-item" aria-hidden={index >= trustedCompanyMarks.length}>
-                    <span className={`trusted-logo-mark bg-gradient-to-br ${color}`}>{mark}</span>
+                    <span className="trusted-logo-mark"><img src={image} alt="" /></span>
                     <span className="whitespace-nowrap text-sm font-black tracking-tight text-slate-700 sm:text-base">{name}</span>
                   </div>
                 ))}
@@ -295,7 +287,7 @@ export default function HomePage() {
 
         <HomeProductSections />
 
-        <section id="features" className="border-y border-violet-100 bg-white px-4 py-24 sm:px-6"><div className="mx-auto max-w-7xl"><div className="max-w-3xl"><p className="text-sm font-black text-violet-600">Platform Features</p><h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Everything you need, built in.</h2><p className="mt-5 text-lg leading-8 text-slate-600">A complete contact-form outreach platform—from upload and personalization to controlled processing and reporting.</p></div><div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{platformFeatures.map(({ icon: Icon, title, description }) => <article key={title} className="rounded-3xl border border-slate-200 bg-[#fafaff] p-7 transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-100"><Icon className="h-8 w-8 text-violet-600" /><h3 className="mt-6 text-xl font-black">{title}</h3><p className="mt-3 leading-7 text-slate-600">{description}</p></article>)}</div></div></section>
+        <section id="features" className="features-section border-y border-violet-100 !bg-white px-4 py-24 sm:px-6"><div className="mx-auto max-w-7xl"><div className="max-w-3xl"><p className="text-sm font-black text-violet-600">Platform Features</p><h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Everything you need, built in.</h2><p className="mt-5 text-lg leading-8 text-slate-600">A complete contact-form outreach platform—from upload and personalization to controlled processing and reporting.</p></div><div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{platformFeatures.map(({ icon: Icon, title, description }) => <article key={title} className="rounded-3xl border border-slate-200 bg-[#fafaff] p-7 transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-100"><Icon className="h-8 w-8 text-violet-600" /><h3 className="mt-6 text-xl font-black">{title}</h3><p className="mt-3 leading-7 text-slate-600">{description}</p></article>)}</div></div></section>
 
         <section className="px-4 py-24 sm:px-6"><div className="mx-auto max-w-6xl overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 p-8 text-white shadow-2xl shadow-blue-200 sm:p-14"><div className="grid items-center gap-10 lg:grid-cols-[1fr_auto]"><div><div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-black"><Globe2 className="h-4 w-4" />Start free — no credit card required.</div><h2 className="mt-6 text-4xl font-black tracking-tight sm:text-5xl">Ready to automate your contact form outreach?</h2><p className="mt-4 max-w-2xl text-lg leading-8 text-blue-100">Create your account, upload a lead list, personalize your campaign, and keep the entire contact-form submission workflow visible.</p></div><Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-7 py-4 text-sm font-black text-blue-700 shadow-xl">Create free account <ArrowRight className="h-4 w-4" /></Link></div></div></section>
       </main>

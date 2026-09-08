@@ -75,7 +75,7 @@ export class EmailVerificationService {
     const sender = getEmailSenderConfig();
 
     // Attempt direct live fetch to Resend API if key is available
-    if (apiKey && apiKey.startsWith('re_') && !apiKey.includes('Yc17d74R')) {
+    if (apiKey && apiKey.startsWith('re_')) {
       try {
         const fetchRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',

@@ -242,25 +242,27 @@
   display: flex;
   min-width: max-content;
   align-items: center;
-  gap: 0.7rem;
-  padding-inline: 1.45rem;
+  gap: 0.85rem;
+  padding-inline: 1.75rem;
   color: #e2e8f0;
 }
 
 .trusted-logo-mark {
   display: inline-flex;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 3.25rem;
+  height: 3.25rem;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 0.7rem;
+  border-radius: 0.9rem;
   color: white;
   font-size: 0.76rem;
   font-weight: 900;
   box-shadow: 0 8px 24px rgba(76, 29, 149, 0.2);
 }
+.trusted-logo-mark img { width: 3.25rem; height: 3.25rem; object-fit: contain; border-radius: .85rem; background: #fff; }
+.trusted-logo-item > span:last-child { font-size: 1rem; }
 
 @keyframes trusted-logo-scroll {
   from { transform: translateX(0); }
@@ -350,6 +352,15 @@
 
 .home-saas-main > section:first-child a[href="/signup"]:hover {
   background: var(--home-brand-deep) !important;
+}
+
+/* Hero product preview cards use a refined translucent surface treatment. */
+.home-saas-main > section:first-child .rounded-3xl {
+  background-color: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(14, 109, 228, 0.2) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 22px 65px rgba(14, 68, 137, 0.12) !important;
 }
 
 .home-saas-main > section:nth-child(12) > div {
@@ -594,3 +605,35 @@
 }
 
 .pricing-public-page .pricing-plan-card h3,.pricing-public-page .pricing-plan-card p,.pricing-public-page .pricing-plan-card span{color:#0f172a}.pricing-public-page .pricing-plan-card button,.pricing-public-page .pricing-plan-card a.bg-slate-800,.pricing-public-page .pricing-plan-card a.bg-indigo-600,.pricing-public-page .pricing-plan-card a.bg-purple-600,.pricing-public-page .pricing-plan-card button span{color:#fff}.pricing-public-page .pricing-plan-card .bg-slate-800,.pricing-public-page .pricing-plan-card .bg-indigo-600,.pricing-public-page .pricing-plan-card .bg-purple-600{background-color:#0e6de4}.pricing-public-page .pricing-plan-card{background:#fff!important;border-color:#bfdbfe!important}
+
+.features-section,
+.features-section > div {
+  max-width: 1280px;
+  border-radius: 2.5rem;
+  background: #fff !important;
+  padding: 3.5rem 2rem;
+}
+.features-section h2 { color: #0f172a; font-size: clamp(2.25rem, 4vw, 3rem); letter-spacing: -0.04em; }
+.features-section > div > div:first-child > p:first-child { display: inline-flex; align-items: center; border: 1px solid #bfdbfe; border-radius: 9999px; background: #eff6ff; padding: .45rem .85rem; color: #0e6de4 !important; font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.features-section > div > div:first-child > p:last-child { max-width: 58rem; color: #64748b; font-size: 1.125rem; line-height: 1.75; }
+.features-section h2,
+.features-section > div > div:first-child > p:last-child { color: #fff !important; }
+.features-section article { border-color: #dbeafe !important; background: linear-gradient(145deg, #fff 0%, #f8fbff 100%) !important; border-radius: 1.5rem; padding: 1.75rem; box-shadow: 0 12px 30px rgba(14,109,228,.06); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.features-section article:hover { border-color: #93c5fd !important; box-shadow: 0 18px 38px rgba(14,109,228,.12); }
+.features-section article svg { color: #0e6de4 !important; }
+.features-section article > svg { display: block; width: 2.75rem; height: 2.75rem; border-radius: 1rem; background: #e7f1ff; padding: .6rem; }
+.features-section article h3 { margin-top: 1.25rem; color: #0f172a; font-size: 1.15rem; letter-spacing: -.02em; }
+.features-section article p { margin-top: .55rem; color: #64748b; line-height: 1.65; }
+@media (min-width: 640px) { .features-section > div { padding: 4.5rem 2.5rem; } .features-section article { padding: 2rem; } }
+
+/* Subtle translucent surfaces for public product cards. The content remains fully
+   readable while the light section background softly shows through. */
+.home-saas-main article,
+.home-saas-main [class*="rounded-2xl"][class*="border-blue-100"],
+.home-saas-main [class*="rounded-3xl"][class*="border-blue-100"] {
+  background-color: rgba(255, 255, 255, 0.76) !important;
+  border-color: rgba(14, 109, 228, 0.16) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 12px 30px rgba(14, 109, 228, 0.07);
+}
