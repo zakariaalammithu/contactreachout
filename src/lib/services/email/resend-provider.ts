@@ -23,7 +23,8 @@ export class ResendProvider implements EmailProvider {
    * Retrieves the secure API key exclusively on the server.
    */
   private getApiKey(): string | null {
-    return SecretManager.getSecret('RESEND_API_KEY', this.organizationId);
+    const raw = SecretManager.getSecret('RESEND_API_KEY', this.organizationId);
+    return raw?.trim().replace(/^[\"']|[\"']$/g, '') || null;
   }
 
   /**

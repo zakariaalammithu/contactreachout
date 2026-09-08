@@ -54,7 +54,8 @@ export class EmailVerificationService {
     // Verification codes are single-use and expire after exactly 2 minutes.
     AuthStore.saveOtpCode(emailKey, plainCode, params.purpose, 2 * 60 * 1000, 60 * 1000);
 
-    const apiKey = params.resendApiKey || SecretManager.getSecret('RESEND_API_KEY') || process.env.RESEND_API_KEY;
+    const rawApiKey = params.resendApiKey || SecretManager.getSecret('RESEND_API_KEY') || process.env.RESEND_API_KEY;
+    const apiKey = rawApiKey?.trim().replace(/^[\"']|[\"']$/g, '');
     const subject = `🔑 Verification Code: ${plainCode}`;
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
