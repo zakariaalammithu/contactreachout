@@ -25,6 +25,12 @@ export default function SignupClient() {
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const handleGoogleSignup = () => {
+    // Use the same OAuth entry point as Login; the callback creates/finds the
+    // account and establishes the normal server session.
+    window.location.href = '/api/auth/google/redirect';
+  };
+
   // Send 6-Digit Verification Code via Resend
   const handleSendVerification = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +105,12 @@ export default function SignupClient() {
         <div className="rounded-3xl border border-blue-100 bg-white p-8 shadow-xl shadow-blue-100/60 space-y-6">
           {!isVerificationStep ? (
             /* STEP 1: SIGNUP DETAILS */
+            <>
+            <button type="button" onClick={handleGoogleSignup} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-sm font-black text-[#4285F4]">G</span>
+              Continue with Google
+            </button>
+            <div className="flex items-center gap-3 text-[10px] text-slate-400"><span className="h-px flex-1 bg-slate-200" /><span>OR</span><span className="h-px flex-1 bg-slate-200" /></div>
             <form onSubmit={handleSendVerification} className="space-y-4">
               <div className="space-y-1 text-center">
                 <h2 className="text-lg font-bold text-slate-950">Create Your Free Account</h2>
@@ -175,6 +187,7 @@ export default function SignupClient() {
                 </Link>
               </p>
             </form>
+            </>
           ) : (
             /* STEP 2: 6-DIGIT EMAIL CODE VERIFICATION */
             <form onSubmit={handleVerifyCode} className="space-y-5 animate-in fade-in duration-300">
