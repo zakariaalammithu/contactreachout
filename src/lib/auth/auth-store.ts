@@ -358,6 +358,17 @@ export class AuthStore {
     // Accept a signed, self-contained cookie token as a stateless fallback.
     if (!session) {
       const parts = sessionId.split('.');
+      if (parts.length === 3 && parts[0] === 'v2') {
+        const payload = parts[1];
+        const expected = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'contactreachout-session-secret').update(payload).digest('base64url');
+        if (parts[2].length === expected.length && crypto.timingSafeEqual(Buffer.from(parts[2]), Buffer.from(expected))) {
+          try {
+            const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as UserSession;
+            if (parsed?.sessionId && parsed?.userId && parsed?.email && Number.isFinite(parsed.expiresAt) && Date.now() <= parsed.expiresAt) return parsed;
+          } catch { /* invalid token */ }
+        }
+        return null;
+      }
       if (parts.length === 7 && parts[0] === 'v1') {
         const payload = parts.slice(0, 6).join('.');
         const expected = crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.RESEND_API_KEY || 'contactreachout-session-secret').update(payload).digest('base64url');
@@ -376,9 +387,9 @@ export class AuthStore {
   }
 
   public static createSignedSessionToken(session: UserSession): string {
-    const payload = `v1.${session.sessionId}.${session.userId}.${encodeURIComponent(session.email)}.${session.role}.${session.expiresAt}`;
-    const signature = crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.RESEND_API_KEY || 'contactreachout-session-secret').update(payload).digest('base64url');
-    return `${payload}.${signature}`;
+    const payload = Buffer.from(JSON.stringify(session)).toString('base64url');
+    const signature = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'contactreachout-session-secret').update(payload).digest('base64url');
+    return `v2.${payload}.${signature}`;
   }
 
   public static deleteSession(sessionId: string): void {
