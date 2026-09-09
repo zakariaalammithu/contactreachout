@@ -16,12 +16,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isPublicRoute) return;
     setSessionVerified(false);
-    fetch('/api/auth/session', { cache: 'no-store' })
-      .then((response) => {
-        if (!response.ok) throw new Error('Authentication required');
-        setSessionVerified(true);
-      })
-      .catch(() => router.replace(`/login?tab=signin&next=${encodeURIComponent(pathname)}`));
+    let cancelled = false;
+    const verify = async () => {
+      // A transient serverless/network failure must not log a user out.
+      for (let attempt = 0; attempt < 3 && !cancelled; attempt += 1) {
+        try {
+          const response = await fetch('/api/auth/session', { cache: 'no-store' });
+          if (response.ok) { if (!cancelled) setSessionVerified(true); return; }
+          if (response.status === 401) break;
+        } catch { /* retry */ }
+        await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+      }
+      if (!cancelled) router.replace(`/login?tab=signin&next=${encodeURIComponent(pathname)}`);
+    };
+    verify();
+    return () => { cancelled = true; };
   }, [isPublicRoute, pathname, router]);
 
   useEffect(() => {
