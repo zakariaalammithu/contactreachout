@@ -59,10 +59,10 @@ export class CreditWalletService {
       userId,
       freeMonthlyCredits: 100,
       freeMonthlyUsed: 0,
-      paidCredits: 500, // Initial sandbox state
+      paidCredits: 0,
       bonusCredits: 0,
-      totalCreditsAvailable: 600,
-      lifetimeCreditsPurchased: 500,
+      totalCreditsAvailable: 100,
+      lifetimeCreditsPurchased: 0,
       lifetimeCreditsUsed: 0,
       freeCreditPeriodStart: new Date().toISOString(),
       freeCreditPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -74,7 +74,9 @@ export class CreditWalletService {
         const stored = localStorage.getItem(STORAGE_KEY_WALLET);
         if (stored) {
           const parsed = JSON.parse(stored);
-          wallet = { ...wallet, ...parsed };
+          // Never carry another account's wallet into a newly signed-in user.
+          if (parsed?.userId === userId) wallet = { ...wallet, ...parsed };
+          else this.saveWallet(wallet);
         } else {
           // First time initialization — store initial grant transaction
           this.saveWallet(wallet);
@@ -85,7 +87,7 @@ export class CreditWalletService {
             creditSource: 'FREE',
             amount: 100,
             balanceBefore: 0,
-            balanceAfter: 600,
+            balanceAfter: 100,
             description: 'Initial Monthly 100 FREE Credits Grant',
             idempotencyKey: `init-grant-${wallet.lastResetPeriodKey}`,
             createdAt: new Date().toISOString(),
