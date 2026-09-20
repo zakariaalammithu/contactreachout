@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const protectedPrefixes = [
-  '/dashboard', '/campaigns', '/ai-personalization', '/unibox', '/leads', '/import',
+  '/dashboard', '/campaigns', '/ai-personalization', '/unibox', '/leads', '/crm', '/import',
   '/processing', '/results', '/logs', '/settings', '/profile', '/templates', '/credits',
   '/referral', '/checkout', '/admin',
 ];
@@ -77,7 +77,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*', '/campaigns/:path*', '/ai-personalization/:path*', '/unibox/:path*',
-    '/leads/:path*', '/import/:path*', '/processing/:path*', '/results/:path*', '/logs/:path*',
+    '/leads/:path*', '/crm/:path*', '/import/:path*', '/processing/:path*', '/results/:path*', '/logs/:path*',
     '/settings/:path*', '/profile/:path*', '/templates/:path*', '/credits/:path*', '/referral/:path*',
     '/checkout/:path*', '/admin/:path*',
   ],

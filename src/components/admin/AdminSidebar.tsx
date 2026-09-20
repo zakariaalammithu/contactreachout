@@ -59,6 +59,7 @@ const navSections: NavSection[] = [
       { name: 'Users', href: '/admin/users', icon: Users },
       { name: 'Campaigns', href: '/admin/campaigns', icon: Layers },
       { name: 'Leads', href: '/admin/leads', icon: Database },
+      { name: 'CRM', href: '/crm', icon: Users },
       { name: 'Submissions', href: '/admin/submissions', icon: FileCheck },
       { name: 'Notifications', href: '/admin/notifications', icon: Bell },
     ],
@@ -155,6 +156,7 @@ export function AdminSidebar() {
                     <Link
                       key={item.name}
                       href={item.href}
+                      prefetch={true}
                       className={cn(
                         'flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150',
                         isActive

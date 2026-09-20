@@ -44,7 +44,7 @@ const navSections: Array<{ title: string; items: NavItem[] }> = [
     { name: 'Campaigns', href: '/campaigns', icon: Megaphone },
     { name: 'AI Personalization', href: '/ai-personalization', icon: Bot },
     { name: 'Inbox', href: '/unibox', icon: Inbox },
-    { name: 'Contact List', href: '/leads', icon: Users },
+    { name: 'CRM', href: '/crm', icon: Users },
     { name: 'Usage & History', href: '/logs', icon: ScrollText },
   ] },
   { title: 'ACCOUNT', items: [
@@ -95,7 +95,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200/90 bg-white shadow-sm transition-transform duration-300 ease-in-out lg:static lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200/90 bg-white shadow-sm transition-transform duration-300 ease-in-out lg:static lg:w-60 lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -119,7 +119,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         </div>
 
         {/* Safety Guard Indicator */}
-        <div className="mx-3.5 my-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-2.5 shadow-xs">
+        <div className="mx-2 my-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-2 shadow-xs">
           <div className="flex items-center gap-2 text-emerald-700">
             <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
             <div className="flex-1">
@@ -130,7 +130,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         </div>
 
         {/* Navigation List */}
-        <div className="flex-1 overflow-y-auto px-3 py-1 space-y-4">
+        <div className="flex-1 overflow-y-auto space-y-4 px-3 py-1">
           {navSections.map((section) => <nav key={section.title} className="space-y-1">
             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">{section.title}</p>
             {section.items.map((item) => {
@@ -156,8 +156,9 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                     } catch (e) {}
                   }}
                   onClick={onClose}
+                  title={item.name}
                   className={cn(
-                    'flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150',
+                    'flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150',
                     isActive
                       ? 'bg-[#0e6de4] text-white shadow-sm'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
@@ -196,12 +197,12 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
 
           <nav className="space-y-1 pb-3">
             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">SUPPORT</p>
-            {supportItems.map((item) => { const Icon = item.icon; return <Link key={item.name} href={item.href} onClick={onClose} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-blue-50 hover:text-[#0e6de4]"><Icon className="h-4 w-4 text-slate-400" />{item.name}</Link>; })}
+            {supportItems.map((item) => { const Icon = item.icon; return <Link key={item.name} href={item.href} onClick={onClose} title={item.name} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-blue-50 hover:text-[#0e6de4]"><Icon className="h-4 w-4 text-slate-400" /><span>{item.name}</span></Link>; })}
           </nav>
         </div>
 
         {/* User & Small Super Admin Icon Footer */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 p-2 lg:justify-center">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white shadow-xs">
               CR

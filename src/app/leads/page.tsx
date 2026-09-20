@@ -28,7 +28,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { mockLeads } from '@/lib/store/mock-data';
 import {
   parseSpreadsheetPreview,
@@ -63,6 +62,16 @@ export default function LeadsPage() {
   const [listSearch, setListSearch] = useState('');
   const [listFilter, setListFilter] = useState('ALL');
   const [activeListId, setActiveListId] = useState<string>('');
+  const [listsFilterOpen, setListsFilterOpen] = useState(true);
+  const [listDropdownOpen, setListDropdownOpen] = useState(false);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaignFilter, setCampaignFilter] = useState('ALL');
+  const [tagFilter, setTagFilter] = useState('ALL');
+
+  const availableStatuses = React.useMemo(
+    () => Array.from(new Set(allLeads.map((lead) => String(lead.status || 'PENDING').trim()).filter(Boolean))),
+    [allLeads]
+  );
 
   // Direct Lead File Selection & Instant Parsing (No Page Redirects)
   const handleDirectFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,6 +164,12 @@ export default function LeadsPage() {
       try {
         const stored = localStorage.getItem('user_imported_leads');
         const storedLists = localStorage.getItem('user_lead_lists');
+        const storedCampaigns = localStorage.getItem('user_campaigns');
+        const deletedLeadIds = new Set<string>(JSON.parse(localStorage.getItem('user_deleted_lead_ids') || '[]'));
+        if (storedCampaigns) {
+          const parsedCampaigns = JSON.parse(storedCampaigns);
+          if (Array.isArray(parsedCampaigns)) setCampaigns(parsedCampaigns);
+        }
         if (storedLists) {
           const parsedLists = JSON.parse(storedLists);
           if (Array.isArray(parsedLists)) setLeadLists(parsedLists);
@@ -184,8 +199,12 @@ export default function LeadsPage() {
               isNewlyImported: true,
             }));
 
-            setAllLeads([...leadsWithSource, ...mockLeads]);
+            setAllLeads([...leadsWithSource, ...mockLeads.filter((lead: any) => !deletedLeadIds.has(String(lead.id)))]);
+          } else {
+            setAllLeads(mockLeads.filter((lead: any) => !deletedLeadIds.has(String(lead.id))));
           }
+        } else {
+          setAllLeads(mockLeads.filter((lead: any) => !deletedLeadIds.has(String(lead.id))));
         }
       } catch (err) {
         console.error('Error loading imported leads from localStorage:', err);
@@ -244,7 +263,7 @@ export default function LeadsPage() {
   // Reset pagination to page 1 whenever filters or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, pageSize]);
+  }, [searchTerm, statusFilter, campaignFilter, tagFilter, activeListId, pageSize]);
 
   const clearImportedLeads = () => {
     if (confirm('Clear all your imported leads?')) {
@@ -283,11 +302,19 @@ export default function LeadsPage() {
       (lead.country || '').toLowerCase().includes(searchLower) ||
       leadFile.includes(searchLower);
 
-    const matchesList = !activeListId || lead.listId === activeListId || lead.listName === activeListId;
+    const selectedList = activeListId ? leadLists.find((list) => list.id === activeListId || list.name === activeListId || list.fileName === activeListId) : null;
+    const listKeys = selectedList ? new Set([selectedList.id, selectedList.name, selectedList.fileName].filter(Boolean).map(String)) : null;
+    const leadListKeys = [lead.listId, lead.listName, lead.sourceFileName, lead.source_file, lead.fileName, lead.file_name].filter(Boolean).map(String);
+    const matchesList = !listKeys || leadListKeys.some((key) => listKeys.has(key));
+    const selectedCampaign = campaignFilter === 'ALL' ? null : campaigns.find((campaign) => campaign.id === campaignFilter);
+    const campaignLeads = selectedCampaign?.prospectsList || selectedCampaign?.prospects || [];
+    const campaignLeadIds = selectedCampaign ? new Set(campaignLeads.map((item: any) => typeof item === 'string' ? item : item.id).filter(Boolean).map(String)) : null;
+    const matchesCampaign = !campaignLeadIds || campaignLeadIds.has(String(lead.id)) || campaignLeadIds.has(String(lead.website || lead.domain || ''));
+    const matchesTag = tagFilter === 'ALL' || String(lead.tag || lead.tags || '').split(',').map((value: string) => value.trim()).includes(tagFilter);
     const matchesStatus =
       statusFilter === 'ALL' || lead.status === statusFilter;
 
-    return matchesSearch && matchesStatus && matchesList;
+    return matchesSearch && matchesStatus && matchesList && matchesCampaign && matchesTag;
   });
 
   // Calculate Pagination Slices
@@ -327,6 +354,9 @@ export default function LeadsPage() {
       setSelectedLeadIds([]);
 
       if (typeof window !== 'undefined') {
+        const deleted = new Set<string>(JSON.parse(localStorage.getItem('user_deleted_lead_ids') || '[]'));
+        selectedLeadIds.forEach((id) => deleted.add(String(id)));
+        localStorage.setItem('user_deleted_lead_ids', JSON.stringify(Array.from(deleted)));
         const storedImported = localStorage.getItem('user_imported_leads');
         if (storedImported) {
           const parsed = JSON.parse(storedImported);
@@ -401,6 +431,41 @@ export default function LeadsPage() {
         </div>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+      <Card className="border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-slate-700">Filters</p>
+          <button type="button" onClick={() => setListsFilterOpen((open) => !open)} className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:bg-slate-100" aria-expanded={listsFilterOpen}>Lists {listsFilterOpen ? '⌃' : '⌄'}</button>
+        </div>
+        {listsFilterOpen && <div className="relative mt-3 max-w-sm">
+          <label className="mb-1.5 block text-xs font-semibold text-slate-600">Lead Lists</label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <input value={listSearch} onFocus={() => setListDropdownOpen(true)} onChange={(e) => { setListSearch(e.target.value); setListDropdownOpen(true); }} placeholder={activeListId ? (leadLists.find((list) => list.id === activeListId || list.name === activeListId)?.name || 'Search lists') : 'Search lists'} className="w-full rounded-xl border border-slate-300 py-2.5 pl-9 pr-8 text-sm outline-none focus:border-blue-500" aria-label="Search lead lists" />
+            {activeListId && <button type="button" onClick={() => { setActiveListId(''); setListSearch(''); setListDropdownOpen(false); }} className="absolute right-2 top-2 text-xs text-slate-400 hover:text-slate-700" aria-label="Clear selected list">×</button>}
+          </div>
+          {listDropdownOpen && <div className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl">
+            {visibleLists.length ? visibleLists.map((list) => { const selected = activeListId === list.id || activeListId === list.name; return <button type="button" key={list.id || list.name} onClick={() => { setActiveListId(list.id || list.name); setListSearch(''); setListDropdownOpen(false); }} className={`block w-full rounded-lg px-3 py-2 text-left text-xs ${selected ? 'bg-blue-50 font-bold text-blue-700' : 'text-slate-700 hover:bg-slate-50'}`}>{list.name || list.fileName}<span className="ml-1 text-slate-400">({listLeadCount(list)})</span></button>; }) : <p className="px-3 py-3 text-xs text-slate-500">No lists found</p>}
+          </div>}
+        </div>}
+        {activeListId && <p className="mt-2 text-xs font-semibold text-blue-700">Active list: {leadLists.find((list) => list.id === activeListId || list.name === activeListId)?.name || activeListId}</p>}
+        {(activeListId || campaignFilter !== 'ALL' || tagFilter !== 'ALL' || statusFilter !== 'ALL') && <button type="button" onClick={() => { setActiveListId(''); setListSearch(''); setCampaignFilter('ALL'); setTagFilter('ALL'); setStatusFilter('ALL'); }} className="mt-2 text-xs font-semibold text-slate-600 underline hover:text-slate-900">Clear all filters</button>}
+        <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-100">
+          <details className="group px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-slate-600"><span>Campaigns</span><span className="text-slate-400">⌄</span></summary><select value={campaignFilter} onChange={(e) => setCampaignFilter(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"><option value="ALL">All campaigns</option>{campaigns.map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.name}</option>)}</select></details>
+          <details className="group px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-slate-600"><span>Tags</span><span className="text-slate-400">⌄</span></summary>{Array.from(new Set(allLeads.flatMap((lead) => String(lead.tag || lead.tags || '').split(',').map((tag) => tag.trim()).filter(Boolean)))).length ? <select value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"><option value="ALL">All tags</option>{Array.from(new Set(allLeads.flatMap((lead) => String(lead.tag || lead.tags || '').split(',').map((tag) => tag.trim()).filter(Boolean)))).map((tag) => <option key={tag} value={tag}>{tag}</option>)}</select> : <p className="pt-2 text-[11px] text-slate-400">No tags available.</p>}</details>
+          {[
+            ['Validation', 'Validation results are not available for these records yet.'],
+            ['Deliverability', 'Deliverability data is not available for these records yet.'],
+            ['Opened', 'Opened metrics are not supported by this website-form workflow.'],
+            ['Clicked', 'Clicked metrics are not supported by this website-form workflow.'],
+            ['Responded', 'Response metrics are not available for these records yet.'],
+          ].map(([label]) => <details key={label} className="group px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-slate-600"><span>{label}</span><span className="text-slate-400 transition-transform group-open:rotate-180">⌄</span></summary><div className="mt-2 h-1 rounded-full bg-slate-100" aria-hidden="true" /></details>)}
+          <details className="group px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-slate-600"><span>Status</span><span className="text-slate-400 transition-transform group-open:rotate-180">⌄</span></summary><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"><option value="ALL">All statuses</option>{availableStatuses.map((status) => <option key={status} value={status}>{status.replace(/_/g, ' ')}</option>)}</select></details>
+        </div>
+      </Card>
+
+      <div className="min-w-0 space-y-6">
+
       <Card className="border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-md"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><input value={listSearch} onChange={(e) => setListSearch(e.target.value)} placeholder="Search lists" className="w-full rounded-xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-blue-500" /></div>
@@ -454,7 +519,7 @@ export default function LeadsPage() {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {['ALL', 'PENDING', 'DRY_RUN_COMPLETED', 'SUBMITTED', 'REVIEW_REQUIRED'].map(
+          {['ALL', ...availableStatuses].map(
             (status) => (
               <button
                 key={status}
@@ -528,7 +593,7 @@ export default function LeadsPage() {
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-slate-900 text-xs">{lead.companyName || lead.company_name}</span>
                         {lead.isNewlyImported && (
-                          <span className="px-1.5 py-0.2 rounded-full bg-purple-100 text-purple-700 font-mono text-[9px] font-bold">
+                          <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-mono text-[9px] font-bold">
                             Uploaded
                           </span>
                         )}
@@ -537,7 +602,7 @@ export default function LeadsPage() {
                         href={lead.website || `https://${lead.domain}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] text-blue-600 hover:underline font-mono flex items-center gap-1"
+                        className="text-[11px] text-slate-700 hover:text-[#0e6de4] hover:underline font-mono flex items-center gap-1"
                       >
                         {lead.domain || lead.website || 'website.com'}
                         <ExternalLink className="h-2.5 w-2.5" />
@@ -577,14 +642,14 @@ export default function LeadsPage() {
 
                   {/* Status */}
                   <td className="p-3.5">
-                    <Badge variant={lead.status === 'SUBMITTED' ? 'submitted' : lead.status === 'REVIEW_REQUIRED' ? 'review_required' : 'pending'} size="sm">
+                    <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700">
                       {lead.status || 'PENDING'}
-                    </Badge>
+                    </span>
                   </td>
 
                   {/* Source File Name */}
                   <td className="p-3.5 text-[10px] font-mono">
-                    <span className="font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded border border-purple-200 inline-block truncate max-w-[160px]">
+                    <span className="font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200 inline-block truncate max-w-[160px]">
                       📁 {lead.sourceFileName || uploadedFileName || 'Uploaded File'}
                     </span>
                   </td>
@@ -593,7 +658,7 @@ export default function LeadsPage() {
                   <td className="p-3.5 text-right">
                     <button
                       onClick={() => setSelectedLeadForModal(lead)}
-                      className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-bold flex items-center gap-1.5 ml-auto transition-colors cursor-pointer shadow-2xs"
+                      className="px-3 py-1.5 rounded-xl bg-white text-slate-700 hover:bg-slate-50 border border-slate-300 text-xs font-semibold flex items-center gap-1.5 ml-auto transition-colors cursor-pointer shadow-2xs"
                       title="Inspect all uploaded fields in large spreadsheet modal"
                     >
                       <Eye className="h-3.5 w-3.5" />
@@ -669,6 +734,9 @@ export default function LeadsPage() {
       </Card>
 
       {/* Large Full Lead Info Inspection Modal */}
+      </div>
+      </div>
+
       {selectedLeadForModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
