@@ -81,6 +81,7 @@ export default function AppDashboard() {
     );
   };
 
+
   const targetCompanies = [
     {
       id: 'tc-01',
@@ -144,7 +145,8 @@ export default function AppDashboard() {
         </div>
       </section>
 
-      {/* 1. Heyreach & Aimfox Hero Section (Matching attached screenshot) */}
+      {false && <>
+      {/* Removed demo/marketing dashboard content; campaign functionality is unchanged. */}
       <div className="rounded-3xl border border-slate-200/90 bg-white/95 p-8 sm:p-12 text-center relative overflow-hidden shadow-sm">
         {/* Ambient Iridescent Glow */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[750px] h-[360px] bg-gradient-to-r from-[#FF5722]/10 via-[#8B5CF6]/15 to-[#06B6D4]/10 blur-3xl pointer-events-none" />
@@ -441,6 +443,7 @@ export default function AppDashboard() {
           </Card>
         </div>
       )}
+      </>}
     </div>
   );
 }

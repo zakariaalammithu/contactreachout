@@ -9,6 +9,7 @@ const signinSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
   resendApiKey: z.string().optional(),
+  next: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const { email, password, resendApiKey } = parsed.data;
+    const { email, password, resendApiKey, next } = parsed.data;
     const cleanEmail = email.toLowerCase().trim();
 
     // 1. Verify credentials against AuthStore
@@ -61,7 +62,9 @@ export async function POST(req: Request) {
     // account-creation step, not a second factor on every login.
     if (user.isEmailVerified) {
       const session = AuthStore.createSession(user.id, user.email, user.role);
-      const redirectTo = (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') ? '/admin' : '/dashboard';
+      const isAdminRole = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
+      const requestedNext = next?.startsWith('/') && !next.startsWith('//') && (!next.startsWith('/admin') || isAdminRole) ? next : undefined;
+      const redirectTo = requestedNext || (isAdminRole ? '/admin' : '/dashboard');
       const response = NextResponse.json({
         success: true,
         authenticated: true,

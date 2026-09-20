@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -54,6 +54,18 @@ interface CustomColumnDef {
 
 export default function ImportLeadsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [fromCampaign, setFromCampaign] = useState(false);
+  const returnToCampaign = searchParams.get('returnTo') === 'campaign' || fromCampaign;
+  const campaignId = searchParams.get('campaignId') || '';
+
+  useEffect(() => {
+    if (!searchParams.get('campaignId') && !searchParams.get('campaign') && !searchParams.get('returnTo')) router.replace('/campaigns/new');
+  }, [router, searchParams]);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined' && document.referrer.includes('/campaigns/new')) setFromCampaign(true);
+  }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // File & List Name State
@@ -82,7 +94,7 @@ export default function ImportLeadsPage() {
   // Filters during import
   const [filterIndustry, setFilterIndustry] = useState<string>('ALL');
   const [filterCountry, setFilterCountry] = useState<string>('ALL');
-  const [filterRequireWebsite, setFilterRequireWebsite] = useState(true);
+  const [filterRequireWebsite, setFilterRequireWebsite] = useState(false);
 
   // Dynamic Custom Personalized Columns
   const [customColumns, setCustomColumns] = useState<CustomColumnDef[]>([
@@ -151,17 +163,24 @@ export default function ImportLeadsPage() {
 
   const handleMatchImportSuccess = (importedLeads: any[], listInfo: any) => {
     if (typeof window !== 'undefined') {
+      // The matcher creates the list after normalizing rows. Attach the final
+      // list identity here so Campaign → Prospects can count the real leads.
+      const leadsWithList = importedLeads.map((lead) => ({
+        ...lead,
+        listId: listInfo.id,
+        listName: listInfo.name,
+      }));
       const existingLeads = localStorage.getItem('user_imported_leads');
       const parsedLeads = existingLeads ? JSON.parse(existingLeads) : [];
-      localStorage.setItem('user_imported_leads', JSON.stringify([...importedLeads, ...parsedLeads]));
+      localStorage.setItem('user_imported_leads', JSON.stringify([...leadsWithList, ...parsedLeads]));
 
       const existingLists = localStorage.getItem('user_lead_lists');
       const parsedLists = existingLists ? JSON.parse(existingLists) : [];
       localStorage.setItem('user_lead_lists', JSON.stringify([listInfo, ...parsedLists]));
 
-      window.dispatchEvent(new CustomEvent('leads_imported_directly', { detail: importedLeads }));
+      window.dispatchEvent(new CustomEvent('leads_imported_directly', { detail: leadsWithList }));
       setImportSuccess(true);
-      router.push('/leads');
+      router.push(returnToCampaign ? `/campaigns/new${campaignId ? `?edit=${encodeURIComponent(campaignId)}` : ''}` : '/leads');
     }
   };
 
@@ -350,6 +369,7 @@ export default function ImportLeadsPage() {
 
       setImportResult(result);
       setImportSuccess(true);
+      if (returnToCampaign) router.push(`/campaigns/new${campaignId ? `?edit=${encodeURIComponent(campaignId)}` : ''}`);
     } catch (err) {
       console.error('Import processing error:', err);
     } finally {
@@ -378,15 +398,15 @@ export default function ImportLeadsPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
           <UploadCloud className="h-6 w-6 text-blue-600" />
-          Lead List Ingestion & AI Personalization Mapper
+          Upload CSV/XLSX File
         </h1>
         <p className="text-xs sm:text-sm text-slate-500">
-          Upload spreadsheets, apply filters, match columns, and add custom personalized message variables for <strong>ContactReachout</strong>.
+          Upload your prospect list to add leads to this campaign.
         </p>
       </div>
 
-      {/* Download Pre-built Templates & 1-Click Load */}
-      <Card className="glass-panel p-5 space-y-4 border-slate-200 bg-white shadow-xs">
+      {/* Sample dataset generation remains available through the existing service; the sample cards are intentionally hidden from this page. */}
+      {false && <Card className="glass-panel p-5 space-y-4 border-slate-200 bg-white shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-purple-700 font-mono flex items-center gap-1.5">
@@ -447,7 +467,7 @@ export default function ImportLeadsPage() {
             </div>
           ))}
         </div>
-      </Card>
+      </Card>}
 
       {/* Main Upload Dropzone */}
       {!file && (
@@ -472,6 +492,8 @@ export default function ImportLeadsPage() {
           <p className="text-xs text-slate-500 mt-1 max-w-sm">
             Drag and drop your <strong>.csv</strong> or <strong>.xlsx</strong> file here, or click to browse.
           </p>
+          <p className="mt-2 max-w-md text-xs text-slate-400">Website is required for campaigns. Add more fields for better AI personalization.</p>
+          <p className="mt-2 text-xs text-slate-500">Website is required. Other fields are optional.</p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 mt-6 text-xs text-slate-500 font-mono">
             <span>✓ Scrambled Header Auto-Detection</span>
@@ -480,6 +502,14 @@ export default function ImportLeadsPage() {
             <span>•</span>
             <span>✓ Save as Named List</span>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(event) => { event.stopPropagation(); downloadSampleCsv('b2b-saas'); }}
+            className="mt-5 border-blue-200 text-xs font-semibold text-[#0e6de4] hover:bg-blue-50"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Need a sample? Download Example CSV/XLSX
+          </Button>
         </Card>
       )}
 

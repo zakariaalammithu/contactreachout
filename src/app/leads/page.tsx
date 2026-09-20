@@ -59,6 +59,10 @@ export default function LeadsPage() {
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [selectedLeadForModal, setSelectedLeadForModal] = useState<any | null>(null);
   const [isImportingDirectly, setIsImportingDirectly] = useState(false);
+  const [leadLists, setLeadLists] = useState<any[]>([]);
+  const [listSearch, setListSearch] = useState('');
+  const [listFilter, setListFilter] = useState('ALL');
+  const [activeListId, setActiveListId] = useState<string>('');
 
   // Direct Lead File Selection & Instant Parsing (No Page Redirects)
   const handleDirectFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,6 +115,10 @@ export default function LeadsPage() {
 
         // Save list metadata
         const storedLists = localStorage.getItem('user_lead_lists');
+        if (storedLists) {
+          const parsedLists = JSON.parse(storedLists);
+          if (Array.isArray(parsedLists)) setLeadLists(parsedLists);
+        }
         const existingLists = storedLists ? JSON.parse(storedLists) : [];
         const newListObj = {
           id: `list-${Date.now()}`,
@@ -120,6 +128,7 @@ export default function LeadsPage() {
           uploadedAt: new Date().toISOString(),
         };
         localStorage.setItem('user_lead_lists', JSON.stringify([newListObj, ...existingLists]));
+        setLeadLists((prev) => [newListObj, ...prev.filter((item) => item.id !== newListObj.id)]);
 
         setNewlyImportedCount(validLeads.length);
         setUploadedFileName(fileName);
@@ -146,6 +155,10 @@ export default function LeadsPage() {
       try {
         const stored = localStorage.getItem('user_imported_leads');
         const storedLists = localStorage.getItem('user_lead_lists');
+        if (storedLists) {
+          const parsedLists = JSON.parse(storedLists);
+          if (Array.isArray(parsedLists)) setLeadLists(parsedLists);
+        }
 
         let detectedFileName = '';
         if (storedLists) {
@@ -179,6 +192,38 @@ export default function LeadsPage() {
       }
     }
   }, []);
+
+  const listLeadCount = (list: any) => allLeads.filter((lead) =>
+    (lead.listId && (lead.listId === list.id || lead.listId === list.name)) ||
+    (lead.listName && lead.listName === list.name)
+  ).length || Number(list.count || list.totalLeads || 0);
+
+  const visibleLists = leadLists.filter((list) => {
+    const name = String(list.name || list.fileName || '').toLowerCase();
+    const matchesSearch = !listSearch.trim() || name.includes(listSearch.trim().toLowerCase());
+    const count = listLeadCount(list);
+    const matchesFilter = listFilter === 'ALL' ||
+      (listFilter === 'RECENT' && Date.now() - new Date(list.uploadedAt || list.createdAt || 0).getTime() < 30 * 86400000) ||
+      (listFilter === 'LARGEST' && count >= Math.max(...leadLists.map((item) => listLeadCount(item)), 0)) ||
+      (listFilter === 'USED' && allLeads.some((lead) => lead.listId === list.id || lead.listName === list.name));
+    return matchesSearch && matchesFilter;
+  });
+
+  const removeList = (list: any) => {
+    if (!window.confirm(`Delete Lead List "${list.name}"? This will remove its imported prospect records.`)) return;
+    const nextLists = leadLists.filter((item) => item.id !== list.id);
+    const nextLeads = allLeads.filter((lead) => lead.listId !== list.id && lead.listId !== list.name && lead.listName !== list.name);
+    setLeadLists(nextLists); setAllLeads(nextLeads);
+    localStorage.setItem('user_lead_lists', JSON.stringify(nextLists));
+    localStorage.setItem('user_imported_leads', JSON.stringify(nextLeads.filter((lead) => lead.isNewlyImported)));
+  };
+
+  const renameList = (list: any) => {
+    const name = window.prompt('Lead List Name', list.name || '');
+    if (!name?.trim()) return;
+    const nextLists = leadLists.map((item) => item.id === list.id ? { ...item, name: name.trim(), lastUpdated: new Date().toISOString() } : item);
+    setLeadLists(nextLists); localStorage.setItem('user_lead_lists', JSON.stringify(nextLists));
+  };
 
   // Listen for direct header lead imports
   useEffect(() => {
@@ -238,10 +283,11 @@ export default function LeadsPage() {
       (lead.country || '').toLowerCase().includes(searchLower) ||
       leadFile.includes(searchLower);
 
+    const matchesList = !activeListId || lead.listId === activeListId || lead.listName === activeListId;
     const matchesStatus =
       statusFilter === 'ALL' || lead.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesList;
   });
 
   // Calculate Pagination Slices
@@ -344,15 +390,29 @@ export default function LeadsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-            Target Contact List Directory
-          </h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Contact Lists</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            View, search, inspect, and manage all outreach fields across your uploaded business accounts and discovered forms.
+            Organize your uploaded lead lists and use them in campaigns.
           </p>
         </div>
-
+        <div className="flex gap-2">
+          <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleDirectFileUpload} className="hidden" />
+          <Button onClick={() => fileInputRef.current?.click()} variant="primary" size="sm"><UploadCloud className="mr-2 h-4 w-4" />Upload CSV/XLSX</Button>
+        </div>
       </div>
+
+      <Card className="border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 max-w-md"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><input value={listSearch} onChange={(e) => setListSearch(e.target.value)} placeholder="Search lists" className="w-full rounded-xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-blue-500" /></div>
+          <select value={listFilter} onChange={(e) => setListFilter(e.target.value)} className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm"><option value="ALL">All Lists</option><option value="RECENT">Recently Added</option><option value="LARGEST">Largest Lists</option><option value="USED">Used in Campaigns</option></select>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {visibleLists.length ? visibleLists.map((list) => <div key={list.id || list.name} className="rounded-2xl border border-slate-200 p-4 hover:border-blue-300">
+            <div className="flex items-start justify-between gap-3"><div><h3 className="font-bold text-slate-900">{list.name || list.fileName}</h3><p className="mt-1 text-xs text-slate-500">{listLeadCount(list)} leads · {list.fileName || 'Imported list'}</p></div><details className="relative"><summary className="cursor-pointer list-none rounded-lg px-2 py-1 text-lg text-slate-500 hover:bg-slate-100">⋮</summary><div className="absolute right-0 z-10 mt-1 w-36 rounded-xl border bg-white p-1 text-xs shadow-lg"><button onClick={() => renameList(list)} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-50">Rename</button><button onClick={() => removeList(list)} className="block w-full rounded-lg px-3 py-2 text-left text-rose-600 hover:bg-rose-50">Delete</button></div></details></div>
+            <div className="mt-3 flex gap-2"><button onClick={() => { setActiveListId(list.id || list.name); setSearchTerm(''); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">View Leads</button><button onClick={() => router.push('/campaigns/new')} className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">Use in Campaign</button></div>
+          </div>) : <div className="col-span-full rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">No lead lists yet. Upload a CSV/XLSX file to create your first list.</div>}
+        </div>
+      </Card>
 
       {/* Newly Uploaded Banner */}
       {newlyImportedCount > 0 && (

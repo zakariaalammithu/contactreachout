@@ -110,6 +110,11 @@ export function MatchDataModal({
   };
 
   const handleExecuteImport = () => {
+    const websiteHeader = Object.entries(columnMappings).find(([, value]) => value === 'website')?.[0];
+    if (!websiteHeader || !allRawRows.some((row) => String(row[websiteHeader] ?? '').trim())) {
+      alert('Website is required. Please map a Website column before importing leads.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       // Re-construct mapping object expected by processImportRows
@@ -152,6 +157,9 @@ export function MatchDataModal({
         ? result.validLeads
         : allRawRows;
 
+      const generatedListId = `list-${Date.now()}`;
+      const generatedListName = listName || fileName.replace(/\.[^/.]+$/, '');
+
       const validLeads = rawRowsToUse.map((ld: any, idx: number) => {
         const keys = Object.keys(ld);
         const findVal = (terms: string[]) => {
@@ -175,6 +183,11 @@ export function MatchDataModal({
           if (ld[sysKey] !== undefined) {
             return String(ld[sysKey]).trim();
           }
+          const nested = ld.custom_fields || ld.customFields || {};
+          if (nested[sysKey] !== undefined) return String(nested[sysKey] ?? '').trim();
+          const normalizedTarget = sysKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const nestedEntry = Object.entries(nested).find(([key]) => key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedTarget);
+          if (nestedEntry) return String(nestedEntry[1] ?? '').trim();
           return '';
         };
 
@@ -252,15 +265,16 @@ export function MatchDataModal({
           sourceFileName: fileName,
           source_file: fileName,
           file_name: fileName,
-          listId: listName || 'Default List',
+          listId: generatedListId,
+          listName: generatedListName,
           isNewlyImported: true,
           createdAt: new Date().toISOString(),
         };
       });
 
       const listInfo = {
-        id: `list-${Date.now()}`,
-        name: listName || fileName.replace(/\.[^/.]+$/, ''),
+        id: generatedListId,
+        name: generatedListName,
         fileName: fileName,
         count: validLeads.length,
         uploadedAt: new Date().toISOString(),
@@ -373,7 +387,7 @@ export function MatchDataModal({
                 return (
                   <tr key={header} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-4 px-6 font-bold text-slate-900 truncate max-w-[200px]" title={header}>
-                      {header}
+                      {header}{currentMappedVal === 'website' && <span className="ml-1 text-rose-600" title="Required field">*</span>}
                     </td>
                     <td className="py-4 px-6">
                       <select

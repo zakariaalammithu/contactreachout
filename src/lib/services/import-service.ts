@@ -57,6 +57,7 @@ export interface ColumnMapping {
 }
 
 export interface ImportAnalysisResult {
+  [key: string]: any;
   filename: string;
   fileSizeBytes: number;
   totalRows: number;
@@ -435,14 +436,11 @@ export function processImportRows(
 
     // Validate Required Fields
     const companyName = String(rawCompanyName || '').trim();
-    if (!companyName) {
-      errors.push('Missing required company name');
-    }
+    // Company name and website are optional at import time. Website is
+    // enforced by campaign start validation, not by file ingestion.
 
     const { normalizedUrl, domain, isValid: isUrlValid } = normalizeWebsiteUrl(String(rawWebsite || ''));
-    if (!isUrlValid || !domain) {
-      errors.push(`Invalid website URL format: "${rawWebsite || ''}"`);
-    }
+    if (rawWebsite && (!isUrlValid || !domain)) errors.push(`Invalid website URL format: "${rawWebsite || ''}"`);
 
     // Deduplication check
     if (domain) {
@@ -464,6 +462,19 @@ export function processImportRows(
         if (sanitized !== val) sanitizedFormulasCount++;
         customFields[key] = sanitized;
       }
+    }
+
+    // Preserve explicitly mapped Custom 1–10 values. These headers are part
+    // of mappedHeaders, so without this copy they would be excluded above and
+    // lost before the campaign preview/message resolver receives the lead.
+    for (let customIndex = 1; customIndex <= 10; customIndex += 1) {
+      const customKey = `custom_${customIndex}`;
+      const mappedHeader = mapping[customKey];
+      if (!mappedHeader) continue;
+      const rawValue = rawRow[mappedHeader];
+      const sanitized = sanitizeCellInput(rawValue);
+      if (sanitized !== rawValue) sanitizedFormulasCount++;
+      customFields[customKey] = sanitized == null ? '' : String(sanitized).trim();
     }
 
     // Construct Normalized Lead

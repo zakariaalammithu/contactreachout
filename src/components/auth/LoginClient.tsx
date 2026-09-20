@@ -164,7 +164,7 @@ export default function LoginClient() {
       const res = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, resendApiKey }),
+        body: JSON.stringify({ email, password, resendApiKey, next: searchParams.get('next') || undefined }),
       });
 
       const data = await res.json();
@@ -245,7 +245,7 @@ export default function LoginClient() {
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: fullCode }),
+        body: JSON.stringify({ email, code: fullCode, next: searchParams.get('next') || undefined }),
       });
 
       const data = await res.json();
@@ -299,10 +299,10 @@ export default function LoginClient() {
         {/* VIEW 1 & 2: STANDARD LOGIN & SIGNUP HEADER */}
         {(activeTab === 'signup' || activeTab === 'signin') && (
           <div className="flex items-center gap-3 text-left">
-            <img src="/logo-128.png" alt="ContactReachout logo" width="48" height="48" className="h-12 w-12 shrink-0 object-contain" />
+            <img src="/brand/logo-icon.png" alt="ContactReachout logo" width="48" height="48" className="h-12 w-auto max-w-[48px] max-h-[48px] shrink-0 object-contain" />
             <div className="space-y-1">
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-sans">
-                Welcome to ContactReachout
+                Welcome to <span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span>
               </h1>
               <p className="text-xs text-slate-500 font-normal">
                 Bulk Website Contact Form Outreach System

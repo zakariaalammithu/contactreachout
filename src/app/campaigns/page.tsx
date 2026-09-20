@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -31,6 +31,8 @@ import {
   Clock,
   AlertTriangle,
   X,
+  Copy,
+  Archive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -40,7 +42,7 @@ interface CampaignItem {
   date: string;
   sendersCount: number;
   tag?: string;
-  status: 'active' | 'paused' | 'draft';
+  status: 'active' | 'paused' | 'draft' | 'archived';
   prospects: number;
   reached: number;
   failed?: number;
@@ -159,6 +161,111 @@ export default function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedReportCamp, setSelectedReportCamp] = useState<CampaignItem | null>(null);
+  const [openMenuCampId, setOpenMenuCampId] = useState<string | null>(null);
+
+  // Create Campaign Modal state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newCampaignName, setNewCampaignName] = useState('New Campaign');
+  const [nameError, setNameError] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus and select input text when modal opens
+  useEffect(() => {
+    if (isCreateModalOpen) {
+      setNewCampaignName('New Campaign');
+      setNameError('');
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.select();
+        }
+      }, 50);
+    }
+  }, [isCreateModalOpen]);
+
+  // Create Campaign submit handler
+  const handleCreateCampaignSubmit = () => {
+    const trimmedName = newCampaignName.trim();
+    if (!trimmedName) {
+      setNameError('Campaign name is required.');
+      return;
+    }
+    if (isCreating) return;
+    setIsCreating(true);
+
+    try {
+      const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
+      const newId = `camp-${Date.now()}`;
+      const todayDate = new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+
+      const newCampItem: CampaignItem = {
+        id: newId,
+        name: trimmedName,
+        date: todayDate,
+        sendersCount: 3,
+        tag: 'CUSTOM',
+        status: 'draft',
+        prospects: 0,
+        reached: 0,
+        failed: 0,
+        noContactPage: 0,
+        captchaBlocked: 0,
+        reachedPercent: 0,
+        opened: 0,
+        clicked: 0,
+        replied: 0,
+        repliedPercent: 0,
+        interested: 0,
+        opportunities: 0,
+        last24h: 0,
+      };
+
+      const rawCampaign = {
+        id: newId,
+        name: trimmedName,
+        tag: 'CUSTOM',
+        status: 'draft',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        totalLeads: 0,
+        sentCount: 0,
+        failedCount: 0,
+        noFormCount: 0,
+        captchaCount: 0,
+        logs: [],
+        prospectsList: [],
+        sequences: [],
+        ownerEmail: activeAccount,
+      };
+
+      const stored = localStorage.getItem('user_campaigns');
+      const parsed = stored ? JSON.parse(stored) : [];
+      parsed.unshift(rawCampaign);
+      localStorage.setItem('user_campaigns', JSON.stringify(parsed));
+
+      setCampaigns((prev) => [newCampItem, ...prev]);
+      setIsCreateModalOpen(false);
+      setIsCreating(false);
+      router.push(`/campaigns/new?id=${encodeURIComponent(newId)}`);
+    } catch (err) {
+      console.error('Error creating new campaign:', err);
+      setIsCreating(false);
+    }
+  };
+
+  // Close three-dot menu on outside click
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuCampId(null);
+    if (openMenuCampId) {
+      window.addEventListener('click', handleClickOutside);
+    }
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [openMenuCampId]);
 
   // Load custom campaigns from localStorage & handle deleted IDs
   useEffect(() => {
@@ -167,12 +274,19 @@ export default function CampaignsPage() {
         const deletedIdsStr = localStorage.getItem('user_deleted_campaign_ids');
         const deletedIds: string[] = deletedIdsStr ? JSON.parse(deletedIdsStr) : [];
 
+        const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
         const stored = localStorage.getItem('user_campaigns');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
             const mappedUserCamps: CampaignItem[] = parsed
-              .filter((c: any) => !deletedIds.includes(c.id))
+              .filter((c: any) => {
+                if (deletedIds.includes(c.id)) return false;
+                if (activeAccount && c.ownerEmail) {
+                  return c.ownerEmail.toLowerCase() === activeAccount;
+                }
+                return true;
+              })
               .map((c: any) => {
                 const total = c.prospectsList ? c.prospectsList.length : (c.totalLeads || 0);
                 const sent = typeof c.sentCount === 'number' ? c.sentCount : 0;
@@ -189,7 +303,7 @@ export default function CampaignsPage() {
                   }),
                   sendersCount: 3,
                   tag: c.tag || 'CUSTOM',
-                  status: c.status === 'running' ? 'active' : c.status === 'paused' ? 'paused' : 'draft',
+                  status: c.status === 'running' || c.status === 'active' ? 'active' : c.status === 'paused' ? 'paused' : c.status === 'archived' ? 'archived' : 'draft',
                   prospects: total,
                   reached: sent,
                   failed,
@@ -578,6 +692,109 @@ export default function CampaignsPage() {
     }
   };
 
+  // Duplicate / Copy Campaign Handler
+  const handleCopyCampaign = (campId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenMenuCampId(null);
+
+    const targetCamp = campaigns.find((c) => c.id === campId);
+    if (!targetCamp) return;
+
+    const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
+    const newId = `camp-copy-${Date.now()}`;
+    const newName = `${targetCamp.name} - Copy`;
+    const todayDate = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    const newCampItem: CampaignItem = {
+      ...targetCamp,
+      id: newId,
+      name: newName,
+      date: todayDate,
+      status: 'draft',
+      prospects: targetCamp.prospects || 0,
+      reached: 0,
+      failed: 0,
+      noContactPage: 0,
+      captchaBlocked: 0,
+      reachedPercent: 0,
+      opened: 0,
+      clicked: 0,
+      replied: 0,
+      repliedPercent: 0,
+      interested: 0,
+      opportunities: 0,
+      last24h: 0,
+    };
+
+    try {
+      const stored = localStorage.getItem('user_campaigns');
+      const parsed = stored ? JSON.parse(stored) : [];
+      const existingRaw = parsed.find((c: any) => c.id === campId);
+
+      const rawCopy = existingRaw
+        ? {
+            ...existingRaw,
+            id: newId,
+            name: newName,
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            sentCount: 0,
+            failedCount: 0,
+            noFormCount: 0,
+            captchaCount: 0,
+            logs: [],
+            ownerEmail: activeAccount || existingRaw.ownerEmail,
+          }
+        : {
+            id: newId,
+            name: newName,
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            totalLeads: targetCamp.prospects,
+            sentCount: 0,
+            failedCount: 0,
+            noFormCount: 0,
+            captchaCount: 0,
+            logs: [],
+            ownerEmail: activeAccount,
+          };
+
+      parsed.unshift(rawCopy);
+      localStorage.setItem('user_campaigns', JSON.stringify(parsed));
+    } catch (err) {
+      console.error('Error duplicating campaign in storage:', err);
+    }
+
+    setCampaigns((prev) => [newCampItem, ...prev]);
+  };
+
+  // Archive Campaign Handler
+  const handleArchiveCampaign = (campId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenMenuCampId(null);
+
+    setCampaigns((prev) =>
+      prev.map((c) => (c.id === campId ? { ...c, status: 'archived' } : c))
+    );
+
+    try {
+      const stored = localStorage.getItem('user_campaigns');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const updated = parsed.map((c: any) =>
+          c.id === campId ? { ...c, status: 'archived' } : c
+        );
+        localStorage.setItem('user_campaigns', JSON.stringify(updated));
+      }
+    } catch (err) {
+      console.error('Error archiving campaign in storage:', err);
+    }
+  };
+
   // Clear All Campaigns (Fresh Start)
   const handleClearAllCampaigns = () => {
     if (window.confirm('Are you sure you want to delete ALL campaigns and start completely fresh?')) {
@@ -599,10 +816,11 @@ export default function CampaignsPage() {
 
   // Filtered campaigns
   const filtered = campaigns.filter((c) => {
-    if (statusFilter === 'Active' && c.status !== 'active') return false;
-    if (statusFilter === 'Paused' && c.status !== 'paused') return false;
-    if (statusFilter === 'Draft' && c.status !== 'draft') return false;
-    return true;
+    if (statusFilter === 'Active') return c.status === 'active';
+    if (statusFilter === 'Paused') return c.status === 'paused';
+    if (statusFilter === 'Draft') return c.status === 'draft';
+    if (statusFilter === 'Archived') return c.status === 'archived';
+    return c.status !== 'archived';
   });
 
   // Calculate Column Totals for Bulk Contact Outreach
@@ -661,6 +879,7 @@ export default function CampaignsPage() {
               <option value="Active">Active</option>
               <option value="Paused">Paused</option>
               <option value="Draft">Draft</option>
+              <option value="Archived">Archived</option>
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
           </div>
@@ -668,16 +887,87 @@ export default function CampaignsPage() {
 
         {/* Right Action: Create New Campaign Button */}
         <div className="flex items-center gap-2.5">
-          <Link
-            href="/campaigns/new"
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
             id="create-new-campaign-btn"
             className="rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-5 py-2.5 text-xs font-extrabold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-2 shrink-0"
           >
             <Plus className="h-4 w-4 stroke-[2.5]" />
             <span>Create New Campaign</span>
-          </Link>
+          </button>
         </div>
       </div>
+
+      {/* COMPACT CREATE CAMPAIGN MODAL */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <h2 className="text-base font-bold text-slate-900">Create Campaign</h2>
+              <button
+                type="button"
+                onClick={() => { setIsCreateModalOpen(false); setNameError(''); }}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Campaign Name
+                </label>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={newCampaignName}
+                  onChange={(e) => {
+                    setNewCampaignName(e.target.value);
+                    if (nameError) setNameError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCreateCampaignSubmit();
+                    } else if (e.key === 'Escape') {
+                      setIsCreateModalOpen(false);
+                      setNameError('');
+                    }
+                  }}
+                  placeholder="e.g. Austin SaaS Partnerships"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 transition-all"
+                />
+                {nameError && (
+                  <p className="mt-1.5 text-xs font-medium text-rose-600">{nameError}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => { setIsCreateModalOpen(false); setNameError(''); }}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isCreating}
+                onClick={handleCreateCampaignSubmit}
+                className="rounded-xl bg-[#0e6de4] hover:bg-blue-700 text-white px-5 py-2.5 text-xs font-bold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isCreating ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Selection Action Bar */}
       {selectedIds.length > 0 && (
@@ -759,7 +1049,15 @@ export default function CampaignsPage() {
         <div className="space-y-2.5">
           {filtered.length === 0 ? (
             <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 text-sm">
-              No campaigns found. Click <strong>Create Campaign</strong> to start a new campaign.
+              No campaigns found. Click{' '}
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="font-bold text-blue-600 underline cursor-pointer"
+              >
+                Create Campaign
+              </button>{' '}
+              to start a new campaign.
             </div>
           ) : (
             filtered.map((camp) => {
@@ -795,6 +1093,11 @@ export default function CampaignsPage() {
                       )}
                       {camp.status === 'draft' && (
                         <Edit2 className="h-3.5 w-3.5 text-slate-400" />
+                      )}
+                      {camp.status === 'archived' && (
+                        <span title="Archived">
+                          <Archive className="h-3.5 w-3.5 text-slate-400" />
+                        </span>
                       )}
                     </div>
 
@@ -875,8 +1178,8 @@ export default function CampaignsPage() {
                     </span>
                   </div>
 
-                  {/* Col 9: ACTIONS (Toggle Switch, Edit, Delete, Report) */}
-                  <div className="col-span-2 flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  {/* Col 9: ACTIONS (Toggle Switch + Edit + Analytics + Vertical Three-Dot Action Menu) */}
+                  <div className="col-span-2 flex items-center justify-center gap-1.5 relative" onClick={(e) => e.stopPropagation()}>
                     {/* Active / Paused Toggle Switch */}
                     <button
                       onClick={(e) => toggleCampaignStatus(camp.id, e)}
@@ -892,35 +1195,92 @@ export default function CampaignsPage() {
                       />
                     </button>
 
-                    {/* Report Telemetry Icon Button */}
-                    <button
-                      onClick={() => setSelectedReportCamp(camp)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                      title="View Detailed Telemetry Report"
-                    >
-                      <BarChart2 className="h-3.5 w-3.5" />
-                    </button>
-
-                    {/* Edit Icon */}
+                    {/* Edit Campaign Icon Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
                       }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+                      className="p-1 rounded-lg text-slate-400 hover:text-[#0e6de4] hover:bg-blue-50 transition-colors cursor-pointer"
                       title="Edit Campaign"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
                     </button>
 
-                    {/* Delete Icon Button */}
+                    {/* View Telemetry & Analytics Icon Button (New Action Icon) */}
                     <button
-                      onClick={(e) => handleDeleteSingle(camp.id, e)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                      title="Delete Campaign"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedReportCamp(camp);
+                      }}
+                      className="p-1 rounded-lg text-slate-400 hover:text-[#0e6de4] hover:bg-blue-50 transition-colors cursor-pointer"
+                      title="View Campaign Telemetry & Analytics"
                     >
-                      <Trash2 className="h-3.5 w-3.5 text-rose-500 hover:text-rose-700" />
+                      <BarChart2 className="h-3.5 w-3.5" />
                     </button>
+
+                    {/* Vertical Three-Dot Action Menu Trigger */}
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuCampId(openMenuCampId === camp.id ? null : camp.id);
+                        }}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          openMenuCampId === camp.id
+                            ? 'bg-slate-100 text-slate-800'
+                            : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                        }`}
+                        title="Campaign Actions"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+
+                      {/* Popover Action Menu */}
+                      {openMenuCampId === camp.id && (
+                        <div
+                          className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-white border border-slate-200 shadow-xl z-50 py-1 font-sans text-xs text-left"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={(e) => handleCopyCampaign(camp.id, e)}
+                            className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors font-medium cursor-pointer"
+                          >
+                            <Copy className="h-3.5 w-3.5 text-slate-400" />
+                            Copy Campaign
+                          </button>
+                          <button
+                            onClick={(e) => handleArchiveCampaign(camp.id, e)}
+                            className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors font-medium cursor-pointer"
+                          >
+                            <Archive className="h-3.5 w-3.5 text-slate-400" />
+                            Archive
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuCampId(null);
+                              router.push(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
+                            }}
+                            className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors font-medium cursor-pointer"
+                          >
+                            <Edit2 className="h-3.5 w-3.5 text-slate-400" />
+                            Edit
+                          </button>
+                          <div className="my-1 border-t border-slate-100" />
+                          <button
+                            onClick={(e) => {
+                              setOpenMenuCampId(null);
+                              handleDeleteSingle(camp.id, e);
+                            }}
+                            className="w-full text-left px-3 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors font-medium cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

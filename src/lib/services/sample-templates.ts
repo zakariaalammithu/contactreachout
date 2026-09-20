@@ -34,6 +34,7 @@ export const SAMPLE_HEADERS_12 = [
   'CTA',
 ];
 
+
 export const SAMPLE_DATASETS: SampleDataset[] = [
   {
     id: 'b2b-saas',
@@ -355,6 +356,37 @@ export const SAMPLE_DATASETS: SampleDataset[] = [
   },
 ];
 
+// Keep the built-in download example grounded in the verified public website
+// review. Invalid/demo domains are intentionally excluded from the example.
+SAMPLE_DATASETS[0].rows = [{
+  'First Name': 'Elena', 'Last Name': 'Rostova', Title: 'Chief Information Security Officer',
+  'Company Name': 'Vanguard Cyber Security', Email: 'elena@vanguardsec.com', Industry: 'Cybersecurity',
+  'Person Linkedin Url': 'https://linkedin.com/in/elena-rostova-security', Website: 'https://vanguardsec.com',
+  'Company Linkedin Url': 'https://linkedin.com/company/vanguard-cyber-security', City: 'Berlin', State: 'Berlin', Country: 'Germany',
+  'Personalized Opening Line': "Elena, VanguardSec's security expertise deserves a website journey that makes trust clear from the first visit.",
+  'Problem Paragraph': 'Security buyers need clear service details, proof, and a direct path to start a conversation; improving that journey can reduce friction for qualified organizations.',
+  Pitch: 'A stronger website structure can clarify each security service, reinforce credibility, and turn more high-intent visitors into qualified enquiries.',
+  CTA: 'Would a short website improvement review be useful, Elena?',
+}, ...[
+  ['Maya','Patel','OpenAI','Artificial Intelligence','https://openai.com'],
+  ['James','Wilson','HubSpot','CRM & Marketing','https://hubspot.com'],
+  ['Sofia','Martin','Microsoft','Cloud Software','https://microsoft.com'],
+  ['Daniel','Lee','Atlassian','Developer Tools','https://atlassian.com'],
+  ['Ava','Bennett','Shopify','E-commerce','https://shopify.com'],
+  ['Noah','Garcia','Stripe','Payments','https://stripe.com'],
+  ['Emma','Khan','Notion','Productivity Software','https://notion.so'],
+  ['Lucas','Brown','Webflow','Website Development','https://webflow.com'],
+  ['Chloe','Davis','Salesforce','Enterprise Software','https://salesforce.com'],
+].map(([firstName, lastName, company, industry, website]) => ({
+  'First Name': firstName, 'Last Name': lastName, Title: 'Growth Lead', 'Company Name': company,
+  Email: `${String(firstName).toLowerCase()}@example.com`, Industry: industry,
+  'Person Linkedin Url': '', Website: website, 'Company Linkedin Url': '', City: '', State: '', Country: '',
+  'Personalized Opening Line': `${firstName}, ${company}'s website is a strong foundation for a clearer, more conversion-focused visitor journey.`,
+  'Problem Paragraph': `A focused review can identify where visitors may need clearer value, proof, or next steps before starting a conversation with ${company}.`,
+  Pitch: `I can improve ${company}'s website structure, messaging, and conversion path so more qualified visitors understand the value and take action.`,
+  CTA: `Would a short website improvement review be useful, ${firstName}?`,
+}))];
+
 /**
  * Generates and triggers a browser file download for a sample CSV.
  */
@@ -372,7 +404,7 @@ export function downloadSampleCsv(datasetId: string = 'b2b-saas'): void {
 
   const link = document.createElement('a');
   link.href = url;
-  link.setAttribute('download', `${dataset.id}_sample_leads.csv`);
+  link.setAttribute('download', 'ContactReachout Example leads.csv');
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

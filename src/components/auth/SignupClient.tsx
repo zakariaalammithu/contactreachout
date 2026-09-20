@@ -91,9 +91,8 @@ export default function SignupClient() {
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <img src="/logo-128.png" alt="ContactReachout logo" width="40" height="40" className="h-10 w-10 object-contain" />
-            <span className="text-xl font-extrabold text-slate-950">ContactReachout</span>
+          <Link href="/" className="inline-flex items-center justify-center">
+            <img src="/brand/logo-full.png" alt="ContactReachout logo" width="190" height="42" className="h-10 w-auto max-w-[200px] object-contain" />
           </Link>
           <p className="text-xs text-slate-500 font-mono">
             Create your ContactReachout account

@@ -386,6 +386,43 @@ CREATE TABLE screenshots (
 CREATE INDEX idx_screenshots_submission ON screenshots(submission_id);
 ```
 
+### 3.14 Website analytics tables
+
+Dedicated first-party analytics storage added by `20260913000001_create_website_analytics.sql`. Browser visitor and session identifiers are stored as SHA-256 HMAC hashes.
+
+```sql
+CREATE TABLE website_analytics_visitors (
+    id TEXT PRIMARY KEY,
+    first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE website_analytics_sessions (
+    id TEXT PRIMARY KEY,
+    visitor_id TEXT NOT NULL REFERENCES website_analytics_visitors(id) ON DELETE CASCADE,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    referrer TEXT,
+    utm_source TEXT,
+    utm_medium TEXT,
+    utm_campaign TEXT,
+    source TEXT NOT NULL DEFAULT 'Direct',
+    country TEXT,
+    device TEXT NOT NULL DEFAULT 'Unknown',
+    browser TEXT NOT NULL DEFAULT 'Other'
+);
+
+CREATE TABLE website_analytics_page_views (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id TEXT NOT NULL REFERENCES website_analytics_sessions(id) ON DELETE CASCADE,
+    path TEXT NOT NULL,
+    viewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    engagement_ms INTEGER NOT NULL DEFAULT 0
+);
+```
+
+These tables use service-role-only access. RLS is enabled without public policies. The migration also provides `purge_website_analytics(retention_days)` with a minimum retention of 30 days.
+
 ---
 
 ## 4. Row-Level Security (RLS) Policies

@@ -68,8 +68,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
 
   const handleLogout = async () => {
     await fetch('/api/auth/signout', { method: 'POST' }).catch(() => undefined);
+    if (typeof window !== 'undefined') localStorage.removeItem('active_account_email');
     router.replace('/login?tab=signin');
-    router.refresh();
   };
 
   React.useEffect(() => {
@@ -103,15 +103,15 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5">
           <Link href="/campaigns" prefetch={true} className="flex items-center gap-2.5">
             <img
-              src="/logo-128.png"
+              src="/brand/logo-icon.png"
               alt="ContactReachout Logo"
               width="36"
               height="36"
-              className="h-9 w-9 object-contain shadow-md shadow-blue-500/20"
+              className="h-9 w-auto max-w-[36px] max-h-[36px] object-contain"
             />
             <div>
               <span className="text-base font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
-                ContactReachout <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-700 font-mono font-bold">PRO</span>
+                <span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span> <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-700 font-mono font-bold">PRO</span>
               </span>
               <p className="text-[10px] text-slate-400 font-mono">contactreachout.com</p>
             </div>

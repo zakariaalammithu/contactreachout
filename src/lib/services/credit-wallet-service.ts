@@ -8,6 +8,7 @@ import { PricingService } from './pricing-service';
 
 export interface CreditWallet {
   userId: string;
+  planName?: string;
   freeMonthlyCredits: number;
   freeMonthlyUsed: number;
   paidCredits: number;
@@ -41,6 +42,32 @@ const STORAGE_KEY_TRANSACTIONS = 'user_credit_transactions';
 
 export class CreditWalletService {
   /**
+   * Helper to check if current account or userId is an authorized Admin account
+   */
+  private static isAdminAccount(userId: string): boolean {
+    const lower = (userId || '').toLowerCase();
+    if (
+      lower.includes('superadmin') ||
+      lower.includes('admin') ||
+      lower.includes('mithusquare') ||
+      lower.includes('operator')
+    ) {
+      return true;
+    }
+    if (typeof window !== 'undefined') {
+      const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
+      if (
+        activeAccount === 'mithusquare@gmail.com' ||
+        activeAccount === 'operator@bulkreach.io' ||
+        activeAccount.includes('admin')
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Gets current period key (e.g., 'usr_default-2026-08')
    */
   private static getPeriodKey(userId: string): string {
@@ -55,13 +82,18 @@ export class CreditWalletService {
    * Performs idempotent monthly reset if period has changed.
    */
   public static getWallet(userId: string = 'usr_operator'): CreditWallet {
+    const isAdmin = this.isAdminAccount(userId);
+    const defaultMonthly = isAdmin ? 1000000 : 100;
+    const defaultPlan = isAdmin ? 'Admin / Internal' : 'Free';
+
     let wallet: CreditWallet = {
       userId,
-      freeMonthlyCredits: 100,
+      planName: defaultPlan,
+      freeMonthlyCredits: defaultMonthly,
       freeMonthlyUsed: 0,
       paidCredits: 0,
       bonusCredits: 0,
-      totalCreditsAvailable: 100,
+      totalCreditsAvailable: defaultMonthly,
       lifetimeCreditsPurchased: 0,
       lifetimeCreditsUsed: 0,
       freeCreditPeriodStart: new Date().toISOString(),
@@ -85,10 +117,10 @@ export class CreditWalletService {
             userId,
             transactionType: 'FREE_MONTHLY_GRANT',
             creditSource: 'FREE',
-            amount: 100,
+            amount: defaultMonthly,
             balanceBefore: 0,
-            balanceAfter: 100,
-            description: 'Initial Monthly 100 FREE Credits Grant',
+            balanceAfter: defaultMonthly,
+            description: isAdmin ? 'Admin / Internal High-Limit Credit Grant' : 'Initial Monthly 100 FREE Credits Grant',
             idempotencyKey: `init-grant-${wallet.lastResetPeriodKey}`,
             createdAt: new Date().toISOString(),
           });
@@ -102,6 +134,13 @@ export class CreditWalletService {
     const currentPeriodKey = this.getPeriodKey(userId);
     if (wallet.lastResetPeriodKey !== currentPeriodKey) {
       wallet = this.processMonthlyReset(wallet, currentPeriodKey);
+    }
+
+    if (isAdmin) {
+      wallet.planName = 'Admin / Internal';
+      wallet.freeMonthlyCredits = 1000000;
+    } else {
+      wallet.planName = wallet.planName || 'Free';
     }
 
     // Ensure total available is strictly calculated

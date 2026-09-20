@@ -178,20 +178,60 @@ export function interpolateTemplate(
   const country = context.country || context.custom_fields?.country || '';
 
   // Custom Fields (CUSTOM 1 through 10 / custom_1..10)
-  const getCustomVal = (num: number) => {
-    const c = context.custom_fields || {};
-    return (
-      c[`custom_${num}`] ||
-      c[`custom${num}`] ||
-      c[`CUSTOM ${num}`] ||
-      c[`CUSTOM_${num}`] ||
-      (num === 1 ? c.personalizedOpeningLine || c.icebreaker : '') ||
-      (num === 2 ? c.problemParagraph : '') ||
-      (num === 3 ? c.pitch : '') ||
-      (num === 4 ? c.cta : '') ||
-      ''
-    );
+  const getCustomVal = (num: number): string => {
+    const c = (context.custom_fields || context.customFields || {}) as Record<string, any>;
+    const targetKeyNorm = `custom${num}`;
+
+    // 1. Direct check on context properties
+    for (const [key, val] of Object.entries(context)) {
+      if (key === 'custom_fields' || key === 'customFields') continue;
+      if (val !== undefined && val !== null && String(val) !== 'undefined' && String(val) !== 'null') {
+        const norm = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (norm === targetKeyNorm) {
+          return String(val);
+        }
+      }
+    }
+
+    // 2. Check on custom_fields / customFields object
+    if (typeof c === 'object' && c !== null) {
+      for (const [key, val] of Object.entries(c)) {
+        if (val !== undefined && val !== null && String(val) !== 'undefined' && String(val) !== 'null') {
+          const norm = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (norm === targetKeyNorm) {
+            return String(val);
+          }
+        }
+      }
+    }
+
+    // 3. Fallbacks for AI fields 1..4
+    if (num === 1) {
+      const val = context.personalizedOpeningLine || context.icebreaker || c.personalizedOpeningLine || c.icebreaker;
+      if (val) return String(val);
+    }
+    if (num === 2) {
+      const val = context.problemParagraph || c.problemParagraph;
+      if (val) return String(val);
+    }
+    if (num === 3) {
+      const val = context.pitch || c.pitch;
+      if (val) return String(val);
+    }
+    if (num === 4) {
+      const val = context.cta || c.cta;
+      if (val) return String(val);
+    }
+
+    return '';
   };
+
+  const phone = context.phone || context.custom_fields?.phone || context.customFields?.phone || '';
+  const title = context.title || context.jobPosition || context.custom_fields?.title || context.customFields?.title || '';
+  const location = context.location || [city, state, country].filter(Boolean).join(', ');
+  const personLinkedinUrl = context.personLinkedinUrl || context.custom_fields?.personLinkedinUrl || context.customFields?.personLinkedinUrl || '';
+  const companyLinkedinUrl = context.companyLinkedinUrl || context.custom_fields?.companyLinkedinUrl || context.customFields?.companyLinkedinUrl || '';
+  const companySize = context.companySize || context.custom_fields?.companySize || context.customFields?.companySize || '';
 
   // Map of normalized lowercase tags
   const tagMap: Record<string, string> = {
@@ -216,52 +256,69 @@ export function interpolateTemplate(
     company_name: company,
     'company name': company,
 
-    // Email
+    // Lead Standard Fields
     email: String(email),
     website: String(website),
     industry: String(industry),
     city: String(city),
     state: String(state),
     country: String(country),
+    phone: String(phone),
+    title: String(title),
+    job_position: String(title),
+    jobposition: String(title),
+    'job position': String(title),
+    location: String(location),
+    person_linkedin_url: String(personLinkedinUrl),
+    personallinkedin: String(personLinkedinUrl),
+    personal_linkedin: String(personLinkedinUrl),
+    'personal linkedin': String(personLinkedinUrl),
+    company_linkedin_url: String(companyLinkedinUrl),
+    companylinkedin: String(companyLinkedinUrl),
+    company_linkedin: String(companyLinkedinUrl),
+    'company linkedin': String(companyLinkedinUrl),
+    company_size: String(companySize),
+    companysize: String(companySize),
+    'company size': String(companySize),
 
-    // Custom lines
-    custom1: String(getCustomVal(1)),
-    custom_1: String(getCustomVal(1)),
-    'custom 1': String(getCustomVal(1)),
-    custom2: String(getCustomVal(2)),
-    custom_2: String(getCustomVal(2)),
-    'custom 2': String(getCustomVal(2)),
-    custom3: String(getCustomVal(3)),
-    custom_3: String(getCustomVal(3)),
-    'custom 3': String(getCustomVal(3)),
-    custom4: String(getCustomVal(4)),
-    custom_4: String(getCustomVal(4)),
-    'custom 4': String(getCustomVal(4)),
-    custom5: String(getCustomVal(5)),
-    custom_5: String(getCustomVal(5)),
-    'custom 5': String(getCustomVal(5)),
-    custom6: String(getCustomVal(6)),
-    custom_6: String(getCustomVal(6)),
-    'custom 6': String(getCustomVal(6)),
-    custom7: String(getCustomVal(7)),
-    custom_7: String(getCustomVal(7)),
-    'custom 7': String(getCustomVal(7)),
-    custom8: String(getCustomVal(8)),
-    custom_8: String(getCustomVal(8)),
-    'custom 8': String(getCustomVal(8)),
-    custom9: String(getCustomVal(9)),
-    custom_9: String(getCustomVal(9)),
-    'custom 9': String(getCustomVal(9)),
-    custom10: String(getCustomVal(10)),
-    custom_10: String(getCustomVal(10)),
-    'custom 10': String(getCustomVal(10)),
+    // Custom Fields (Custom 1..10)
+    custom1: getCustomVal(1),
+    custom_1: getCustomVal(1),
+    'custom 1': getCustomVal(1),
+    custom2: getCustomVal(2),
+    custom_2: getCustomVal(2),
+    'custom 2': getCustomVal(2),
+    custom3: getCustomVal(3),
+    custom_3: getCustomVal(3),
+    'custom 3': getCustomVal(3),
+    custom4: getCustomVal(4),
+    custom_4: getCustomVal(4),
+    'custom 4': getCustomVal(4),
+    custom5: getCustomVal(5),
+    custom_5: getCustomVal(5),
+    'custom 5': getCustomVal(5),
+    custom6: getCustomVal(6),
+    custom_6: getCustomVal(6),
+    'custom 6': getCustomVal(6),
+    custom7: getCustomVal(7),
+    custom_7: getCustomVal(7),
+    'custom 7': getCustomVal(7),
+    custom8: getCustomVal(8),
+    custom_8: getCustomVal(8),
+    'custom 8': getCustomVal(8),
+    custom9: getCustomVal(9),
+    custom_9: getCustomVal(9),
+    'custom 9': getCustomVal(9),
+    custom10: getCustomVal(10),
+    custom_10: getCustomVal(10),
+    'custom 10': getCustomVal(10),
 
     // Icebreaker aliases
-    icebreaker: String(getCustomVal(1)),
-    personalizedopeningline: String(getCustomVal(1)),
-    problemparagraph: String(getCustomVal(2)),
-    pitch: String(getCustomVal(3)),
-    cta: String(getCustomVal(4)),
+    icebreaker: getCustomVal(1),
+    personalizedopeningline: getCustomVal(1),
+    problemparagraph: getCustomVal(2),
+    pitch: getCustomVal(3),
+    cta: getCustomVal(4),
   };
 
   // 2. Replace {{token}} or {token}
@@ -278,10 +335,11 @@ export function interpolateTemplate(
       return String(context[rawInner]);
     }
 
-    if (context.custom_fields) {
-      if (rawInner in context.custom_fields && context.custom_fields[rawInner] != null) {
-        return String(context.custom_fields[rawInner]);
-      }
+    if (context.custom_fields && rawInner in context.custom_fields && context.custom_fields[rawInner] != null) {
+      return String(context.custom_fields[rawInner]);
+    }
+    if (context.customFields && rawInner in context.customFields && context.customFields[rawInner] != null) {
+      return String(context.customFields[rawInner]);
     }
 
     return options.fallbackPlaceholder !== undefined ? options.fallbackPlaceholder : '';

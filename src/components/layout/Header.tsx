@@ -27,9 +27,10 @@ import {
 
 interface HeaderProps {
   onOpenMobileMenu: () => void;
+  initialUserProfile?: { name: string; email: string };
 }
 
-export function Header({ onOpenMobileMenu }: HeaderProps) {
+export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,27 +56,24 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
     allRawRows: [],
   });
 
-  const [userProfile, setUserProfile] = useState<{ name: string; email: string }>({
+  const [userProfile, setUserProfile] = useState<{ name: string; email: string }>(initialUserProfile || {
     name: 'ContactReachout Team',
     email: 'hello@contactreachout.com',
   });
 
   const handleSignOut = async () => {
     await fetch('/api/auth/signout', { method: 'POST' }).catch(() => undefined);
+    if (typeof window !== 'undefined') localStorage.removeItem('active_account_email');
     setUserMenuOpen(false);
     router.replace('/login?tab=signin');
-    router.refresh();
   };
 
   useEffect(() => {
-    fetch('/api/auth/session', { cache: 'no-store' }).then(response => response.json()).then(data => {
-      if (data.user) setUserProfile({ name: data.user.name, email: data.user.email });
-    }).catch(() => undefined);
     fetch('/api/notifications', { cache: 'no-store' }).then(response => response.json()).then(data => setNotifications(data.notifications || [])).catch(() => undefined);
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem('user_sender_profile');
-        if (stored) {
+        if (stored && !initialUserProfile) {
           const parsed = JSON.parse(stored);
           setUserProfile({
             name: parsed.name || 'ContactReachout Team',
@@ -148,9 +146,14 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
   const handleCreateCampaignSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const finalName = inputCampaignName.trim() || `Campaign ${new Date().toLocaleDateString()}`;
+    const now = new Date().toISOString();
+    const id = `campaign-${Date.now()}`;
+    const campaigns = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+    campaigns.unshift({ id, name: finalName, tag: 'CUSTOM', status: 'draft', createdAt: now, updatedAt: now, selectedListId: '', prospectsList: [], sequences: [], isDryRun: true, rateLimitPerMinute: 10, maxConcurrency: 5, sentCount: 0, failedCount: 0, noFormCount: 0, captchaCount: 0 });
+    localStorage.setItem('user_campaigns', JSON.stringify(campaigns));
     setShowNameModal(false);
     setInputCampaignName('');
-    router.push(`/campaigns/new?name=${encodeURIComponent(finalName)}`);
+    router.push(`/campaigns/new?edit=${encodeURIComponent(id)}`);
   };
 
   return (
@@ -196,40 +199,12 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
           className="hidden"
         />
 
-        <Link
-          href="/campaigns/new"
-          id="header-create-campaign-btn"
-          className="bg-[#0e6de4] hover:bg-[#0758bd] text-white font-bold text-xs shadow-md rounded-xl px-4 py-2 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
-        >
-          <Plus className="h-4 w-4 text-white stroke-[2.5]" />
-          <span>Create Campaign</span>
-        </Link>
-
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleImportLeadsClick}
-          className="bg-[#0e6de4] hover:bg-[#0758bd] text-white font-bold text-xs shadow-md rounded-xl px-4 py-2 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
-        >
-          <Upload className="h-4 w-4 text-white" />
-          <span>Import Leads File</span>
-        </Button>
-
         {pathname.startsWith('/campaigns/new') && (
           <div className="flex items-center gap-2 rounded-xl border border-dashed border-blue-300 bg-blue-50/60 px-3.5 py-1.5 text-xs font-bold text-blue-800 shadow-2xs">
             <span className="text-[10px] uppercase font-mono text-blue-500 font-bold">Campaign Name:</span>
-            <input
-              type="text"
-              value={currentHeaderCampName}
-              placeholder="e.g. SaaS Outreach Q3"
-              className="bg-transparent font-bold text-blue-950 outline-none text-xs w-32 sm:w-44 focus:w-56 transition-all font-sans"
-              onChange={(e) => {
-                setCurrentHeaderCampName(e.target.value);
-                if (typeof window !== 'undefined') {
-                  window.dispatchEvent(new CustomEvent('campaign_name_updated', { detail: e.target.value }));
-                }
-              }}
-            />
+            <span className="font-bold text-blue-950 text-xs font-sans max-w-[200px] truncate">
+              {currentHeaderCampName || 'New campaign'}
+            </span>
           </div>
         )}
 

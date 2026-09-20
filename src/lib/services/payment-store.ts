@@ -21,6 +21,10 @@ export class PaymentStore {
 
   static get(sessionId: string) { return payments.get(sessionId) || null; }
 
+  static list(): PaymentRecord[] {
+    return [...payments.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
   static markPaid(sessionId: string) {
     const payment = payments.get(sessionId);
     if (!payment) return null;

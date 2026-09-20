@@ -7,7 +7,7 @@ import { SessionManager } from '@/lib/auth/session';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, code } = body;
+    const { email, code, next } = body;
 
     if (!email || !code || code.trim().length !== 6) {
       return NextResponse.json({ error: 'Email and valid 6-digit code are required.' }, { status: 400 });
@@ -47,7 +47,9 @@ export async function POST(req: Request) {
     const session = AuthStore.createSession(user.id, user.email, user.role);
 
     // Determine redirect destination based on RBAC role
-    const redirectTo = (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') ? '/admin' : '/dashboard';
+    const isAdminRole = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
+    const requestedNext = typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') && (!next.startsWith('/admin') || isAdminRole) ? next : undefined;
+    const redirectTo = requestedNext || (isAdminRole ? '/admin' : '/dashboard');
 
     // 4. Set HTTP-only session cookie
     const res = NextResponse.json({

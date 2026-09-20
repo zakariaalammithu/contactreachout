@@ -26,6 +26,14 @@ import {
   ArrowUpRight,
   ShieldAlert,
   Bell,
+  BarChart3,
+  TrendingUp,
+  Compass,
+  UserPlus,
+  CreditCard,
+  DollarSign,
+  Receipt,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,12 +54,30 @@ const navSections: NavSection[] = [
   {
     title: 'ADMIN',
     items: [
-      { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-      { name: 'Users', href: '/admin/users', icon: Users, badge: '3', badgeColor: 'bg-indigo-100 text-indigo-800' },
-      { name: 'Notifications', href: '/admin/notifications', icon: Bell },
-      { name: 'Campaigns', href: '/admin/campaigns', icon: Send },
+      { name: 'Overview', href: '/admin', icon: LayoutDashboard },
+      { name: 'My Campaigns', href: '/admin/my-campaigns', icon: Send },
+      { name: 'Users', href: '/admin/users', icon: Users },
+      { name: 'Campaigns', href: '/admin/campaigns', icon: Layers },
       { name: 'Leads', href: '/admin/leads', icon: Database },
       { name: 'Submissions', href: '/admin/submissions', icon: FileCheck },
+      { name: 'Notifications', href: '/admin/notifications', icon: Bell },
+    ],
+  },
+  {
+    title: 'ANALYTICS',
+    items: [
+      { name: 'Website Visitors', href: '/admin/website-visitors', icon: BarChart3 },
+      { name: 'Traffic Sources', href: '/admin/analytics/traffic-sources', icon: Compass },
+      { name: 'User Growth', href: '/admin/analytics/user-growth', icon: UserPlus },
+      { name: 'Usage & Credits', href: '/admin/credits', icon: TrendingUp },
+    ],
+  },
+  {
+    title: 'BILLING',
+    items: [
+      { name: 'Transactions', href: '/admin/billing/transactions', icon: Receipt },
+      { name: 'Revenue', href: '/admin/billing/revenue', icon: DollarSign },
+      { name: 'Credit Rules', href: '/admin/credits/rules', icon: CreditCard },
     ],
   },
   {
@@ -70,21 +96,15 @@ const navSections: NavSection[] = [
       { name: 'Queue & Workers', href: '/admin/system/queue', icon: Layers, badge: 'Online', badgeColor: 'bg-emerald-100 text-emerald-800' },
       { name: 'Browser Automation', href: '/admin/system/browser', icon: Globe },
       { name: 'Campaign Settings', href: '/admin/system/campaigns', icon: Sliders },
-      { name: 'Security', href: '/admin/security', icon: Shield },
-      { name: 'System Settings', href: '/admin/settings', icon: Settings },
-    ],
-  },
-  {
-    title: 'MONITORING',
-    items: [
-      { name: 'Logs & Audit', href: '/admin/logs', icon: ScrollText },
       { name: 'System Health', href: '/admin/system/health', icon: Activity, badge: 'Healthy', badgeColor: 'bg-emerald-100 text-emerald-800' },
     ],
   },
   {
-    title: 'ACCOUNT',
+    title: 'SECURITY / SETTINGS',
     items: [
-      { name: 'Admin Profile', href: '/admin/profile', icon: UserCheck },
+      { name: 'Configure Secrets', href: '/admin/security', icon: KeyRound },
+      { name: 'Emergency Controls', href: '/admin/settings', icon: Shield },
+      { name: 'Audit Logs', href: '/admin/logs', icon: ScrollText },
     ],
   },
 ];
@@ -98,10 +118,10 @@ export function AdminSidebar() {
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 pt-1">
           <Link href="/admin" className="flex items-center gap-2.5">
-            <img src="/logo-128.png" alt="ContactReachout logo" width="32" height="32" className="h-8 w-8 shrink-0 object-contain shadow-sm" />
+            <img src="/brand/logo-icon.png" alt="ContactReachout logo" width="32" height="32" className="h-8 w-auto max-w-[32px] max-h-[32px] shrink-0 object-contain" />
             <div>
               <div className="font-extrabold tracking-tight text-slate-900 flex items-center gap-1.5 text-sm">
-                ContactReachout <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-[#0e6de4] font-mono font-bold">SUPER ADMIN</span>
+                <span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span> <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-[#0e6de4] font-mono font-bold">SUPER ADMIN</span>
               </div>
               <p className="text-[10px] text-slate-400 font-mono">Enterprise Control</p>
             </div>

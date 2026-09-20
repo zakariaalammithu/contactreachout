@@ -64,6 +64,7 @@ export interface Lead {
 export interface LeadList {
   id: string;
   name: string;
+  ownerEmail?: string;
   fileName: string;
   totalLeads: number;
   columns: string[];
@@ -77,7 +78,10 @@ export interface CampaignSequenceStep {
   subject: string;
   body: string;
   delayDays: number;
+  delayUnit?: 'days' | 'weeks';
   condition: string;
+  date?: string;
+  replyInThread?: boolean;
 }
 
 export interface Campaign {
