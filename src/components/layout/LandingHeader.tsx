@@ -6,7 +6,6 @@ import { ArrowRight, Menu, X } from 'lucide-react';
 
 const navigation = [
   { label: 'How It Works', href: '/#how-it-works' },
-  { label: 'Services', href: '/#features' },
   { label: 'Integrations', href: '/#integrations' },
   { label: 'Features', href: '/#features' },
   { label: 'Benefits', href: '/benefits' },

@@ -267,32 +267,58 @@ export default function CampaignsPage() {
     return () => window.removeEventListener('click', handleClickOutside);
   }, [openMenuCampId]);
 
-  // Load custom campaigns from localStorage & handle deleted IDs
+  const [currentUser, setCurrentUser] = useState<{ email: string; role: string } | null>(null);
+
+  // Load custom campaigns from session & localStorage with strict user isolation
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    async function loadSessionAndCampaigns() {
+      if (typeof window === 'undefined') return;
+
+      let userEmail = (localStorage.getItem('active_account_email') || '').toLowerCase();
+      let userRole = 'USER';
+
+      try {
+        const res = await fetch('/api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            userEmail = (data.user.email || '').toLowerCase();
+            userRole = data.user.role || 'USER';
+            setCurrentUser({ email: userEmail, role: userRole });
+          }
+        }
+      } catch (e) {
+        console.error('Session fetch error in campaigns:', e);
+      }
+
+      const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userEmail === 'mithusquare@gmail.com';
+
       try {
         const deletedIdsStr = localStorage.getItem('user_deleted_campaign_ids');
         const deletedIds: string[] = deletedIdsStr ? JSON.parse(deletedIdsStr) : [];
 
-        const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
         const stored = localStorage.getItem('user_campaigns');
+        let mappedUserCamps: CampaignItem[] = [];
+
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const mappedUserCamps: CampaignItem[] = parsed
+          if (Array.isArray(parsed)) {
+            mappedUserCamps = parsed
               .filter((c: any) => {
                 if (deletedIds.includes(c.id)) return false;
-                if (activeAccount && c.ownerEmail) {
-                  return c.ownerEmail.toLowerCase() === activeAccount;
+                if (!isAdmin) {
+                  // Normal User: strictly require owner match if ownerEmail exists
+                  if (c.ownerEmail && c.ownerEmail.toLowerCase() !== userEmail) return false;
                 }
                 return true;
               })
               .map((c: any) => {
-                const total = c.prospectsList ? c.prospectsList.length : (c.totalLeads || 0);
-                const sent = typeof c.sentCount === 'number' ? c.sentCount : 0;
-                const failed = c.failedCount || 0;
-                const noForm = c.noFormCount || 0;
-                const captcha = c.captchaCount || 0;
+                const total = Array.isArray(c.prospectsList) ? c.prospectsList.length : typeof c.totalLeads === 'number' ? c.totalLeads : typeof c.prospects === 'number' ? c.prospects : 0;
+                const sent = typeof c.sentCount === 'number' ? c.sentCount : typeof c.reached === 'number' ? c.reached : 0;
+                const failed = typeof c.failedCount === 'number' ? c.failedCount : typeof c.failed === 'number' ? c.failed : 0;
+                const noForm = typeof c.noFormCount === 'number' ? c.noFormCount : typeof c.noContactPage === 'number' ? c.noContactPage : 0;
+                const captcha = typeof c.captchaCount === 'number' ? c.captchaCount : typeof c.captchaBlocked === 'number' ? c.captchaBlocked : 0;
+                const replied = typeof c.repliedCount === 'number' ? c.repliedCount : typeof c.replied === 'number' ? c.replied : 0;
                 return {
                   id: c.id,
                   name: c.name,
@@ -301,7 +327,7 @@ export default function CampaignsPage() {
                     month: 'short',
                     year: 'numeric',
                   }),
-                  sendersCount: 3,
+                  sendersCount: typeof c.sendersCount === 'number' ? c.sendersCount : 3,
                   tag: c.tag || 'CUSTOM',
                   status: c.status === 'running' || c.status === 'active' ? 'active' : c.status === 'paused' ? 'paused' : c.status === 'archived' ? 'archived' : 'draft',
                   prospects: total,
@@ -310,21 +336,31 @@ export default function CampaignsPage() {
                   noContactPage: noForm,
                   captchaBlocked: captcha,
                   reachedPercent: total > 0 ? Math.round((sent / total) * 100) : 0,
-                  replied: 0,
+                  replied,
                 };
               });
-            setCampaigns(mappedUserCamps);
-            return;
           }
         }
 
-        // If no user campaigns, load filtered initial mock list
-        const filteredInitial = initialCampaignsList.filter((c) => !deletedIds.includes(c.id));
-        setCampaigns(filteredInitial);
+        if (isAdmin) {
+          // Authorized Admin: Combine custom campaigns with platform initial campaigns (if not deleted)
+          const filteredInitial = initialCampaignsList.filter((c) => !deletedIds.includes(c.id));
+          const customIds = new Set(mappedUserCamps.map((c) => c.id));
+          const combined = [
+            ...mappedUserCamps,
+            ...filteredInitial.filter((c) => !customIds.has(c.id)),
+          ];
+          setCampaigns(combined);
+        } else {
+          // Normal User: ONLY show their own custom campaigns (or empty list if none)
+          setCampaigns(mappedUserCamps);
+        }
       } catch (err) {
         console.error('Error reading campaigns in page:', err);
       }
     }
+
+    loadSessionAndCampaigns();
   }, []);
 
   // Active Campaign Safety Pacing Worker Simulation Ticker (5-second pacing interval)
@@ -361,50 +397,41 @@ export default function CampaignsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Tech Stack Detector Helper
-  const getTechStackForUrl = (url: string, index: number) => {
-    const lower = url.toLowerCase();
-    if (lower.includes('b2bgdc')) return 'React / Next.js (Supabase)';
-    if (index % 5 === 0) return 'WordPress (CF7 / Elementor)';
-    if (index % 5 === 1) return 'React / Next.js SPA';
-    if (index % 5 === 2) return 'Webflow';
-    if (index % 5 === 3) return 'Shopify';
-    return 'HTML5 / Custom';
-  };
-
-  // Domain Age & Registration Date Intelligence Helper (100% Official ICANN RDAP/WHOIS Live Data)
-  const getDomainAgeForUrl = (url: string, index: number) => {
-    if (url.includes('b2bgdc')) return 'Registered: 19 Jul 2022 (ICANN RDAP Official WHOIS)';
-    return `Registered: ICANN WHOIS Record Verified`;
-  };
-
-  // Last Website Edit Date Intelligence Helper (Extracted from Server HTTP Handshake Headers)
-  const getLastUpdatedForUrl = (url: string, index: number) => {
-    if (url.includes('b2bgdc')) return 'Last Modified: 19 May 2026 (Live Server Header)';
-    return `Last Modified: Live Server Response Header`;
-  };
-
-  // Generate Campaign-Specific Prospect Audit Logs with Tech Stack & Website Age Intelligence
+  // Generate Campaign-Specific Prospect Audit Logs from actual raw campaign/lead records
   const getCampaignAuditLogs = (camp: CampaignItem) => {
     if (typeof window !== 'undefined') {
       try {
-        const storedLeads = localStorage.getItem('user_imported_leads');
-        if (storedLeads) {
-          const parsed = JSON.parse(storedLeads);
-          if (Array.isArray(parsed) && parsed.length > 0 && camp.id.startsWith('camp-')) {
-            return parsed.slice(0, 15).map((ld: any, i: number) => {
+        const stored = localStorage.getItem('user_campaigns');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const rawCamp = parsed.find((c: any) => c.id === camp.id);
+          
+          // Check if campaign has actual recorded telemetry logs
+          if (rawCamp && Array.isArray(rawCamp.logs) && rawCamp.logs.length > 0) {
+            return rawCamp.logs.map((log: any, i: number) => ({
+              domain: log.domain || log.website || 'N/A',
+              url: log.url || log.contactUrl || 'N/A',
+              techStack: log.techStack || log.cms || 'Not detected',
+              domainAge: log.domainAge || log.domain_registration || 'N/A',
+              lastUpdated: log.lastUpdated || log.last_modified || 'N/A',
+              status: log.status || 'PENDING',
+              code: log.code || log.diagnostic || 'N/A',
+              time: log.time || log.timestamp || `${i * 3 + 1} mins ago`,
+            }));
+          }
+
+          // Check if campaign has prospect list records
+          if (rawCamp && Array.isArray(rawCamp.prospectsList) && rawCamp.prospectsList.length > 0) {
+            return rawCamp.prospectsList.map((ld: any, i: number) => {
               const isDelivered = i < camp.reached;
               const isFailed = !isDelivered && i < camp.reached + (camp.failed || 0);
               const isNoForm = !isDelivered && !isFailed && i < camp.reached + (camp.failed || 0) + (camp.noContactPage || 0);
-              
-              const rawDomain = ld.website || ld.domain || `target-prospect-${i + 1}.com`;
-              const cleanDomain = rawDomain.replace(/^https?:\/\//, '').replace(/\/$/, '');
-              const domain = `https://${cleanDomain}`;
-              const contactUrl = `${domain}/contact`;
-              const techStack = getTechStackForUrl(domain, i);
-              const domainAge = getDomainAgeForUrl(domain, i);
-              const lastUpdated = getLastUpdatedForUrl(domain, i);
-              
+              const isCaptcha = !isDelivered && !isFailed && !isNoForm && i < camp.reached + (camp.failed || 0) + (camp.noContactPage || 0) + (camp.captchaBlocked || 0);
+
+              const rawDomain = ld.website || ld.domain || '';
+              const domain = rawDomain ? (rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`) : 'N/A';
+              const contactUrl = ld.contactUrl || (domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A');
+
               let status = 'DELIVERED';
               let code = 'HTTP 200 - Form Submitted Successfully';
               if (isFailed) {
@@ -413,6 +440,9 @@ export default function CampaignsPage() {
               } else if (isNoForm) {
                 status = 'NO_CONTACT_PAGE';
                 code = 'No HTML contact form DOM element found';
+              } else if (isCaptcha) {
+                status = 'CAPTCHA_REVIEW';
+                code = 'reCAPTCHA challenge - Sent to Review Queue';
               } else if (!isDelivered) {
                 status = 'PENDING';
                 code = 'Queued in pacing worker line';
@@ -421,71 +451,32 @@ export default function CampaignsPage() {
               return {
                 domain,
                 url: contactUrl,
-                techStack,
-                domainAge,
-                lastUpdated,
+                techStack: ld.techStack || ld.cms || 'Not detected',
+                domainAge: ld.domainAge || ld.domain_registration || 'N/A',
+                lastUpdated: ld.lastUpdated || ld.last_modified || 'N/A',
                 status,
                 code,
-                time: `${i * 3 + 1} mins ago`,
+                time: ld.time || ld.timestamp || `${i * 3 + 1} mins ago`,
               };
             });
           }
         }
       } catch (e) {
-        // fallback
+        console.error('Error loading audit logs:', e);
       }
     }
 
-    // Generate realistic campaign-specific audit logs derived from campaign name & telemetry
-    const cleanBaseName = (camp?.name || 'campaign').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').slice(0, 20);
-    const total = Math.min(12, camp.prospects || 5);
-    const logs = [];
-
-    for (let i = 0; i < total; i++) {
-      const isDelivered = i < Math.min(total, camp.reached || 1);
-      const isFailed = !isDelivered && i < (camp.reached || 0) + (camp.failed || 0);
-      const isNoForm = !isDelivered && !isFailed && i < (camp.reached || 0) + (camp.failed || 0) + (camp.noContactPage || 0);
-      const isCaptcha = !isDelivered && !isFailed && !isNoForm && i < (camp.reached || 0) + (camp.failed || 0) + (camp.noContactPage || 0) + (camp.captchaBlocked || 0);
-
-      const domain = `https://${cleanBaseName}-${i + 1}.com`;
-      const contactUrl = `${domain}/contact-us`;
-      const techStack = getTechStackForUrl(domain, i);
-      const domainAge = getDomainAgeForUrl(domain, i);
-      const lastUpdated = getLastUpdatedForUrl(domain, i);
-
-      let status = 'DELIVERED';
-      let code = 'HTTP 200 - Form Submitted Successfully';
-      if (isFailed) {
-        status = 'FAILED';
-        code = 'HTTP 500 - Target Form POST Rejected';
-      } else if (isNoForm) {
-        status = 'NO_CONTACT_PAGE';
-        code = 'No public contact page / form detected';
-      } else if (isCaptcha) {
-        status = 'CAPTCHA_REVIEW';
-        code = 'reCAPTCHA v3 challenge - Sent to Review Queue';
-      } else {
-        status = 'PENDING';
-        code = 'Queued for pacing worker dispatch';
-      }
-
-      logs.push({
-        domain,
-        url: contactUrl,
-        techStack,
-        domainAge,
-        lastUpdated,
-        status,
-        code,
-        time: `${i * 4 + 2} mins ago`,
-      });
-    }
-
-    return logs;
+    // No actual prospect/telemetry records found for this campaign
+    return [];
   };
 
-  // Export Dedicated Single Campaign CSV Report with Flat Horizontal Excel Columns (A through S)
+  // Export Dedicated Single Campaign CSV Report with Flat Horizontal Excel Columns (19 Columns)
   const handleExportSingleCampaignCSV = (camp: CampaignItem) => {
+    if (!isActionAuthorized(camp.id)) {
+      alert('Unauthorized: You do not have permission to export telemetry for this campaign.');
+      return;
+    }
+
     const auditLogs = getCampaignAuditLogs(camp);
     const delivered = camp.reached || 0;
     const failed = camp.failed || 0;
@@ -516,29 +507,51 @@ export default function CampaignsPage() {
       'Timestamp',
     ];
 
-    const tableRows = auditLogs.map((log) => [
-      `"${camp.name.replace(/"/g, '""')}"`,
-      `"${camp.id}"`,
-      `"${camp.date}"`,
-      `"${camp.status.toUpperCase()}"`,
-      camp.prospects,
-      delivered,
-      failed,
-      noPage,
-      captcha,
-      pending,
-      `"${yieldPct}%"`,
-      `"${log.domain}"`,
-      `"${log.url}"`,
-      `"${log.techStack}"`,
-      `"${log.domainAge}"`,
-      `"${log.lastUpdated}"`,
-      `"${log.status}"`,
-      `"${log.code.replace(/"/g, '""')}"`,
-      `"${log.time}"`,
-    ]);
+    const tableRows = auditLogs.length > 0
+      ? auditLogs.map((log: any) => [
+          `"${camp.name.replace(/"/g, '""')}"`,
+          `"${camp.id}"`,
+          `"${camp.date}"`,
+          `"${camp.status.toUpperCase()}"`,
+          camp.prospects,
+          delivered,
+          failed,
+          noPage,
+          captcha,
+          pending,
+          `"${yieldPct}%"`,
+          `"${log.domain}"`,
+          `"${log.url}"`,
+          `"${log.techStack}"`,
+          `"${log.domainAge}"`,
+          `"${log.lastUpdated}"`,
+          `"${log.status}"`,
+          `"${log.code.replace(/"/g, '""')}"`,
+          `"${log.time}"`,
+        ])
+      : [[
+          `"${camp.name.replace(/"/g, '""')}"`,
+          `"${camp.id}"`,
+          `"${camp.date}"`,
+          `"${camp.status.toUpperCase()}"`,
+          camp.prospects,
+          delivered,
+          failed,
+          noPage,
+          captcha,
+          pending,
+          `"${yieldPct}%"`,
+          '"N/A"',
+          '"N/A"',
+          '"Not detected"',
+          '"N/A"',
+          '"N/A"',
+          '"N/A"',
+          '"No website audit records found for this campaign"',
+          '"N/A"',
+        ]];
 
-    const csvContent = `${tableHeaders.join(',')}\n${tableRows.map((r) => r.join(',')).join('\n')}`;
+    const csvContent = `${tableHeaders.join(',')}\n${tableRows.map((r: any) => r.join(',')).join('\n')}`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -602,6 +615,29 @@ export default function CampaignsPage() {
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
+  const isActionAuthorized = (campId: string) => {
+    if (!currentUser) return true;
+    const isAdmin = currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'ADMIN' || currentUser.email === 'mithusquare@gmail.com';
+    if (isAdmin) return true;
+
+    try {
+      const stored = localStorage.getItem('user_campaigns');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const camp = parsed.find((c: any) => c.id === campId);
+        if (camp && camp.ownerEmail && camp.ownerEmail.toLowerCase() !== currentUser.email.toLowerCase()) {
+          return false;
+        }
+      }
+    } catch (e) {}
+
+    if (initialCampaignsList.some((c) => c.id === campId)) {
+      return false;
+    }
+
+    return true;
+  };
+
   const toggleSelectAll = () => {
     if (selectedIds.length === filtered.length && filtered.length > 0) {
       setSelectedIds([]);
@@ -616,6 +652,10 @@ export default function CampaignsPage() {
 
   const toggleCampaignStatus = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isActionAuthorized(id)) {
+      alert('Unauthorized: You can only modify campaigns that belong to your account.');
+      return;
+    }
     setCampaigns((prev) =>
       prev.map((c) => {
         if (c.id === id) {
@@ -666,6 +706,10 @@ export default function CampaignsPage() {
   // Single Row Delete Handler
   const handleDeleteSingle = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isActionAuthorized(id)) {
+      alert('Unauthorized: You can only delete campaigns that belong to your account.');
+      return;
+    }
     const campToDelete = campaigns.find((c) => c.id === id);
     if (window.confirm(`Are you sure you want to delete campaign "${campToDelete?.name || id}"?`)) {
       const remaining = campaigns.filter((c) => c.id !== id);
@@ -696,6 +740,10 @@ export default function CampaignsPage() {
   const handleCopyCampaign = (campId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setOpenMenuCampId(null);
+    if (!isActionAuthorized(campId)) {
+      alert('Unauthorized: You can only copy campaigns that belong to your account.');
+      return;
+    }
 
     const targetCamp = campaigns.find((c) => c.id === campId);
     if (!targetCamp) return;
@@ -776,6 +824,10 @@ export default function CampaignsPage() {
   const handleArchiveCampaign = (campId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setOpenMenuCampId(null);
+    if (!isActionAuthorized(campId)) {
+      alert('Unauthorized: You can only archive campaigns that belong to your account.');
+      return;
+    }
 
     setCampaigns((prev) =>
       prev.map((c) => (c.id === campId ? { ...c, status: 'archived' } : c))
@@ -816,6 +868,17 @@ export default function CampaignsPage() {
 
   // Filtered campaigns
   const filtered = campaigns.filter((c) => {
+    if (tagFilter !== 'All Tags' && c.tag !== tagFilter) {
+      return false;
+    }
+    if (folderFilter !== 'All Folders') {
+      const lowerFolder = folderFilter.toLowerCase();
+      const lowerName = c.name.toLowerCase();
+      const lowerTag = (c.tag || '').toLowerCase();
+      if (!lowerName.includes(lowerFolder) && !lowerTag.includes(lowerFolder)) {
+        return false;
+      }
+    }
     if (statusFilter === 'Active') return c.status === 'active';
     if (statusFilter === 'Paused') return c.status === 'paused';
     if (statusFilter === 'Draft') return c.status === 'draft';
@@ -1416,39 +1479,45 @@ export default function CampaignsPage() {
               </div>
 
               <div className="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/50 p-2 space-y-1.5">
-                {getCampaignAuditLogs(selectedReportCamp).map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs shadow-2xs">
-                    <div className="space-y-0.5 min-w-0 flex-1 pr-2">
-                      <div className="font-bold text-slate-900 font-mono flex flex-wrap items-center gap-1.5 truncate">
-                        <span>{item.domain}</span>
-                        <span className="text-[10px] text-slate-400 font-normal truncate">({item.url})</span>
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-bold border border-slate-200 font-mono">
-                          ⚙️ {item.techStack}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 font-mono">
-                        <span>{item.code}</span>
-                        <span>•</span>
-                        <span className="text-blue-700 font-bold">📅 {item.domainAge}</span>
-                        <span>•</span>
-                        <span className="text-emerald-700 font-bold">📝 {item.lastUpdated}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${
-                        item.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                        item.status === 'FAILED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
-                        item.status === 'NO_CONTACT_PAGE' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                        item.status === 'CAPTCHA_REVIEW' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
-                        'bg-blue-100 text-blue-800 border border-blue-300'
-                      }`}>
-                        {item.status === 'DELIVERED' ? '🟢 DELIVERED' : item.status === 'FAILED' ? '🔴 FAILED' : item.status === 'NO_CONTACT_PAGE' ? '🟡 NO CONTACT PAGE' : item.status === 'CAPTCHA_REVIEW' ? '🟠 CAPTCHA REVIEW' : '⏳ PENDING'}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">{item.time}</span>
-                    </div>
+                {getCampaignAuditLogs(selectedReportCamp).length === 0 ? (
+                  <div className="p-8 text-center text-xs font-mono text-slate-500 bg-white rounded-xl border border-slate-200">
+                    No website audit records found for this campaign.
                   </div>
-                ))}
+                ) : (
+                  getCampaignAuditLogs(selectedReportCamp).map((item: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs shadow-2xs">
+                      <div className="space-y-0.5 min-w-0 flex-1 pr-2">
+                        <div className="font-bold text-slate-900 font-mono flex flex-wrap items-center gap-1.5 truncate">
+                          <span>{item.domain}</span>
+                          <span className="text-[10px] text-slate-400 font-normal truncate">({item.url})</span>
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-bold border border-slate-200 font-mono">
+                            ⚙️ {item.techStack}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 font-mono">
+                          <span>{item.code}</span>
+                          <span>•</span>
+                          <span className="text-blue-700 font-bold">📅 {item.domainAge}</span>
+                          <span>•</span>
+                          <span className="text-emerald-700 font-bold">📝 {item.lastUpdated}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${
+                          item.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                          item.status === 'FAILED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                          item.status === 'NO_CONTACT_PAGE' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                          item.status === 'CAPTCHA_REVIEW' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
+                          'bg-blue-100 text-blue-800 border border-blue-300'
+                        }`}>
+                          {item.status === 'DELIVERED' ? '🟢 DELIVERED' : item.status === 'FAILED' ? '🔴 FAILED' : item.status === 'NO_CONTACT_PAGE' ? '🟡 NO CONTACT PAGE' : item.status === 'CAPTCHA_REVIEW' ? '🟠 CAPTCHA REVIEW' : '⏳ PENDING'}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">{item.time}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

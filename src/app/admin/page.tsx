@@ -144,36 +144,36 @@ export default function AdminOverviewPage() {
         <Card className="p-5 space-y-2 border-slate-200 shadow-xs hover:border-blue-300 transition-colors">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Users</span>
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
               <Users className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{totalUsersCount}</div>
-          <p className="text-[10px] text-indigo-600 font-semibold font-mono">{users.active ?? totalUsersCount} active accounts</p>
+          <p className="text-[10px] text-[#0e6de4] font-semibold font-mono">{users.active ?? totalUsersCount} active accounts</p>
         </Card>
 
         {/* New Users */}
         <Card className="p-5 space-y-2 border-slate-200 shadow-xs hover:border-blue-300 transition-colors">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">New Users</span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
               <UserPlus className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-emerald-700">{newUsersCount}</div>
-          <p className="text-[10px] text-emerald-600 font-semibold font-mono">Registered in last 7 days</p>
+          <div className="text-2xl font-extrabold text-slate-900">{newUsersCount}</div>
+          <p className="text-[10px] text-[#0e6de4] font-semibold font-mono">Registered in last 7 days</p>
         </Card>
 
         {/* Active Campaigns */}
         <Card className="p-5 space-y-2 border-slate-200 shadow-xs hover:border-blue-300 transition-colors">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Active Campaigns</span>
-            <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
+            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
               <Send className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-purple-700">{activeCampaignsCount}</div>
-          <p className="text-[10px] text-purple-600 font-semibold font-mono">Currently running outreach</p>
+          <div className="text-2xl font-extrabold text-[#0e6de4]">{activeCampaignsCount}</div>
+          <p className="text-[10px] text-[#0e6de4] font-semibold font-mono">Currently running outreach</p>
         </Card>
 
         {/* Total Campaigns */}
@@ -192,19 +192,19 @@ export default function AdminOverviewPage() {
         <Card className="p-5 space-y-2 border-slate-200 shadow-xs hover:border-blue-300 transition-colors">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Leads</span>
-            <div className="p-2 rounded-xl bg-cyan-50 text-cyan-600">
+            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
               <Database className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{totalLeadsCount.toLocaleString()}</div>
-          <p className="text-[10px] text-cyan-700 font-mono font-semibold">Imported prospect records</p>
+          <p className="text-[10px] text-[#0e6de4] font-mono font-semibold">Imported prospect records</p>
         </Card>
 
         {/* Total Submissions */}
         <Card className="p-5 space-y-2 border-slate-200 shadow-xs hover:border-blue-300 transition-colors">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Submissions</span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
               <FileCheck className="h-4 w-4" />
             </div>
           </div>
@@ -216,12 +216,12 @@ export default function AdminOverviewPage() {
         <Card className="p-5 space-y-2 border-slate-200 shadow-xs hover:border-blue-300 transition-colors">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Successful Submissions</span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
               <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-emerald-700">{successfulSubmissionsCount.toLocaleString()}</div>
-          <p className="text-[10px] text-emerald-600 font-mono font-semibold">Verified contact submissions</p>
+          <div className="text-2xl font-extrabold text-slate-900">{successfulSubmissionsCount.toLocaleString()}</div>
+          <p className="text-[10px] text-[#0e6de4] font-mono font-semibold">Verified contact submissions</p>
         </Card>
 
         {/* Failed Submissions */}
@@ -269,18 +269,18 @@ export default function AdminOverviewPage() {
 
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-1">
               <span className="text-[11px] font-bold uppercase text-slate-500">Last 7 Days</span>
-              <div className="text-xl font-extrabold text-blue-700">
+              <div className="text-xl font-extrabold text-[#0e6de4]">
                 {(visitorMetrics.uniqueVisitors ?? visitorMetrics.totalVisitors ?? 0).toLocaleString()}
               </div>
-              <p className="text-[10px] text-blue-600 font-mono">Unique visitors</p>
+              <p className="text-[10px] text-[#0e6de4] font-mono">Unique visitors</p>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-1">
               <span className="text-[11px] font-bold uppercase text-slate-500">Last 30 Days</span>
-              <div className="text-xl font-extrabold text-purple-700">
+              <div className="text-xl font-extrabold text-[#0e6de4]">
                 {(visitorMetrics.pageViews ?? 0).toLocaleString()}
               </div>
-              <p className="text-[10px] text-purple-600 font-mono">Total page views</p>
+              <p className="text-[10px] text-[#0e6de4] font-mono">Total page views</p>
             </div>
           </div>
 
@@ -300,12 +300,12 @@ export default function AdminOverviewPage() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-emerald-600" />
+                <DollarSign className="h-5 w-5 text-[#0e6de4]" />
                 Revenue Summary
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">Verified payment earnings</p>
             </div>
-            <Link href="/admin/billing/revenue" className="text-xs font-bold text-emerald-700 hover:underline">
+            <Link href="/admin/billing/revenue" className="text-xs font-bold text-[#0e6de4] hover:underline">
               View Billing →
             </Link>
           </div>
@@ -314,9 +314,9 @@ export default function AdminOverviewPage() {
             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5">
               <div>
                 <p className="text-[11px] font-bold uppercase text-slate-500">Today</p>
-                <p className="text-lg font-extrabold text-emerald-700">{formatUsd(revenue.todayCents)}</p>
+                <p className="text-lg font-extrabold text-slate-900">{formatUsd(revenue.todayCents)}</p>
               </div>
-              <span className="text-[10px] font-mono px-2 py-1 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+              <span className="text-[10px] font-mono px-2 py-1 rounded bg-blue-50 text-[#0e6de4] font-bold border border-blue-200">
                 Today
               </span>
             </div>
@@ -324,9 +324,9 @@ export default function AdminOverviewPage() {
             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5">
               <div>
                 <p className="text-[11px] font-bold uppercase text-slate-500">This Month</p>
-                <p className="text-lg font-extrabold text-blue-700">{formatUsd(revenue.thisMonthCents)}</p>
+                <p className="text-lg font-extrabold text-[#0e6de4]">{formatUsd(revenue.thisMonthCents)}</p>
               </div>
-              <span className="text-[10px] font-mono px-2 py-1 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">
+              <span className="text-[10px] font-mono px-2 py-1 rounded bg-blue-50 text-[#0e6de4] font-bold border border-blue-200">
                 This Month
               </span>
             </div>
@@ -334,9 +334,9 @@ export default function AdminOverviewPage() {
             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5">
               <div>
                 <p className="text-[11px] font-bold uppercase text-slate-500">Total All-Time</p>
-                <p className="text-lg font-extrabold text-purple-700">{formatUsd(revenue.totalCents)}</p>
+                <p className="text-lg font-extrabold text-[#0e6de4]">{formatUsd(revenue.totalCents)}</p>
               </div>
-              <span className="text-[10px] font-mono px-2 py-1 rounded bg-purple-50 text-purple-700 font-bold border border-purple-200">
+              <span className="text-[10px] font-mono px-2 py-1 rounded bg-blue-50 text-[#0e6de4] font-bold border border-blue-200">
                 Cumulative
               </span>
             </div>
@@ -351,12 +351,12 @@ export default function AdminOverviewPage() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-indigo-600" />
+                <TrendingUp className="h-5 w-5 text-[#0e6de4]" />
                 Outreach Velocity (Last 7 Days)
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">Aggregate submission traffic across all user accounts</p>
             </div>
-            <Link href="/admin/submissions" className="text-xs font-bold text-indigo-600 hover:underline">
+            <Link href="/admin/submissions" className="text-xs font-bold text-[#0e6de4] hover:underline">
               View Submissions →
             </Link>
           </div>
@@ -373,7 +373,7 @@ export default function AdminOverviewPage() {
                     <div className="flex justify-between text-xs font-mono">
                       <span className="font-bold text-slate-700 w-10">{item.day}</span>
                       <div className="flex gap-4 text-[11px]">
-                        <span className="text-emerald-700 font-bold">{item.successful.toLocaleString()} success</span>
+                        <span className="text-[#0e6de4] font-bold">{item.successful.toLocaleString()} success</span>
                         <span className="text-rose-700 font-bold">{item.failed} failed</span>
                       </div>
                     </div>
@@ -398,12 +398,12 @@ export default function AdminOverviewPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-purple-600" />
+                  <Activity className="h-4 w-4 text-[#0e6de4]" />
                   Recent Activity
                 </h3>
                 <p className="text-[11px] text-slate-500">Live admin audit trail</p>
               </div>
-              <Link href="/admin/logs" className="text-xs text-indigo-600 hover:text-indigo-800 font-bold hover:underline">
+              <Link href="/admin/logs" className="text-xs text-[#0e6de4] hover:text-blue-700 font-bold hover:underline">
                 View All →
               </Link>
             </div>

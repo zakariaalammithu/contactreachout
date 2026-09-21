@@ -158,58 +158,99 @@ export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Load user imported leads & list file names from localStorage on mount
+  const [currentUser, setCurrentUser] = useState<{ email: string; role: string } | null>(null);
+
+  // Load session & user imported leads & list file names with strict user isolation
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    async function loadSessionAndLeads() {
+      if (typeof window === 'undefined') return;
+
+      let userEmail = (localStorage.getItem('active_account_email') || '').toLowerCase();
+      let userRole = 'USER';
+
+      try {
+        const res = await fetch('/api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            userEmail = (data.user.email || '').toLowerCase();
+            userRole = data.user.role || 'USER';
+            setCurrentUser({ email: userEmail, role: userRole });
+          }
+        }
+      } catch (e) {
+        console.error('Session fetch error in CRM:', e);
+      }
+
+      const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userEmail === 'mithusquare@gmail.com';
+
       try {
         const stored = localStorage.getItem('user_imported_leads');
         const storedLists = localStorage.getItem('user_lead_lists');
         const storedCampaigns = localStorage.getItem('user_campaigns');
         const deletedLeadIds = new Set<string>(JSON.parse(localStorage.getItem('user_deleted_lead_ids') || '[]'));
+
         if (storedCampaigns) {
           const parsedCampaigns = JSON.parse(storedCampaigns);
-          if (Array.isArray(parsedCampaigns)) setCampaigns(parsedCampaigns);
-        }
-        if (storedLists) {
-          const parsedLists = JSON.parse(storedLists);
-          if (Array.isArray(parsedLists)) setLeadLists(parsedLists);
-        }
-
-        let detectedFileName = '';
-        if (storedLists) {
-          const parsedLists = JSON.parse(storedLists);
-          if (Array.isArray(parsedLists) && parsedLists.length > 0) {
-            detectedFileName = parsedLists[0].fileName || parsedLists[0].name || '';
+          if (Array.isArray(parsedCampaigns)) {
+            const filteredCamps = isAdmin
+              ? parsedCampaigns
+              : parsedCampaigns.filter((c: any) => !c.ownerEmail || c.ownerEmail.toLowerCase() === userEmail);
+            setCampaigns(filteredCamps);
           }
         }
+
+        if (storedLists) {
+          const parsedLists = JSON.parse(storedLists);
+          if (Array.isArray(parsedLists)) {
+            const filteredLists = isAdmin
+              ? parsedLists
+              : parsedLists.filter((l: any) => !l.ownerEmail || l.ownerEmail.toLowerCase() === userEmail);
+            setLeadLists(filteredLists);
+          }
+        }
+
+        let userLeads: any[] = [];
+        let detectedFileName = '';
 
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setNewlyImportedCount(parsed.length);
-            if (!detectedFileName && parsed[0].sourceFileName) {
-              detectedFileName = parsed[0].sourceFileName;
+            userLeads = parsed
+              .filter((ld: any) => !deletedLeadIds.has(String(ld.id)))
+              .filter((ld: any) => {
+                if (isAdmin) return true;
+                if (ld.ownerEmail) return ld.ownerEmail.toLowerCase() === userEmail;
+                return true;
+              })
+              .map((ld: any) => ({
+                ...ld,
+                sourceFileName: ld.sourceFileName || ld.fileName || 'Uploaded_Leads_File.csv',
+                isNewlyImported: true,
+              }));
+
+            setNewlyImportedCount(userLeads.length);
+            if (userLeads.length > 0 && userLeads[0].sourceFileName) {
+              detectedFileName = userLeads[0].sourceFileName;
             }
             setUploadedFileName(detectedFileName || 'Uploaded_Leads.csv');
-
-            // Attach source file name fallback if missing
-            const leadsWithSource = parsed.map((ld: any) => ({
-              ...ld,
-              sourceFileName: ld.sourceFileName || detectedFileName || 'Uploaded_Leads_File.csv',
-              isNewlyImported: true,
-            }));
-
-            setAllLeads([...leadsWithSource, ...mockLeads.filter((lead: any) => !deletedLeadIds.has(String(lead.id)))]);
-          } else {
-            setAllLeads(mockLeads.filter((lead: any) => !deletedLeadIds.has(String(lead.id))));
           }
+        }
+
+        if (isAdmin) {
+          // Admin: include platform mockLeads alongside imported leads
+          const validMockLeads = mockLeads.filter((lead: any) => !deletedLeadIds.has(String(lead.id)));
+          setAllLeads([...userLeads, ...validMockLeads]);
         } else {
-          setAllLeads(mockLeads.filter((lead: any) => !deletedLeadIds.has(String(lead.id))));
+          // Normal User: ONLY load user's own leads (no mock leads leak)
+          setAllLeads(userLeads);
         }
       } catch (err) {
         console.error('Error loading imported leads from localStorage:', err);
       }
     }
+
+    loadSessionAndLeads();
   }, []);
 
   const listLeadCount = (list: any) => allLeads.filter((lead) =>
@@ -311,8 +352,27 @@ export default function LeadsPage() {
     const campaignLeadIds = selectedCampaign ? new Set(campaignLeads.map((item: any) => typeof item === 'string' ? item : item.id).filter(Boolean).map(String)) : null;
     const matchesCampaign = !campaignLeadIds || campaignLeadIds.has(String(lead.id)) || campaignLeadIds.has(String(lead.website || lead.domain || ''));
     const matchesTag = tagFilter === 'ALL' || String(lead.tag || lead.tags || '').split(',').map((value: string) => value.trim()).includes(tagFilter);
-    const matchesStatus =
-      statusFilter === 'ALL' || lead.status === statusFilter;
+    const rawStatus = String(lead.status || 'PROSPECT').toUpperCase().trim();
+    let matchesStatus = true;
+    if (statusFilter !== 'ALL') {
+      if (statusFilter === 'PROSPECT') {
+        matchesStatus = rawStatus === 'PROSPECT' || rawStatus === 'UNCONTACTED' || rawStatus === 'NEW';
+      } else if (statusFilter === 'DELIVERED') {
+        matchesStatus = rawStatus === 'DELIVERED' || rawStatus === 'REACHED' || rawStatus === 'SENT';
+      } else if (statusFilter === 'FAILED') {
+        matchesStatus = rawStatus === 'FAILED';
+      } else if (statusFilter === 'NO_FORM') {
+        matchesStatus = rawStatus === 'NO_FORM' || rawStatus === 'NO_CONTACT_PAGE';
+      } else if (statusFilter === 'REVIEW') {
+        matchesStatus = rawStatus === 'REVIEW' || rawStatus === 'CAPTCHA' || rawStatus === 'CAPTCHA_REVIEW';
+      } else if (statusFilter === 'REPLIED') {
+        matchesStatus = rawStatus === 'REPLIED' || rawStatus === 'INTERESTED';
+      } else if (statusFilter === 'PENDING') {
+        matchesStatus = rawStatus === 'PENDING';
+      } else {
+        matchesStatus = rawStatus === statusFilter.toUpperCase();
+      }
+    }
 
     return matchesSearch && matchesStatus && matchesList && matchesCampaign && matchesTag;
   });
@@ -378,7 +438,7 @@ export default function LeadsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 w-full max-w-[1750px] pb-12">
       {/* Floating Selection Bar */}
       {selectedLeadIds.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl border border-slate-800 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -394,7 +454,7 @@ export default function LeadsPage() {
           <div className="flex items-center gap-2.5">
             <button
               onClick={handleCreateCampaignWithSelected}
-              className="flex items-center gap-1.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2 text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white px-4 py-2 text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
             >
               <Play className="h-3.5 w-3.5 fill-current" />
               <span>Create Campaign with Selected ({selectedLeadIds.length})</span>
@@ -431,53 +491,259 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
-      <Card className="border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-extrabold uppercase tracking-wider text-slate-700">Filters</p>
-          <button type="button" onClick={() => setListsFilterOpen((open) => !open)} className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:bg-slate-100" aria-expanded={listsFilterOpen}>Lists {listsFilterOpen ? '⌃' : '⌄'}</button>
+      <div className="grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start w-full">
+      <Card className="border-slate-200 bg-white p-3.5 shadow-sm lg:sticky lg:top-4 shrink-0 w-full">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+            <Filter className="h-3.5 w-3.5 text-blue-600" />
+            <span>Filters</span>
+          </p>
+          {(activeListId || campaignFilter !== 'ALL' || statusFilter !== 'ALL') && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveListId('');
+                setListSearch('');
+                setCampaignFilter('ALL');
+                setStatusFilter('ALL');
+              }}
+              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
+            >
+              Clear All Filters
+            </button>
+          )}
         </div>
-        {listsFilterOpen && <div className="relative mt-3 max-w-sm">
-          <label className="mb-1.5 block text-xs font-semibold text-slate-600">Lead Lists</label>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <input value={listSearch} onFocus={() => setListDropdownOpen(true)} onChange={(e) => { setListSearch(e.target.value); setListDropdownOpen(true); }} placeholder={activeListId ? (leadLists.find((list) => list.id === activeListId || list.name === activeListId)?.name || 'Search lists') : 'Search lists'} className="w-full rounded-xl border border-slate-300 py-2.5 pl-9 pr-8 text-sm outline-none focus:border-blue-500" aria-label="Search lead lists" />
-            {activeListId && <button type="button" onClick={() => { setActiveListId(''); setListSearch(''); setListDropdownOpen(false); }} className="absolute right-2 top-2 text-xs text-slate-400 hover:text-slate-700" aria-label="Clear selected list">×</button>}
+
+        <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200/80 bg-white overflow-hidden text-xs">
+          {/* 1. Campaigns */}
+          <details className="group px-3 py-2.5" open={campaignFilter !== 'ALL'}>
+            <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-slate-700 hover:text-blue-600">
+              <span className="flex items-center gap-2">
+                <span>Campaigns</span>
+                {campaignFilter !== 'ALL' && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-700 text-[10px] font-mono">1 selected</span>
+                )}
+              </span>
+              <span className="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="mt-2 space-y-1 pt-1">
+              <select
+                value={campaignFilter}
+                onChange={(e) => setCampaignFilter(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-500"
+              >
+                <option value="ALL">All Campaigns</option>
+                {campaigns.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </details>
+
+          {/* 2. Lists */}
+          <details className="group px-3 py-2.5" open={!!activeListId}>
+            <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-slate-700 hover:text-blue-600">
+              <span className="flex items-center gap-2">
+                <span>Lists</span>
+                {activeListId && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-700 text-[10px] font-mono">1 selected</span>
+                )}
+              </span>
+              <span className="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="mt-2 space-y-2 pt-1">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  value={listSearch}
+                  onFocus={() => setListDropdownOpen(true)}
+                  onChange={(e) => {
+                    setListSearch(e.target.value);
+                    setListDropdownOpen(true);
+                  }}
+                  placeholder={
+                    activeListId
+                      ? leadLists.find((l) => l.id === activeListId || l.name === activeListId)?.name || 'Search lists'
+                      : 'Search lists'
+                  }
+                  className="w-full rounded-lg border border-slate-300 py-1.5 pl-8 pr-7 text-xs text-slate-800 outline-none focus:border-blue-500"
+                />
+                {activeListId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveListId('');
+                      setListSearch('');
+                      setListDropdownOpen(false);
+                    }}
+                    className="absolute right-2 top-1.5 text-xs text-slate-400 hover:text-slate-700 font-bold"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              {listDropdownOpen && (
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-md">
+                  {visibleLists.length ? (
+                    visibleLists.map((list) => {
+                      const selected = activeListId === list.id || activeListId === list.name;
+                      return (
+                        <button
+                          type="button"
+                          key={list.id || list.name}
+                          onClick={() => {
+                            setActiveListId(list.id || list.name);
+                            setListSearch('');
+                            setListDropdownOpen(false);
+                          }}
+                          className={`block w-full rounded-md px-2.5 py-1.5 text-left text-xs ${
+                            selected ? 'bg-blue-50 font-bold text-blue-700' : 'text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          {list.name || list.fileName}
+                          <span className="ml-1 text-slate-400">({listLeadCount(list)})</span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="px-2 py-2 text-xs text-slate-400">No lists found</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </details>
+
+          {/* 3. PROSPECTS */}
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'PROSPECT' ? 'ALL' : 'PROSPECT')}
+            className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
+              statusFilter === 'PROSPECT' ? 'bg-slate-100 text-slate-900 border-l-4 border-l-slate-700' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <span>Prospects</span>
+            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-mono">
+              {allLeads.filter((l) => {
+                const s = String(l.status || 'PROSPECT').toUpperCase();
+                return s === 'PROSPECT' || s === 'UNCONTACTED' || s === 'NEW';
+              }).length}
+            </span>
           </div>
-          {listDropdownOpen && <div className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl">
-            {visibleLists.length ? visibleLists.map((list) => { const selected = activeListId === list.id || activeListId === list.name; return <button type="button" key={list.id || list.name} onClick={() => { setActiveListId(list.id || list.name); setListSearch(''); setListDropdownOpen(false); }} className={`block w-full rounded-lg px-3 py-2 text-left text-xs ${selected ? 'bg-blue-50 font-bold text-blue-700' : 'text-slate-700 hover:bg-slate-50'}`}>{list.name || list.fileName}<span className="ml-1 text-slate-400">({listLeadCount(list)})</span></button>; }) : <p className="px-3 py-3 text-xs text-slate-500">No lists found</p>}
-          </div>}
-        </div>}
-        {activeListId && <p className="mt-2 text-xs font-semibold text-blue-700">Active list: {leadLists.find((list) => list.id === activeListId || list.name === activeListId)?.name || activeListId}</p>}
-        {(activeListId || campaignFilter !== 'ALL' || tagFilter !== 'ALL' || statusFilter !== 'ALL') && <button type="button" onClick={() => { setActiveListId(''); setListSearch(''); setCampaignFilter('ALL'); setTagFilter('ALL'); setStatusFilter('ALL'); }} className="mt-2 text-xs font-semibold text-slate-600 underline hover:text-slate-900">Clear all filters</button>}
-        <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-100">
-          <details className="group px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-slate-600"><span>Campaigns</span><span className="text-slate-400">⌄</span></summary><select value={campaignFilter} onChange={(e) => setCampaignFilter(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"><option value="ALL">All campaigns</option>{campaigns.map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.name}</option>)}</select></details>
-          <details className="group px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-slate-600"><span>Tags</span><span className="text-slate-400">⌄</span></summary>{Array.from(new Set(allLeads.flatMap((lead) => String(lead.tag || lead.tags || '').split(',').map((tag) => tag.trim()).filter(Boolean)))).length ? <select value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"><option value="ALL">All tags</option>{Array.from(new Set(allLeads.flatMap((lead) => String(lead.tag || lead.tags || '').split(',').map((tag) => tag.trim()).filter(Boolean)))).map((tag) => <option key={tag} value={tag}>{tag}</option>)}</select> : <p className="pt-2 text-[11px] text-slate-400">No tags available.</p>}</details>
-          {[
-            ['Validation', 'Validation results are not available for these records yet.'],
-            ['Deliverability', 'Deliverability data is not available for these records yet.'],
-            ['Opened', 'Opened metrics are not supported by this website-form workflow.'],
-            ['Clicked', 'Clicked metrics are not supported by this website-form workflow.'],
-            ['Responded', 'Response metrics are not available for these records yet.'],
-          ].map(([label]) => <details key={label} className="group px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-slate-600"><span>{label}</span><span className="text-slate-400 transition-transform group-open:rotate-180">⌄</span></summary><div className="mt-2 h-1 rounded-full bg-slate-100" aria-hidden="true" /></details>)}
-          <details className="group px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-slate-600"><span>Status</span><span className="text-slate-400 transition-transform group-open:rotate-180">⌄</span></summary><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"><option value="ALL">All statuses</option>{availableStatuses.map((status) => <option key={status} value={status}>{status.replace(/_/g, ' ')}</option>)}</select></details>
+
+          {/* 4. DELIVERED */}
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'DELIVERED' ? 'ALL' : 'DELIVERED')}
+            className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
+              statusFilter === 'DELIVERED' ? 'bg-emerald-50 text-emerald-900 border-l-4 border-l-emerald-600' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span>Delivered</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-mono">
+              {allLeads.filter((l) => {
+                const s = String(l.status || '').toUpperCase();
+                return s === 'DELIVERED' || s === 'REACHED' || s === 'SENT';
+              }).length}
+            </span>
+          </div>
+
+          {/* 5. PENDING */}
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'PENDING' ? 'ALL' : 'PENDING')}
+            className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
+              statusFilter === 'PENDING' ? 'bg-blue-50 text-blue-900 border-l-4 border-l-blue-600' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-blue-500" />
+              <span>Pending</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-mono">
+              {allLeads.filter((l) => String(l.status || '').toUpperCase() === 'PENDING').length}
+            </span>
+          </div>
+
+          {/* 6. FAILED */}
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'FAILED' ? 'ALL' : 'FAILED')}
+            className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
+              statusFilter === 'FAILED' ? 'bg-rose-50 text-rose-900 border-l-4 border-l-rose-600' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-rose-500" />
+              <span>Failed</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-mono">
+              {allLeads.filter((l) => String(l.status || '').toUpperCase() === 'FAILED').length}
+            </span>
+          </div>
+
+          {/* 7. NO-FORM */}
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'NO_FORM' ? 'ALL' : 'NO_FORM')}
+            className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
+              statusFilter === 'NO_FORM' ? 'bg-amber-50 text-amber-900 border-l-4 border-l-amber-600' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-amber-500" />
+              <span>No-Form</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-mono">
+              {allLeads.filter((l) => {
+                const s = String(l.status || '').toUpperCase();
+                return s === 'NO_FORM' || s === 'NO_CONTACT_PAGE';
+              }).length}
+            </span>
+          </div>
+
+          {/* 8. REVIEW */}
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'REVIEW' ? 'ALL' : 'REVIEW')}
+            className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
+              statusFilter === 'REVIEW' ? 'bg-purple-50 text-purple-900 border-l-4 border-l-purple-600' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-purple-500" />
+              <span>Review</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-mono">
+              {allLeads.filter((l) => {
+                const s = String(l.status || '').toUpperCase();
+                return s === 'REVIEW' || s === 'CAPTCHA' || s === 'CAPTCHA_REVIEW';
+              }).length}
+            </span>
+          </div>
+
+          {/* 9. REPLIED */}
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'REPLIED' ? 'ALL' : 'REPLIED')}
+            className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
+              statusFilter === 'REPLIED' ? 'bg-indigo-50 text-indigo-900 border-l-4 border-l-indigo-600' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-indigo-500" />
+              <span>Replied</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-mono">
+              {allLeads.filter((l) => {
+                const s = String(l.status || '').toUpperCase();
+                return s === 'REPLIED' || s === 'INTERESTED';
+              }).length}
+            </span>
+          </div>
         </div>
       </Card>
 
       <div className="min-w-0 space-y-6">
 
-      <Card className="border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><input value={listSearch} onChange={(e) => setListSearch(e.target.value)} placeholder="Search lists" className="w-full rounded-xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-blue-500" /></div>
-          <select value={listFilter} onChange={(e) => setListFilter(e.target.value)} className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm"><option value="ALL">All Lists</option><option value="RECENT">Recently Added</option><option value="LARGEST">Largest Lists</option><option value="USED">Used in Campaigns</option></select>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {visibleLists.length ? visibleLists.map((list) => <div key={list.id || list.name} className="rounded-2xl border border-slate-200 p-4 hover:border-blue-300">
-            <div className="flex items-start justify-between gap-3"><div><h3 className="font-bold text-slate-900">{list.name || list.fileName}</h3><p className="mt-1 text-xs text-slate-500">{listLeadCount(list)} leads · {list.fileName || 'Imported list'}</p></div><details className="relative"><summary className="cursor-pointer list-none rounded-lg px-2 py-1 text-lg text-slate-500 hover:bg-slate-100">⋮</summary><div className="absolute right-0 z-10 mt-1 w-36 rounded-xl border bg-white p-1 text-xs shadow-lg"><button onClick={() => renameList(list)} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-50">Rename</button><button onClick={() => removeList(list)} className="block w-full rounded-lg px-3 py-2 text-left text-rose-600 hover:bg-rose-50">Delete</button></div></details></div>
-            <div className="mt-3 flex gap-2"><button onClick={() => { setActiveListId(list.id || list.name); setSearchTerm(''); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">View Leads</button><button onClick={() => router.push('/campaigns/new')} className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">Use in Campaign</button></div>
-          </div>) : <div className="col-span-full rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">No lead lists yet. Upload a CSV/XLSX file to create your first list.</div>}
-        </div>
-      </Card>
+
 
       {/* Newly Uploaded Banner */}
       {newlyImportedCount > 0 && (
@@ -505,8 +771,8 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {/* Search & Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Search Bar */}
+      <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
           <input
@@ -514,26 +780,8 @@ export default function LeadsPage() {
             placeholder="Search by company, name, title, email, domain, file name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none shadow-2xs font-medium"
+            className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:outline-none shadow-2xs font-medium"
           />
-        </div>
-
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {['ALL', ...availableStatuses].map(
-            (status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0 cursor-pointer ${
-                  statusFilter === status
-                    ? 'bg-slate-900 text-white shadow-xs font-bold'
-                    : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {status.replace(/_/g, ' ')}
-              </button>
-            )
-          )}
         </div>
       </div>
 
@@ -642,9 +890,28 @@ export default function LeadsPage() {
 
                   {/* Status */}
                   <td className="p-3.5">
-                    <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700">
-                      {lead.status || 'PENDING'}
-                    </span>
+                    {(() => {
+                      const st = String(lead.status || 'PROSPECT').toUpperCase().trim();
+                      let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
+                      if (st === 'DELIVERED' || st === 'REACHED' || st === 'SENT') {
+                        badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                      } else if (st === 'FAILED') {
+                        badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200';
+                      } else if (st === 'NO_FORM' || st === 'NO_CONTACT_PAGE') {
+                        badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200';
+                      } else if (st === 'REVIEW' || st === 'CAPTCHA' || st === 'CAPTCHA_REVIEW') {
+                        badgeStyle = 'bg-purple-50 text-purple-700 border-purple-200';
+                      } else if (st === 'REPLIED' || st === 'INTERESTED') {
+                        badgeStyle = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                      } else if (st === 'PENDING') {
+                        badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200';
+                      }
+                      return (
+                        <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-mono font-bold uppercase ${badgeStyle}`}>
+                          {st.replace(/_/g, ' ')}
+                        </span>
+                      );
+                    })()}
                   </td>
 
                   {/* Source File Name */}
@@ -749,7 +1016,7 @@ export default function LeadsPage() {
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                     <span>{selectedLeadForModal.companyName || selectedLeadForModal.company_name || 'Lead Record Inspector'}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-mono font-bold">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-[#0e6de4] font-mono font-bold">
                       Full Sheet Record
                     </span>
                   </h3>
@@ -771,15 +1038,15 @@ export default function LeadsPage() {
             {/* Modal Body - All 12+ Fields Spreadsheet Inspection Grid */}
             <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
               {/* Account & Person Banner */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider text-blue-600 font-bold font-mono">Company / Domain</span>
+                  <span className="text-[10px] uppercase tracking-wider text-[#0e6de4] font-bold font-mono">Company / Domain</span>
                   <h4 className="text-sm font-extrabold text-slate-900">{selectedLeadForModal.companyName || selectedLeadForModal.company_name}</h4>
                   <a
                     href={selectedLeadForModal.website || `https://${selectedLeadForModal.domain}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-blue-700 font-mono hover:underline flex items-center gap-1"
+                    className="text-xs text-[#0e6de4] font-mono hover:underline flex items-center gap-1"
                   >
                     {selectedLeadForModal.website || selectedLeadForModal.domain}
                     <ExternalLink className="h-3 w-3" />
@@ -787,7 +1054,7 @@ export default function LeadsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider text-indigo-600 font-bold font-mono">Contact Person</span>
+                  <span className="text-[10px] uppercase tracking-wider text-slate-600 font-bold font-mono">Contact Person</span>
                   <h4 className="text-sm font-extrabold text-slate-900">
                     {`${selectedLeadForModal.firstName || selectedLeadForModal.first_name || ''} ${selectedLeadForModal.lastName || selectedLeadForModal.last_name || ''}`.trim() || 'Decision Maker'}
                   </h4>

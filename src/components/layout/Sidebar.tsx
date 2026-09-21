@@ -64,13 +64,30 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
   const pathname = usePathname();
   const router = useRouter();
   const [availableCredits, setAvailableCredits] = React.useState(0);
-  const [currentUser, setCurrentUser] = React.useState({ name: 'Your account', email: '' });
+  const [currentUser, setCurrentUser] = React.useState<{ name: string; email: string; role: string }>({ name: 'User', email: '', role: 'USER' });
 
   const handleLogout = async () => {
     await fetch('/api/auth/signout', { method: 'POST' }).catch(() => undefined);
     if (typeof window !== 'undefined') localStorage.removeItem('active_account_email');
-    router.replace('/login?tab=signin');
+    window.location.href = '/login?tab=signin';
   };
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data?.authenticated && data?.user) {
+          setCurrentUser({
+            name: data.user.name || data.user.email.split('@')[0],
+            email: data.user.email,
+            role: data.user.role || 'USER',
+          });
+        }
+      })
+      .catch(() => undefined);
+    return () => { isMounted = false; };
+  }, [pathname]);
 
   React.useEffect(() => {
     const refreshCredits = () => setAvailableCredits(CreditWalletService.getWallet().totalCreditsAvailable);
@@ -82,6 +99,9 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
       window.removeEventListener('focus', refreshCredits);
     };
   }, [pathname]);
+
+  const roleBadge = currentUser.role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : currentUser.role === 'ADMIN' ? 'ADMIN' : 'USER';
+  const userInitials = (currentUser.name || currentUser.email || 'User').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'CR';
 
   return (
     <>
@@ -104,14 +124,17 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
           <Link href="/campaigns" prefetch={true} className="flex items-center gap-2.5">
             <img
               src="/brand/logo-icon.png"
-              alt="ContactReachout Logo"
+              alt="ContactReachout logo"
               width="36"
               height="36"
               className="h-9 w-auto max-w-[36px] max-h-[36px] object-contain"
             />
             <div>
               <span className="text-base font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
-                <span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span> <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-700 font-mono font-bold">PRO</span>
+                <span className="inline-flex items-center"><span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span></span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-mono font-bold">
+                  {roleBadge}
+                </span>
               </span>
               <p className="text-[10px] text-slate-400 font-mono">contactreachout.com</p>
             </div>
@@ -176,7 +199,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                         isActive && 'bg-white/20 text-white',
                         !isActive && item.badgeVariant === 'emerald' && 'bg-emerald-100 text-emerald-800',
                         !isActive && item.badgeVariant === 'amber' && 'bg-amber-100 text-amber-800',
-                        !isActive && item.badgeVariant === 'default' && 'bg-indigo-100 text-indigo-800',
+                        !isActive && item.badgeVariant === 'default' && 'bg-blue-100 text-blue-800',
                         !isActive && !item.badgeVariant && 'bg-slate-100 text-slate-700'
                       )}
                     >
@@ -201,11 +224,11 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
           </nav>
         </div>
 
-        {/* User & Small Super Admin Icon Footer */}
+        {/* User Footer */}
         <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 p-2 lg:justify-center">
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white shadow-xs">
-              CR
+            <div className="h-7 w-7 rounded-full bg-[#0e6de4] flex items-center justify-center text-[10px] font-bold text-white shadow-xs">
+              {userInitials}
             </div>
             <div>
               <p className="max-w-[130px] truncate text-[11px] font-bold text-slate-900 leading-tight">{currentUser.name}</p>

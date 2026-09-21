@@ -6,6 +6,27 @@ import { KeyRound, Sparkles } from 'lucide-react';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
+  const [sessionRole, setSessionRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data?.authenticated && data?.user?.role) {
+          setSessionRole(data.user.role);
+        }
+      })
+      .catch(() => undefined);
+    return () => { isMounted = false; };
+  }, []);
+
+  const badgeText = sessionRole === 'SUPER_ADMIN'
+    ? 'SUPER ADMIN GOVERNANCE CONSOLE'
+    : sessionRole === 'ADMIN'
+    ? 'ADMIN GOVERNANCE CONSOLE'
+    : 'ADMIN CONSOLE';
+
   return (
     <div className="admin-app-shell flex min-h-screen bg-[#f4f8fd] text-slate-900 font-sans selection:bg-blue-500/20 selection:text-blue-950">
       {/* Single Admin Sidebar */}
@@ -18,7 +39,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-[#0e6de4] shadow-xs">
               <Sparkles className="h-3.5 w-3.5" />
-              SUPER ADMIN GOVERNANCE CONSOLE
+              {badgeText}
             </span>
             <span className="hidden text-xs font-mono text-slate-400 sm:inline">• Server-authorized session</span>
           </div>
@@ -39,7 +60,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Main Admin Page Content */}
-        <main className="mx-auto w-full max-w-7xl flex-1 overflow-y-auto p-6 md:p-8">
+        <main className="w-full max-w-[1750px] flex-1 overflow-y-auto p-6 md:p-8">
           {children}
         </main>
       </div>

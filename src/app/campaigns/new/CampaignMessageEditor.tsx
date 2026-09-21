@@ -445,17 +445,17 @@ export function CampaignMessageEditor({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5">
+      <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3"><Bot className="mt-0.5 h-6 w-6 text-indigo-600" /><div><h3 className="font-bold text-indigo-950">AI Personalization</h3><p className="text-sm text-indigo-700">Uses the configured AI provider and public lead details. If no provider key is configured, the existing deterministic fallback generates the preview.</p></div></div>
+          <div className="flex items-start gap-3"><Bot className="mt-0.5 h-6 w-6 text-[#0e6de4]" /><div><h3 className="font-bold text-slate-950">AI Personalization</h3><p className="text-sm text-slate-600">Uses the configured AI provider and public lead details. If no provider key is configured, the existing deterministic fallback generates the preview.</p></div></div>
           <input type="checkbox" aria-label="Enable AI Personalization" checked={aiPersonalizationEnabled} onChange={(event) => onAiPersonalizationEnabledChange(event.target.checked)} className="mt-1 h-5 w-5" />
         </div>
         {aiPersonalizationEnabled && (
           <div className="mt-5 space-y-4">
-            <label className="block text-sm font-semibold text-indigo-950">AI instructions<textarea rows={5} value={aiInstructions} onChange={(event) => onAiInstructionsChange(event.target.value)} className="mt-2 w-full rounded-xl border border-indigo-200 bg-white px-4 py-3 outline-none focus:border-indigo-500" /></label>
+            <label className="block text-sm font-semibold text-slate-950">AI instructions<textarea rows={5} value={aiInstructions} onChange={(event) => onAiInstructionsChange(event.target.value)} className="mt-2 w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none focus:border-blue-500" /></label>
             <Button type="button" variant="outline" onClick={onGeneratePreview} disabled={isGeneratingPreview}>{isGeneratingPreview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate preview for first prospect</Button>
-            {aiPreview && <div className="rounded-xl border border-indigo-200 bg-white p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-bold text-slate-900">Preview for {aiPreview.companyName}</p><span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-bold uppercase text-indigo-700">{aiPreview.isAiGenerated ? aiPreview.provider : 'Offline fallback'}</span></div><p className="text-sm font-semibold text-slate-800">{aiPreview.subject}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{aiPreview.body}</p></div>}
-            <p className="text-xs text-indigo-700">Approved per-prospect messages are stored on each lead and remain available to the existing template workflow through personalized fields.</p>
+            {aiPreview && <div className="rounded-xl border border-blue-200 bg-white p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-bold text-slate-900">Preview for {aiPreview.companyName}</p><span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold uppercase text-[#0e6de4]">{aiPreview.isAiGenerated ? aiPreview.provider : 'Offline fallback'}</span></div><p className="text-sm font-semibold text-slate-800">{aiPreview.subject}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{aiPreview.body}</p></div>}
+            <p className="text-xs text-slate-600">Approved per-prospect messages are stored on each lead and remain available to the existing template workflow through personalized fields.</p>
           </div>
         )}
       </div>

@@ -48,17 +48,34 @@ export default function AppDashboard() {
   const [campaigns, setCampaigns] = useState(mockCampaigns);
   const [selectedProof, setSelectedProof] = useState<any | null>(null);
   const [storedCampaigns, setStoredCampaigns] = useState<any[]>([]);
+  const [sessionUser, setSessionUser] = useState<{ name: string; email: string } | null>(null);
   const [availableCredits, setAvailableCredits] = useState(0);
 
   useEffect(() => {
+    let isMounted = true;
     try {
       const saved = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
       setStoredCampaigns(Array.isArray(saved) ? saved : []);
-      setAvailableCredits(CreditWalletService.getWallet().totalCreditsAvailable);
     } catch {
       setStoredCampaigns([]);
-      setAvailableCredits(CreditWalletService.getWallet().totalCreditsAvailable);
     }
+
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data?.authenticated && data?.user) {
+          const uName = data.user.name || data.user.email.split('@')[0];
+          setSessionUser({ name: uName, email: data.user.email });
+          setAvailableCredits(CreditWalletService.getWallet(data.user.email).totalCreditsAvailable);
+        } else if (isMounted) {
+          setAvailableCredits(CreditWalletService.getWallet().totalCreditsAvailable);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setAvailableCredits(CreditWalletService.getWallet().totalCreditsAvailable);
+      });
+
+    return () => { isMounted = false; };
   }, []);
 
   const dashboardSummary = useMemo(() => ({
@@ -130,9 +147,9 @@ export default function AppDashboard() {
   ];
 
   return (
-    <div className="space-y-10 max-w-7xl mx-auto pb-16 aimfox-light-backdrop">
+    <div className="space-y-10 max-w-7xl mx-auto pb-16">
       <section className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-black text-[#0e6de4]">Dashboard</p><h1 className="mt-1 text-3xl font-black text-slate-950">Welcome back</h1><p className="mt-2 text-sm text-slate-600">Manage bulk contact-form campaigns and AI personalization from one workspace.</p></div><Link href="/campaigns/new" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-5 py-3 text-sm font-black text-white shadow-md hover:bg-[#0758bd]"><PlusCircle className="h-4 w-4" />New Campaign</Link></div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-black text-[#0e6de4]">Dashboard</p><h1 className="mt-1 text-3xl font-black text-slate-950">Welcome back{sessionUser?.name ? `, ${sessionUser.name}` : ''}</h1><p className="mt-2 text-sm text-slate-600">Manage bulk contact-form campaigns and AI personalization from one workspace.</p></div><Link href="/campaigns/new" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-5 py-3 text-sm font-black text-white shadow-md hover:bg-[#0758bd]"><PlusCircle className="h-4 w-4" />New Campaign</Link></div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
           { label: 'Available Credits', value: availableCredits.toLocaleString(), icon: CreditCard },
           { label: 'Active Campaigns', value: dashboardSummary.active.toLocaleString(), icon: Activity },

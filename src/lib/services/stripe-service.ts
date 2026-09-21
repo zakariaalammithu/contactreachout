@@ -9,15 +9,19 @@ export interface StripePurchase {
   period: 'monthly' | 'yearly';
 }
 
-const fixedPrices: Record<number, number> = { 5000: 50, 10000: 99, 100000: 199, 300000: 299 };
+const fixedMonthlyPrices: Record<number, number> = { 5000: 50, 10000: 99, 100000: 199, 300000: 299 };
+const fixedYearlyPrices: Record<number, number> = { 5000: 480, 10000: 948, 100000: 1908, 300000: 2868 }; // $40/mo, $79/mo, $159/mo, $239/mo x 12
 
 export class StripeService {
   static getPurchase(credits: number, period: 'monthly' | 'yearly' = 'monthly'): StripePurchase {
     if (!Number.isSafeInteger(credits) || credits < 1000 || credits > 500000 || credits % 1000 !== 0) {
       throw new Error('Select a valid credit quantity between 1,000 and 500,000.');
     }
-    const monthlyPrice = fixedPrices[credits] ?? PricingService.calculateCustomCreditPrice(credits).price;
-    const price = period === 'yearly' ? Math.round(monthlyPrice * 12 * 0.8) : monthlyPrice;
+    const isYearly = period === 'yearly';
+    const price = isYearly
+      ? (fixedYearlyPrices[credits] ?? Math.round((fixedMonthlyPrices[credits] ?? PricingService.calculateCustomCreditPrice(credits).price) * 12 * 0.8))
+      : (fixedMonthlyPrices[credits] ?? PricingService.calculateCustomCreditPrice(credits).price);
+
     const configuredPriceId = SecretManager.getSecret(`STRIPE_PRICE_ID_${credits}_${period.toUpperCase()}`) || undefined;
     return { credits, amountCents: Math.round(price * 100), priceId: configuredPriceId, period };
   }

@@ -22,12 +22,12 @@ export function StatCard({
   colorVariant = 'blue',
 }: StatCardProps) {
   const colorMap = {
-    blue: 'text-indigo-600 bg-indigo-50 border-indigo-100',
+    blue: 'text-[#0e6de4] bg-blue-50 border-blue-100',
     emerald: 'text-emerald-700 bg-emerald-50 border-emerald-100',
     amber: 'text-amber-700 bg-amber-50 border-amber-100',
     rose: 'text-rose-700 bg-rose-50 border-rose-100',
-    purple: 'text-purple-700 bg-purple-50 border-purple-100',
-    cyan: 'text-cyan-700 bg-cyan-50 border-cyan-100',
+    purple: 'text-[#0e6de4] bg-blue-50 border-blue-100',
+    cyan: 'text-[#0e6de4] bg-blue-50 border-blue-100',
     slate: 'text-slate-700 bg-slate-100 border-slate-200',
   };
 

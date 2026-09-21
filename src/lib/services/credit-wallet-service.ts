@@ -1,7 +1,7 @@
 /**
- * Bulk Contact Form Outreach System — Credit Wallet & Ledger Service
- * Handles server-side credit balance calculation, priority consumption (FREE first, then PAID),
- * idempotent monthly resets, and transaction ledger recording.
+ * ContactReachout — Credit Wallet & Ledger Service
+ * Handles credit balance calculation, priority consumption (FREE first, then PAID),
+ * monthly resets, and transaction ledger recording with strict user isolation.
  */
 
 import { PricingService } from './pricing-service';
@@ -37,38 +37,25 @@ export interface CreditTransaction {
   createdAt: string;
 }
 
-const STORAGE_KEY_WALLET = 'user_credit_wallet';
-const STORAGE_KEY_TRANSACTIONS = 'user_credit_transactions';
+const STORAGE_KEY_WALLET_PREFIX = 'user_credit_wallet_';
+const STORAGE_KEY_TRANSACTIONS_PREFIX = 'user_credit_txs_';
 
 export class CreditWalletService {
   /**
    * Helper to check if current account or userId is an authorized Admin account
    */
-  private static isAdminAccount(userId: string): boolean {
-    const lower = (userId || '').toLowerCase();
-    if (
-      lower.includes('superadmin') ||
-      lower.includes('admin') ||
-      lower.includes('mithusquare') ||
-      lower.includes('operator')
-    ) {
-      return true;
-    }
-    if (typeof window !== 'undefined') {
-      const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
-      if (
-        activeAccount === 'mithusquare@gmail.com' ||
-        activeAccount === 'operator@bulkreach.io' ||
-        activeAccount.includes('admin')
-      ) {
-        return true;
-      }
-    }
-    return false;
+  public static isAdminAccount(userId: string): boolean {
+    const lower = (userId || '').toLowerCase().trim();
+    if (!lower) return false;
+    return (
+      lower === 'usr_super_admin' ||
+      lower === 'mithusquare@gmail.com' ||
+      lower === 'superadmin@contactreachout.com'
+    );
   }
 
   /**
-   * Gets current period key (e.g., 'usr_default-2026-08')
+   * Gets current period key (e.g., 'usr_default-2026-09')
    */
   private static getPeriodKey(userId: string): string {
     const d = new Date();
@@ -81,73 +68,90 @@ export class CreditWalletService {
    * Retrieves or initializes the user's credit wallet.
    * Performs idempotent monthly reset if period has changed.
    */
-  public static getWallet(userId: string = 'usr_operator'): CreditWallet {
-    const isAdmin = this.isAdminAccount(userId);
-    const defaultMonthly = isAdmin ? 1000000 : 100;
-    const defaultPlan = isAdmin ? 'Admin / Internal' : 'Free';
+  public static getWallet(userId?: string): CreditWallet {
+    const activeEmail =
+      typeof window !== 'undefined'
+        ? (localStorage.getItem('active_account_email') || '').toLowerCase().trim()
+        : '';
+    const effectiveUserId = (userId || activeEmail || 'usr_guest').toLowerCase().trim();
+    const isAdmin = this.isAdminAccount(effectiveUserId);
+
+    // Free Monthly Grant limit is ALWAYS 100 credits for all users.
+    // Admin internal testing credits (1,000,000) are stored in bonusCredits.
+    const defaultMonthlyLimit = 100;
+    const defaultBonusCredits = isAdmin ? 999900 : 0;
+    const defaultTotalAvailable = defaultMonthlyLimit + defaultBonusCredits;
+
+    const storageKey = `${STORAGE_KEY_WALLET_PREFIX}${effectiveUserId}`;
 
     let wallet: CreditWallet = {
-      userId,
-      planName: defaultPlan,
-      freeMonthlyCredits: defaultMonthly,
+      userId: effectiveUserId,
+      planName: isAdmin ? 'Admin / Internal' : 'Free',
+      freeMonthlyCredits: defaultMonthlyLimit,
       freeMonthlyUsed: 0,
       paidCredits: 0,
-      bonusCredits: 0,
-      totalCreditsAvailable: defaultMonthly,
+      bonusCredits: defaultBonusCredits,
+      totalCreditsAvailable: defaultTotalAvailable,
       lifetimeCreditsPurchased: 0,
       lifetimeCreditsUsed: 0,
       freeCreditPeriodStart: new Date().toISOString(),
       freeCreditPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      lastResetPeriodKey: this.getPeriodKey(userId),
+      lastResetPeriodKey: this.getPeriodKey(effectiveUserId),
     };
 
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY_WALLET);
+        const stored = localStorage.getItem(storageKey);
         if (stored) {
           const parsed = JSON.parse(stored);
-          // Never carry another account's wallet into a newly signed-in user.
-          if (parsed?.userId === userId) wallet = { ...wallet, ...parsed };
-          else this.saveWallet(wallet);
+          if (parsed && parsed.userId === effectiveUserId) {
+            wallet = { ...wallet, ...parsed };
+          }
         } else {
-          // First time initialization — store initial grant transaction
+          // First time wallet initialization — record single initial grant transaction
           this.saveWallet(wallet);
-          this.recordTransaction({
-            id: `tx-init-${Date.now()}`,
-            userId,
-            transactionType: 'FREE_MONTHLY_GRANT',
-            creditSource: 'FREE',
-            amount: defaultMonthly,
-            balanceBefore: 0,
-            balanceAfter: defaultMonthly,
-            description: isAdmin ? 'Admin / Internal High-Limit Credit Grant' : 'Initial Monthly 100 FREE Credits Grant',
-            idempotencyKey: `init-grant-${wallet.lastResetPeriodKey}`,
-            createdAt: new Date().toISOString(),
-          });
+          this.recordTransaction(
+            {
+              id: `tx-init-${Date.now()}`,
+              userId: effectiveUserId,
+              transactionType: 'FREE_MONTHLY_GRANT',
+              creditSource: 'FREE',
+              amount: 100,
+              balanceBefore: 0,
+              balanceAfter: 100,
+              description: 'Initial Monthly 100 FREE Credits Grant',
+              idempotencyKey: `init-grant-${wallet.lastResetPeriodKey}`,
+              createdAt: new Date().toISOString(),
+            },
+            effectiveUserId
+          );
         }
       } catch (err) {
         console.error('Error reading credit wallet:', err);
       }
     }
 
+    // Enforce strict separation: Free Monthly limit is always 100.
+    wallet.freeMonthlyCredits = 100;
+    if (isAdmin) {
+      wallet.planName = 'Admin / Internal';
+      if (wallet.bonusCredits < 999900) {
+        wallet.bonusCredits = 999900;
+      }
+    } else {
+      wallet.planName = wallet.planName || 'Free';
+      wallet.bonusCredits = wallet.bonusCredits || 0;
+    }
+
     // Check for idempotent monthly reset
-    const currentPeriodKey = this.getPeriodKey(userId);
+    const currentPeriodKey = this.getPeriodKey(effectiveUserId);
     if (wallet.lastResetPeriodKey !== currentPeriodKey) {
       wallet = this.processMonthlyReset(wallet, currentPeriodKey);
     }
 
-    if (isAdmin) {
-      wallet.planName = 'Admin / Internal';
-      wallet.freeMonthlyCredits = 1000000;
-    } else {
-      wallet.planName = wallet.planName || 'Free';
-    }
-
-    // Ensure total available is strictly calculated
-    wallet.totalCreditsAvailable =
-      Math.max(0, wallet.freeMonthlyCredits - wallet.freeMonthlyUsed) +
-      wallet.paidCredits +
-      wallet.bonusCredits;
+    // Calculate total available balance: Remaining Free + Paid + Bonus
+    const remainingFree = Math.max(0, wallet.freeMonthlyCredits - wallet.freeMonthlyUsed);
+    wallet.totalCreditsAvailable = remainingFree + wallet.paidCredits + wallet.bonusCredits;
 
     return wallet;
   }
@@ -162,23 +166,27 @@ export class CreditWalletService {
     wallet.lastResetPeriodKey = currentPeriodKey;
     wallet.freeCreditPeriodStart = new Date().toISOString();
     wallet.freeCreditPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    
-    wallet.totalCreditsAvailable = 100 + wallet.paidCredits + wallet.bonusCredits;
+
+    const remainingFree = 100;
+    wallet.totalCreditsAvailable = remainingFree + wallet.paidCredits + wallet.bonusCredits;
 
     this.saveWallet(wallet);
 
-    this.recordTransaction({
-      id: `tx-reset-${Date.now()}`,
-      userId: wallet.userId,
-      transactionType: 'FREE_MONTHLY_GRANT',
-      creditSource: 'FREE',
-      amount: 100,
-      balanceBefore,
-      balanceAfter: wallet.totalCreditsAvailable,
-      description: `Monthly Free 100 Credits Reset (${currentPeriodKey})`,
-      idempotencyKey: `monthly-reset-${currentPeriodKey}`,
-      createdAt: new Date().toISOString(),
-    });
+    this.recordTransaction(
+      {
+        id: `tx-reset-${Date.now()}`,
+        userId: wallet.userId,
+        transactionType: 'FREE_MONTHLY_GRANT',
+        creditSource: 'FREE',
+        amount: 100,
+        balanceBefore,
+        balanceAfter: wallet.totalCreditsAvailable,
+        description: `Monthly Free 100 Credits Reset (${currentPeriodKey})`,
+        idempotencyKey: `monthly-reset-${currentPeriodKey}`,
+        createdAt: new Date().toISOString(),
+      },
+      wallet.userId
+    );
 
     return wallet;
   }
@@ -196,7 +204,9 @@ export class CreditWalletService {
     const cost = PricingService.getCreditCost(resultType);
     const wallet = this.getWallet(userId);
     const idempotencyKey = `usage-${campaignId || 'manual'}-${leadId || 'unknown'}`;
-    if (typeof window !== 'undefined' && this.getTransactions().some((tx) => tx.idempotencyKey === idempotencyKey)) {
+    const userTxs = this.getTransactions(wallet.userId);
+
+    if (userTxs.some((tx) => tx.idempotencyKey === idempotencyKey)) {
       return { success: true, cost: 0, source: 'NONE', wallet };
     }
 
@@ -211,7 +221,7 @@ export class CreditWalletService {
     const balanceBefore = wallet.totalCreditsAvailable;
     let source: 'FREE' | 'PAID' = 'FREE';
 
-    const freeRemaining = wallet.freeMonthlyCredits - wallet.freeMonthlyUsed;
+    const freeRemaining = Math.max(0, wallet.freeMonthlyCredits - wallet.freeMonthlyUsed);
 
     if (freeRemaining >= cost) {
       // Consume FREE credits
@@ -234,31 +244,34 @@ export class CreditWalletService {
 
     this.saveWallet(wallet);
 
-    this.recordTransaction({
-      id: `tx-usage-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      userId,
-      campaignId,
-      leadId,
-      transactionType: 'USAGE',
-      creditSource: source,
-      amount: -cost,
-      balanceBefore,
-      balanceAfter: wallet.totalCreditsAvailable,
-      description: `Outreach Deduction (${resultType}) ${companyName ? 'for ' + companyName : ''}`,
-      idempotencyKey,
-      createdAt: new Date().toISOString(),
-    });
+    this.recordTransaction(
+      {
+        id: `tx-usage-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        userId: wallet.userId,
+        campaignId,
+        leadId,
+        transactionType: 'USAGE',
+        creditSource: source,
+        amount: -cost,
+        balanceBefore,
+        balanceAfter: wallet.totalCreditsAvailable,
+        description: `Outreach Deduction (${resultType}) ${companyName ? 'for ' + companyName : ''}`,
+        idempotencyKey,
+        createdAt: new Date().toISOString(),
+      },
+      wallet.userId
+    );
 
     return { success: true, cost, source, wallet };
   }
 
   /**
-   * Adds paid credits after purchase confirmation (500 credits for $20).
+   * Adds paid credits after purchase confirmation.
    */
   public static addPaidCredits(
-    amount: number = 500,
+    amount: number = 5000,
     referenceId?: string,
-    userId: string = 'usr_operator'
+    userId?: string
   ): CreditWallet {
     const wallet = this.getWallet(userId);
     const balanceBefore = wallet.totalCreditsAvailable;
@@ -272,30 +285,33 @@ export class CreditWalletService {
 
     this.saveWallet(wallet);
 
-    this.recordTransaction({
-      id: `tx-purchase-${Date.now()}`,
-      userId,
-      transactionType: 'PURCHASE',
-      creditSource: 'PAID',
-      amount,
-      balanceBefore,
-      balanceAfter: wallet.totalCreditsAvailable,
-      description: `Purchased ${amount} Paid Credits Package ($20 USD)`,
-      referenceId,
-      idempotencyKey: `purchase-${referenceId || Date.now()}`,
-      createdAt: new Date().toISOString(),
-    });
+    this.recordTransaction(
+      {
+        id: `tx-purchase-${Date.now()}`,
+        userId: wallet.userId,
+        transactionType: 'PURCHASE',
+        creditSource: 'PAID',
+        amount,
+        balanceBefore,
+        balanceAfter: wallet.totalCreditsAvailable,
+        description: `Purchased ${amount.toLocaleString()} Paid Credits Package`,
+        referenceId,
+        idempotencyKey: `purchase-${referenceId || Date.now()}`,
+        createdAt: new Date().toISOString(),
+      },
+      wallet.userId
+    );
 
     return wallet;
   }
 
   /**
-   * Adds admin bonus credits or manual adjustments.
+   * Adds admin bonus credits or referral/signup bonus credits.
    */
   public static addBonusCredits(
     amount: number,
     reason: string,
-    userId: string = 'usr_operator'
+    userId?: string
   ): CreditWallet {
     const wallet = this.getWallet(userId);
     const balanceBefore = wallet.totalCreditsAvailable;
@@ -308,77 +324,94 @@ export class CreditWalletService {
 
     this.saveWallet(wallet);
 
-    this.recordTransaction({
-      id: `tx-bonus-${Date.now()}`,
-      userId,
-      transactionType: 'ADMIN_ADJUSTMENT',
-      creditSource: 'BONUS',
-      amount,
-      balanceBefore,
-      balanceAfter: wallet.totalCreditsAvailable,
-      description: `Admin Bonus: ${reason}`,
-      idempotencyKey: `bonus-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    });
+    this.recordTransaction(
+      {
+        id: `tx-bonus-${Date.now()}`,
+        userId: wallet.userId,
+        transactionType: 'ADMIN_ADJUSTMENT',
+        creditSource: 'BONUS',
+        amount,
+        balanceBefore,
+        balanceAfter: wallet.totalCreditsAvailable,
+        description: `Bonus: ${reason}`,
+        idempotencyKey: `bonus-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      },
+      wallet.userId
+    );
 
     return wallet;
   }
 
   /**
-   * Gets transactions ledger.
+   * Reads transactions strictly for a specific user ID with no duplicate grants.
    */
-  public static getTransactions(): CreditTransaction[] {
+  public static getTransactions(userId?: string): CreditTransaction[] {
+    const activeEmail =
+      typeof window !== 'undefined'
+        ? (localStorage.getItem('active_account_email') || '').toLowerCase().trim()
+        : '';
+    const effectiveUserId = (userId || activeEmail || 'usr_guest').toLowerCase().trim();
+    const storageKey = `${STORAGE_KEY_TRANSACTIONS_PREFIX}${effectiveUserId}`;
+
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY_TRANSACTIONS);
+        const stored = localStorage.getItem(storageKey);
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
         }
       } catch (err) {
-        console.error('Error reading credit transactions:', err);
+        console.error('Error reading user credit transactions:', err);
       }
     }
-    return [
+
+    const isAdmin = this.isAdminAccount(effectiveUserId);
+    const defaultTx: CreditTransaction[] = [
       {
-        id: 'tx-default-1',
-        userId: 'usr_operator',
+        id: `tx-${effectiveUserId}-001`,
+        userId: effectiveUserId,
         transactionType: 'FREE_MONTHLY_GRANT',
         creditSource: 'FREE',
         amount: 100,
         balanceBefore: 0,
-        balanceAfter: 600,
-        description: 'Monthly Free 100 Credits Grant',
-        idempotencyKey: 'init-001',
+        balanceAfter: isAdmin ? 1000000 : 100,
+        description: isAdmin
+          ? 'Initial Monthly 100 FREE Credits Grant + Admin Internal Balance'
+          : 'Initial Monthly 100 FREE Credits Grant',
+        idempotencyKey: `init-grant-${effectiveUserId}`,
         createdAt: new Date().toISOString(),
       },
-      {
-        id: 'tx-default-2',
-        userId: 'usr_operator',
-        transactionType: 'PURCHASE',
-        creditSource: 'PAID',
-        amount: 500,
-        balanceBefore: 100,
-        balanceAfter: 600,
-        description: 'Purchased 500 Credits Package ($20 USD)',
-        referenceId: 'ch_3N8x2eLkd',
-        idempotencyKey: 'purchase-001',
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-      },
     ];
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(defaultTx));
+      } catch {}
+    }
+
+    return defaultTx;
   }
 
   private static saveWallet(wallet: CreditWallet) {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(wallet));
+      const storageKey = `${STORAGE_KEY_WALLET_PREFIX}${wallet.userId}`;
+      localStorage.setItem(storageKey, JSON.stringify(wallet));
     }
   }
 
-  private static recordTransaction(tx: CreditTransaction) {
+  private static recordTransaction(tx: CreditTransaction, userId: string) {
     if (typeof window !== 'undefined') {
-      const existing = this.getTransactions();
+      const storageKey = `${STORAGE_KEY_TRANSACTIONS_PREFIX}${userId.toLowerCase().trim()}`;
+      const existing = this.getTransactions(userId);
+      // Deduplicate by idempotencyKey
+      if (existing.some((item) => item.idempotencyKey === tx.idempotencyKey)) {
+        return;
+      }
       const updated = [tx, ...existing];
-      localStorage.setItem(STORAGE_KEY_TRANSACTIONS, JSON.stringify(updated));
+      localStorage.setItem(storageKey, JSON.stringify(updated));
     }
   }
 }

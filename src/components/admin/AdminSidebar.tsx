@@ -112,6 +112,30 @@ const navSections: NavSection[] = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const [sessionUser, setSessionUser] = React.useState<{ email: string; name: string; role: string } | null>(null);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data?.authenticated && data?.user) {
+          setSessionUser(data.user);
+        }
+      })
+      .catch(() => undefined);
+    return () => { isMounted = false; };
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/signout', { method: 'POST' }).catch(() => undefined);
+    if (typeof window !== 'undefined') localStorage.removeItem('active_account_email');
+    window.location.href = '/login?tab=signin';
+  };
+
+  const userRole = sessionUser?.role || 'SUPER_ADMIN';
+  const displayRole = userRole === 'SUPER_ADMIN' ? 'SUPER ADMIN' : userRole === 'ADMIN' ? 'ADMIN' : 'USER';
+  const userInitials = (sessionUser?.name || sessionUser?.email || 'Admin').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'AD';
 
   return (
     <aside className="w-64 border-r border-slate-200/90 bg-white flex flex-col justify-between shrink-0 h-screen sticky top-0 overflow-y-auto shadow-xs">
@@ -122,7 +146,10 @@ export function AdminSidebar() {
             <img src="/brand/logo-icon.png" alt="ContactReachout logo" width="32" height="32" className="h-8 w-auto max-w-[32px] max-h-[32px] shrink-0 object-contain" />
             <div>
               <div className="font-extrabold tracking-tight text-slate-900 flex items-center gap-1.5 text-sm">
-                <span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span> <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-[#0e6de4] font-mono font-bold">SUPER ADMIN</span>
+                <span className="inline-flex items-center"><span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span></span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-[#0e6de4] font-mono font-bold">
+                  {displayRole}
+                </span>
               </div>
               <p className="text-[10px] text-slate-400 font-mono">Enterprise Control</p>
             </div>
@@ -193,18 +220,23 @@ export function AdminSidebar() {
         </Link>
 
         <div className="flex items-center justify-between px-2 pt-1">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-[#0e6de4] flex items-center justify-center text-[10px] font-bold text-white shadow-xs">
-              MA
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-7 w-7 shrink-0 rounded-full bg-[#0e6de4] flex items-center justify-center text-[10px] font-bold text-white shadow-xs">
+              {userInitials}
             </div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-900 leading-tight">mithusquare@gmail.com</p>
-              <p className="text-[9px] text-emerald-700 font-mono font-bold">SUPER_ADMIN</p>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold text-slate-900 leading-tight truncate max-w-[130px]">{sessionUser?.email || 'Admin'}</p>
+              <p className="text-[9px] text-blue-700 font-mono font-bold">{userRole}</p>
             </div>
           </div>
-          <Link href="/login" className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            title="Log Out"
+          >
             <LogOut className="h-3.5 w-3.5" />
-          </Link>
+          </button>
         </div>
       </div>
     </aside>

@@ -70,20 +70,17 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
 
   useEffect(() => {
     fetch('/api/notifications', { cache: 'no-store' }).then(response => response.json()).then(data => setNotifications(data.notifications || [])).catch(() => undefined);
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('user_sender_profile');
-        if (stored && !initialUserProfile) {
-          const parsed = JSON.parse(stored);
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data?.authenticated && data?.user) {
           setUserProfile({
-            name: parsed.name || 'ContactReachout Team',
-            email: parsed.email || 'hello@contactreachout.com',
+            name: data.user.name || data.user.email.split('@')[0],
+            email: data.user.email,
           });
         }
-      } catch (e) {
-        // Fallback
-      }
-    }
+      })
+      .catch(() => undefined);
   }, []);
 
   // Listen for campaign name updates from editor. Next.js will prefetch links on demand.

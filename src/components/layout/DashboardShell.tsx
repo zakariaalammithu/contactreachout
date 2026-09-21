@@ -26,17 +26,27 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           if (response.ok) {
             if (!cancelled) {
               const data = await response.json().catch(() => ({}));
-              if (!cancelled && data?.user?.email) setSessionUser({ name: data.user.name || 'ContactReachout Team', email: data.user.email });
-              const currentEmail = data?.user?.email?.toLowerCase?.();
-              if (currentEmail && typeof window !== 'undefined') {
-                const previousEmail = localStorage.getItem('active_account_email');
-                if (previousEmail && previousEmail !== currentEmail) {
-                  ['user_campaigns', 'user_sender_profile', 'user_lead_lists', 'user_imported_leads', 'user_credit_wallet', 'user_credit_transactions'].forEach((key) => localStorage.removeItem(key));
+              if (!cancelled && data?.user?.email) {
+                const userName = data.user.name || data.user.email.split('@')[0];
+                setSessionUser({ name: userName, email: data.user.email });
+                const currentEmail = data?.user?.email?.toLowerCase?.();
+                if (currentEmail && typeof window !== 'undefined') {
+                  const previousEmail = localStorage.getItem('active_account_email');
+                  if (previousEmail && previousEmail !== currentEmail) {
+                    ['user_campaigns', 'user_sender_profile', 'user_lead_lists', 'user_imported_leads', 'user_credit_wallet', 'user_credit_transactions'].forEach((key) => localStorage.removeItem(key));
+                  }
+                  localStorage.setItem('active_account_email', currentEmail);
+                  localStorage.setItem('user_auth_email', currentEmail);
+                  const profile = {
+                    name: userName,
+                    email: currentEmail,
+                    company: 'ContactReachout',
+                    website: 'https://contactreachout.com',
+                  };
+                  localStorage.setItem('user_sender_profile', JSON.stringify(profile));
                 }
-                localStorage.setItem('active_account_email', currentEmail);
-                localStorage.setItem('user_auth_email', currentEmail);
+                setSessionVerified(true);
               }
-              setSessionVerified(true);
             }
             return;
           }
@@ -60,21 +70,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const userProfile = localStorage.getItem('user_sender_profile');
-
-      if (!userProfile) {
-        const defaultProfile = {
-          name: 'ContactReachout Team',
-          email: 'hello@contactreachout.com',
-          phone: '+1 (888) 420-7322',
-          company: 'ContactReachout',
-          website: 'https://contactreachout.com',
-          title: 'Outreach Operations',
-          location: 'Austin, TX 73301, USA',
-        };
-        localStorage.setItem('user_sender_profile', JSON.stringify(defaultProfile));
-        localStorage.setItem('user_reply_to_email', 'hello@contactreachout.com');
-      }
       localStorage.removeItem('user_logged_out');
     }
   }, []);
@@ -100,7 +95,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onOpenMobileMenu={() => setMobileMenuOpen(true)} initialUserProfile={sessionUser || undefined} />
         <main className="flex-1 overflow-y-auto bg-[#f4f8fd] p-4 sm:p-5 lg:p-6">
-          <div className="mx-auto max-w-7xl">{children}</div>
+          <div className="w-full max-w-[1750px]">{children}</div>
         </main>
       </div>
     </div>

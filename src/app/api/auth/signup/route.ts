@@ -1,8 +1,8 @@
-
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
+import { RiskEngine } from '@/lib/auth/risk-engine';
 
 const signupSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
@@ -20,9 +20,10 @@ const signupSchema = z.object({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const ip = (req.headers.get('x-forwarded-for') || '127.0.0.1').split(',')[0].trim();
+    const userAgent = req.headers.get('user-agent');
 
     // 1. Rate limiting check
-    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
     const rateCheck = AuthStore.checkRateLimit(`signup_${ip}`, 10, 60000);
     if (!rateCheck.allowed) {
       return NextResponse.json(
@@ -41,7 +42,21 @@ export async function POST(req: Request) {
     const { fullName, email, phone, password, resendApiKey, referralCode } = parsed.data;
     const cleanEmail = email.toLowerCase().trim();
 
-    // 3. Check if email already exists
+    // 3. Multi-Signal Risk Engine & Anti-Abuse Check
+    const riskEval = RiskEngine.evaluateSignupRequest({
+      ip,
+      userAgent,
+      email: cleanEmail,
+    });
+
+    if (!riskEval.allowed) {
+      return NextResponse.json(
+        { error: riskEval.reasons[0] || 'Account creation request flagged by anti-abuse protection.' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Check if email already exists
     const existingUser = AuthStore.getUserByEmail(cleanEmail);
     if (existingUser) {
       return NextResponse.json(
@@ -56,7 +71,7 @@ export async function POST(req: Request) {
     }
     AuthStore.savePendingSignup({ fullName, email: cleanEmail, phone, password, referralCode });
 
-    // 4. Send 6-digit verification code
+    // 5. Send 6-digit verification code
     const dispatchResult = await EmailVerificationService.sendVerificationCode({
       email: cleanEmail,
       purpose: 'signup',
@@ -66,6 +81,9 @@ export async function POST(req: Request) {
     if (!dispatchResult.success) {
       return NextResponse.json({ error: dispatchResult.message }, { status: 429 });
     }
+
+    // Record signup signal velocity
+    RiskEngine.recordSuccessfulSignup(ip, userAgent);
 
     return NextResponse.json({
       success: true,
