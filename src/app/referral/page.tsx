@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, Copy, Gift, Link2, Mail, Users } from 'lucide-react';
+import { Check, Copy, Gift, Link2, Mail, Users, CheckCircle2, Clock, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 
@@ -9,10 +9,23 @@ interface ReferralData {
   userId: string;
   referralCode: string;
   referralUrl: string;
+  fullReferralUrl: string;
   bonusCredits: number;
   payoutEmail: string;
-  totals: { referredUsers: number; earnedCredits: number; linkClicks: number };
-  referredUsers: Array<{ id: string; name: string; joinedAt: string; status: string }>;
+  totals: {
+    totalReferrals: number;
+    successfulReferrals: number;
+    pendingReferrals: number;
+    referralRewards: number;
+    availableReferralCredits: number;
+  };
+  referredUsers: Array<{
+    id: string;
+    name: string;
+    joinedAt: string;
+    status: string;
+    rewardCredits: number;
+  }>;
 }
 
 export default function ReferralPage() {
@@ -26,6 +39,7 @@ export default function ReferralPage() {
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'Unable to load referral details.');
+
         const syncKey = `contactreachout_referral_bonus_synced_${payload.userId}`;
         const alreadySynced = Number(localStorage.getItem(syncKey) || 0);
         const creditsToSync = Math.max(0, payload.bonusCredits - alreadySynced);
@@ -33,6 +47,7 @@ export default function ReferralPage() {
           CreditWalletService.addBonusCredits(creditsToSync, 'Verified referral rewards', payload.userId);
           localStorage.setItem(syncKey, String(payload.bonusCredits));
         }
+
         setData(payload);
         setPayoutEmail(payload.payoutEmail || '');
       })
@@ -42,44 +57,259 @@ export default function ReferralPage() {
   const copyValue = async (label: string, value: string) => {
     await navigator.clipboard.writeText(value);
     setCopied(label);
-    window.setTimeout(() => setCopied(''), 1500);
+    window.setTimeout(() => setCopied(''), 1800);
   };
 
   const savePayoutEmail = async () => {
     setMessage('');
-    const response = await fetch('/api/referral', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payoutEmail }) });
+    const response = await fetch('/api/referral', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payoutEmail }),
+    });
     const payload = await response.json();
     setMessage(response.ok ? 'Wise account email saved.' : payload.error || 'Unable to save email.');
   };
 
-  if (!data) return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm font-semibold text-slate-500">{message || 'Loading your referral dashboard…'}</div>;
-  const fullReferralUrl = typeof window === 'undefined' ? data.referralUrl : `${window.location.origin}${data.referralUrl}`;
+  if (!data) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm font-semibold text-slate-500">
+        {message || 'Loading your referral dashboard…'}
+      </div>
+    );
+  }
+
+  const fullReferralUrl =
+    typeof window === 'undefined'
+      ? data.fullReferralUrl || data.referralUrl
+      : `${window.location.origin}${data.referralUrl}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans">
+      {/* Banner */}
       <div className="rounded-3xl bg-[#0e6de4] p-7 text-white shadow-xl shadow-blue-100 sm:p-9">
-        <div className="flex items-center gap-3"><div className="rounded-2xl bg-white/15 p-3"><Gift className="h-6 w-6" /></div><div><p className="text-xs font-black uppercase tracking-[0.18em] text-blue-100">Refer & Earn</p><h1 className="mt-1 text-3xl font-black">Grow together with ContactReachout</h1></div></div>
-        <p className="mt-5 max-w-2xl text-sm leading-6 text-blue-100">A new user who joins with your code receives 50 one-time bonus credits. You receive 100 one-time bonus credits after their verified account is created.</p>
+        <div className="flex items-center gap-3">
+          <div className="rounded-2xl bg-white/15 p-3">
+            <Gift className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-100">Refer & Earn</p>
+            <h1 className="mt-1 text-3xl font-black">Grow together with ContactReachout</h1>
+          </div>
+        </div>
+        <p className="mt-5 max-w-2xl text-sm leading-6 text-blue-100">
+          Share your unique referral link. A new user who registers receives 50 one-time bonus credits upon email verification. You earn 100 one-time bonus credits after their verified account is created.
+        </p>
       </div>
 
+      {/* Referral Link & Overview Cards Grid */}
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-black">My Referral Code</h2><p className="mt-1 text-sm text-slate-500">Your code is generated automatically and cannot be changed.</p>
-          <div className="mt-5 flex items-center justify-between rounded-2xl bg-slate-950 p-4 text-white"><span className="font-mono text-2xl font-black tracking-[0.18em]">{data.referralCode}</span><button onClick={() => copyValue('code', data.referralCode)} className="rounded-xl bg-white/10 p-2.5" aria-label="Copy referral code">{copied === 'code' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</button></div>
-          <div className="mt-3 flex items-center gap-2 rounded-2xl border border-slate-200 p-3"><Link2 className="h-4 w-4 shrink-0 text-[#0e6de4]" /><span className="min-w-0 flex-1 truncate text-xs text-slate-600">{fullReferralUrl}</span><button onClick={() => copyValue('link', fullReferralUrl)} className="rounded-lg bg-slate-100 p-2" aria-label="Copy referral link">{copied === 'link' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</button></div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+          <div>
+            <h2 className="text-xl font-black text-slate-900">My Referral Link & Code</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Your unique referral link and code are server-generated and securely tied to your account.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Referral Code</label>
+            <div className="mt-1.5 flex items-center justify-between rounded-2xl bg-slate-950 p-4 text-white">
+              <span className="font-mono text-2xl font-black tracking-[0.18em]">{data.referralCode}</span>
+              <button
+                type="button"
+                onClick={() => copyValue('code', data.referralCode)}
+                className="rounded-xl bg-white/10 p-2.5 hover:bg-white/20 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                aria-label="Copy referral code"
+              >
+                {copied === 'code' ? (
+                  <>
+                    <Check className="h-4 w-4 text-emerald-400" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    <span>Copy Code</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">My Referral Link</label>
+            <div className="mt-1.5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <Link2 className="h-4 w-4 shrink-0 text-[#0e6de4]" />
+              <span className="min-w-0 flex-1 truncate font-mono text-xs text-slate-700">{fullReferralUrl}</span>
+              <button
+                type="button"
+                onClick={() => copyValue('link', fullReferralUrl)}
+                className="rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white px-3 py-1.5 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                aria-label="Copy referral link"
+              >
+                {copied === 'link' ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    <span>Copied Link!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    <span>Copy Link</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">{[
-          { label: 'Referred Users', value: data.totals.referredUsers, icon: Users },
-          { label: 'Credits Earned', value: data.totals.earnedCredits, icon: Gift },
-          { label: 'Total Bonus Balance', value: data.bonusCredits, icon: Check },
-        ].map(({ label, value, icon: Icon }) => <div key={label} className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5"><div className="rounded-xl bg-blue-50 p-3 text-[#0e6de4]"><Icon className="h-5 w-5" /></div><div><p className="text-2xl font-black">{value}</p><p className="text-xs font-bold text-slate-500">{label}</p></div></div>)}</div>
+
+        {/* 5 Real Metric Counters */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+            <div className="rounded-xl bg-blue-50 p-3 text-[#0e6de4]">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-900 font-mono">{data.totals.totalReferrals}</p>
+              <p className="text-xs font-bold text-slate-500">Total Referrals</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-2xs">
+            <div className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-emerald-800 font-mono">{data.totals.successfulReferrals}</p>
+              <p className="text-xs font-bold text-emerald-700">Successful Referrals</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50/40 p-4 shadow-2xs">
+            <div className="rounded-xl bg-amber-100 p-3 text-amber-700">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-amber-800 font-mono">{data.totals.pendingReferrals}</p>
+              <p className="text-xs font-bold text-amber-700">Pending Referrals</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 rounded-2xl border border-blue-200 bg-blue-50/40 p-4 shadow-2xs">
+            <div className="rounded-xl bg-blue-100 p-3 text-[#0e6de4]">
+              <Gift className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-[#0e6de4] font-mono">{data.totals.referralRewards}</p>
+              <p className="text-xs font-bold text-slate-600">Referral Rewards Earned</p>
+            </div>
+          </div>
+
+          <div className="sm:col-span-2 flex items-center gap-4 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-2xs">
+            <div className="rounded-xl bg-white p-3 text-[#0e6de4] shadow-xs">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-900 font-mono">{data.totals.availableReferralCredits}</p>
+              <p className="text-xs font-bold text-slate-600">Available Referral Credits Balance</p>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-xl font-black">How rewards work</h2><div className="mt-5 grid gap-4 md:grid-cols-3">{[['1', 'Share your link', 'Send your unique signup link to a new ContactReachout user.'], ['2', 'They verify', 'The referred user completes email verification and receives 50 bonus credits.'], ['3', 'You earn', 'Your account receives 100 bonus credits once for that verified signup.']].map(([number, title, description]) => <div key={number} className="rounded-2xl bg-slate-50 p-5"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0e6de4] text-xs font-black text-white">{number}</span><h3 className="mt-4 font-black">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{description}</p></div>)}</div></section>
+      {/* How rewards work */}
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <h2 className="text-xl font-black text-slate-900">How referral rewards work</h2>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          {[
+            ['1', 'Share your link', 'Send your unique referral link or code to a new business contact.'],
+            ['2', 'They verify account', 'The referred user completes email OTP verification and receives 50 bonus credits.'],
+            ['3', 'You earn credits', 'Your account receives 100 bonus credits automatically for that verified signup.'],
+          ].map(([number, title, description]) => (
+            <div key={number} className="rounded-2xl bg-slate-50 p-5 border border-slate-100">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0e6de4] text-xs font-black text-white">
+                {number}
+              </span>
+              <h3 className="mt-4 font-black text-slate-900">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-xl font-black">Referred Users</h2><div className="mt-5 overflow-x-auto"><table className="w-full min-w-[560px] text-left text-sm"><thead className="border-b border-slate-200 text-xs uppercase text-slate-400"><tr><th className="pb-3">Date Joined</th><th className="pb-3">User</th><th className="pb-3">Status</th><th className="pb-3 text-right">Reward</th></tr></thead><tbody>{data.referredUsers.length ? data.referredUsers.map((user) => <tr key={user.id} className="border-b border-slate-100"><td className="py-4 text-slate-500">{new Date(user.joinedAt).toLocaleDateString()}</td><td className="py-4 font-bold">{user.name}</td><td className="py-4"><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">{user.status}</span></td><td className="py-4 text-right font-black text-[#0e6de4]">+100 credits</td></tr>) : <tr><td colSpan={4} className="py-10 text-center text-slate-500">No referred users yet. Share your code to start earning.</td></tr>}</tbody></table></div></section>
+      {/* Referred Users Table */}
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <h2 className="text-xl font-black text-slate-900">Referred Users Audit</h2>
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[560px] text-left text-sm">
+            <thead className="border-b border-slate-200 text-xs uppercase text-slate-400 font-mono">
+              <tr>
+                <th className="pb-3">Date Joined</th>
+                <th className="pb-3">User</th>
+                <th className="pb-3">Status</th>
+                <th className="pb-3 text-right">Reward</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-700 font-mono">
+              {data.referredUsers.length ? (
+                data.referredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-4 text-slate-500 text-xs">
+                      {new Date(user.joinedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="py-4 font-bold text-slate-900 font-sans">{user.name}</td>
+                    <td className="py-4">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                          user.status === 'Successful'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}
+                      >
+                        {user.status}
+                      </span>
+                    </td>
+                    <td className="py-4 text-right font-black text-[#0e6de4]">
+                      +{user.rewardCredits} credits
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="py-10 text-center text-slate-500 font-sans">
+                    No referred users recorded yet. Share your link to start earning bonus credits.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-center gap-2"><Mail className="h-5 w-5 text-[#0e6de4]" /><h2 className="text-xl font-black">Payment Details</h2></div><p className="mt-2 text-sm text-slate-500">Optional: save the email associated with your Wise account for future affiliate payout features. Credit rewards do not require Wise.</p><div className="mt-5 flex max-w-xl flex-col gap-3 sm:flex-row"><input value={payoutEmail} onChange={(event) => setPayoutEmail(event.target.value)} type="email" placeholder="alex@company.com" className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500" /><Button onClick={savePayoutEmail} className="bg-[#0e6de4] text-white hover:bg-[#0758bd]">Save</Button></div>{message && <p className="mt-3 text-xs font-bold text-slate-600">{message}</p>}</section>
+      {/* Optional Wise Payment Details */}
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex items-center gap-2">
+          <Mail className="h-5 w-5 text-[#0e6de4]" />
+          <h2 className="text-xl font-black text-slate-900">Payment Details</h2>
+        </div>
+        <p className="mt-2 text-sm text-slate-500">
+          Optional: save the email associated with your Wise account for future affiliate payout features. Credit rewards do not require Wise.
+        </p>
+        <div className="mt-5 flex max-w-xl flex-col gap-3 sm:flex-row">
+          <input
+            value={payoutEmail}
+            onChange={(event) => setPayoutEmail(event.target.value)}
+            type="email"
+            placeholder="alex@company.com"
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-mono"
+          />
+          <Button onClick={savePayoutEmail} className="bg-[#0e6de4] text-white hover:bg-[#0758bd]">
+            Save
+          </Button>
+        </div>
+        {message && <p className="mt-3 text-xs font-bold text-slate-600">{message}</p>}
+      </section>
     </div>
   );
 }

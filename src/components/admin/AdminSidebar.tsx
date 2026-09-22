@@ -59,7 +59,7 @@ const navSections: NavSection[] = [
       { name: 'Users', href: '/admin/users', icon: Users },
       { name: 'Campaigns', href: '/admin/campaigns', icon: Layers },
       { name: 'Leads', href: '/admin/leads', icon: Database },
-      { name: 'CRM', href: '/crm', icon: Users },
+      { name: 'CRM', href: '/admin/crm', icon: Users },
       { name: 'Submissions', href: '/admin/submissions', icon: FileCheck },
       { name: 'Notifications', href: '/admin/notifications', icon: Bell },
     ],

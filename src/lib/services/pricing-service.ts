@@ -1,15 +1,13 @@
 /**
  * Single Source of Truth Pricing & Credit Configuration Service
- * Bulk Contact Form Outreach System
+ * ContactReachout — Bulk Contact Form Outreach System
  * 
  * Enforces:
  * - Free Plan: $0/mo, 100 monthly credits (resets to 100 every billing period, non-rollover).
- * - Paid Package: 500 credits for $20 USD (One-time, non-expiring).
- * - Credit Deduction Rules:
- *   - SUCCESSFUL_SUBMISSION: 1.00 credit per submitted message
- *   - AI_PERSONALIZATION: 0.00 credits
- *   - All failed/pre-submission outcomes: 0.00 credits
- *   - Zero-credit outcomes: 0 credit (WEBSITE_UNREACHABLE, NO_CONTACT_PAGE, NO_CONTACT_FORM, CAPTCHA_DETECTED, BOT_PROTECTION, BLOCKED, TIMEOUT, FORM_VALIDATION_FAILURE).
+ * - Starter: 5,000 Credits/mo ($50/mo monthly | $40/mo billed $480 annually)
+ * - Growth: 10,000 Credits/mo ($99/mo monthly | $79/mo billed $948 annually)
+ * - Scale: 100,000 Credits/mo ($199/mo monthly | $159/mo billed $1,908 annually)
+ * - Enterprise: 300,000 Credits/mo ($299/mo monthly | $239/mo billed $2,868 annually)
  */
 
 export interface PricingPlan {
@@ -30,12 +28,75 @@ export interface CreditRule {
   description: string;
 }
 
+export interface PlanPricingDetails {
+  planId: string;
+  name: string;
+  creditsMonthly: number;
+  creditsYearly: number;
+  monthlyPrice: number;          // Display & Charge for Monthly mode
+  yearlyEffectiveMonthly: number; // Display price for Yearly mode ($40)
+  yearlyAnnualCharge: number;     // Actual Stripe charge for Yearly mode ($480)
+  yearlyAnnualSavings: number;    // Total annual savings ($120)
+  discountPercent: number;       // Discount % (20%)
+  strikethroughMonthly?: number; // Optional strikethrough for promo
+  strikethroughYearlyEffective?: number;
+}
+
+export const PLAN_PRICING_DETAILS: Record<number, PlanPricingDetails> = {
+  5000: {
+    planId: 'starter',
+    name: 'Starter',
+    creditsMonthly: 5000,
+    creditsYearly: 60000,
+    monthlyPrice: 50,
+    yearlyEffectiveMonthly: 40,
+    yearlyAnnualCharge: 480,
+    yearlyAnnualSavings: 120,
+    discountPercent: 20,
+  },
+  10000: {
+    planId: 'growth',
+    name: 'Growth',
+    creditsMonthly: 10000,
+    creditsYearly: 120000,
+    monthlyPrice: 99,
+    yearlyEffectiveMonthly: 79,
+    yearlyAnnualCharge: 948,
+    yearlyAnnualSavings: 240,
+    discountPercent: 20,
+  },
+  100000: {
+    planId: 'scale',
+    name: 'Scale',
+    creditsMonthly: 100000,
+    creditsYearly: 1200000,
+    monthlyPrice: 199,
+    yearlyEffectiveMonthly: 159,
+    yearlyAnnualCharge: 1908,
+    yearlyAnnualSavings: 480,
+    discountPercent: 20,
+  },
+  300000: {
+    planId: 'enterprise',
+    name: 'Enterprise',
+    creditsMonthly: 300000,
+    creditsYearly: 3600000,
+    monthlyPrice: 299,
+    yearlyEffectiveMonthly: 239,
+    yearlyAnnualCharge: 2868,
+    yearlyAnnualSavings: 720,
+    discountPercent: 20,
+    strikethroughMonthly: 399,
+    strikethroughYearlyEffective: 319,
+  },
+};
+
 export interface SystemPricingConfig {
-  freePlan: PricingPlan; // 100 Credits Free each month
-  package5000: PricingPlan; // 5,000 Credits ($50)
-  package10000: PricingPlan; // 10,000 Credits ($99)
-  package100000: PricingPlan; // 100,000 Credits ($199)
-  package300000: PricingPlan; // 300,000 Credits ($299 Promo - Flat $100 Off)
+  freePlan: PricingPlan;
+  package5000: PricingPlan;
+  package10000: PricingPlan;
+  package100000: PricingPlan;
+  package300000: PricingPlan;
   creditRules: Record<string, CreditRule>;
   lowCreditThreshold: number;
 }
@@ -109,7 +170,7 @@ export const DEFAULT_PRICING_CONFIG: SystemPricingConfig = {
   package300000: {
     id: 'package_300000',
     name: '300,000 Credits',
-    price: 299, // Original 399, Flat 100 Off
+    price: 299,
     currency: 'USD',
     billingCycle: 'one_time',
     credits: 300000,
@@ -188,21 +249,14 @@ export class PricingService {
    * Single server-side source of truth for pricing config.
    */
   public static getPricingConfig(): SystemPricingConfig {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('user_pricing_config_overrides');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          return {
-            ...DEFAULT_PRICING_CONFIG,
-            ...parsed,
-          };
-        }
-      } catch (err) {
-        console.error('Error reading pricing config overrides:', err);
-      }
-    }
     return DEFAULT_PRICING_CONFIG;
+  }
+
+  /**
+   * Returns plan pricing details by credits quantity.
+   */
+  public static getPlanPricingDetails(credits: number): PlanPricingDetails | null {
+    return PLAN_PRICING_DETAILS[credits] || null;
   }
 
   /**
@@ -217,12 +271,11 @@ export class PricingService {
     const rule = config.creditRules[clean];
     if (rule) return rule.creditCost;
 
-    // All protected, unattempted, or pre-submission failure statuses (CAPTCHA, BOT_PROTECTION, NO_FORM, BLOCKED, AUTHENTICATION_REQUIRED, DUPLICATE_PREVENTED, REVIEW_REQUIRED) return 0.0 credit
     return 0.0;
   }
 
   /**
-   * Calculates total price and tier rate for custom requested credit amounts matching exact screenshot rates.
+   * Calculates total price and tier rate for custom requested credit amounts.
    */
   public static calculateCustomCreditPrice(amount: number): {
     price: number;

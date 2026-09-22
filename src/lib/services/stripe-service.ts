@@ -1,29 +1,71 @@
 import crypto from 'crypto';
 import { SecretManager } from '@/lib/security/secret-manager';
-import { PricingService } from '@/lib/services/pricing-service';
+import { PricingService, PLAN_PRICING_DETAILS } from '@/lib/services/pricing-service';
 
 export interface StripePurchase {
   credits: number;
   amountCents: number;
   priceId?: string;
   period: 'monthly' | 'yearly';
+  interval: 'month' | 'year';
+  displayMonthlyPrice: number;
+  actualAnnualCharge: number;
+  planName: string;
 }
-
-const fixedMonthlyPrices: Record<number, number> = { 5000: 50, 10000: 99, 100000: 199, 300000: 299 };
-const fixedYearlyPrices: Record<number, number> = { 5000: 480, 10000: 948, 100000: 1908, 300000: 2868 }; // $40/mo, $79/mo, $159/mo, $239/mo x 12
 
 export class StripeService {
   static getPurchase(credits: number, period: 'monthly' | 'yearly' = 'monthly'): StripePurchase {
-    if (!Number.isSafeInteger(credits) || credits < 1000 || credits > 500000 || credits % 1000 !== 0) {
+    if (!Number.isSafeInteger(credits) || credits < 1000 || credits > 500000) {
       throw new Error('Select a valid credit quantity between 1,000 and 500,000.');
     }
-    const isYearly = period === 'yearly';
-    const price = isYearly
-      ? (fixedYearlyPrices[credits] ?? Math.round((fixedMonthlyPrices[credits] ?? PricingService.calculateCustomCreditPrice(credits).price) * 12 * 0.8))
-      : (fixedMonthlyPrices[credits] ?? PricingService.calculateCustomCreditPrice(credits).price);
 
-    const configuredPriceId = SecretManager.getSecret(`STRIPE_PRICE_ID_${credits}_${period.toUpperCase()}`) || undefined;
-    return { credits, amountCents: Math.round(price * 100), priceId: configuredPriceId, period };
+    const isYearly = period === 'yearly';
+    const interval = isYearly ? 'year' : 'month';
+    const planDetails = PLAN_PRICING_DETAILS[credits];
+
+    let amountCents: number;
+    let displayMonthlyPrice: number;
+    let actualAnnualCharge: number;
+    let planName: string = planDetails?.name || `${credits.toLocaleString()} Credits`;
+
+    if (planDetails) {
+      if (isYearly) {
+        displayMonthlyPrice = planDetails.yearlyEffectiveMonthly;
+        actualAnnualCharge = planDetails.yearlyAnnualCharge;
+        amountCents = Math.round(planDetails.yearlyAnnualCharge * 100);
+      } else {
+        displayMonthlyPrice = planDetails.monthlyPrice;
+        actualAnnualCharge = planDetails.monthlyPrice * 12;
+        amountCents = Math.round(planDetails.monthlyPrice * 100);
+      }
+    } else {
+      // Custom Calculator Quantity Interpolation
+      const customInfo = PricingService.calculateCustomCreditPrice(credits);
+      if (isYearly) {
+        displayMonthlyPrice = Math.round(customInfo.price * 0.8);
+        actualAnnualCharge = Math.round(displayMonthlyPrice * 12);
+        amountCents = Math.round(actualAnnualCharge * 100);
+      } else {
+        displayMonthlyPrice = customInfo.price;
+        actualAnnualCharge = customInfo.price * 12;
+        amountCents = Math.round(customInfo.price * 100);
+      }
+    }
+
+    // Reuse existing secret Price ID if configured in SecretManager
+    const priceIdKey = `STRIPE_PRICE_ID_${credits}_${period.toUpperCase()}`;
+    const configuredPriceId = SecretManager.getSecret(priceIdKey) || undefined;
+
+    return {
+      credits,
+      amountCents,
+      priceId: configuredPriceId,
+      period,
+      interval,
+      displayMonthlyPrice,
+      actualAnnualCharge,
+      planName,
+    };
   }
 
   static getSecretKey(): string {
@@ -51,6 +93,10 @@ export class StripeService {
     const signature = values.v1;
     if (!timestamp || !signature || Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
     const expected = crypto.createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
-    try { return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex')); } catch { return false; }
+    try {
+      return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex'));
+    } catch {
+      return false;
+    }
   }
 }

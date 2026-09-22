@@ -18,8 +18,11 @@ export interface UserAccount {
   payoutEmail?: string;
   isEmailVerified: boolean;
   isSuspended: boolean;
+  company?: string;
+  plan?: string;
   createdAt: string;
   updatedAt: string;
+  lastLoginAt?: string;
 }
 
 export interface OtpRecord {
@@ -232,6 +235,8 @@ export class AuthStore {
     role?: AppRole;
     isEmailVerified?: boolean;
     referredByCode?: string;
+    company?: string;
+    plan?: string;
   }): UserAccount {
     this.initialize();
     const emailKey = params.email.toLowerCase().trim();
@@ -249,7 +254,12 @@ export class AuthStore {
       salt = hashed.salt;
     }
 
-    const referrer = params.referredByCode ? this.getUserByReferralCode(params.referredByCode) : null;
+    let referrer = params.referredByCode ? this.getUserByReferralCode(params.referredByCode) : null;
+    if (referrer && referrer.email.toLowerCase().trim() === emailKey) {
+      // Self-referral attempt strictly blocked on server-side
+      referrer = null;
+    }
+
     const newUser: UserAccount = {
       id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       name: params.name,
@@ -266,6 +276,8 @@ export class AuthStore {
       paidCredits: 0,
       isEmailVerified: params.isEmailVerified ?? false,
       isSuspended: false,
+      company: params.company,
+      plan: params.plan || 'Free',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -320,6 +332,23 @@ export class AuthStore {
     return user;
   }
 
+  public static resetPassword(email: string, newPassword?: string): { success: boolean; resetToken?: string } {
+    const user = this.getUserByEmail(email);
+    if (!user) throw new Error('User not found');
+    if (newPassword) {
+      const { hash, salt } = this.hashPassword(newPassword);
+      user.passwordHash = hash;
+      user.salt = salt;
+      user.updatedAt = new Date().toISOString();
+      userRegistry.set(user.email, user);
+      return { success: true };
+    }
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.updatedAt = new Date().toISOString();
+    userRegistry.set(user.email, user);
+    return { success: true, resetToken };
+  }
+
   public static addPaidCredits(userId: string, credits: number): UserAccount {
     this.initialize();
     const user = Array.from(userRegistry.values()).find((candidate) => candidate.id === userId);
@@ -340,16 +369,35 @@ export class AuthStore {
   // --- SESSIONS & TOKENS ---
   public static createSession(userId: string, email: string, role: AppRole, ttlMs: number = 7 * 24 * 60 * 60 * 1000): UserSession {
     const sessionId = `sess_${crypto.randomBytes(32).toString('hex')}`;
+    const cleanEmail = email.toLowerCase().trim();
     const session: UserSession = {
       sessionId,
       userId,
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       role,
       expiresAt: Date.now() + ttlMs,
     };
     sessionRegistry.set(sessionId, session);
+
+    // Record last login timestamp on user account
+    const user = userRegistry.get(cleanEmail);
+    if (user) {
+      user.lastLoginAt = new Date().toISOString();
+      userRegistry.set(cleanEmail, user);
+    }
+
     return session;
   }
+
+  public static deleteUserSessions(userId: string): void {
+    const lowerUserId = userId.toLowerCase().trim();
+    for (const [key, session] of sessionRegistry.entries()) {
+      if (session.userId.toLowerCase().trim() === lowerUserId || session.email.toLowerCase().trim() === lowerUserId) {
+        sessionRegistry.delete(key);
+      }
+    }
+  }
+
 
   public static getSession(sessionId: string): UserSession | null {
     const session = sessionRegistry.get(sessionId);

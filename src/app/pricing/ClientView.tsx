@@ -5,8 +5,9 @@ import Link from 'next/link';
 import {
   Sparkles,
   Calculator,
+  CheckCircle2,
 } from 'lucide-react';
-import { PricingService } from '@/lib/services/pricing-service';
+import { PricingService, PLAN_PRICING_DETAILS } from '@/lib/services/pricing-service';
 import { LandingHeader } from '@/components/layout/LandingHeader';
 import { LandingFooter } from '@/components/layout/LandingFooter';
 
@@ -19,18 +20,8 @@ export default function PricingPage() {
   // Default selected MUST be Yearly
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
 
+  const isYearly = billingPeriod === 'yearly';
   const customPriceInfo = PricingService.calculateCustomCreditPrice(customCredits);
-
-  // Price calculation helpers (No decimals for yearly: $40, $79, $159, $239)
-  const getPlanPrice = (monthlyPrice: number, yearlyPrice: number) => {
-    return billingPeriod === 'yearly' ? yearlyPrice : monthlyPrice;
-  };
-
-  const getSubWording = () => {
-    return billingPeriod === 'yearly'
-      ? 'Per seat per month, billed annually'
-      : 'Per seat per month, billed monthly';
-  };
 
   return (
     <div className="pricing-public-page min-h-screen bg-[#f8fbff] text-slate-900 font-sans">
@@ -44,10 +35,10 @@ export default function PricingPage() {
         </span>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
           Flexible outreach pricing. <br className="hidden sm:inline" />
-          <span className="text-[#0e6de4]">Buy the credits your campaigns need.</span>
+          <span className="text-[#0e6de4]">Choose your plan or buy credits as needed.</span>
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          No hidden fees. Choose your outreach volume and unlock powerful contact form campaigns.
+          No hidden fees. Choose annual billing to save 20% or choose pay-as-you-go credit packages.
         </p>
       </section>
 
@@ -55,9 +46,9 @@ export default function PricingPage() {
       <section className="mx-auto grid max-w-5xl grid-cols-1 gap-3.5 px-4 pb-6 sm:grid-cols-2 lg:grid-cols-4">
         {[
           ['1 credit', 'per successful website message'],
-          ['0 credits', 'AI Personalization on paid plans'],
-          ['Pay-as-you-go', 'buy credits when needed'],
-          ['No subscription', 'one-time credit packages'],
+          ['0 credits', 'AI Personalization included on paid plans'],
+          ['Save 20%', 'on annual subscription plans'],
+          ['No hidden fees', 'transparent Stripe checkout'],
         ].map(([title, detail]) => (
           <div key={title} className="rounded-2xl border border-blue-100 bg-white p-4 text-center shadow-2xs">
             <p className="text-base font-black text-[#0e6de4]">{title}</p>
@@ -66,13 +57,13 @@ export default function PricingPage() {
         ))}
       </section>
 
-      {/* Billing Toggle (Yearly | Monthly) - YEARLY DEFAULT */}
+      {/* Billing Toggle (YEARLY | MONTHLY) - YEARLY DEFAULT */}
       <div className="mx-auto mb-8 flex w-fit items-center gap-1 rounded-2xl border border-blue-200 bg-white p-1 shadow-2xs">
         <button
           type="button"
           onClick={() => setBillingPeriod('yearly')}
           className={`rounded-xl px-6 py-2 text-xs font-extrabold transition-all cursor-pointer ${
-            billingPeriod === 'yearly'
+            isYearly
               ? 'bg-[#0e6de4] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
@@ -83,7 +74,7 @@ export default function PricingPage() {
           type="button"
           onClick={() => setBillingPeriod('monthly')}
           className={`rounded-xl px-6 py-2 text-xs font-extrabold transition-all cursor-pointer ${
-            billingPeriod === 'monthly'
+            !isYearly
               ? 'bg-[#0e6de4] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
@@ -106,16 +97,18 @@ export default function PricingPage() {
 
             <div>
               <h3 className="text-base font-extrabold text-slate-900">
-                {billingPeriod === 'yearly' ? '12,000 Credits/year' : '100 Credits'}
+                {isYearly ? '12,000 Credits/year' : '100 Credits'}
               </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">No credit card required</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">100 free credits every month</p>
             </div>
 
             <div className="py-2.5 border-y border-slate-100 space-y-0.5">
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-extrabold text-slate-900">$0</span>
               </div>
-              <p className="text-[10px] font-medium text-slate-500 leading-tight">{getSubWording()}</p>
+              <p className="text-[10px] font-medium text-slate-500 leading-tight">
+                {isYearly ? 'Free plan • Resets monthly' : 'Free plan • Resets monthly'}
+              </p>
             </div>
 
             <div className="space-y-2 pt-1">
@@ -137,13 +130,13 @@ export default function PricingPage() {
                 type="button"
                 className="w-full py-3 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center text-center uppercase tracking-wider"
               >
-                BUY NOW
+                GET STARTED FREE
               </button>
             </Link>
           </div>
         </div>
 
-        {/* CARD 2: 5,000 CREDITS ($50 / $40) */}
+        {/* CARD 2: STARTER (5,000 Credits) */}
         <div className="pricing-plan-card rounded-3xl border-2 border-[#0e6de4] bg-white p-6 flex flex-col justify-between shadow-md relative">
           <div className="absolute -top-3 right-3 px-2.5 py-0.5 rounded-full bg-[#0e6de4] text-white text-[9px] font-extrabold font-mono uppercase shadow-2xs">
             POPULAR
@@ -159,20 +152,23 @@ export default function PricingPage() {
 
             <div>
               <h3 className="text-base font-extrabold text-slate-900">
-                {billingPeriod === 'yearly' ? '60,000 Credits/year' : '5,000 Credits'}
+                {isYearly ? '60,000 Credits/year' : '5,000 Credits'}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                {billingPeriod === 'yearly' ? '5,000 Credits/month' : '5,000 Credits package'}
+                {isYearly ? '5,000 Credits/month equivalent' : '5,000 Credits/month'}
               </p>
             </div>
 
             <div className="py-2.5 border-y border-slate-100 space-y-0.5">
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-extrabold text-slate-900">
-                  ${getPlanPrice(50, 40)}
+                  ${isYearly ? PLAN_PRICING_DETAILS[5000].yearlyEffectiveMonthly : PLAN_PRICING_DETAILS[5000].monthlyPrice}
                 </span>
+                <span className="text-xs font-bold text-slate-600 font-mono">/ month</span>
               </div>
-              <p className="text-[10px] font-medium text-slate-500 leading-tight">{getSubWording()}</p>
+              <p className="text-[10px] font-medium text-slate-500 leading-tight">
+                {isYearly ? `Billed $${PLAN_PRICING_DETAILS[5000].yearlyAnnualCharge} annually • Save 20%` : 'Billed monthly'}
+              </p>
             </div>
 
             <div className="space-y-2 pt-1">
@@ -189,7 +185,10 @@ export default function PricingPage() {
           </div>
 
           <div className="pt-6 flex justify-center">
-            <Link href={`/checkout?credits=5000&price=${getPlanPrice(50, 40)}&period=${billingPeriod}`} className="w-full">
+            <Link
+              href={`/checkout?credits=5000&period=${billingPeriod}`}
+              className="w-full"
+            >
               <button
                 type="button"
                 className="w-full py-3 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center text-center uppercase tracking-wider"
@@ -200,7 +199,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* CARD 3: 10,000 CREDITS ($99 / $79) */}
+        {/* CARD 3: GROWTH (10,000 Credits) */}
         <div className="pricing-plan-card rounded-3xl border border-slate-200 bg-white p-6 flex flex-col justify-between shadow-2xs hover:border-blue-300 transition-all relative">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -212,20 +211,23 @@ export default function PricingPage() {
 
             <div>
               <h3 className="text-base font-extrabold text-slate-900">
-                {billingPeriod === 'yearly' ? '120,000 Credits/year' : '10,000 Credits'}
+                {isYearly ? '120,000 Credits/year' : '10,000 Credits'}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                {billingPeriod === 'yearly' ? '10,000 Credits/month' : '10,000 Credits package'}
+                {isYearly ? '10,000 Credits/month equivalent' : '10,000 Credits/month'}
               </p>
             </div>
 
             <div className="py-2.5 border-y border-slate-100 space-y-0.5">
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-extrabold text-slate-900">
-                  ${getPlanPrice(99, 79)}
+                  ${isYearly ? PLAN_PRICING_DETAILS[10000].yearlyEffectiveMonthly : PLAN_PRICING_DETAILS[10000].monthlyPrice}
                 </span>
+                <span className="text-xs font-bold text-slate-600 font-mono">/ month</span>
               </div>
-              <p className="text-[10px] font-medium text-slate-500 leading-tight">{getSubWording()}</p>
+              <p className="text-[10px] font-medium text-slate-500 leading-tight">
+                {isYearly ? `Billed $${PLAN_PRICING_DETAILS[10000].yearlyAnnualCharge} annually • Save 20%` : 'Billed monthly'}
+              </p>
             </div>
 
             <div className="space-y-2 pt-1">
@@ -242,7 +244,10 @@ export default function PricingPage() {
           </div>
 
           <div className="pt-6 flex justify-center">
-            <Link href={`/checkout?credits=10000&price=${getPlanPrice(99, 79)}&period=${billingPeriod}`} className="w-full">
+            <Link
+              href={`/checkout?credits=10000&period=${billingPeriod}`}
+              className="w-full"
+            >
               <button
                 type="button"
                 className="w-full py-3 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center text-center uppercase tracking-wider"
@@ -253,7 +258,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* CARD 4: 100,000 CREDITS ($199 / $159) */}
+        {/* CARD 4: SCALE (100,000 Credits) */}
         <div className="pricing-plan-card rounded-3xl border border-slate-200 bg-white p-6 flex flex-col justify-between shadow-2xs hover:border-blue-300 transition-all relative">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -265,20 +270,23 @@ export default function PricingPage() {
 
             <div>
               <h3 className="text-base font-extrabold text-slate-900">
-                {billingPeriod === 'yearly' ? '1,200,000 Credits/year' : '100,000 Credits'}
+                {isYearly ? '1,200,000 Credits/year' : '100,000 Credits'}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                {billingPeriod === 'yearly' ? '100,000 Credits/month' : '100,000 Credits package'}
+                {isYearly ? '100,000 Credits/month equivalent' : '100,000 Credits/month'}
               </p>
             </div>
 
             <div className="py-2.5 border-y border-slate-100 space-y-0.5">
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-extrabold text-slate-900">
-                  ${getPlanPrice(199, 159)}
+                  ${isYearly ? PLAN_PRICING_DETAILS[100000].yearlyEffectiveMonthly : PLAN_PRICING_DETAILS[100000].monthlyPrice}
                 </span>
+                <span className="text-xs font-bold text-slate-600 font-mono">/ month</span>
               </div>
-              <p className="text-[10px] font-medium text-slate-500 leading-tight">{getSubWording()}</p>
+              <p className="text-[10px] font-medium text-slate-500 leading-tight">
+                {isYearly ? `Billed $${PLAN_PRICING_DETAILS[100000].yearlyAnnualCharge} annually • Save 20%` : 'Billed monthly'}
+              </p>
             </div>
 
             <div className="space-y-2 pt-1">
@@ -295,7 +303,10 @@ export default function PricingPage() {
           </div>
 
           <div className="pt-6 flex justify-center">
-            <Link href={`/checkout?credits=100000&price=${getPlanPrice(199, 159)}&period=${billingPeriod}`} className="w-full">
+            <Link
+              href={`/checkout?credits=100000&period=${billingPeriod}`}
+              className="w-full"
+            >
               <button
                 type="button"
                 className="w-full py-3 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center text-center uppercase tracking-wider"
@@ -306,7 +317,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* CARD 5: 300,000 CREDITS ($299 / $239 WITH STRIKETHROUGH OLD PRICE) */}
+        {/* CARD 5: ENTERPRISE (300,000 Credits) */}
         <div className="pricing-plan-card rounded-3xl border border-slate-200 bg-white p-6 flex flex-col justify-between shadow-2xs hover:border-blue-300 transition-all relative">
           <div className="absolute -top-3 right-3 px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[9px] font-extrabold font-mono uppercase shadow-2xs">
             BEST VALUE
@@ -322,24 +333,26 @@ export default function PricingPage() {
 
             <div>
               <h3 className="text-base font-extrabold text-slate-900">
-                {billingPeriod === 'yearly' ? '3,600,000 Credits/year' : '300,000 Credits'}
+                {isYearly ? '3,600,000 Credits/year' : '300,000 Credits'}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                {billingPeriod === 'yearly' ? '300,000 Credits/month' : '300,000 Credits package'}
+                {isYearly ? '300,000 Credits/month equivalent' : '300,000 Credits/month'}
               </p>
             </div>
 
             <div className="py-2.5 border-y border-slate-100 space-y-0.5">
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-bold text-slate-400 line-through">
-                  {billingPeriod === 'yearly' ? '$319' : '$399'}
+                  ${isYearly ? PLAN_PRICING_DETAILS[300000].strikethroughYearlyEffective : PLAN_PRICING_DETAILS[300000].strikethroughMonthly}
                 </span>
                 <span className="text-3xl font-extrabold text-slate-900">
-                  ${getPlanPrice(299, 239)}
+                  ${isYearly ? PLAN_PRICING_DETAILS[300000].yearlyEffectiveMonthly : PLAN_PRICING_DETAILS[300000].monthlyPrice}
                 </span>
-                <span className="text-xs font-bold text-[#0e6de4]">USD</span>
+                <span className="text-xs font-bold text-slate-600 font-mono">/ month</span>
               </div>
-              <p className="text-[10px] font-medium text-slate-500 leading-tight">{getSubWording()}</p>
+              <p className="text-[10px] font-medium text-slate-500 leading-tight">
+                {isYearly ? `Billed $${PLAN_PRICING_DETAILS[300000].yearlyAnnualCharge} annually • Save 20%` : 'Billed monthly • Flat $100 Off'}
+              </p>
             </div>
 
             <div className="space-y-2 pt-1">
@@ -356,7 +369,10 @@ export default function PricingPage() {
           </div>
 
           <div className="pt-6 flex justify-center">
-            <Link href={`/checkout?credits=300000&price=${getPlanPrice(299, 239)}&period=${billingPeriod}`} className="w-full">
+            <Link
+              href={`/checkout?credits=300000&period=${billingPeriod}`}
+              className="w-full"
+            >
               <button
                 type="button"
                 className="w-full py-3 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center text-center uppercase tracking-wider"
@@ -368,7 +384,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Interactive Custom Credit Amount Calculator Slider - Clean Layout */}
+      {/* Interactive Custom Credit Amount Calculator Slider */}
       <section className="py-12 px-4 sm:px-6 max-w-4xl mx-auto">
         <div className="pricing-calculator rounded-3xl border border-blue-100 bg-white p-8 space-y-6 shadow-2xs">
           <div className="text-center space-y-2">
@@ -444,60 +460,19 @@ export default function PricingPage() {
 
             {/* Single Clean BUY NOW Purchase Action for Calculator */}
             <div className="pt-2 flex justify-center">
-              <Link href={`/checkout?credits=${customCredits}&price=${customPriceInfo.price}&period=${billingPeriod}`} className="w-full">
+              <Link
+                href={`/checkout?credits=${customCredits}&period=${billingPeriod}`}
+                className="w-full"
+              >
                 <button
                   type="button"
                   className="w-full py-3.5 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white font-extrabold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center text-center uppercase tracking-wider"
                 >
-                  BUY NOW
+                  BUY NOW (${isYearly ? Math.round(customPriceInfo.price * 0.8 * 12).toLocaleString() + ' / year' : customPriceInfo.price.toLocaleString() + ' / month'})
                 </button>
               </Link>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Credit Deduction Rules Table - Brand Blue & Slate Only */}
-      <section className="py-10 px-4 sm:px-6 max-w-4xl mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-extrabold text-slate-900">Transparent Credit Deduction Rules</h2>
-          <p className="text-xs text-slate-500 font-mono">
-            Credits are deducted ONLY when processing results are finalized according to strict outcome rules:
-          </p>
-        </div>
-
-        <div className="pricing-rules rounded-2xl border border-blue-100 bg-white overflow-hidden text-xs shadow-xs">
-          <table className="w-full text-left">
-            <thead className="bg-blue-50/70 border-b border-blue-100 text-slate-700 font-mono text-[11px] uppercase">
-              <tr>
-                <th className="p-3.5">Submission Outcome Result</th>
-                <th className="p-3.5 text-center">Credit Cost</th>
-                <th className="p-3.5">Rule Explanation</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              <tr>
-                <td className="p-3.5 font-bold text-slate-900">SUCCESSFUL_SUBMISSION</td>
-                <td className="p-3.5 text-center font-bold font-mono text-[#0e6de4]">1.00 Credit</td>
-                <td className="p-3.5 text-slate-600">Form page found, fields mapped, form filled & submitted successfully.</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold text-slate-900">AI_PERSONALIZATION (OPTIONAL)</td>
-                <td className="p-3.5 text-center font-bold font-mono text-[#0e6de4]">0.00 Credits</td>
-                <td className="p-3.5 text-slate-600">Included at no credit cost on paid plans; unavailable on the Free plan.</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold text-slate-900">FAILED_SUBMISSION_AFTER_REAL_ATTEMPT</td>
-                <td className="p-3.5 text-center font-bold font-mono text-slate-500">0.00 Credits</td>
-                <td className="p-3.5 text-slate-600">No credit is deducted unless the website message is successfully submitted.</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold text-slate-900">WEBSITE_UNREACHABLE / NO_FORM / CAPTCHA</td>
-                <td className="p-3.5 text-center font-bold font-mono text-slate-500">0.00 Credit</td>
-                <td className="p-3.5 text-slate-600">Website offline, no form present, or CAPTCHA detected. Zero cost.</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </section>
 
