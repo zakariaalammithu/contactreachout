@@ -200,27 +200,34 @@ Write a short outreach inquiry. Output valid JSON: {"subject": "...", "body": ".
 /**
  * Central AI Service Factory
  */
+import { SecretManager } from '@/lib/security/secret-manager';
+
 export class AIService {
   private static providerInstance: AIProvider | null = null;
 
-  public static getProvider(): AIProvider {
-    if (this.providerInstance) return this.providerInstance;
+  public static resetCache(): void {
+    this.providerInstance = null;
+  }
 
-    const providerType = (process.env.AI_PROVIDER || 'none').toLowerCase().trim();
+  public static getProvider(overrideProviderType?: string): AIProvider {
+    const providerType = (
+      overrideProviderType ||
+      SecretManager.getSecret('AI_PROVIDER') ||
+      process.env.AI_PROVIDER ||
+      'none'
+    ).toLowerCase().trim();
+
+    const openaiKey = SecretManager.getSecret('OPENAI_API_KEY') || process.env.OPENAI_API_KEY || undefined;
+    const anthropicKey = SecretManager.getSecret('ANTHROPIC_API_KEY') || process.env.ANTHROPIC_API_KEY || undefined;
 
     switch (providerType) {
       case 'openai':
-        this.providerInstance = new OpenAIProvider();
-        break;
+        return new OpenAIProvider(openaiKey);
       case 'anthropic':
-        this.providerInstance = new AnthropicProvider();
-        break;
+        return new AnthropicProvider(anthropicKey);
       default:
-        this.providerInstance = new NoneProvider();
-        break;
+        return new NoneProvider();
     }
-
-    return this.providerInstance;
   }
 
   /**

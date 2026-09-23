@@ -13,25 +13,46 @@ import {
   Layers,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
-  AlertCircle,
-  KeyRound,
-  ExternalLink,
   CreditCard,
   TriangleAlert,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
 export default function AdminIntegrationsPage() {
   const [integrations, setIntegrations] = useState<any>(null);
+  const [hasRuntimeOnlySecrets, setHasRuntimeOnlySecrets] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch('/api/admin/integrations');
+      if (res.ok) {
+        const data = await res.json();
+        setIntegrations(data.integrations);
+        if (data.hasRuntimeOnlySecrets !== undefined) {
+          setHasRuntimeOnlySecrets(data.hasRuntimeOnlySecrets);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch integration statuses:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    fetch('/api/admin/integrations')
-      .then((res) => res.json())
-      .then((data) => setIntegrations(data.integrations))
-      .catch(() => {});
+    fetchStatus();
   }, []);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchStatus();
+  };
 
   const cards = [
     {
@@ -39,10 +60,9 @@ export default function AdminIntegrationsPage() {
       title: 'Stripe Payments',
       desc: 'Server-side payment credential for secure credit-package checkout processing.',
       icon: CreditCard,
-      href: '/admin/integrations/stripe',
-      status: integrations?.stripe?.status || 'NOT_CONFIGURED',
+      href: '/admin/billing/transactions',
+      status: isLoading ? 'CHECKING' : integrations?.stripe?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.stripe?.maskedKey || 'NOT_CONFIGURED',
-      color: 'from-violet-500 to-indigo-600',
     },
     {
       id: 'email',
@@ -50,9 +70,8 @@ export default function AdminIntegrationsPage() {
       desc: 'High-deliverability transactional notifications, lead report summaries, and queue event alerts.',
       icon: Mail,
       href: '/admin/integrations/email',
-      status: integrations?.resend?.status || 'NOT_CONFIGURED',
+      status: isLoading ? 'CHECKING' : integrations?.resend?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.resend?.maskedKey || 'NOT_CONFIGURED',
-      color: 'from-purple-500 to-indigo-600',
     },
     {
       id: 'googleSheets',
@@ -60,9 +79,8 @@ export default function AdminIntegrationsPage() {
       desc: 'Bidirectional synchronization for spreadsheet lead ingestion and live status writebacks.',
       icon: FileSpreadsheet,
       href: '/admin/integrations/google-sheets',
-      status: integrations?.googleSheets?.status || 'NOT_CONFIGURED',
+      status: isLoading ? 'CHECKING' : integrations?.googleSheets?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.googleSheets?.maskedKey || 'NOT_CONFIGURED',
-      color: 'from-emerald-500 to-teal-600',
     },
     {
       id: 'ai',
@@ -70,9 +88,8 @@ export default function AdminIntegrationsPage() {
       desc: 'Optional public company signal synthesis with enforced anti-hallucination and CAN-SPAM truthfulness.',
       icon: Bot,
       href: '/admin/integrations/ai',
-      status: integrations?.openai?.status === 'CONNECTED' || integrations?.anthropic?.status === 'CONNECTED' ? 'CONNECTED' : 'NOT_CONFIGURED',
-      maskedKey: integrations?.openai?.maskedKey || 'NOT_CONFIGURED',
-      color: 'from-pink-500 to-rose-600',
+      status: isLoading ? 'CHECKING' : integrations?.ai?.status || 'NOT_CONFIGURED',
+      maskedKey: integrations?.ai?.maskedKey || 'NOT_CONFIGURED',
     },
     {
       id: 'supabase',
@@ -80,65 +97,102 @@ export default function AdminIntegrationsPage() {
       desc: 'Primary multi-tenant relational persistence with PostgreSQL Row-Level Security policies active.',
       icon: Database,
       href: '/admin/system/health',
-      status: integrations?.supabase?.status || 'NOT_CONFIGURED',
+      status: isLoading ? 'CHECKING' : integrations?.supabase?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.supabase?.maskedKey || 'NOT_CONFIGURED',
-      color: 'from-indigo-500 to-blue-600',
     },
     {
       id: 'redis',
       title: 'Redis Queue Broker',
-      desc: 'In-memory BullMQ message broker governing 6 worker job types and concurrency limits.',
+      desc: 'In-memory BullMQ message broker governing worker job dispatch and concurrency limits.',
       icon: Layers,
       href: '/admin/system/queue',
-      status: integrations?.redis?.status || 'NOT_CONFIGURED',
+      status: isLoading ? 'CHECKING' : integrations?.redis?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.redis?.maskedKey || 'NOT_CONFIGURED',
-      color: 'from-rose-500 to-orange-600',
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto pb-16 font-sans">
       {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <Plug className="h-6 w-6 text-indigo-400" />
-            API & Integrations Center
+          <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
+              <Plug className="h-5 w-5" />
+            </div>
+            <span>API & Integrations Center</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-1">
             Centralized hub for managing external cloud services, OAuth tokens, and server-side encrypted credentials.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-indigo-500/30 bg-indigo-950/20 text-xs text-indigo-300">
-          <ShieldCheck className="h-4 w-4 text-indigo-400" />
-          <span>AES-256-GCM Vault Active</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="font-bold border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            {isRefreshing ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 text-[#0e6de4] animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5 text-[#0e6de4]" />
+                Refresh Status
+              </>
+            )}
+          </Button>
+
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/70 text-xs font-bold text-[#0e6de4]">
+            <ShieldCheck className="h-4 w-4 text-[#0e6de4]" />
+            <span>AES-256-GCM Vault Active</span>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 text-xs leading-5 text-amber-200"><TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" /><p>Dashboard-saved credentials are encrypted but runtime-only. Configure production keys in Vercel Environment Variables so they persist across serverless restarts.</p></div>
+      {/* Warning Banner */}
+      {hasRuntimeOnlySecrets && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 leading-relaxed shadow-xs animate-in fade-in duration-150">
+          <TriangleAlert className="mt-0.5 h-4 w-4 text-amber-600 shrink-0" />
+          <p>
+            <strong className="font-bold">Runtime Credentials Active:</strong> Dashboard-saved credentials are encrypted in memory vault. Configure production keys in Vercel Environment Variables so they persist across serverless cold restarts.
+          </p>
+        </div>
+      )}
 
       {/* Integration Cards Grid */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => {
           const Icon = card.icon;
-          const isConnected = card.status === 'CONNECTED';
+          const status = card.status;
+          const isConnected = status === 'CONNECTED';
+          const isChecking = status === 'CHECKING';
+          const isError = status === 'ERROR';
 
           return (
             <Card
               key={card.id}
-              className="glass-panel-interactive p-5 flex flex-col justify-between space-y-4 border-white/[0.08]"
+              className="p-5 flex flex-col justify-between space-y-4 border-slate-200 bg-white hover:border-slate-300 transition-all shadow-xs"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className={`h-10 w-10 rounded-xl bg-gradient-to-tr ${card.color} flex items-center justify-center text-white shadow-md`}>
+                  <div className="p-2.5 rounded-xl bg-blue-50 text-[#0e6de4] border border-blue-100 flex items-center justify-center">
                     <Icon className="h-5 w-5" />
                   </div>
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono border ${
-                      isConnected
-                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                      isChecking
+                        ? 'bg-blue-50 text-blue-800 border-blue-200 animate-pulse'
+                        : isConnected
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : isError
+                        ? 'bg-red-50 text-red-800 border-red-200'
+                        : 'bg-slate-100 text-slate-700 border-slate-200'
                     }`}
                   >
                     {card.status}
@@ -146,19 +200,23 @@ export default function AdminIntegrationsPage() {
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-white text-sm">{card.title}</h3>
-                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">{card.desc}</p>
+                  <h3 className="font-extrabold text-slate-900 text-sm">{card.title}</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{card.desc}</p>
                 </div>
               </div>
 
-              <div className="space-y-3 pt-3 border-t border-white/[0.06]">
+              <div className="space-y-3 pt-3 border-t border-slate-100">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-slate-500 text-[11px]">Vault Key:</span>
-                  <span className="text-slate-300 font-semibold">{card.maskedKey}</span>
+                  <span className="text-slate-800 font-bold">{card.maskedKey}</span>
                 </div>
 
                 <Link href={card.href} className="block">
-                  <Button variant="outline" size="sm" className="w-full text-xs justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs font-bold justify-between border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-[#0e6de4]"
+                  >
                     <span>Manage Settings</span>
                     <ArrowRight className="h-3.5 w-3.5 ml-1" />
                   </Button>

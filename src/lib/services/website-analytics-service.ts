@@ -45,6 +45,8 @@ export interface CountryAnalytics {
 export interface SourceAnalytics {
   source: string;
   visitors: number;
+  sessions: number;
+  pageViews: number;
   percentage: number;
 }
 
@@ -67,6 +69,19 @@ export interface RealtimeAnalytics {
   pages: string[];
 }
 
+export interface VisitorSessionDetail {
+  id: string;
+  visitorIdMasked: string;
+  startedAt: string;
+  lastSeenAt: string;
+  country: string;
+  device: string;
+  browser: string;
+  source: string;
+  pageViewsCount: number;
+  entryPath: string;
+}
+
 export interface WebsiteAnalyticsResult {
   hasData: boolean;
   metrics: WebsiteAnalyticsMetrics | null;
@@ -77,6 +92,7 @@ export interface WebsiteAnalyticsResult {
   devices: DimensionAnalytics[];
   browsers: DimensionAnalytics[];
   realtime: RealtimeAnalytics;
+  recentSessions: VisitorSessionDetail[];
   storageMode: 'supabase' | 'in-memory';
 }
 
@@ -232,9 +248,14 @@ function aggregate(
     countryMap.set(country, item);
   }
 
-  const sourceMap = new Map<string, number>();
+  const sourceMap = new Map<string, { sessions: number; visitors: Set<string>; pageViews: number }>();
   for (const session of sessionRows) {
-    sourceMap.set(session.source, (sourceMap.get(session.source) || 0) + 1);
+    const item = sourceMap.get(session.source) || { sessions: 0, visitors: new Set<string>(), pageViews: 0 };
+    item.sessions += 1;
+    item.visitors.add(session.visitor_id);
+    const sViews = pageViewRows.filter((pv) => pv.session_id === session.id);
+    item.pageViews += Math.max(1, sViews.length);
+    sourceMap.set(session.source, item);
   }
 
   const pageMap = new Map<string, { views: number; visitors: Set<string>; engagement: number }>();
@@ -261,6 +282,26 @@ function aggregate(
     (session) => new Date(session.last_seen_at).getTime() >= realtimeCutoff
   );
 
+  const recentSessions: VisitorSessionDetail[] = sessionRows
+    .slice()
+    .sort((a, b) => b.started_at.localeCompare(a.started_at))
+    .slice(0, 100)
+    .map((session) => {
+      const sViews = pageViewRows.filter((pv) => pv.session_id === session.id);
+      return {
+        id: session.id,
+        visitorIdMasked: `vst_${session.visitor_id.slice(0, 8)}`,
+        startedAt: session.started_at,
+        lastSeenAt: session.last_seen_at,
+        country: session.country || 'Unknown',
+        device: session.device || 'Unknown',
+        browser: session.browser || 'Other',
+        source: session.source || 'Direct',
+        pageViewsCount: Math.max(1, sViews.length),
+        entryPath: sViews[0]?.path || '/',
+      };
+    });
+
   return {
     hasData,
     metrics: hasData ? {
@@ -284,8 +325,14 @@ function aggregate(
       }))
       .sort((a, b) => b.visitors - a.visitors),
     sources: [...sourceMap.entries()]
-      .map(([source, count]) => ({ source, visitors: count, percentage: percentage(count, sessionRows.length) }))
-      .sort((a, b) => b.visitors - a.visitors),
+      .map(([source, item]) => ({
+        source,
+        visitors: item.visitors.size,
+        sessions: item.sessions,
+        pageViews: item.pageViews,
+        percentage: percentage(item.sessions, sessionRows.length),
+      }))
+      .sort((a, b) => b.sessions - a.sessions),
     topPages: [...pageMap.entries()]
       .map(([path, item]) => ({
         path,
@@ -303,6 +350,7 @@ function aggregate(
         pageViewRows.filter((view) => view.session_id === session.id).map((view) => view.path)
       ))].slice(0, 5),
     },
+    recentSessions,
     storageMode,
   };
 }

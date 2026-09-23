@@ -10,229 +10,319 @@ import {
   RefreshCw,
   ShieldCheck,
   CheckCircle2,
-  AlertTriangle,
+  AlertCircle,
   XCircle,
   Clock,
   User,
+  ChevronLeft,
+  ChevronRight,
+  Code2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+
+interface AuditLogEntry {
+  id: string;
+  userId: string;
+  userEmail: string;
+  action: string;
+  resourceType: string;
+  resourceId?: string;
+  ipAddress: string;
+  userAgent: string;
+  status: 'success' | 'failed' | 'blocked';
+  metadata: Record<string, any>;
+  timestamp: string;
+}
 
 export default function AdminAuditLogsPage() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedLog, setSelectedLog] = useState<any | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalLogs, setTotalLogs] = useState(0);
+
+  const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchLogs = async () => {
+  const fetchLogs = async (targetPage = page) => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
       if (actionFilter !== 'all') params.set('action', actionFilter);
       if (statusFilter !== 'all') params.set('status', statusFilter);
-      if (search) params.set('search', search);
+      if (search.trim()) params.set('search', search.trim());
+      params.set('page', targetPage.toString());
+      params.set('limit', '20');
 
-      const res = await fetch(`/api/admin/logs?${params.toString()}`);
-      const json = await res.json();
-      if (json.logs) setLogs(json.logs);
+      const res = await fetch(`/api/admin/logs?${params.toString()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.logs && Array.isArray(json.logs)) {
+          setLogs(json.logs);
+          setTotalLogs(json.totalLogs || json.logs.length);
+          setTotalPages(json.totalPages || 1);
+          setPage(json.page || targetPage);
+        }
+      }
     } catch {
-      // Offline fallback
-      setLogs([
-        {
-          id: 'log-001',
-          userEmail: 'mithusquare@gmail.com',
-          action: 'admin_login_success',
-          resourceType: 'auth',
-          resourceId: 'usr-superadmin-001',
-          ipAddress: '127.0.0.1',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          status: 'success',
-          metadata: { role: 'SUPER_ADMIN', authMethod: 'password_hash' },
-          timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-        },
-        {
-          id: 'log-002',
-          userEmail: 'mithusquare@gmail.com',
-          action: 'integration_updated',
-          resourceType: 'system_secrets',
-          resourceId: 'RESEND_API_KEY',
-          ipAddress: '127.0.0.1',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          status: 'success',
-          metadata: { provider: 'Resend', keyConfigured: true, maskedPreview: '••••••••ABCD' },
-          timestamp: new Date(Date.now() - 3600000 * 1).toISOString(),
-        },
-      ]);
+      // Fallback
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLogs();
+    fetchLogs(1);
   }, [actionFilter, statusFilter]);
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchLogs(1);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'success':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="h-3 w-3 text-emerald-600" /> SUCCESS
+          </span>
+        );
+      case 'failed':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-rose-50 text-rose-700 border border-rose-200">
+            <XCircle className="h-3 w-3 text-rose-600" /> FAILED
+          </span>
+        );
+      case 'blocked':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200">
+            <AlertCircle className="h-3 w-3 text-amber-600" /> BLOCKED
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
+            {status.toUpperCase()}
+          </span>
+        );
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[1500px] mx-auto pb-10">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <ScrollText className="h-6 w-6 text-indigo-400" />
+          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2.5">
+            <ScrollText className="h-6 w-6 text-[#0e6de4]" />
             Super Admin Audit Trail
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-            Immutable log of all administrative actions, role modifications, queue changes, and API key updates.
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
+            Immutable server-side audit log of administrative actions, role modifications, queue changes, and API key updates.
           </p>
         </div>
 
-        <Button variant="outline" size="sm" onClick={fetchLogs} isLoading={isLoading}>
-          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+        <button
+          type="button"
+          onClick={() => fetchLogs(page)}
+          disabled={isLoading}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#0758bd] disabled:opacity-50 cursor-pointer shrink-0"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh Feed
-        </Button>
+        </button>
       </div>
 
       {/* Filter Bar */}
-      <Card className="glass-panel p-4 flex flex-col sm:flex-row items-center gap-3">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center gap-3">
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 w-full">
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search by action, email, or resource..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetchLogs()}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-xs font-semibold text-[#111827] placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-100 focus:outline-none transition shadow-2xs"
           />
-        </div>
+        </form>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:border-indigo-500 focus:outline-none w-full sm:w-auto"
-        >
-          <option value="all">All Statuses</option>
-          <option value="success">Success</option>
-          <option value="failed">Failed</option>
-          <option value="blocked">Blocked</option>
-        </select>
-      </Card>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <select
+            value={actionFilter}
+            onChange={(e) => setActionFilter(e.target.value)}
+            className="rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 focus:border-[#0e6de4] focus:outline-none shadow-2xs cursor-pointer flex-1 md:flex-initial"
+          >
+            <option value="all">All Actions</option>
+            <option value="admin_login_success">Admin Login Success</option>
+            <option value="integration_updated">Integration Updated</option>
+            <option value="campaign_settings_saved">Campaign Settings Saved</option>
+            <option value="secret_configured">Secret Configured</option>
+            <option value="emergency_controls_triggered">Emergency Controls</option>
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 focus:border-[#0e6de4] focus:outline-none shadow-2xs cursor-pointer flex-1 md:flex-initial"
+          >
+            <option value="all">All Statuses</option>
+            <option value="success">Success</option>
+            <option value="failed">Failed</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        </div>
+      </div>
 
       {/* Audit Log Table */}
-      <Card className="glass-panel overflow-hidden border-white/[0.08]">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
+          <span className="text-xs font-extrabold text-[#111827]">
+            Immutable Event Trail ({totalLogs} recorded)
+          </span>
+          <span className="text-[11px] font-mono font-bold text-slate-600 bg-slate-200/60 px-2.5 py-1 rounded-md">
+            Page {page} of {totalPages}
+          </span>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#090D16] border-b border-white/[0.08] text-slate-400 font-mono uppercase text-[10px]">
-              <tr>
-                <th className="px-5 py-3.5">Timestamp</th>
-                <th className="px-5 py-3.5">Admin Actor</th>
-                <th className="px-5 py-3.5">Action</th>
-                <th className="px-5 py-3.5">Resource</th>
-                <th className="px-5 py-3.5">IP & Agent</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5 text-right">Details</th>
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase text-[11px]">
+                <th className="px-6 py-4">Timestamp (UTC)</th>
+                <th className="px-5 py-4">Admin Actor</th>
+                <th className="px-5 py-4">Action</th>
+                <th className="px-5 py-4">Resource</th>
+                <th className="px-5 py-4">IP Address</th>
+                <th className="px-5 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.05]">
+            <tbody className="divide-y divide-slate-100">
               {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-900/40 transition-colors">
-                  <td className="px-5 py-3.5 font-mono text-[11px] text-slate-400">
-                    {new Date(log.timestamp).toLocaleString()}
+                <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="px-6 py-4 font-mono text-[11px] font-bold text-slate-600 whitespace-nowrap align-middle">
+                    {new Date(log.timestamp).toISOString().replace('T', ' ').slice(0, 19)}
                   </td>
 
-                  <td className="px-5 py-3.5">
-                    <span className="font-bold text-white">{log.userEmail}</span>
+                  <td className="px-5 py-4 whitespace-nowrap align-middle">
+                    <span className="font-bold text-[#111827]">{log.userEmail}</span>
                   </td>
 
-                  <td className="px-5 py-3.5 font-mono font-bold text-indigo-300 text-[11px]">
+                  <td className="px-5 py-4 font-mono font-extrabold text-[#0e6de4] text-[11px] whitespace-nowrap align-middle">
                     {log.action}
                   </td>
 
-                  <td className="px-5 py-3.5">
-                    <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] font-mono text-slate-300">
+                  <td className="px-5 py-4 whitespace-nowrap align-middle">
+                    <span className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-[10px] font-mono font-bold text-slate-700">
                       {log.resourceType}
                     </span>
                   </td>
 
-                  <td className="px-5 py-3.5 font-mono text-[10px] text-slate-400">
+                  <td className="px-5 py-4 font-mono text-[11px] text-slate-600 font-semibold whitespace-nowrap align-middle">
                     {log.ipAddress}
                   </td>
 
-                  <td className="px-5 py-3.5">
-                    {log.status === 'success' ? (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                        SUCCESS
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-rose-500/15 text-rose-400 border border-rose-500/30">
-                        {log.status.toUpperCase()}
-                      </span>
-                    )}
+                  <td className="px-5 py-4 whitespace-nowrap align-middle">
+                    {getStatusBadge(log.status)}
                   </td>
 
-                  <td className="px-5 py-3.5 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                  <td className="px-6 py-4 text-right whitespace-nowrap align-middle">
+                    <button
+                      type="button"
                       onClick={() => setSelectedLog(log)}
-                      className="text-[11px] h-7 px-2 text-indigo-400 hover:text-white"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#0e6de4] hover:bg-blue-50 border border-blue-200 transition cursor-pointer"
                     >
-                      View JSON
-                    </Button>
+                      <Code2 className="h-3.5 w-3.5" /> View JSON
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </Card>
+
+        {/* Pagination Footer */}
+        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between">
+          <span className="text-xs text-slate-500 font-medium">
+            Showing page <span className="font-bold text-slate-700">{page}</span> of <span className="font-bold text-slate-700">{totalPages}</span> ({totalLogs} total events)
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={page <= 1 || isLoading}
+              onClick={() => fetchLogs(page - 1)}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 disabled:opacity-40 cursor-pointer shadow-2xs"
+            >
+              <ChevronLeft className="h-4 w-4" /> Previous
+            </button>
+            <button
+              type="button"
+              disabled={page >= totalPages || isLoading}
+              onClick={() => fetchLogs(page + 1)}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 disabled:opacity-40 cursor-pointer shadow-2xs"
+            >
+              Next <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Metadata Detail Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <Card className="glass-panel w-full max-w-lg p-6 space-y-4 border-slate-700 bg-slate-950">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white font-mono">
-                Audit Event: {selectedLog.action}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-sm font-black text-[#111827] font-mono">
+                Audit Payload: {selectedLog.action}
               </h3>
               <button
+                type="button"
                 onClick={() => setSelectedLog(null)}
-                className="text-slate-400 hover:text-white text-sm font-bold"
+                className="text-slate-400 hover:text-slate-700 text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between text-slate-400">
+            <div className="space-y-2 text-xs font-medium">
+              <div className="flex justify-between border-b border-slate-100 pb-1.5 text-slate-600">
                 <span>Actor:</span>
-                <span className="font-bold text-white">{selectedLog.userEmail}</span>
+                <span className="font-bold text-[#111827]">{selectedLog.userEmail}</span>
               </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Timestamp:</span>
-                <span className="font-mono text-slate-300">{new Date(selectedLog.timestamp).toISOString()}</span>
+              <div className="flex justify-between border-b border-slate-100 pb-1.5 text-slate-600">
+                <span>Timestamp (UTC):</span>
+                <span className="font-mono font-bold text-slate-800">{new Date(selectedLog.timestamp).toISOString()}</span>
               </div>
-              <div className="flex justify-between text-slate-400">
-                <span>IP Address:</span>
-                <span className="font-mono text-slate-300">{selectedLog.ipAddress}</span>
+              <div className="flex justify-between border-b border-slate-100 pb-1.5 text-slate-600">
+                <span>Client IP Address:</span>
+                <span className="font-mono font-bold text-slate-800">{selectedLog.ipAddress}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Resource ID:</span>
+                <span className="font-mono font-bold text-slate-800">{selectedLog.resourceId || 'global'}</span>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-300">Sanitized Metadata (Zero Secrets):</p>
-              <pre className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-mono text-indigo-300 overflow-x-auto">
+            <div className="space-y-1.5">
+              <p className="text-xs font-extrabold text-[#111827]">Sanitized JSON Metadata (Zero Secrets):</p>
+              <pre className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-60">
                 {JSON.stringify(selectedLog.metadata, null, 2)}
               </pre>
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button variant="secondary" size="sm" onClick={() => setSelectedLog(null)}>
-                Close
-              </Button>
+              <button
+                type="button"
+                onClick={() => setSelectedLog(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 cursor-pointer"
+              >
+                Close Payload
+              </button>
             </div>
-          </Card>
+          </div>
         </div>
       )}
     </div>

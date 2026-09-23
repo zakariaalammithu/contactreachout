@@ -1,33 +1,41 @@
 /**
  * Bulk Contact Form Outreach System — Log Sanitization & Secret Redaction
  * Automatically masks credentials, tokens, API keys, and sensitive PII in logs.
+ * NEVER exposes secrets to client components, API responses, or log files.
  */
 
-// Regex patterns identifying secrets and credentials
 const SENSITIVE_PATTERNS = [
-  /sk-[a-zA-Z0-9]{20,}/g,                        // OpenAI keys
-  /sk-ant-[a-zA-Z0-9\-_]{20,}/g,                  // Anthropic keys
-  /Bearer\s+[a-zA-Z0-9\-_\.]+/gi,                 // Bearer tokens
-  /password["']?\s*[:=]\s*["']?([^"'\s,]+)/gi,    // Passwords
-  /secret["']?\s*[:=]\s*["']?([^"'\s,]+)/gi,      // Secrets
-  /anon_key["']?\s*[:=]\s*["']?([^"'\s,]+)/gi,    // Supabase keys
+  /sk-[a-zA-Z0-9\-_]{20,}/g,                       // OpenAI keys
+  /sk-ant-[a-zA-Z0-9\-_]{20,}/g,                 // Anthropic keys
+  /re_[a-zA-Z0-9\-_]{20,}/g,                     // Resend keys
+  /rk_[a-zA-Z0-9\-_]{20,}/g,                     // Resend keys variant
+  /GOCSPX-[a-zA-Z0-9\-_]{20,}/g,                 // Google OAuth Client Secret
+  /Bearer\s+[a-zA-Z0-9\-_\.]+/gi,                // Bearer tokens
+  /password["']?\s*[:=]\s*["']?([^"'\s,]+)/gi,   // Passwords
+  /secret["']?\s*[:=]\s*["']?([^"'\s,]+)/gi,     // Secrets
+  /anon_key["']?\s*[:=]\s*["']?([^"'\s,]+)/gi,   // Supabase anon key
   /service_role["']?\s*[:=]\s*["']?([^"'\s,]+)/gi,// Supabase service role
-  /DATABASE_URL=([^\s]+)/gi,                       // DB connection strings
+  /DATABASE_URL=([^\s]+)/gi,                      // DB connection strings
+  /REDIS_URL=([^\s]+)/gi,                         // Redis connection strings
 ];
 
 /**
- * Redacts secrets and credentials from strings or log objects.
+ * Recursively redacts secrets, credentials, and sensitive tokens from strings or objects.
  */
 export function sanitizeLogOutput(input: any): any {
+  if (input === null || input === undefined) {
+    return input;
+  }
+
   if (typeof input === 'string') {
     let sanitized = input;
     for (const pattern of SENSITIVE_PATTERNS) {
-      sanitized = sanitized.replace(pattern, '[REDACTED_SECRET]');
+      sanitized = sanitized.replace(pattern, '••••••••[REDACTED]');
     }
     return sanitized;
   }
 
-  if (typeof input === 'object' && input !== null) {
+  if (typeof input === 'object') {
     if (Array.isArray(input)) {
       return input.map(sanitizeLogOutput);
     }
@@ -39,10 +47,18 @@ export function sanitizeLogOutput(input: any): any {
         lowerKey.includes('password') ||
         lowerKey.includes('secret') ||
         lowerKey.includes('apikey') ||
+        lowerKey.includes('api_key') ||
         lowerKey.includes('token') ||
-        lowerKey.includes('auth')
+        lowerKey.includes('auth') ||
+        lowerKey.includes('cookie') ||
+        lowerKey.includes('session') ||
+        lowerKey.includes('key')
       ) {
-        sanitizedObj[key] = '[REDACTED]';
+        if (typeof value === 'string' && value.startsWith('••••')) {
+          sanitizedObj[key] = value; // Already masked preview (e.g. ••••••••ABCD)
+        } else {
+          sanitizedObj[key] = '••••••••[REDACTED]';
+        }
       } else {
         sanitizedObj[key] = sanitizeLogOutput(value);
       }

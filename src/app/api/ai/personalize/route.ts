@@ -13,8 +13,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
     const account = AuthStore.getUserByEmail(session.email);
-    if (account && account.role === 'USER' && account.paidCredits <= 0) {
-      return NextResponse.json({ error: 'AI Personalization is available on paid plans. Upgrade your plan to unlock AI-powered personalized outreach.' }, { status: 403 });
+    const userPlan = (account?.plan || 'Free').toLowerCase();
+    const isEligiblePlan = userPlan.includes('agency') || userPlan.includes('enterprise') || session.role === 'ADMIN' || session.role === 'SUPER_ADMIN';
+
+    if (account && session.role === 'USER' && !isEligiblePlan) {
+      return NextResponse.json({ error: 'AI Personalization is exclusive to Agency and Enterprise plans. Please upgrade your plan to unlock AI-powered personalized outreach.' }, { status: 403 });
     }
 
     const body = await req.json();

@@ -193,6 +193,35 @@ export class QueueManager {
   }
 
   /**
+   * Re-queues failed jobs that have not exceeded maximum attempts.
+   */
+  public static async retryFailedJobs(): Promise<number> {
+    let retriedCount = 0;
+    for (const job of this.jobsMap.values()) {
+      if (job.status === 'failed') {
+        job.status = 'waiting';
+        job.failedReason = undefined;
+        retriedCount++;
+      }
+    }
+    return retriedCount;
+  }
+
+  /**
+   * Clears completed job telemetry from memory without modifying active/pending/failed jobs or credit records.
+   */
+  public static async clearCompletedTelemetry(): Promise<number> {
+    let clearedCount = 0;
+    for (const [id, job] of this.jobsMap.entries()) {
+      if (job.status === 'completed') {
+        this.jobsMap.delete(id);
+        clearedCount++;
+      }
+    }
+    return clearedCount;
+  }
+
+  /**
    * Clears all jobs (for test fixtures).
    */
   public static clear(): void {

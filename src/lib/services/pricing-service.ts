@@ -66,8 +66,8 @@ export const PLAN_PRICING_DETAILS: Record<number, PlanPricingDetails> = {
     discountPercent: 20,
   },
   100000: {
-    planId: 'scale',
-    name: 'Scale',
+    planId: 'agency',
+    name: 'Agency',
     creditsMonthly: 100000,
     creditsYearly: 1200000,
     monthlyPrice: 199,
@@ -86,8 +86,6 @@ export const PLAN_PRICING_DETAILS: Record<number, PlanPricingDetails> = {
     yearlyAnnualCharge: 2868,
     yearlyAnnualSavings: 720,
     discountPercent: 20,
-    strikethroughMonthly: 399,
-    strikethroughYearlyEffective: 319,
   },
 };
 
@@ -104,85 +102,92 @@ export interface SystemPricingConfig {
 export const DEFAULT_PRICING_CONFIG: SystemPricingConfig = {
   freePlan: {
     id: 'plan_free',
-    name: 'Free Plan',
+    name: 'Free',
     price: 0,
     currency: 'USD',
     billingCycle: 'monthly',
     credits: 100,
-    description: '100 free credits every month • No credit card required',
+    description: 'Try ContactReachout',
     features: [
       '100 monthly credits',
       'No credit card required',
       'Contact form outreach engine',
       'CSV & Excel import',
-      'Basic & live results',
+      'Basic results',
     ],
-    buttonText: 'Get Started Free (100 Credits)',
+    buttonText: 'Try ContactReachout',
   },
   package5000: {
-    id: 'package_5000',
-    name: '5,000 Credits',
+    id: 'starter',
+    name: 'Starter',
     price: 50,
     currency: 'USD',
-    billingCycle: 'one_time',
+    billingCycle: 'monthly',
     credits: 5000,
-    description: '$0.01 per credit • Starter package',
+    description: 'For getting started',
     features: [
-      '5,000 credits ($0.01 / credit)',
+      '5,000 credits/month',
       'Non-expiring credits',
-      'Full contact form processing engine',
+      'Full contact-form processing engine',
       'Detailed results & screenshot proofs',
+      'No AI Personalization',
     ],
-    buttonText: 'Buy 5,000 Credits ($50)',
+    buttonText: 'Buy Starter',
   },
   package10000: {
-    id: 'package_10000',
-    name: '10,000 Credits',
+    id: 'growth',
+    name: 'Growth',
     price: 99,
     currency: 'USD',
-    billingCycle: 'one_time',
+    billingCycle: 'monthly',
     credits: 10000,
-    description: '$0.0099 per credit • Growth volume',
+    description: 'For growing outreach',
     features: [
-      '10,000 credits ($0.0099 / credit)',
+      '10,000 credits/month',
       'Non-expiring credits',
-      'Full contact form processing engine',
+      'Full contact-form processing engine',
       'Detailed results & screenshot proofs',
+      'No AI Personalization',
     ],
-    buttonText: 'Buy 10,000 Credits ($99)',
+    buttonText: 'Buy Growth',
   },
   package100000: {
-    id: 'package_100000',
-    name: '100,000 Credits',
+    id: 'agency',
+    name: 'Agency',
     price: 199,
     currency: 'USD',
-    billingCycle: 'one_time',
+    billingCycle: 'monthly',
     credits: 100000,
-    description: '$0.0019 per credit • Scale volume',
+    description: 'For high-volume teams & AI outreach',
     features: [
-      '100,000 credits ($0.0019 / credit)',
+      '100,000 credits/month',
       'Non-expiring credits',
-      'Priority worker queue dispatch',
+      'Full contact-form processing engine',
+      'Detailed results & screenshot proofs',
+      'AI Personalization',
       'Multi-sequence follow-up support',
+      'Priority worker queue',
     ],
-    buttonText: 'Buy 100,000 Credits ($199)',
+    buttonText: 'Buy Agency',
   },
   package300000: {
-    id: 'package_300000',
-    name: '300,000 Credits',
+    id: 'enterprise',
+    name: 'Enterprise',
     price: 299,
     currency: 'USD',
-    billingCycle: 'one_time',
+    billingCycle: 'monthly',
     credits: 300000,
-    description: 'Promo • $0.0009 per credit • Flat $100 Off',
+    description: 'For large-scale outreach',
     features: [
-      '300,000 credits ($0.0009 / credit)',
-      'Promo: Flat $100 Off (Was $399)',
+      '300,000 credits/month',
+      'Non-expiring credits',
+      'Full contact-form processing engine',
+      'AI Personalization',
       'Dedicated worker concurrency pool',
       'Master Inbox & email forwarding sync',
       'Priority 24/7 technical support',
     ],
-    buttonText: 'Buy 300,000 Credits ($299)',
+    buttonText: 'Buy Enterprise',
   },
   creditRules: {
     SUCCESSFUL_SUBMISSION: {
@@ -245,10 +250,18 @@ export const DEFAULT_PRICING_CONFIG: SystemPricingConfig = {
 };
 
 export class PricingService {
+  private static customCreditRules: Record<string, CreditRule> | null = null;
+
   /**
    * Single server-side source of truth for pricing config.
    */
   public static getPricingConfig(): SystemPricingConfig {
+    if (this.customCreditRules) {
+      return {
+        ...DEFAULT_PRICING_CONFIG,
+        creditRules: { ...DEFAULT_PRICING_CONFIG.creditRules, ...this.customCreditRules },
+      };
+    }
     return DEFAULT_PRICING_CONFIG;
   }
 
@@ -260,14 +273,49 @@ export class PricingService {
   }
 
   /**
+   * Updates credit rules with strict validation. Changes apply to future transactions.
+   */
+  public static updateCreditRules(updatedRules: Record<string, { creditCost: number; description?: string }>): SystemPricingConfig {
+    const validKeys = Object.keys(DEFAULT_PRICING_CONFIG.creditRules);
+    const currentRules = this.getPricingConfig().creditRules;
+    const newRules: Record<string, CreditRule> = { ...currentRules };
+
+    for (const [key, ruleUpdate] of Object.entries(updatedRules)) {
+      if (!validKeys.includes(key)) {
+        throw new Error(`Invalid credit rule outcome key: ${key}`);
+      }
+      const cost = Number(ruleUpdate.creditCost);
+      if (isNaN(cost) || cost < 0) {
+        throw new Error(`Invalid credit cost for ${key}: must be a non-negative number.`);
+      }
+      newRules[key] = {
+        ...newRules[key],
+        creditCost: cost,
+        description: ruleUpdate.description || newRules[key].description,
+      };
+    }
+
+    this.customCreditRules = newRules;
+    DEFAULT_PRICING_CONFIG.creditRules = newRules;
+    return this.getPricingConfig();
+  }
+
+  /**
    * Calculates credit deduction based on finalized submission result.
    */
   public static getCreditCost(resultType: string): number {
     const clean = (resultType || '').toUpperCase().trim();
-    if (clean === 'AI_PERSONALIZATION') return 0;
-    if (clean === 'SUCCESS' || clean === 'SUBMITTED' || clean === 'SUCCESSFUL_SUBMISSION') return 1;
-    if (clean === 'FAILED' || clean === 'SUBMISSION_FAILED' || clean === 'FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT') return 0;
+    if (clean === 'AI_PERSONALIZATION') return 0.0;
+    
     const config = this.getPricingConfig();
+    
+    if (clean === 'SUCCESS' || clean === 'SUBMITTED' || clean === 'SUCCESSFUL_SUBMISSION') {
+      return config.creditRules.SUCCESSFUL_SUBMISSION?.creditCost ?? 1.0;
+    }
+    if (clean === 'FAILED' || clean === 'SUBMISSION_FAILED' || clean === 'FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT') {
+      return config.creditRules.FAILED_SUBMISSION_AFTER_REAL_FORM_ATTEMPT?.creditCost ?? 0.0;
+    }
+    
     const rule = config.creditRules[clean];
     if (rule) return rule.creditCost;
 
