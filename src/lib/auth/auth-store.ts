@@ -45,12 +45,22 @@ export interface UserSession {
   expiresAt: number;
 }
 
-// In-memory server-side persistent data stores
-const userRegistry = new Map<string, UserAccount>();
-const otpRegistry = new Map<string, OtpRecord>();
-const sessionRegistry = new Map<string, UserSession>();
-const pendingSignupRegistry = new Map<string, { fullName: string; email: string; phone?: string; password: string; referralCode?: string }>();
-const rateLimitTracker = new Map<string, { count: number; windowExpiresAt: number }>();
+declare global {
+  /* eslint-disable no-var */
+  var __cr_userRegistry: Map<string, UserAccount> | undefined;
+  var __cr_otpRegistry: Map<string, OtpRecord> | undefined;
+  var __cr_sessionRegistry: Map<string, UserSession> | undefined;
+  var __cr_pendingSignupRegistry: Map<string, { fullName: string; email: string; phone?: string; password: string; referralCode?: string }> | undefined;
+  var __cr_rateLimitTracker: Map<string, { count: number; windowExpiresAt: number }> | undefined;
+  /* eslint-enable no-var */
+}
+
+// Global server-side persistent data stores (persisted on globalThis to prevent route bundle isolation)
+const userRegistry = globalThis.__cr_userRegistry ?? (globalThis.__cr_userRegistry = new Map<string, UserAccount>());
+const otpRegistry = globalThis.__cr_otpRegistry ?? (globalThis.__cr_otpRegistry = new Map<string, OtpRecord>());
+const sessionRegistry = globalThis.__cr_sessionRegistry ?? (globalThis.__cr_sessionRegistry = new Map<string, UserSession>());
+const pendingSignupRegistry = globalThis.__cr_pendingSignupRegistry ?? (globalThis.__cr_pendingSignupRegistry = new Map<string, { fullName: string; email: string; phone?: string; password: string; referralCode?: string }>());
+const rateLimitTracker = globalThis.__cr_rateLimitTracker ?? (globalThis.__cr_rateLimitTracker = new Map<string, { count: number; windowExpiresAt: number }>());
 
 export class AuthStore {
   public static readonly PRIMARY_SUPER_ADMIN_EMAIL = 'mithusquare@gmail.com';

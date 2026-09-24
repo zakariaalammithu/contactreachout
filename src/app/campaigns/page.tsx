@@ -234,10 +234,12 @@ export default function CampaignsPage() {
           if (Array.isArray(parsed)) {
             mappedUserCamps = parsed
               .filter((c: any) => {
-                if (deletedIds.includes(c.id)) return false;
+                if (!c || typeof c !== 'object') return false;
+                if (c.id && deletedIds.includes(c.id)) return false;
                 if (!isAdmin) {
                   // Normal User: strictly require owner match to prevent cross-account campaign leakage
-                  if (!c.ownerEmail || c.ownerEmail.toLowerCase().trim() !== userEmail.toLowerCase().trim()) return false;
+                  const owner = typeof c.ownerEmail === 'string' ? c.ownerEmail.toLowerCase().trim() : '';
+                  if (!owner || owner !== userEmail.toLowerCase().trim()) return false;
                 }
                 return true;
               })
@@ -248,16 +250,27 @@ export default function CampaignsPage() {
                 const noForm = typeof c.noFormCount === 'number' ? c.noFormCount : typeof c.noContactPage === 'number' ? c.noContactPage : 0;
                 const captcha = typeof c.captchaCount === 'number' ? c.captchaCount : typeof c.captchaBlocked === 'number' ? c.captchaBlocked : 0;
                 const replied = typeof c.repliedCount === 'number' ? c.repliedCount : typeof c.replied === 'number' ? c.replied : 0;
+                
+                let dateStr = 'Recently';
+                try {
+                  const d = new Date(c.createdAt || Date.now());
+                  if (!isNaN(d.getTime())) {
+                    dateStr = d.toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    });
+                  }
+                } catch (e) {
+                  dateStr = 'Recently';
+                }
+
                 return {
-                  id: c.id,
-                  name: c.name,
-                  date: new Date(c.createdAt || Date.now()).toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                  }),
+                  id: String(c.id || `camp-${Date.now()}`),
+                  name: String(c.name || 'Untitled Campaign'),
+                  date: dateStr,
                   sendersCount: typeof c.sendersCount === 'number' ? c.sendersCount : 3,
-                  tag: c.tag || 'CUSTOM',
+                  tag: String(c.tag || 'CUSTOM'),
                   status: c.status === 'running' || c.status === 'active' ? 'active' : c.status === 'paused' ? 'paused' : c.status === 'archived' ? 'archived' : 'draft',
                   prospects: total,
                   reached: sent,
@@ -571,7 +584,7 @@ export default function CampaignsPage() {
 
       return [
         c.id,
-        `"${c.name.replace(/"/g, '""')}"`,
+        `"${String(c.name || '').replace(/"/g, '""')}"`,
         c.date,
         c.status,
         c.prospects,
@@ -848,15 +861,19 @@ export default function CampaignsPage() {
     }
   };
 
-  // Filtered campaigns
+  // Filtered campaigns (with safe string conversion and null checks)
   const filtered = campaigns.filter((c) => {
-    if (tagFilter !== 'All Tags' && c.tag !== tagFilter) {
+    if (!c) return false;
+    const cName = String(c.name || '');
+    const cTag = String(c.tag || '');
+
+    if (tagFilter !== 'All Tags' && cTag !== tagFilter) {
       return false;
     }
     if (folderFilter !== 'All Folders') {
       const lowerFolder = folderFilter.toLowerCase();
-      const lowerName = c.name.toLowerCase();
-      const lowerTag = (c.tag || '').toLowerCase();
+      const lowerName = cName.toLowerCase();
+      const lowerTag = cTag.toLowerCase();
       if (!lowerName.includes(lowerFolder) && !lowerTag.includes(lowerFolder)) {
         return false;
       }
