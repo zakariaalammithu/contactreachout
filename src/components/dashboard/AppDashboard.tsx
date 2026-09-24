@@ -36,6 +36,7 @@ import {
   FileEdit,
   PlusCircle,
   Send,
+  Gift,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -158,7 +159,51 @@ export default function AppDashboard() {
         ].map(({ label, value, icon: Icon }) => <Card key={label} className="rounded-3xl border border-blue-100 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-xs font-black uppercase tracking-wide text-slate-500">{label}</p><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#0e6de4]"><Icon className="h-5 w-5" /></span></div><p className="mt-5 text-3xl font-black text-slate-950">{value}</p></Card>)}</div>
         <div className="grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
           <Card className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><div><h2 className="font-black text-slate-950">Recent Campaigns</h2><p className="mt-1 text-xs text-slate-500">Your most recently updated campaigns.</p></div><Link href="/campaigns" className="text-xs font-black text-[#0e6de4]">View all</Link></div><div className="mt-5 space-y-2">{storedCampaigns.length ? storedCampaigns.slice().sort((a,b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))).slice(0,4).map((campaign) => <Link key={campaign.id} href={`/campaigns/new?edit=${campaign.id}`} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4 hover:border-blue-200"><div><p className="text-sm font-black text-slate-900">{campaign.name || 'Untitled campaign'}</p><p className="mt-1 text-xs text-slate-500">{campaign.prospectsList?.length || 0} prospects</p></div><span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${campaign.status === 'draft' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-[#0e6de4]'}`}>{campaign.status || 'draft'}</span></Link>) : <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">No saved campaigns yet.</div>}</div></Card>
-          <div className="space-y-5"><Card className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm"><h2 className="font-black text-slate-950">Quick Actions</h2><div className="mt-4 grid gap-2">{[{ href:'/campaigns/new', label:'Create New Campaign', icon:PlusCircle },{ href:'/import', label:'Import Leads', icon:UploadCloud },{ href:'/pricing', label:'Buy Credits', icon:CreditCard }].map(({href,label,icon:Icon}) => <Link key={label} href={href} className="flex items-center gap-3 rounded-xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-black text-slate-700 hover:text-[#0e6de4]"><Icon className="h-4 w-4 text-[#0e6de4]" />{label}</Link>)}</div></Card><Card className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><h2 className="font-black text-slate-950">Recent Activity</h2><Link href="/results" className="text-xs font-black text-[#0e6de4]">Results</Link></div><p className="mt-4 text-sm leading-6 text-slate-500">Review submission outcomes, blocked forms and completed campaign activity.</p></Card></div>
+          <div className="space-y-5">
+            <Card className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+              <h2 className="font-black text-slate-950">Quick Actions</h2>
+              <div className="mt-4 grid gap-2">
+                {[
+                  { href: '/campaigns/new', label: 'Create New Campaign', icon: PlusCircle },
+                  { href: '/import', label: 'Import Leads', icon: UploadCloud },
+                  { href: '/pricing', label: 'Buy Credits', icon: CreditCard },
+                ].map(({ href, label, icon: Icon }) => (
+                  <Link key={label} href={href} className="flex items-center gap-3 rounded-xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-black text-slate-700 hover:text-[#0e6de4]">
+                    <Icon className="h-4 w-4 text-[#0e6de4]" />
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            </Card>
+
+            {/* Compact Refer & Earn Widget */}
+            <Card className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50/80 to-white p-6 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#0e6de4] text-white">
+                    <Gift className="h-4 w-4" />
+                  </span>
+                  <h2 className="font-black text-slate-950 text-sm">Refer & Earn</h2>
+                </div>
+                <span className="text-[10px] font-black uppercase text-[#0e6de4] bg-blue-100 px-2 py-0.5 rounded-full">Bonus Credits</span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed font-sans">
+                Give a new user 50 bonus credits and earn 100 bonus credits when they verify their account.
+              </p>
+              <Link href="/referral" className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors">
+                Refer a Friend
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Card>
+
+            <Card className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="font-black text-slate-950">Recent Activity</h2>
+                <Link href="/results" className="text-xs font-black text-[#0e6de4]">Results</Link>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-500">Review submission outcomes, blocked forms and completed campaign activity.</p>
+            </Card>
+          </div>
         </div>
       </section>
 

@@ -23,6 +23,7 @@ import {
   ExternalLink,
   MessageSquare,
   CornerUpLeft,
+  Coins,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -35,171 +36,118 @@ interface LeadReply {
   campaignName: string;
   date: string;
   isUnread: boolean;
-  status: 'INTERESTED' | 'QUESTION' | 'REPLIED';
+  status: 'INTERESTED' | 'QUESTION' | 'REPLIED' | 'NEW' | 'UNMATCHED';
   originalSubject: string;
   originalMessage: string;
   replyMessage: string;
   replySent?: string;
   forwardedToEmail: string;
+  isTest?: boolean;
 }
 
-const sampleReplies: LeadReply[] = [
-  {
-    id: 'rep-1',
-    prospectName: 'Sarah Connor',
-    email: 'sarah@acmeclouddynamics.com',
-    companyName: 'Acme Cloud Dynamics',
-    website: 'https://acmeclouddynamics.com',
-    campaignName: '7.19.26-SaaS Company for Healthcare 2',
-    date: '10 mins ago',
-    isUnread: true,
-    status: 'INTERESTED',
-    forwardedToEmail: 'alex@outreachagency.com',
-    originalSubject: 'Idea for Acme Cloud Dynamics website contact form outreach',
-    originalMessage:
-      'Hi Sarah,\n\nHope you are having a great week at Acme Cloud Dynamics.\n\nWe help teams manage B2B contact-form outreach campaigns.\n\nAre you open for a 5-minute call this Thursday?\n\nBest,\nAlex Morgan',
-    replyMessage:
-      'Hey Alex,\n\nThanks for reaching out! We are actually looking to expand our B2B lead generation via contact form submission this quarter.\n\nCould you share your pricing structure and a quick 5-min demo link? Thursday 2 PM PST works for me!\n\nBest regards,\nSarah Connor\nCTO, Acme Cloud Dynamics',
-  },
-  {
-    id: 'rep-2',
-    prospectName: 'John Vance',
-    email: 'j.vance@dentalcarenet.io',
-    companyName: 'DentalCare Network',
-    website: 'https://dentalcarenet.io',
-    campaignName: '6.16.26- Dantal list for web',
-    date: '2 hours ago',
-    isUnread: true,
-    status: 'QUESTION',
-    forwardedToEmail: 'alex@outreachagency.com',
-    originalSubject: 'Question for John regarding DentalCare Network',
-    originalMessage:
-      'Hi John,\n\nFollowing up on my previous note regarding DentalCare Network.\n\nContactReachout supports controlled bulk contact-form outreach.\n\nBest,\nAlex Morgan',
-    replyMessage:
-      'Hello,\n\nDoes your system support Google CAPTCHA v3 bypass without getting blocked by Cloudflare? If yes, we have a list of 5,000 clinic websites to test.\n\nThanks,\nJohn Vance',
-  },
-  {
-    id: 'rep-3',
-    prospectName: 'Elena Rostova',
-    email: 'elena@healthtechglobal.org',
-    companyName: 'HealthTech Global',
-    website: 'https://healthtechglobal.org',
-    campaignName: '6.22.26- SaaS company for Healthcare',
-    date: 'Yesterday at 4:15 PM',
-    isUnread: false,
-    status: 'REPLIED',
-    forwardedToEmail: 'alex@outreachagency.com',
-    originalSubject: 'Sequence 2: Tailored idea for HealthTech Global',
-    originalMessage:
-      'Hi Elena,\n\nScaling outreach often brings manual bottlenecks.\n\nContactReachout organizes bulk contact-form submission campaigns.\n\nBest,\nAlex Morgan',
-    replyMessage:
-      'Hi Alex,\n\nOur marketing VP handles vendor inquiries. I have cc-ed him here so you can coordinate directly. Thanks!\n\nElena',
-    replySent: 'Thanks Elena! I will connect with your VP right away.',
-  },
-];
-
 export default function UniboxPage() {
-  const [replies, setReplies] = useState<LeadReply[]>(sampleReplies);
-  const [selectedReplyId, setSelectedReplyId] = useState<string>('rep-1');
+  const [replies, setReplies] = useState<LeadReply[]>([]);
+  const [selectedReplyId, setSelectedReplyId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [replyText, setReplyText] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Sync forward email setting from localStorage or campaign settings
+  // Sync forward email & user wallet credits from server session
   const [forwardEmail, setForwardEmail] = useState('hello@contactreachout.com');
+  const [availableCredits, setAvailableCredits] = useState<number>(0);
 
-  // Test Reply Sync Modal State
+  // Sandbox Test Reply Modal State
   const [showSyncModal, setShowSyncModal] = useState(false);
-  const [syncProspectName, setSyncProspectName] = useState('Lead Prospect');
-  const [syncProspectEmail, setSyncProspectEmail] = useState('prospect@targetcompany.com');
+  const [syncProspectName, setSyncProspectName] = useState('Test Prospect');
+  const [syncProspectEmail, setSyncProspectEmail] = useState('test.lead@targetdomain.com');
   const [syncCompanyName, setSyncCompanyName] = useState('Target Business Corp');
-  const [syncReplyMessage, setSyncReplyMessage] = useState('Hi ContactReachout Team, I received your website inquiry regarding outbound B2B lead generation! We are interested in testing this for 5,000 clinic websites. Can we schedule a demo call this Thursday?');
+  const [syncReplyMessage, setSyncReplyMessage] = useState('Hi, I received your contact form outreach! We are interested in testing ContactReachout for our sales team.');
 
-  const loadInboxReplies = () => {
-    if (typeof window === 'undefined') return;
+  const fetchInboxData = async () => {
+    setIsLoading(true);
     try {
-      const stored = localStorage.getItem('user_inbox_messages');
-      const customReplies: LeadReply[] = stored ? JSON.parse(stored) : [];
+      const res = await fetch('/api/inbox');
+      if (res.ok) {
+        const data = await res.json();
+        const msgList: LeadReply[] = data.messages || [];
+        setReplies(msgList);
+        if (data.forwardingEmail) setForwardEmail(data.forwardingEmail);
+        if (typeof data.availableCredits === 'number') setAvailableCredits(data.availableCredits);
 
-      const storedSender = localStorage.getItem('user_sender_profile');
-      if (storedSender) {
-        const parsed = JSON.parse(storedSender);
-        if (parsed.email) setForwardEmail(parsed.email);
-      } else {
-        const storedReplyEmail = localStorage.getItem('user_reply_to_email');
-        if (storedReplyEmail) setForwardEmail(storedReplyEmail);
-      }
-
-      if (Array.isArray(customReplies) && customReplies.length > 0) {
-        setReplies([...customReplies, ...sampleReplies]);
-        if (customReplies[0]?.id) {
-          setSelectedReplyId(customReplies[0].id);
+        if (msgList.length > 0) {
+          setSelectedReplyId((prev) => prev || msgList[0].id);
         }
       }
     } catch (err) {
-      console.error('Error loading inbox replies:', err);
+      console.error('Failed to fetch inbox data from API:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadInboxReplies();
-
-    const handleNewReplyEvent = () => loadInboxReplies();
-    window.addEventListener('inbox_reply_received', handleNewReplyEvent);
-    return () => window.removeEventListener('inbox_reply_received', handleNewReplyEvent);
+    fetchInboxData();
   }, []);
 
   // Handle Creating / Syncing a Test Reply
-  const handleSimulateIncomingReply = () => {
+  const handleSimulateIncomingReply = async () => {
     if (!syncProspectEmail.trim() || !syncReplyMessage.trim()) {
       alert('Please fill in prospect email and reply message.');
       return;
     }
 
-    const newReplyObj: LeadReply = {
-      id: `rep-${Date.now()}`,
-      prospectName: syncProspectName.trim() || 'Alex Morgan',
-      email: syncProspectEmail.trim(),
-      companyName: syncCompanyName.trim() || 'B2B GDC',
-      website: `https://${(syncCompanyName.trim() || 'b2bgdc').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
-      campaignName: 'Live B2B Contact Form Outreach',
-      date: 'Just now',
-      isUnread: true,
-      status: 'INTERESTED',
-      forwardedToEmail: forwardEmail,
-      originalSubject: 'Outreach Inquiry regarding growth',
-      originalMessage: `Hi ${syncProspectName.split(' ')[0] || 'there'},\n\nReaching out via contact form regarding your growth services.\n\nBest regards,\n${forwardEmail}`,
-      replyMessage: syncReplyMessage.trim(),
-    };
+    try {
+      const res = await fetch('/api/inbox/webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prospectName: syncProspectName.trim() || 'Test Prospect',
+          prospectEmail: syncProspectEmail.trim(),
+          companyName: syncCompanyName.trim() || 'Target Business',
+          website: `https://${(syncCompanyName.trim() || 'targetbusiness').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+          subject: '[TEST SIMULATED] Website Outreach Inquiry',
+          replyMessage: `[SANDBOX TEST REPLY]\n${syncReplyMessage.trim()}`,
+          userEmail: forwardEmail,
+          campaignName: 'Sandbox Test Campaign',
+          status: 'INTERESTED',
+        }),
+      });
 
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('user_inbox_messages');
-        const existing: LeadReply[] = stored ? JSON.parse(stored) : [];
-        const updated = [newReplyObj, ...existing];
-        localStorage.setItem('user_inbox_messages', JSON.stringify(updated));
-
-        setReplies([newReplyObj, ...replies]);
-        setSelectedReplyId(newReplyObj.id);
+      if (res.ok) {
         setShowSyncModal(false);
-        setToastMessage(`✅ Incoming reply received from ${newReplyObj.prospectName} (${newReplyObj.email}) and synced to Unibox!`);
+        setToastMessage(`✅ Test reply generated and synced to Master Inbox!`);
         setTimeout(() => setToastMessage(null), 4000);
-      } catch (err) {
-        console.error('Error saving simulated reply:', err);
+        await fetchInboxData();
+      } else {
+        alert('Failed to simulate test reply');
       }
+    } catch (err) {
+      console.error('Error simulating test reply:', err);
     }
   };
 
   const activeReply = replies.find((r) => r.id === selectedReplyId) || replies[0];
 
   // Mark as read when selected
-  const handleSelectReply = (rep: LeadReply) => {
+  const handleSelectReply = async (rep: LeadReply) => {
     setSelectedReplyId(rep.id);
-    setReplies((prev) =>
-      prev.map((r) => (r.id === rep.id ? { ...r, isUnread: false } : r))
-    );
+    if (rep.isUnread) {
+      setReplies((prev) =>
+        prev.map((r) => (r.id === rep.id ? { ...r, isUnread: false } : r))
+      );
+      try {
+        await fetch('/api/inbox', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messageId: rep.id }),
+        });
+      } catch (err) {
+        console.error('Error marking message read:', err);
+      }
+    }
   };
 
   // Send Outbound Reply Email Handler (Dispatches real email via /api/inbox/send-reply)
@@ -208,50 +156,40 @@ export default function UniboxPage() {
       alert('Please enter a reply message before sending.');
       return;
     }
+    if (!activeReply) return;
 
     setIsSendingReply(true);
     const sentMessageText = replyText.trim();
-    const targetId = selectedReplyId || activeReply.id;
+    const targetId = activeReply.id;
 
     try {
-      // Call API to transmit real outbound reply email to recipient's email
       const res = await fetch('/api/inbox/send-reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          messageId: targetId,
           recipientEmail: activeReply.email,
-          senderEmail: forwardEmail || 'mithusquare@gmail.com',
           subject: activeReply.originalSubject || 'Re: Outreach Inquiry',
           replyText: sentMessageText,
-          prospectName: activeReply.prospectName,
         }),
       });
 
       const data = await res.json();
 
-      setReplies((prev) =>
-        prev.map((r) =>
-          r.id === targetId || r.email === activeReply.email
-            ? { ...r, replySent: sentMessageText, status: 'REPLIED', isUnread: false }
-            : r
-        )
-      );
-
-      // Persist outbound reply in user_inbox_messages
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('user_inbox_messages');
-        const existing: LeadReply[] = stored ? JSON.parse(stored) : [];
-        const updated = existing.map((r) =>
-          r.id === targetId || r.email === activeReply.email
-            ? { ...r, replySent: sentMessageText, status: 'REPLIED', isUnread: false }
-            : r
+      if (res.ok) {
+        setReplies((prev) =>
+          prev.map((r) =>
+            r.id === targetId
+              ? { ...r, replySent: sentMessageText, status: 'REPLIED', isUnread: false }
+              : r
+          )
         );
-        localStorage.setItem('user_inbox_messages', JSON.stringify(updated));
+        setReplyText('');
+        setToastMessage(data.message || `Reply email sent successfully to ${activeReply.email}!`);
+        setTimeout(() => setToastMessage(null), 4000);
+      } else {
+        alert(`Error sending email reply: ${data.error || 'Server error'}`);
       }
-
-      setReplyText('');
-      setToastMessage(data.message || `Reply email "${sentMessageText}" sent successfully to ${activeReply.email}!`);
-      setTimeout(() => setToastMessage(null), 4000);
     } catch (err: any) {
       console.error('Error sending reply email:', err);
       alert(`Error sending email reply: ${err.message}`);
@@ -260,10 +198,12 @@ export default function UniboxPage() {
     }
   };
 
+
   // Filtered Replies List
   const filteredReplies = replies.filter((r) => {
     if (statusFilter === 'UNREAD' && !r.isUnread) return false;
     if (statusFilter === 'INTERESTED' && r.status !== 'INTERESTED') return false;
+    if (statusFilter === 'UNMATCHED' && r.status !== 'UNMATCHED') return false;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -300,8 +240,13 @@ export default function UniboxPage() {
           </p>
         </div>
 
-        {/* Right Action Bar (Forward Email Banner + Receive Test Reply Button) */}
+        {/* Right Action Bar (Forward Email Banner + Available Credits + Receive Test Reply Button) */}
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/80 text-xs text-emerald-900 font-semibold shadow-2xs font-mono">
+            <Coins className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>Available Credits: <strong className="text-emerald-700 font-extrabold">{availableCredits}</strong></span>
+          </div>
+
           <div className="flex items-center gap-2 p-2.5 rounded-xl border border-blue-200 bg-blue-50/70 text-xs text-blue-900 font-semibold shadow-2xs">
             <Mail className="h-4 w-4 text-blue-600 shrink-0" />
             <span>Forwarding Replies to: <strong className="font-mono text-blue-700">{forwardEmail}</strong></span>
@@ -313,7 +258,7 @@ export default function UniboxPage() {
             className="rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-2 text-xs font-bold flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all cursor-pointer active:scale-95"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            <span>+ Receive / Test Email Reply</span>
+            <span>+ Sandbox Test Reply</span>
           </button>
         </div>
       </div>
@@ -342,14 +287,15 @@ export default function UniboxPage() {
               <option value="ALL">All Status</option>
               <option value="UNREAD">Unread Only</option>
               <option value="INTERESTED">🔥 High Intent</option>
+              <option value="UNMATCHED">🔍 Unmatched / Review</option>
             </select>
           </div>
 
           {/* Lead Thread Cards */}
           <div className="space-y-2 max-h-[680px] overflow-y-auto pr-1">
             {filteredReplies.length === 0 ? (
-              <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs">
-                No replies found.
+              <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs font-semibold">
+                No replies yet.
               </div>
             ) : (
               filteredReplies.map((rep) => (

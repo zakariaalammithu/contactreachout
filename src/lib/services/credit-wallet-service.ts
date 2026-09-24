@@ -26,7 +26,7 @@ export interface CreditTransaction {
   userId: string;
   campaignId?: string;
   leadId?: string;
-  transactionType: 'FREE_MONTHLY_GRANT' | 'PURCHASE' | 'USAGE' | 'BONUS' | 'REFUND' | 'ADMIN_ADJUSTMENT';
+  transactionType: 'FREE_MONTHLY_GRANT' | 'PURCHASE' | 'USAGE' | 'BONUS' | 'REFUND' | 'ADMIN_ADJUSTMENT' | 'REFERRAL_BONUS' | 'REFERRAL_SIGNUP_BONUS';
   creditSource: 'FREE' | 'PAID' | 'BONUS';
   amount: number; // Negative for usage, positive for grants/purchases
   balanceBefore: number;
@@ -154,6 +154,107 @@ export class CreditWalletService {
     wallet.totalCreditsAvailable = remainingFree + wallet.paidCredits + wallet.bonusCredits;
 
     return wallet;
+  }
+
+  /**
+   * Calculates current unreserved available credits for a user.
+   * Subtracts reserved prospects of running campaigns from available credits.
+   */
+  public static getUnreservedAvailableCredits(userId: string): {
+    availableCredits: number;
+    reservedCredits: number;
+    unreservedCredits: number;
+    activeCampaignsCount: number;
+  } {
+    const wallet = this.getWallet(userId);
+    const userEmail = (userId || '').toLowerCase().trim();
+
+    let activeCampaignsProspects = 0;
+    let activeCampaignsCount = 0;
+
+    if (typeof window !== 'undefined') {
+      try {
+        const campaigns: any[] = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+        const userCampaigns = campaigns.filter(
+          (c) =>
+            c.status === 'running' &&
+            (c.ownerEmail || '').toLowerCase().trim() === userEmail
+        );
+        activeCampaignsCount = userCampaigns.length;
+
+        for (const camp of userCampaigns) {
+          const total = (camp.prospectsList || []).length || camp.totalLeads || 0;
+          const sent = camp.sentCount || 0;
+          const remaining = Math.max(0, total - sent);
+          activeCampaignsProspects += remaining;
+        }
+      } catch {}
+    }
+
+    const reservedCredits = activeCampaignsProspects;
+    const unreservedCredits = Math.max(0, wallet.totalCreditsAvailable - reservedCredits);
+
+    return {
+      availableCredits: wallet.totalCreditsAvailable,
+      reservedCredits,
+      unreservedCredits,
+      activeCampaignsCount,
+    };
+  }
+
+  /**
+   * Server-side validation to check whether a user has sufficient unreserved credits to start a campaign.
+   */
+  public static validateCampaignStart(
+    userId: string,
+    prospectsCount: number
+  ): {
+    allowed: boolean;
+    reason?: 'INSUFFICIENT_CREDITS' | 'NO_CREDITS_REMAINING';
+    availableCredits: number;
+    unreservedCredits: number;
+    requiredCredits: number;
+    shortfall: number;
+    message: string;
+  } {
+    const capacity = this.getUnreservedAvailableCredits(userId);
+    const requiredCredits = prospectsCount;
+    const availableCredits = capacity.availableCredits;
+    const unreservedCredits = capacity.unreservedCredits;
+
+    if (availableCredits <= 0) {
+      return {
+        allowed: false,
+        reason: 'NO_CREDITS_REMAINING',
+        availableCredits,
+        unreservedCredits,
+        requiredCredits,
+        shortfall: requiredCredits,
+        message: 'You have no credits remaining. Please upgrade your plan to continue.',
+      };
+    }
+
+    if (unreservedCredits < requiredCredits) {
+      const shortfall = requiredCredits - unreservedCredits;
+      return {
+        allowed: false,
+        reason: 'INSUFFICIENT_CREDITS',
+        availableCredits,
+        unreservedCredits,
+        requiredCredits,
+        shortfall,
+        message: `Not enough credits to start this campaign. Your current plan has ${availableCredits} available credits (${unreservedCredits} unreserved), but this campaign contains ${requiredCredits} prospects. Please upgrade to a paid plan or reduce the number of prospects.`,
+      };
+    }
+
+    return {
+      allowed: true,
+      availableCredits,
+      unreservedCredits,
+      requiredCredits,
+      shortfall: 0,
+      message: `${requiredCredits} prospects can be processed with your current ${availableCredits} available credits.`,
+    };
   }
 
   /**
@@ -306,7 +407,7 @@ export class CreditWalletService {
   }
 
   /**
-   * Adds admin bonus credits or referral/signup bonus credits.
+   * Adds admin bonus credits or referral/signup bonus credits with canonical transaction logging.
    */
   public static addBonusCredits(
     amount: number,
@@ -324,17 +425,29 @@ export class CreditWalletService {
 
     this.saveWallet(wallet);
 
+    const isReferralReward = reason.toLowerCase().includes('referral reward') || reason.toLowerCase().includes('qualified referral');
+    const isReferralSignup = reason.toLowerCase().includes('referral signup') || reason.toLowerCase().includes('joining through a referral');
+
+    let transactionType: CreditTransaction['transactionType'] = 'ADMIN_ADJUSTMENT';
+    if (isReferralReward) {
+      transactionType = 'REFERRAL_BONUS';
+    } else if (isReferralSignup) {
+      transactionType = 'REFERRAL_SIGNUP_BONUS';
+    } else if (reason.toLowerCase().includes('bonus')) {
+      transactionType = 'BONUS';
+    }
+
     this.recordTransaction(
       {
-        id: `tx-bonus-${Date.now()}`,
+        id: `tx-bonus-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         userId: wallet.userId,
-        transactionType: 'ADMIN_ADJUSTMENT',
+        transactionType,
         creditSource: 'BONUS',
         amount,
         balanceBefore,
         balanceAfter: wallet.totalCreditsAvailable,
-        description: `Bonus: ${reason}`,
-        idempotencyKey: `bonus-${Date.now()}`,
+        description: reason.startsWith('Bonus:') ? reason : `Bonus: ${reason}`,
+        idempotencyKey: `bonus-${Date.now()}-${amount}-${Math.random().toString(36).slice(2, 6)}`,
         createdAt: new Date().toISOString(),
       },
       wallet.userId
@@ -342,6 +455,7 @@ export class CreditWalletService {
 
     return wallet;
   }
+
 
   /**
    * Reads transactions strictly for a specific user ID with no duplicate grants.

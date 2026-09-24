@@ -12,6 +12,7 @@ import {
   Calendar,
   CheckCircle2,
   ArrowRight,
+  Gift,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -204,6 +205,32 @@ export default function CreditsClient() {
         )}
       </div>
 
+      {/* Referral Program Bonus Explanation Card */}
+      <div className="p-4 rounded-2xl border border-blue-200 bg-white shadow-2xs space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 font-extrabold text-slate-900 text-xs">
+            <Gift className="h-4 w-4 text-[#0e6de4]" />
+            <span>Referral Program Credits Structure</span>
+          </div>
+          <Link href="/referral" className="text-xs font-bold text-[#0e6de4] hover:underline flex items-center gap-1">
+            <span>Referral Dashboard</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 font-sans">
+          <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-100 space-y-0.5">
+            <span className="font-extrabold text-[#0e6de4] block text-xs">Referral Bonus (+100 Credits)</span>
+            <span className="text-[11px]">Earn 100 one-time bonus credits for each qualified referral after their email verification.</span>
+          </div>
+          <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-100 space-y-0.5">
+            <span className="font-extrabold text-emerald-800 block text-xs">Referral Signup Bonus (+50 Credits)</span>
+            <span className="text-[11px]">Receive 50 one-time bonus credits after email verification when joining through a referral link.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Priority Consumption Banner */}
+
       {/* Priority Consumption Banner */}
       <div className="p-4 rounded-2xl border border-blue-200 bg-blue-50/70 text-xs text-slate-900 flex items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-2.5">
@@ -314,7 +341,11 @@ export default function CreditsClient() {
                     <td className="p-3 font-bold">
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
-                          tx.transactionType === 'FREE_MONTHLY_GRANT'
+                          tx.transactionType === 'REFERRAL_BONUS'
+                            ? 'bg-blue-100 text-blue-900 border-blue-300 font-bold'
+                            : tx.transactionType === 'REFERRAL_SIGNUP_BONUS'
+                            ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold'
+                            : tx.transactionType === 'FREE_MONTHLY_GRANT'
                             ? 'bg-blue-50 text-[#0e6de4] border-blue-200'
                             : tx.transactionType === 'PURCHASE'
                             ? 'bg-blue-100 text-blue-800 border-blue-200'

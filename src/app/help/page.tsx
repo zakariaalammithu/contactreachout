@@ -58,13 +58,31 @@ const FAQS = [
     id: 'faq-2',
     category: 'contact-forms',
     question: 'How does website contact-form outreach work?',
-    answer: 'A campaign processes target lead data to discover available website contact forms, prepare approved messages, and record each diagnostic submission outcome.',
+    answer: 'ContactReachout does not send email campaigns. It finds and interacts with website contact forms and submits your personalized message using the fields available on each website.',
+  },
+  {
+    id: 'faq-2b',
+    category: 'contact-forms',
+    question: 'How does ContactReachout handle different website form fields?',
+    answer: 'Because every website uses different contact forms, ContactReachout detects available fields such as name, email, subject, message, dropdowns, and other supported fields before submission. Optional fields like Subject are submitted only when supported by the target website.',
   },
   {
     id: 'faq-3',
     category: 'ai-personalization',
     question: 'How does AI personalization work?',
     answer: 'Available prospect and company context is processed to draft relevant outreach text. All generated messages can be reviewed and edited prior to starting submissions.',
+  },
+  {
+    id: 'faq-[#ai-access]',
+    category: 'ai-personalization',
+    question: 'Who can use AI Personalization?',
+    answer: 'AI Personalization is available only to paid ContactReachout plans. Free users cannot use AI Personalization. Paid users can use ContactReachout’s configured AI provider or, where supported, connect their own OpenAI API key from Settings.',
+  },
+  {
+    id: 'faq-[#ai-own-key]',
+    category: 'ai-personalization',
+    question: 'Can I use my own OpenAI API key on the Free plan?',
+    answer: 'No. A paid ContactReachout plan is required. Your own OpenAI API key does not bypass the Free plan restriction.',
   },
   {
     id: 'faq-4',
@@ -119,6 +137,30 @@ const FAQS = [
     category: 'getting-started',
     question: 'How do I contact support?',
     answer: 'Click Contact Support below or email hello@contactreachout.com for direct assistance from the ContactReachout team.',
+  },
+  {
+    id: 'faq-13',
+    category: 'referrals',
+    question: 'How does the ContactReachout referral program work?',
+    answer: 'Share your unique referral link with someone who is new to ContactReachout. When they sign up through your link and complete email verification, they receive 50 one-time bonus credits and you receive 100 one-time bonus credits.',
+  },
+  {
+    id: 'faq-14',
+    category: 'referrals',
+    question: 'How many credits does my referral receive?',
+    answer: 'Your referred user receives 50 one-time bonus credits after completing email verification.',
+  },
+  {
+    id: 'faq-15',
+    category: 'referrals',
+    question: 'How many credits do I earn?',
+    answer: 'You receive 100 one-time bonus credits for each qualified referral after the referred user\'s account is successfully verified.',
+  },
+  {
+    id: 'faq-16',
+    category: 'referrals',
+    question: 'Can I refer myself?',
+    answer: 'No. Self-referrals and duplicate referral activity are not eligible for referral rewards.',
   },
 ];
 

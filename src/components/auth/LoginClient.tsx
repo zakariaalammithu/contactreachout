@@ -9,7 +9,14 @@ export default function LoginClient() {
   const searchParams = useSearchParams();
 
   // Mode: 'signup' | 'signin' | 'google_chooser' | 'otp_verify'
-  const [activeTab, setActiveTab] = useState<'signup' | 'signin' | 'google_chooser' | 'otp_verify'>('signup');
+  const [activeTab, setActiveTab] = useState<'signup' | 'signin' | 'google_chooser' | 'otp_verify'>(() => {
+    if (typeof window !== 'undefined') {
+      const tab = new URLSearchParams(window.location.search).get('tab');
+      if (tab === 'signin') return 'signin';
+      if (tab === 'signup') return 'signup';
+    }
+    return 'signup';
+  });
 
   // Form Fields
   const [fullName, setFullName] = useState('');
@@ -34,7 +41,22 @@ export default function LoginClient() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Check URL parameters for OAuth errors or pre-filled tab
+  // Switch tab and synchronize browser URL query parameter without full reload
+  const switchTab = (tab: 'signup' | 'signin') => {
+    setActiveTab(tab);
+    setErrorMsg('');
+    setSuccessMsg('');
+    setPassword('');
+    setConfirmPassword('');
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.pushState({}, '', url.toString());
+    }
+  };
+
+  // Synchronize with searchParams from Next.js router
   useEffect(() => {
     if (searchParams) {
       const error = searchParams.get('error');
@@ -44,9 +66,27 @@ export default function LoginClient() {
       const tab = searchParams.get('tab');
       if (tab === 'signin') {
         setActiveTab('signin');
+      } else if (tab === 'signup') {
+        setActiveTab('signup');
       }
     }
   }, [searchParams]);
+
+  // Handle browser Back / Forward (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window !== 'undefined') {
+        const tab = new URLSearchParams(window.location.search).get('tab');
+        if (tab === 'signin') {
+          setActiveTab('signin');
+        } else if (tab === 'signup' || !tab) {
+          setActiveTab('signup');
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Read saved local profile if visitor previously signed in on this device
   useEffect(() => {
@@ -333,11 +373,7 @@ export default function LoginClient() {
           <div className="flex rounded-2xl bg-[#EDF2EF] p-1 text-xs">
             <button
               type="button"
-              onClick={() => {
-                setActiveTab('signup');
-                setErrorMsg('');
-                setSuccessMsg('');
-              }}
+              onClick={() => switchTab('signup')}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'signup'
                   ? 'bg-white text-slate-900 shadow-xs'
@@ -348,11 +384,7 @@ export default function LoginClient() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setActiveTab('signin');
-                setErrorMsg('');
-                setSuccessMsg('');
-              }}
+              onClick={() => switchTab('signin')}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'signin'
                   ? 'bg-white text-slate-900 shadow-xs'
@@ -470,10 +502,7 @@ export default function LoginClient() {
               Already have an account?{' '}
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('signin');
-                  setErrorMsg('');
-                }}
+                onClick={() => switchTab('signin')}
                 className="text-blue-600 font-bold hover:underline cursor-pointer"
               >
                 Sign In
@@ -547,10 +576,7 @@ export default function LoginClient() {
               Don't have an account?{' '}
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('signup');
-                  setErrorMsg('');
-                }}
+                onClick={() => switchTab('signup')}
                 className="text-blue-600 font-bold hover:underline cursor-pointer"
               >
                 Sign Up

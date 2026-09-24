@@ -197,9 +197,10 @@ export function MatchDataModal({
         const mappedFirstHeader = mappingObj.first_name;
         const mappedLastHeader = mappingObj.last_name;
 
-        const company = (mappedCompanyHeader && ld[mappedCompanyHeader])
+        const rawCompany = (mappedCompanyHeader && ld[mappedCompanyHeader])
           ? String(ld[mappedCompanyHeader]).trim()
-          : (ld.companyName || ld.company_name || findVal(['company', 'organization', 'business']) || 'Target Lead Account');
+          : (ld.companyName || ld.company_name || findVal(['company', 'organization', 'business']) || '');
+        const company = /^(http|www\.|target lead account|unknown company)/i.test(rawCompany) || /\.(com|org|net|io|co)$/i.test(rawCompany) ? '' : rawCompany;
 
         const rawWeb = (mappedWebsiteHeader && ld[mappedWebsiteHeader])
           ? String(ld[mappedWebsiteHeader]).trim()

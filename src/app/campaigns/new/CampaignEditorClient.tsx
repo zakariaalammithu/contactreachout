@@ -4,11 +4,12 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, AlertCircle, Bot, CheckCircle2, Edit2, FileSpreadsheet, Loader2, Save, ShieldCheck, Sparkles, Users, Upload, UploadCloud, UserPlus, List, X } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Bot, CheckCircle2, Clock, Calendar, Coins, Edit2, FileSpreadsheet, Globe, Loader2, RotateCcw, Save, ShieldCheck, Sparkles, Sliders, Users, Upload, UploadCloud, UserPlus, List, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { CampaignSequenceStep, Lead, LeadList } from '@/types';
 import { downloadSampleCsv } from '@/lib/services/sample-templates';
 import { parseSpreadsheetPreview } from '@/lib/services/import-service';
+import { CANONICAL_DEFAULT_SAFETY_CONFIG, SendingScheduleConfig } from '@/lib/services/processing-controls-service';
 import { MatchDataModal } from '@/components/leads/MatchDataModal';
 import { CampaignMessageEditor } from './CampaignMessageEditor';
 
@@ -22,6 +23,7 @@ interface StoredCampaign {
   maxConcurrency: number; sentCount: number; failedCount: number; noFormCount: number; captchaCount: number;
   submissionDelaySeconds?: number; dailySubmissionLimit?: number; preventDuplicateSubmissions?: boolean;
   retryFailedSubmissions?: number; failureThreshold?: number; humanReviewUncertainForms?: boolean; stopOnSecurityChallenge?: boolean;
+  schedule?: SendingScheduleConfig;
   aiPersonalizationEnabled?: boolean; aiInstructions?: string;
   aiPreview?: { subject: string; body: string; provider: string; isAiGenerated: boolean; companyName: string };
   aiPersonalizedMessages?: Record<string, string>;
@@ -48,18 +50,39 @@ export default function CampaignEditorClient() {
   const [selectedListId, setSelectedListId] = useState('');
   const [selectedListIds, setSelectedListIds] = useState<string[]>([]);
   const [sequence, setSequence] = useState<CampaignSequenceStep>(defaultSequence);
-  const [messageSequences, setMessageSequences] = useState<MessageSequence[]>([{ id: 'sequence-1', name: 'Initial Email', condition: 'prospects that did NOT reply', subject: '', body: '', date: new Date().toISOString().slice(0, 10), delayAmount: 0, delayUnit: 'days', replyInThread: true }]);
+  const [messageSequences, setMessageSequences] = useState<MessageSequence[]>([{ id: 'sequence-1', name: 'Initial Message', condition: 'prospects that did NOT reply', subject: '', body: '', date: new Date().toISOString().slice(0, 10), delayAmount: 0, delayUnit: 'days', replyInThread: true }]);
   const [selectedSequenceId, setSelectedSequenceId] = useState('sequence-1');
-  const [isDryRun, setIsDryRun] = useState(true);
-  const [rateLimitPerMinute, setRateLimitPerMinute] = useState(10);
-  const [maxConcurrency, setMaxConcurrency] = useState(5);
-  const [submissionDelaySeconds, setSubmissionDelaySeconds] = useState(5);
-  const [dailySubmissionLimit, setDailySubmissionLimit] = useState(100);
-  const [preventDuplicateSubmissions, setPreventDuplicateSubmissions] = useState(true);
-  const [retryFailedSubmissions, setRetryFailedSubmissions] = useState(1);
-  const [failureThreshold, setFailureThreshold] = useState(5);
-  const [humanReviewUncertainForms, setHumanReviewUncertainForms] = useState(true);
-  const [stopOnSecurityChallenge, setStopOnSecurityChallenge] = useState(true);
+  const [isDryRun, setIsDryRun] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.isDryRun);
+  const [rateLimitPerMinute, setRateLimitPerMinute] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.rateLimitPerMinute);
+  const [maxConcurrency, setMaxConcurrency] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.maxConcurrency);
+  const [submissionDelaySeconds, setSubmissionDelaySeconds] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.submissionDelaySeconds);
+  const [dailySubmissionLimit, setDailySubmissionLimit] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.dailySubmissionLimit);
+  const [preventDuplicateSubmissions, setPreventDuplicateSubmissions] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.preventDuplicateSubmissions);
+  const [retryFailedSubmissions, setRetryFailedSubmissions] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.retryFailedSubmissions);
+  const [failureThreshold, setFailureThreshold] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.pauseAfterConsecutiveFailures);
+  const [humanReviewUncertainForms, setHumanReviewUncertainForms] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.humanReviewUncertainForms);
+  const [stopOnSecurityChallenge, setStopOnSecurityChallenge] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.stopOnSecurityChallenge);
+
+  // Sending Schedule States
+  const [timezoneMode, setTimezoneMode] = useState<'account' | 'prospect' | 'custom'>(CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.timezoneMode);
+  const [customTimezone, setCustomTimezone] = useState<string>(CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.customTimezone);
+  const [sendingDays, setSendingDays] = useState({ ...CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays });
+  const [sendingHours, setSendingHours] = useState<{ enabled: boolean; start: string; end: string }>({
+    enabled: CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours.enabled ?? false,
+    start: CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours.start || '09:00',
+    end: CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours.end || '17:00',
+  });
+  const [randomizeSubmissionTime, setRandomizeSubmissionTime] = useState(CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.randomizeSubmissionTime);
+  const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
+  const [showStartCampaignConfirmModal, setShowStartCampaignConfirmModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+
+  // Credit Wallet & Shortfall States
+  const [availableCredits, setAvailableCredits] = useState(100);
+  const [showCreditShortfallModal, setShowCreditShortfallModal] = useState(false);
+  const [creditShortfallData, setCreditShortfallData] = useState<any>(null);
+
   const [aiPersonalizationEnabled, setAiPersonalizationEnabled] = useState(false);
   const [aiInstructions, setAiInstructions] = useState('Write a short, professional outreach message for this business. Mention something relevant about the target website and keep the message natural and concise.');
   const [aiPreview, setAiPreview] = useState<StoredCampaign['aiPreview']>();
@@ -151,9 +174,9 @@ export default function CampaignEditorClient() {
     const filtered = messageSequences.filter((item) => item.id !== id);
     const renumbered = filtered.map((item, index) => {
       if (index === 0) {
-        return { ...item, name: 'Initial Email', delayAmount: 0 };
+        return { ...item, name: 'Initial Message', delayAmount: 0 };
       }
-      return { ...item, name: `Follow-up ${index}` };
+      return { ...item, name: `Follow-up Message ${index}` };
     });
 
     setMessageSequences(renumbered);
@@ -165,15 +188,62 @@ export default function CampaignEditorClient() {
       }
     }
   };
-  const addManualProspect = () => {
-    const websites = manualWebsites.split(/\r?\n/).map((site) => site.trim()).filter(Boolean);
-    if (!websites.length || !manualListName.trim()) { setError('Add at least one Website and a Lead List Name.'); return; }
-    const listId = `list-${Date.now()}`; const listName = manualListName.trim();
-    const newList = { id: listId, name: listName, ownerEmail: accountEmail, fileName: 'Manual websites', totalLeads: websites.length, columns: ['website'], createdAt: new Date().toISOString() } as LeadList;
-    const newLeads = websites.map((website, index) => ({ id: `manual-${Date.now()}-${index}`, firstName: '', companyName: '', website, domain: website.replace(/^https?:\/\//i, '').replace(/\/.*$/, ''), listId, listName, ownerEmail: accountEmail, status: 'UNCONTACTED', createdAt: new Date().toISOString() } as Lead));
-    const storedLists = JSON.parse(localStorage.getItem('user_lead_lists') || '[]'); const storedLeads = JSON.parse(localStorage.getItem('user_imported_leads') || '[]');
-    localStorage.setItem('user_lead_lists', JSON.stringify([newList, ...storedLists])); localStorage.setItem('user_imported_leads', JSON.stringify([...newLeads, ...storedLeads]));
-    setLeadLists((items) => [newList, ...items]); setLeads((items) => [...newLeads, ...items]); setSelectedListId(listId); setSelectedListIds((prev) => Array.from(new Set([...prev, listId]))); setManualWebsites(''); setManualListName(''); setError(`${newLeads.length} website(s) added successfully.`);
+  const addManualProspect = (urlsText?: string, listNameInput?: string) => {
+    const textToParse = typeof urlsText === 'string' ? urlsText : manualWebsites;
+    const nameToUse = typeof listNameInput === 'string' ? listNameInput : manualListName;
+    const websites = textToParse.split(/\r?\n/).map((site) => site.trim()).filter(Boolean);
+    if (!websites.length || !nameToUse.trim()) { setError('Add at least one Website and a Lead List Name.'); return false; }
+    const listId = `list-${Date.now()}`; const listName = nameToUse.trim();
+    const activeAccount = accountEmail || (localStorage.getItem('active_account_email') || '').toLowerCase();
+    const newList = { id: listId, name: listName, ownerEmail: activeAccount, fileName: 'Manual websites', totalLeads: websites.length, columns: ['website'], createdAt: new Date().toISOString() } as LeadList;
+    const newLeads = websites.map((website, index) => {
+      const cleanUrl = /^https?:\/\//i.test(website) ? website : `https://${website}`;
+      const domain = cleanUrl.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+      return { id: `manual-${Date.now()}-${index}`, firstName: '', companyName: '', website: cleanUrl, domain, listId, listName, ownerEmail: activeAccount, status: 'UNCONTACTED', createdAt: new Date().toISOString() } as Lead;
+    });
+    const storedLists = JSON.parse(localStorage.getItem('user_lead_lists') || '[]');
+    const storedLeads = JSON.parse(localStorage.getItem('user_imported_leads') || '[]');
+    localStorage.setItem('user_lead_lists', JSON.stringify([newList, ...storedLists]));
+    localStorage.setItem('user_imported_leads', JSON.stringify([...newLeads, ...storedLeads]));
+
+    setLeadLists((items) => [newList, ...items]);
+    setLeads((items) => [...newLeads, ...items]);
+    setSelectedListId(listId);
+
+    const updatedListIds = Array.from(new Set([...selectedListIds, listId]));
+    setSelectedListIds(updatedListIds);
+
+    // Automatically attach list & prospects to current active campaign and persist to localStorage
+    if (editId) {
+      try {
+        const storedCamps = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+        const campIndex = storedCamps.findIndex((c: any) => c.id === editId);
+        if (campIndex !== -1) {
+          const currentProspects = Array.isArray(storedCamps[campIndex].prospectsList) ? storedCamps[campIndex].prospectsList : [];
+          const existingLeadKeys = new Set(currentProspects.map((l: any) => l.website || l.id));
+          const uniqueNewLeads = newLeads.filter((l) => !existingLeadKeys.has(l.website || l.id));
+          const combinedProspects = [...currentProspects, ...uniqueNewLeads];
+
+          storedCamps[campIndex] = {
+            ...storedCamps[campIndex],
+            selectedListId: listId,
+            selectedListIds: updatedListIds,
+            prospectsList: combinedProspects,
+            totalLeads: combinedProspects.length,
+            updatedAt: new Date().toISOString(),
+          };
+          localStorage.setItem('user_campaigns', JSON.stringify(storedCamps));
+        }
+      } catch (e) {
+        console.error('Error auto-attaching manual leads to campaign:', e);
+      }
+    }
+
+    setManualWebsites('');
+    setManualBulkWebsites('');
+    setManualListName('');
+    setError(`${newLeads.length} website(s) added successfully to "${listName}" and attached to this campaign.`);
+    return true;
   };
 
   const processSelectedFile = async (file: File) => {
@@ -218,22 +288,57 @@ export default function CampaignEditorClient() {
       setAccountEmail(activeAccount);
       setLeadLists(Array.isArray(ownedLists) ? ownedLists : []);
       setLeads(Array.isArray(storedLeads) ? storedLeads : []);
+
+      fetch('/api/credits')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.wallet && typeof data.wallet.totalCreditsAvailable === 'number') {
+            setAvailableCredits(data.wallet.totalCreditsAvailable);
+          }
+        })
+        .catch(() => {});
       if (editId) {
         const campaigns: StoredCampaign[] = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
         const campaign = campaigns.find((item) => item.id === editId);
         if (campaign) {
+          const campaignOwner = (campaign as any).ownerEmail ? (campaign as any).ownerEmail.toLowerCase().trim() : '';
+          const isAdmin = activeAccount === 'mithusquare@gmail.com';
+          if (campaignOwner && activeAccount && campaignOwner !== activeAccount && !isAdmin) {
+            setError('Access Denied: You do not have permission to view or edit this campaign. Each user can only access their own campaigns.');
+            return;
+          }
           setCampaignName(campaign.name || ''); setTag(campaign.tag || 'CUSTOM'); setStatus(campaign.status || 'draft');
           const savedListIds = campaign.selectedListIds?.length ? campaign.selectedListIds : campaign.selectedListId ? [campaign.selectedListId] : [];
           setSelectedListId(campaign.selectedListId || savedListIds[0] || ''); setSelectedListIds(savedListIds); setSequence(campaign.sequences?.[0] || defaultSequence());
           setIsDryRun(campaign.isDryRun ?? true); setRateLimitPerMinute(campaign.rateLimitPerMinute || 10);
           setMaxConcurrency(campaign.maxConcurrency || 5); setCreatedAt(campaign.createdAt);
           if (campaign.sequences?.length) {
-            const loaded = campaign.sequences.map((item: any, index: number) => ({ id: item.id || `sequence-${index + 1}`, name: index === 0 ? 'Initial Email' : `Follow-up ${index}`, condition: item.condition || 'prospects that did NOT reply', subject: item.subject || '', body: item.body || '', date: item.date || new Date().toISOString().slice(0, 10), delayAmount: item.delayDays ?? (index > 0 ? (DEFAULT_FOLLOWUP_DELAYS[index - 1] || 4) : 0), delayUnit: item.delayUnit || 'days', replyInThread: item.replyInThread !== undefined ? Boolean(item.replyInThread) : true }));
+            const loaded = campaign.sequences.map((item: any, index: number) => ({ id: item.id || `sequence-${index + 1}`, name: index === 0 ? 'Initial Message' : `Follow-up Message ${index}`, condition: item.condition || 'prospects that did NOT reply', subject: item.subject || '', body: item.body || '', date: item.date || new Date().toISOString().slice(0, 10), delayAmount: item.delayDays ?? (index > 0 ? (DEFAULT_FOLLOWUP_DELAYS[index - 1] || 4) : 0), delayUnit: item.delayUnit || 'days', replyInThread: item.replyInThread !== undefined ? Boolean(item.replyInThread) : true }));
             setMessageSequences(loaded); setSelectedSequenceId(loaded[0].id);
           }
-          setSubmissionDelaySeconds(campaign.submissionDelaySeconds ?? 5); setDailySubmissionLimit(campaign.dailySubmissionLimit ?? 100);
-          setPreventDuplicateSubmissions(campaign.preventDuplicateSubmissions ?? true); setRetryFailedSubmissions(campaign.retryFailedSubmissions ?? 1);
-          setFailureThreshold(campaign.failureThreshold ?? 5); setHumanReviewUncertainForms(campaign.humanReviewUncertainForms ?? true); setStopOnSecurityChallenge(campaign.stopOnSecurityChallenge ?? true);
+          setSubmissionDelaySeconds(campaign.submissionDelaySeconds ?? CANONICAL_DEFAULT_SAFETY_CONFIG.submissionDelaySeconds); setDailySubmissionLimit(campaign.dailySubmissionLimit ?? CANONICAL_DEFAULT_SAFETY_CONFIG.dailySubmissionLimit);
+          setPreventDuplicateSubmissions(campaign.preventDuplicateSubmissions ?? CANONICAL_DEFAULT_SAFETY_CONFIG.preventDuplicateSubmissions); setRetryFailedSubmissions(campaign.retryFailedSubmissions ?? CANONICAL_DEFAULT_SAFETY_CONFIG.retryFailedSubmissions);
+          setFailureThreshold(campaign.failureThreshold ?? CANONICAL_DEFAULT_SAFETY_CONFIG.pauseAfterConsecutiveFailures); setHumanReviewUncertainForms(campaign.humanReviewUncertainForms ?? CANONICAL_DEFAULT_SAFETY_CONFIG.humanReviewUncertainForms); setStopOnSecurityChallenge(campaign.stopOnSecurityChallenge ?? CANONICAL_DEFAULT_SAFETY_CONFIG.stopOnSecurityChallenge);
+
+          const sched = campaign.schedule || (campaign as any).sendingSchedule || CANONICAL_DEFAULT_SAFETY_CONFIG.schedule;
+          setTimezoneMode(sched.timezoneMode || CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.timezoneMode);
+          setCustomTimezone(sched.customTimezone || CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.customTimezone);
+          setSendingDays({
+            monday: sched.sendingDays?.monday ?? CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays.monday,
+            tuesday: sched.sendingDays?.tuesday ?? CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays.tuesday,
+            wednesday: sched.sendingDays?.wednesday ?? CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays.wednesday,
+            thursday: sched.sendingDays?.thursday ?? CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays.thursday,
+            friday: sched.sendingDays?.friday ?? CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays.friday,
+            saturday: sched.sendingDays?.saturday ?? CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays.saturday,
+            sunday: sched.sendingDays?.sunday ?? CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays.sunday,
+          });
+          setSendingHours({
+            enabled: sched.sendingHours?.enabled !== undefined ? Boolean(sched.sendingHours.enabled) : false,
+            start: sched.sendingHours?.start || CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours.start,
+            end: sched.sendingHours?.end || CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours.end,
+          });
+          setRandomizeSubmissionTime(sched.randomizeSubmissionTime ?? CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.randomizeSubmissionTime);
+
           setAiPersonalizationEnabled(campaign.aiPersonalizationEnabled ?? false);
           setAiInstructions(campaign.aiInstructions || 'Write a short, professional outreach message for this business. Mention something relevant about the target website and keep the message natural and concise.');
           setAiPreview(campaign.aiPreview);
@@ -252,28 +357,59 @@ export default function CampaignEditorClient() {
     } catch { setError('Campaign data could not be loaded from this browser.'); }
   }, [editId]);
 
-  useEffect(() => {
-    const selectedIndex = messageSequences.findIndex((item) => item.id === selectedSequenceId);
-    const selected = messageSequences[selectedIndex];
-    if (selected) {
-      setSequence((current) => ({
-        ...current,
-        id: selected.id,
-        stepType: selectedIndex === 0 ? 'initial_email' : 'followup',
-        subject: selected.subject,
-        body: selected.body,
-        delayDays: selected.delayUnit === 'weeks' ? selected.delayAmount * 7 : selected.delayAmount,
-        delayUnit: selected.delayUnit,
-        condition: selected.condition,
-        date: selected.date,
-        replyInThread: selected.replyInThread ?? true,
-      }));
+  const handleSelectSequence = (targetId: string) => {
+    if (targetId === selectedSequenceId) return;
+
+    // Flush current active step into messageSequences array before switching
+    setMessageSequences((prev) =>
+      prev.map((item) =>
+        item.id === selectedSequenceId
+          ? { ...item, subject: sequence.subject, body: sequence.body, replyInThread: sequence.replyInThread ?? true }
+          : item
+      )
+    );
+
+    const targetItem = messageSequences.find((item) => item.id === targetId);
+    const targetIndex = messageSequences.findIndex((item) => item.id === targetId);
+    if (targetItem) {
+      setSelectedSequenceId(targetId);
+      setSequence({
+        id: targetItem.id,
+        sequenceNumber: targetIndex + 1,
+        stepType: targetIndex === 0 ? 'initial_email' : 'followup',
+        subject: targetItem.subject || '',
+        body: targetItem.body || '',
+        delayDays: targetItem.delayUnit === 'weeks' ? targetItem.delayAmount * 7 : targetItem.delayAmount,
+        delayUnit: targetItem.delayUnit || 'days',
+        condition: targetItem.condition || 'prospects that did NOT reply',
+        date: targetItem.date || new Date().toISOString().slice(0, 10),
+        replyInThread: targetItem.replyInThread ?? true,
+      });
     }
-  }, [selectedSequenceId, messageSequences]);
-  useEffect(() => {
-    if (sequence.id !== selectedSequenceId) return;
-    setMessageSequences((items) => items.map((item) => item.id === selectedSequenceId && (item.subject !== sequence.subject || item.body !== sequence.body || item.replyInThread !== sequence.replyInThread) ? { ...item, subject: sequence.subject, body: sequence.body, replyInThread: sequence.replyInThread } : item));
-  }, [sequence.subject, sequence.body, sequence.replyInThread, sequence.id, selectedSequenceId]);
+  };
+
+  const handleSequenceChange: React.Dispatch<React.SetStateAction<CampaignSequenceStep>> = (action) => {
+    setSequence((prev) => {
+      const updated = typeof action === 'function' ? action(prev) : action;
+      setMessageSequences((items) =>
+        items.map((item) =>
+          item.id === updated.id
+            ? {
+                ...item,
+                subject: updated.subject,
+                body: updated.body,
+                replyInThread: updated.replyInThread ?? true,
+                delayAmount: updated.delayUnit === 'weeks' ? updated.delayDays / 7 : updated.delayDays,
+                delayUnit: updated.delayUnit || 'days',
+                condition: updated.condition || item.condition,
+                date: updated.date || item.date,
+              }
+            : item
+        )
+      );
+      return updated;
+    });
+  };
 
   const updateSelectedTiming = (amount: number, unit: 'days' | 'weeks') => {
     setMessageSequences((items) => items.map((item, index) => {
@@ -386,33 +522,138 @@ export default function CampaignEditorClient() {
     finally { setIsGeneratingPreview(false); }
   };
 
-  const saveCampaign = (launch = false, advance = false) => {
-    const cleanName = campaignName.trim();
-    if (activeTab === 'setup' && cleanName.length < 3) { setError('Enter a campaign name with at least 3 characters.'); return; }
-    if ((activeTab === 'prospects' || launch) && (!selectedListIds.length || selectedLeads.length === 0)) { setError('Select at least one lead list containing prospects.'); setActiveTab('prospects'); return; }
-    if (launch && selectedLeads.some((lead) => !lead.website || lead.website.length < 4)) { setError('Please map a Website column and ensure every selected lead has a valid website before starting.'); setActiveTab('prospects'); return; }
-    if ((activeTab === 'message' || launch) && !sequence.body.trim()) { setError('Add a campaign message before saving.'); setActiveTab('message'); return; }
-    const campaigns: StoredCampaign[] = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
-    const existing = editId ? campaigns.find((item) => item.id === editId) : undefined;
-    const now = new Date().toISOString();
-    const campaign: StoredCampaign = {
-      ...(existing || {} as StoredCampaign),
-      id: existing?.id || `campaign-${Date.now()}`, name: cleanName, tag: tag.trim() || 'CUSTOM',
-      status: launch ? 'running' : 'draft', createdAt: createdAt || existing?.createdAt || now, updatedAt: now,
-      selectedListId: selectedListId || selectedListIds[0] || '', selectedListIds, prospectsList: selectedLeads, sequences: messageSequences.map((item, index) => ({ ...sequence, id: item.id, sequenceNumber: index + 1, stepType: index === 0 ? 'initial_email' : 'followup', name: index === 0 ? 'Initial Email' : `Follow-up ${index}`, subject: item.subject, body: item.body, delayDays: item.delayUnit === 'weeks' ? item.delayAmount * 7 : item.delayAmount, delayUnit: item.delayUnit, condition: item.condition, date: item.date, replyInThread: item.replyInThread ?? true })), isDryRun,
-      rateLimitPerMinute, maxConcurrency, sentCount: existing?.sentCount || 0, failedCount: existing?.failedCount || 0,
-      submissionDelaySeconds, dailySubmissionLimit, preventDuplicateSubmissions, retryFailedSubmissions, failureThreshold,
-      humanReviewUncertainForms, stopOnSecurityChallenge,
-      noFormCount: existing?.noFormCount || 0, captchaCount: existing?.captchaCount || 0,
-      aiPersonalizationEnabled, aiInstructions: aiInstructions.trim(), aiPreview,
-    };
-    const updated = existing ? campaigns.map((item) => item.id === existing.id ? campaign : item) : [campaign, ...campaigns];
-    localStorage.setItem('user_campaigns', JSON.stringify(updated));
-    setError('');
-    if (advance) {
-      const nextTab: EditorTab = activeTab === 'setup' ? 'prospects' : activeTab === 'prospects' ? 'message' : 'settings';
-      setActiveTab(nextTab);
-    } else if (launch || !advance) router.push('/campaigns');
+  const saveCampaign = async (launch = false, advance = false) => {
+    if (isSaving || isStarting) return;
+    if (launch) setIsStarting(true);
+    else setIsSaving(true);
+
+    try {
+      const cleanName = campaignName.trim();
+      if (activeTab === 'setup' && cleanName.length < 3) { setError('Enter a campaign name with at least 3 characters.'); return; }
+      if ((activeTab === 'prospects' || launch) && (!selectedListIds.length || selectedLeads.length === 0)) { setError('Select at least one lead list containing prospects.'); setActiveTab('prospects'); return; }
+      if (launch && selectedLeads.some((lead) => !lead.website || lead.website.length < 4)) { setError('Please map a Website column and ensure every selected lead has a valid website before starting.'); setActiveTab('prospects'); return; }
+      if ((activeTab === 'message' || launch) && !sequence.body.trim()) { setError('Add a campaign message before saving.'); setActiveTab('message'); return; }
+
+      // Validate Sending Schedule
+      const hasAnyDay = Object.values(sendingDays).some(Boolean);
+      if ((activeTab === 'settings' || launch) && !hasAnyDay) {
+        setError('Select at least one sending day in Safety & Pacing (e.g. Monday-Friday).');
+        setActiveTab('settings');
+        return;
+      }
+      const [sH, sM] = (sendingHours.start || '09:00').split(':').map(Number);
+      const [eH, eM] = (sendingHours.end || '17:00').split(':').map(Number);
+      if ((activeTab === 'settings' || launch) && sendingHours.enabled && (sH * 60 + (sM || 0) >= eH * 60 + (eM || 0))) {
+        setError('Sending start time must be earlier than end time (e.g. 09:00 AM to 05:00 PM).');
+        setActiveTab('settings');
+        return;
+      }
+
+      // Server-Side Credit & AI Entitlement Validation on Campaign Launch
+      if (launch) {
+        try {
+          const valRes = await fetch('/api/campaigns/validate-start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              campaignId: editId || 'new',
+              prospectsCount: selectedLeads.length,
+              aiPersonalizationEnabled,
+            }),
+          });
+
+          const valData = await valRes.json();
+          if (!valRes.ok || !valData.allowed) {
+            setError(valData.message || 'Not enough credits to start this campaign.');
+            setCreditShortfallData(valData);
+            setShowCreditShortfallModal(true);
+            setIsStarting(false);
+            return;
+          }
+        } catch (valErr: any) {
+          setError(valErr.message || 'Could not validate campaign credits.');
+          setIsStarting(false);
+          return;
+        }
+      }
+
+      const campaigns: StoredCampaign[] = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+      const existing = editId ? campaigns.find((item) => item.id === editId) : undefined;
+      const now = new Date().toISOString();
+      const activeAccount = accountEmail || (localStorage.getItem('active_account_email') || '').toLowerCase();
+
+      // When user launches/starts the campaign, disable dry-run unless safety setting specifically overrides
+      const effectiveIsDryRun = launch ? false : isDryRun;
+
+      const finalMessageSequences = messageSequences.map((item) =>
+        item.id === selectedSequenceId
+          ? { ...item, subject: sequence.subject, body: sequence.body, replyInThread: sequence.replyInThread ?? true }
+          : item
+      );
+
+      const campaign: StoredCampaign & { ownerEmail?: string } = {
+        ...(existing || {} as StoredCampaign),
+        id: existing?.id || `campaign-${Date.now()}`,
+        name: cleanName,
+        tag: tag.trim() || 'CUSTOM',
+        status: launch ? 'running' : 'draft',
+        createdAt: createdAt || existing?.createdAt || now,
+        updatedAt: now,
+        ownerEmail: (existing as any)?.ownerEmail || activeAccount,
+        selectedListId: selectedListId || selectedListIds[0] || '',
+        selectedListIds,
+        prospectsList: selectedLeads,
+        sequences: finalMessageSequences.map((item, index) => ({
+          id: item.id,
+          sequenceNumber: index + 1,
+          stepType: index === 0 ? 'initial_email' : 'followup',
+          name: index === 0 ? 'Initial Message' : `Follow-up Message ${index}`,
+          subject: item.subject,
+          body: item.body,
+          delayDays: item.delayUnit === 'weeks' ? item.delayAmount * 7 : item.delayAmount,
+          delayUnit: item.delayUnit,
+          condition: item.condition,
+          date: item.date,
+          replyInThread: item.replyInThread ?? true,
+        })),
+        isDryRun: effectiveIsDryRun,
+        rateLimitPerMinute,
+        maxConcurrency,
+        sentCount: existing?.sentCount || 0,
+        failedCount: existing?.failedCount || 0,
+        submissionDelaySeconds,
+        dailySubmissionLimit,
+        preventDuplicateSubmissions,
+        retryFailedSubmissions,
+        failureThreshold,
+        humanReviewUncertainForms,
+        stopOnSecurityChallenge,
+        schedule: {
+          timezoneMode,
+          customTimezone,
+          sendingDays,
+          sendingHours,
+          randomizeSubmissionTime,
+        },
+        noFormCount: existing?.noFormCount || 0,
+        captchaCount: existing?.captchaCount || 0,
+        aiPersonalizationEnabled,
+        aiInstructions: aiInstructions.trim(),
+        aiPreview,
+      };
+      const updated = existing ? campaigns.map((item) => item.id === existing.id ? campaign : item) : [campaign, ...campaigns];
+      localStorage.setItem('user_campaigns', JSON.stringify(updated));
+      setError('');
+      if (advance) {
+        const nextTab: EditorTab = activeTab === 'setup' ? 'prospects' : activeTab === 'prospects' ? 'message' : 'settings';
+        setActiveTab(nextTab);
+      } else if (launch || !advance) {
+        router.push('/campaigns');
+      }
+    } finally {
+      setIsSaving(false);
+      setIsStarting(false);
+    }
   };
 
   const tabs: Array<{ id: EditorTab; label: string }> = [
@@ -499,7 +740,15 @@ export default function CampaignEditorClient() {
             </div>
           </div>
 
-          <div className="flex justify-end border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+            <button
+              type="button"
+              onClick={() => downloadSampleCsv('b2b-saas')}
+              className="text-xs font-semibold text-[#0e6de4] hover:underline cursor-pointer flex items-center gap-1.5"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              <span>Download Example CSV</span>
+            </button>
             <button
               type="button"
               onClick={() => { setUploadModalOpen(false); setUploadModalError(''); }}
@@ -512,7 +761,73 @@ export default function CampaignEditorClient() {
       </div>
     )}
 
-    {manualModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-lg font-bold">Enter Websites Manually</h2><p className="mt-1 text-sm text-slate-500">Paste one website URL per line.</p><textarea rows={8} value={manualBulkWebsites} onChange={(event) => setManualBulkWebsites(event.target.value)} placeholder={'acme.com\nhttps://example.com'} className="mt-4 w-full rounded-xl border border-slate-300 p-3 text-sm" /><input value={manualListName} onChange={(event) => setManualListName(event.target.value)} placeholder="Lead List Name" className="mt-3 w-full rounded-xl border border-slate-300 p-3 text-sm" /><div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setManualModalOpen(false)} className="rounded-xl border px-4 py-2 text-sm">Cancel</button><Button type="button" onClick={() => { setManualWebsites(manualBulkWebsites); addManualProspect(); setManualModalOpen(false); }} className="px-4 py-2">Add Websites</Button></div></div></div>}
+    {manualModalOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs">
+        <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <h2 className="text-base font-bold text-slate-900">Enter Websites Manually</h2>
+            <button
+              type="button"
+              onClick={() => setManualModalOpen(false)}
+              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Website URL(s)
+              </label>
+              <textarea
+                rows={6}
+                value={manualBulkWebsites}
+                onChange={(event) => setManualBulkWebsites(event.target.value)}
+                placeholder={'https://example.com\nhttps://example2.com\nhttps://example3.com'}
+                className="w-full rounded-xl border border-slate-300 p-3 text-sm font-mono text-slate-900 placeholder-slate-400 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="mt-1 text-xs text-slate-500">Paste one website URL per line.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Lead List Name / File Name
+              </label>
+              <input
+                type="text"
+                value={manualListName}
+                onChange={(event) => setManualListName(event.target.value)}
+                placeholder="e.g. My Healthcare Leads"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2.5 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+            <button
+              type="button"
+              onClick={() => setManualModalOpen(false)}
+              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <Button
+              type="button"
+              onClick={() => {
+                const success = addManualProspect(manualBulkWebsites, manualListName);
+                if (success) {
+                  setManualModalOpen(false);
+                }
+              }}
+              className="px-5 py-2.5"
+            >
+              Save & Attach List
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
     {listsModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-bold text-slate-900">Choose Lead Lists</h2><p className="mt-1 text-sm text-slate-500">Select one or more lists to add to this campaign.</p></div><List className="h-5 w-5 text-[#0e6de4]" /></div><div className="mt-5 space-y-3">{ownedLeadLists.length ? ownedLeadLists.map((list) => { const count = leads.filter((lead) => lead.listId === list.id || lead.listName === list.name).length; const checked = listsModalSelection.includes(list.id); return <label key={list.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border p-4 transition-colors ${checked ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-200'}`}><span className="flex items-center gap-3"><FileSpreadsheet className="h-5 w-5 text-blue-600" /><span><span className="block text-sm font-bold text-slate-900">{list.name}</span><span className="block text-xs text-slate-500">{count} leads</span></span></span><input type="checkbox" checked={checked} onChange={() => setListsModalSelection((current) => current.includes(list.id) ? current.filter((id) => id !== list.id) : [...current, list.id])} className="h-5 w-5" /></label>; }) : <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-600">No lead lists are available yet.</div>}</div><div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={() => setListsModalOpen(false)} className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700">Cancel</button><Button type="button" onClick={() => { setSelectedListIds(listsModalSelection); setSelectedListId(listsModalSelection[0] || ''); setListsModalOpen(false); setError(listsModalSelection.length ? '' : 'Select at least one lead list.'); }} className="px-5 py-2.5">Add to Campaign</Button></div></div></div>}
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -573,20 +888,124 @@ export default function CampaignEditorClient() {
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
-          <Button variant="outline" onClick={() => saveCampaign(false)} className="min-w-[148px] whitespace-nowrap px-6 py-3">
-            <Save className="mr-2 h-4 w-4" />Save Draft
+          <Button
+            variant="outline"
+            disabled={isSaving || isStarting}
+            onClick={() => saveCampaign(false)}
+            className="min-w-[148px] whitespace-nowrap px-6 py-3 cursor-pointer"
+          >
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-500" /> : <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Saving...' : 'Save Draft'}
           </Button>
-          <Button onClick={() => activeTab === 'settings' ? saveCampaign(true) : saveCampaign(false, true)} className="min-w-[164px] whitespace-nowrap px-6 py-3">
-            <CheckCircle2 className="mr-2 h-4 w-4" />{activeTab === 'settings' ? 'Save & Start' : 'Save & Next'}
+
+          <Button
+            disabled={isSaving || isStarting}
+            onClick={() => {
+              if (activeTab === 'settings') {
+                setShowStartCampaignConfirmModal(true);
+              } else {
+                saveCampaign(false, true);
+              }
+            }}
+            className="min-w-[164px] whitespace-nowrap px-6 py-3 cursor-pointer bg-[#0e6de4] hover:bg-blue-700 font-bold"
+          >
+            {isStarting || isSaving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
+            ) : (
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+            )}
+            {activeTab === 'settings'
+              ? isStarting ? 'Starting Campaign...' : 'Start Campaign'
+              : isSaving ? 'Saving...' : 'Save & Continue'}
           </Button>
         </div>
       </div>
       {error && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">{error}</div>}
       <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2">{tabs.map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`rounded-xl px-4 py-2 text-sm font-semibold ${activeTab === tab.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>{tab.label}</button>)}</div>
+
+      {activeTab === 'setup' && (
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-2xs sm:p-8 space-y-6">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Campaign Details</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Set the campaign name and category tag for organizing your outreach.</p>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Campaign Name</label>
+                <input
+                  type="text"
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  placeholder="e.g. B2B SaaS Outreach Campaign"
+                  className="w-full rounded-xl border border-slate-300 p-3 text-sm font-bold text-slate-900 focus:border-[#0e6de4] focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Industry / Tag</label>
+                <input
+                  type="text"
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value)}
+                  placeholder="e.g. SaaS, Healthcare, Agencies"
+                  className="w-full rounded-xl border border-slate-300 p-3 text-sm font-bold text-slate-900 focus:border-[#0e6de4] focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* CONTACT & REPLY SETTINGS CARD */}
+          <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-2xs sm:p-8 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-[#0e6de4]" />
+                  <span>Contact & Reply Settings</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  The verified reply email address used when target website forms require an email field.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                Status: Verified
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Campaign Reply Email
+              </label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <input
+                  type="email"
+                  readOnly
+                  value={accountEmail || 'mithusquare@gmail.com'}
+                  className="w-full max-w-md rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-800 outline-none"
+                />
+                <a
+                  href="/profile"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold text-[#0e6de4] hover:underline whitespace-nowrap"
+                >
+                  Change Reply Email in Settings →
+                </a>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Default: your active verified account reply email. Replies from contact form submissions will appear in your <strong>ContactReachout Inbox</strong> and be delivered to this email inbox.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'message' && (
         <div className="float-left mr-6 flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 lg:w-60">
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5 px-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sequence Flow</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Message Sequence</span>
             <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0e6de4] border border-blue-200/60">
               {messageSequences.length - 1}/5 Follow-ups
             </span>
@@ -606,7 +1025,7 @@ export default function CampaignEditorClient() {
               return (
                 <div
                   key={item.id}
-                  onClick={() => setSelectedSequenceId(item.id)}
+                  onClick={() => handleSelectSequence(item.id)}
                   className={`group relative rounded-xl border p-3 transition-all cursor-pointer ${
                     isSelected
                       ? 'border-[#0e6de4] bg-white shadow-xs ring-2 ring-blue-500/20'
@@ -615,7 +1034,7 @@ export default function CampaignEditorClient() {
                 >
                   <div className="flex items-center justify-between">
                     <span className={`text-xs font-bold ${isSelected ? 'text-[#0e6de4]' : 'text-slate-900'}`}>
-                      {isInitial ? 'Initial Email' : `Follow-up ${index}`}
+                      {isInitial ? 'Initial Message' : `Follow-up ${index}`}
                     </span>
                     {!isInitial && (
                       <button
@@ -656,7 +1075,7 @@ export default function CampaignEditorClient() {
               onClick={addFollowUp}
               className="mt-1 w-full rounded-xl border border-dashed border-[#0e6de4]/50 bg-white px-3 py-2 text-center text-xs font-bold text-[#0e6de4] hover:bg-blue-50 hover:border-[#0e6de4] transition-all cursor-pointer"
             >
-              + Add Follow-up
+              + Add Follow-up Message
             </button>
           ) : (
             <div className="mt-1 rounded-xl bg-slate-100 p-2 text-center text-[11px] font-bold text-slate-500">
@@ -667,121 +1086,194 @@ export default function CampaignEditorClient() {
       )}
       {activeTab === 'prospects' && (
         <div className="space-y-4">
-          <div><h2 className="text-xl font-bold text-slate-900">Add Prospects</h2><p className="text-sm text-slate-500">Choose how you want to add prospects to this campaign.</p></div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Add Prospects</h2>
+            <p className="text-sm text-slate-500">Choose how you want to add prospects to this campaign.</p>
+          </div>
           <div className="grid gap-4 md:grid-cols-3">
             <button
               type="button"
               onClick={() => { setUploadModalError(''); setUploadModalOpen(true); }}
-              className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xs transition hover:border-blue-300 cursor-pointer"
+              className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xs transition hover:border-blue-300 cursor-pointer"
             >
               <Upload className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-50 p-1.5 text-[#0e6de4]" />
-              <p className="font-bold">Upload CSV/XLSX</p>
+              <p className="font-bold text-slate-900">Upload CSV/XLSX</p>
             </button>
-            <button type="button" onClick={() => setManualModalOpen(true)} className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm hover:border-blue-300"><UserPlus className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-50 p-1.5 text-[#0e6de4]" /><p className="font-bold">Enter Manually</p></button>
-            <button type="button" onClick={() => { setListsModalSelection(selectedListIds); setListsModalOpen(true); }} className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm hover:border-blue-300"><List className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-50 p-1.5 text-[#0e6de4]" /><p className="font-bold">From Lists</p></button>
+            <button
+              type="button"
+              onClick={() => setManualModalOpen(true)}
+              className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xs transition hover:border-blue-300 cursor-pointer"
+            >
+              <UserPlus className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-50 p-1.5 text-[#0e6de4]" />
+              <p className="font-bold text-slate-900">Enter Manually</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setListsModalSelection(selectedListIds); setListsModalOpen(true); }}
+              className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xs transition hover:border-blue-300 cursor-pointer"
+            >
+              <List className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-50 p-1.5 text-[#0e6de4]" />
+              <p className="font-bold text-slate-900">From Lists</p>
+            </button>
           </div>
+          <input
+            ref={uploadInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+            className="hidden"
+            aria-label="Upload CSV or XLSX"
+            onChange={(event) => { const file = event.target.files?.[0]; if (file) processSelectedFile(file); }}
+          />
         </div>
       )}
-      {activeTab === 'prospects' && <><button type="button" onClick={() => downloadSampleCsv('b2b-saas')} className="text-sm font-semibold text-[#0e6de4] hover:underline">Need a sample? Download Example CSV</button><input ref={uploadInputRef} type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" className="hidden" aria-label="Upload CSV or XLSX" onChange={(event) => { const file = event.target.files?.[0]; if (file) processSelectedFile(file); }} /></>}
-      <section id="campaign-lead-lists" className={`${activeTab === 'message' ? 'lg:ml-64' : ''} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8`}>
-        {activeTab === 'setup' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Campaign details</h2>
-              <p className="text-sm text-slate-500">Manage internal campaign configuration and tags.</p>
-            </div>
 
-            <label className="block text-sm font-semibold text-slate-700">
-              Tag
-              <input
-                value={tag}
-                onChange={(event) => setTag(event.target.value)}
-                placeholder="CUSTOM"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
-              />
-            </label>
-          </div>
-        )}
-        {activeTab === 'prospects' && (
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <Users className="mt-1 h-5 w-5 text-blue-600" />
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Campaign prospects</h2>
-                  <p className="text-sm text-slate-500">{selectedListIds.length} list{selectedListIds.length === 1 ? '' : 's'} selected · {selectedLeads.length} total prospects</p>
-                </div>
+      {/* CAMPAIGN PROSPECTS CONTAINER — ONLY RENDERED WHEN PROSPECTS ARE ADDED */}
+      {activeTab === 'prospects' && (selectedLeads.length > 0 || selectedListIds.length > 0) && (
+        <section id="campaign-prospects-container" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-2xs sm:p-8 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Users className="mt-1 h-5 w-5 text-blue-600" />
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Campaign prospects</h2>
+                <p className="text-sm text-slate-500">
+                  {selectedListIds.length} list{selectedListIds.length === 1 ? '' : 's'} selected · {selectedLeads.length} total prospects
+                </p>
               </div>
-              {selectedLeads.length > 0 && (
-                <input
-                  type="text"
-                  placeholder="Search prospects..."
-                  value={prospectSearchQuery}
-                  onChange={(e) => setProspectSearchQuery(e.target.value)}
-                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 w-full sm:w-56"
-                />
+            </div>
+            {selectedLeads.length > 0 && (
+              <input
+                type="text"
+                placeholder="Search prospects..."
+                value={prospectSearchQuery}
+                onChange={(e) => setProspectSearchQuery(e.target.value)}
+                className="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 w-full sm:w-56"
+              />
+            )}
+          </div>
+
+          {selectedListIds.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {selectedListIds.map((id) => {
+                const list = leadLists.find((item) => item.id === id);
+                const count = leads.filter((l) => l.listId === id || l.listName === list?.name).length;
+                return list ? (
+                  <span key={id} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/50 px-3 py-1.5 text-xs font-semibold text-slate-900">
+                    <FileSpreadsheet className="h-4 w-4 text-blue-600 shrink-0" />
+                    <span>{list.name}</span>
+                    <span className="text-[11px] font-medium text-slate-500">({count} prospects)</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setListsModalSelection(selectedListIds);
+                        setListsModalOpen(true);
+                      }}
+                      className="ml-1.5 text-[11px] font-bold text-[#0e6de4] hover:underline cursor-pointer"
+                    >
+                      View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updatedIds = selectedListIds.filter((item) => item !== id);
+                        setSelectedListIds(updatedIds);
+                        if (selectedListId === id) {
+                          setSelectedListId(updatedIds[0] || '');
+                        }
+                        if (editId) {
+                          try {
+                            const storedCamps = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+                            const cIdx = storedCamps.findIndex((c: any) => c.id === editId);
+                            if (cIdx !== -1) {
+                              const remainingLeads = leads.filter((l) => l.listId !== id && l.listName !== list.name);
+                              storedCamps[cIdx] = {
+                                ...storedCamps[cIdx],
+                                selectedListIds: updatedIds,
+                                selectedListId: updatedIds[0] || '',
+                                prospectsList: remainingLeads,
+                                totalLeads: remainingLeads.length,
+                                updatedAt: new Date().toISOString(),
+                              };
+                              localStorage.setItem('user_campaigns', JSON.stringify(storedCamps));
+                            }
+                          } catch (e) {}
+                        }
+                      }}
+                      className="ml-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                      title="Remove list from campaign"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ) : null;
+              })}
+            </div>
+          )}
+
+          {selectedLeads.length > 0 && (
+            <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-slate-200 bg-slate-100/80 font-bold text-slate-700">
+                  <tr>
+                    <th className="px-4 py-3 w-12">#</th>
+                    <th className="px-4 py-3">Website / Domain</th>
+                    <th className="px-4 py-3">Company</th>
+                    <th className="px-4 py-3">Contact Person</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
+                  {filteredProspects.map((lead, idx) => (
+                    <tr key={lead.id || idx} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-2.5 font-bold text-slate-400">{idx + 1}</td>
+                      <td className="px-4 py-2.5 font-semibold text-slate-900 truncate max-w-[200px]">{lead.website || lead.domain || '—'}</td>
+                      <td className="px-4 py-2.5 truncate max-w-[160px]">{lead.companyName || '—'}</td>
+                      <td className="px-4 py-2.5 truncate max-w-[150px]">{[lead.firstName, lead.lastName].filter(Boolean).join(' ') || '—'}</td>
+                      <td className="px-4 py-2.5 text-blue-600 truncate max-w-[180px]">{lead.email || '—'}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                          {lead.status || 'UNCONTACTED'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredProspects.length === 0 && (
+                <div className="p-6 text-center text-xs text-slate-500 font-medium">
+                  No prospects matching "{prospectSearchQuery}"
+                </div>
               )}
             </div>
-            {selectedListIds.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedListIds.map((id) => {
-                  const list = leadLists.find((item) => item.id === id);
-                  return list ? (
-                    <span key={id} className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700">
-                      <FileSpreadsheet className="h-3.5 w-3.5" />
-                      {list.name}
-                    </span>
-                  ) : null;
-                })}
+          )}
+        </section>
+      )}
+
+      {activeTab !== 'prospects' && (
+        <section id="campaign-lead-lists" className={`${activeTab === 'message' ? 'lg:ml-64' : ''} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8`}>
+          {activeTab === 'setup' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Campaign details</h2>
+                <p className="text-sm text-slate-500">Manage internal campaign configuration and tags.</p>
               </div>
-            )}
-            {selectedLeads.length > 0 ? (
-              <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-b border-slate-200 bg-slate-100/80 font-bold text-slate-700">
-                    <tr>
-                      <th className="px-4 py-3 w-12">#</th>
-                      <th className="px-4 py-3">Website / Domain</th>
-                      <th className="px-4 py-3">Company</th>
-                      <th className="px-4 py-3">Contact Person</th>
-                      <th className="px-4 py-3">Email</th>
-                      <th className="px-4 py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
-                    {filteredProspects.map((lead, idx) => (
-                      <tr key={lead.id || idx} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-4 py-2.5 font-bold text-slate-400">{idx + 1}</td>
-                        <td className="px-4 py-2.5 font-semibold text-slate-900 truncate max-w-[200px]">{lead.website || lead.domain || '—'}</td>
-                        <td className="px-4 py-2.5 truncate max-w-[160px]">{lead.companyName || '—'}</td>
-                        <td className="px-4 py-2.5 truncate max-w-[150px]">{[lead.firstName, lead.lastName].filter(Boolean).join(' ') || '—'}</td>
-                        <td className="px-4 py-2.5 text-blue-600 truncate max-w-[180px]">{lead.email || '—'}</td>
-                        <td className="px-4 py-2.5">
-                          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
-                            {lead.status || 'UNCONTACTED'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {filteredProspects.length === 0 && (
-                  <div className="p-6 text-center text-xs text-slate-500 font-medium">
-                    No prospects matching "{prospectSearchQuery}"
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="mt-2 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-500 font-medium">
-                No prospects added to this campaign yet. Upload a CSV/XLSX, enter websites manually, or select from an existing Lead List above.
-              </div>
-            )}
-          </div>
-        )}
+
+              <label className="block text-sm font-semibold text-slate-700">
+                Tag
+                <input
+                  value={tag}
+                  onChange={(event) => setTag(event.target.value)}
+                  placeholder="CUSTOM"
+                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
+                />
+              </label>
+            </div>
+          )}
+
         {activeTab === 'message' && selectedMessageSequence && (
           <CampaignMessageEditor
             sequence={sequence}
-            onSequenceChange={setSequence}
+            onSequenceChange={handleSequenceChange}
             sequenceDate={selectedMessageSequence.date}
             sequenceIndex={selectedMessageSequenceIndex}
             sequenceName={selectedMessageSequence.name}
@@ -800,8 +1292,521 @@ export default function CampaignEditorClient() {
             editId={editId}
           />
         )}
-        {activeTab === 'settings' && <div className="space-y-6"><div className="flex items-start gap-3"><ShieldCheck className="mt-1 h-6 w-6 text-emerald-600" /><div><h2 className="text-lg font-bold text-slate-900">Safety and pacing</h2><p className="text-sm text-slate-500">Control submission speed, concurrency, retries, and safety behavior.</p></div></div><label className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div><p className="font-bold text-emerald-950">Dry-run protection</p><p className="text-sm text-emerald-700">Inspect and record the workflow without live submission.</p></div><input type="checkbox" checked={isDryRun} onChange={(event) => setIsDryRun(event.target.checked)} className="h-5 w-5" /></label><div className="grid gap-5 sm:grid-cols-2"><label className="text-sm font-semibold text-slate-700">Rate limit per minute<input type="number" min={1} max={120} value={rateLimitPerMinute} onChange={(event) => setRateLimitPerMinute(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3" /></label><label className="text-sm font-semibold text-slate-700">Maximum concurrency<input type="number" min={1} max={20} value={maxConcurrency} onChange={(event) => setMaxConcurrency(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3" /></label><label className="text-sm font-semibold text-slate-700">Delay between submissions (seconds)<input type="number" min={0} max={3600} value={submissionDelaySeconds} onChange={(event) => setSubmissionDelaySeconds(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3" /></label><label className="text-sm font-semibold text-slate-700">Daily submission limit<input type="number" min={1} value={dailySubmissionLimit} onChange={(event) => setDailySubmissionLimit(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3" /></label></div><div className="rounded-2xl border border-slate-200 p-5"><h3 className="font-bold text-slate-900">Advanced safety settings</h3><div className="mt-4 space-y-4"><label className="flex items-center justify-between gap-4"><span><span className="block font-semibold text-slate-800">Prevent duplicate submissions</span><span className="text-xs text-slate-500">Skip contacts already submitted in this campaign.</span></span><input type="checkbox" checked={preventDuplicateSubmissions} onChange={(event) => setPreventDuplicateSubmissions(event.target.checked)} className="h-5 w-5" /></label><label className="text-sm font-semibold text-slate-700">Retry failed submissions<select value={retryFailedSubmissions} onChange={(event) => setRetryFailedSubmissions(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"><option value={0}>No retry</option><option value={1}>1 retry</option><option value={2}>2 retries</option><option value={3}>3 retries</option></select></label><label className="text-sm font-semibold text-slate-700">Pause after consecutive failures<input type="number" min={1} max={50} value={failureThreshold} onChange={(event) => setFailureThreshold(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3" /></label><label className="flex items-center justify-between gap-4"><span><span className="block font-semibold text-slate-800">Send uncertain forms to review</span><span className="text-xs text-slate-500">Route uncertain mappings to manual review.</span></span><input type="checkbox" checked={humanReviewUncertainForms} onChange={(event) => setHumanReviewUncertainForms(event.target.checked)} className="h-5 w-5" /></label><label className="flex items-center justify-between gap-4"><span><span className="block font-semibold text-slate-800">Stop on security challenge</span><span className="text-xs text-slate-500">Stop on CAPTCHA, Cloudflare, or similar challenges.</span></span><input type="checkbox" checked={stopOnSecurityChallenge} onChange={(event) => setStopOnSecurityChallenge(event.target.checked)} className="h-5 w-5" /></label></div></div></div>}
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            {/* Header + Reset to Defaults Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-1 h-6 w-6 text-emerald-600 shrink-0" />
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Safety & Pacing</h2>
+                  <p className="text-sm text-slate-500">Control submission speed, concurrency, retries, and sending schedule.</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowResetConfirmModal(true)}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer shrink-0 self-start sm:self-center"
+              >
+                <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+                <span>Reset to Defaults</span>
+              </button>
+            </div>
+
+            {/* Recommended Safety Helper Message */}
+            <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 text-xs font-medium text-blue-900 flex items-center gap-3">
+              <ShieldCheck className="h-5 w-5 text-blue-600 shrink-0" />
+              <span>Recommended safe settings are applied automatically. You can customize them anytime for this specific campaign.</span>
+            </div>
+
+            {/* Dry-run Protection */}
+            <label className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 cursor-pointer">
+              <div>
+                <p className="font-bold text-emerald-950">Dry-run protection</p>
+                <p className="text-sm text-emerald-700">Inspect and record the workflow without live submission.</p>
+              </div>
+              <input type="checkbox" checked={isDryRun} onChange={(event) => setIsDryRun(event.target.checked)} className="h-5 w-5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
+            </label>
+
+            {/* Core Pacing Grid */}
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="text-sm font-semibold text-slate-700">
+                Rate limit per minute
+                <input type="number" min={1} max={120} value={rateLimitPerMinute} onChange={(event) => setRateLimitPerMinute(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none" />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Maximum concurrency
+                <input type="number" min={1} max={20} value={maxConcurrency} onChange={(event) => setMaxConcurrency(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none" />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Delay between submissions (seconds)
+                <input type="number" min={0} max={3600} value={submissionDelaySeconds} onChange={(event) => setSubmissionDelaySeconds(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none" />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Daily submission limit
+                <input type="number" min={1} value={dailySubmissionLimit} onChange={(event) => setDailySubmissionLimit(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none" />
+              </label>
+            </div>
+
+            {/* SENDING SCHEDULE SECTION */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 space-y-5">
+              <div className="flex items-start gap-3">
+                <Calendar className="mt-0.5 h-5 w-5 text-blue-600 shrink-0" />
+                <div>
+                  <h3 className="font-extrabold text-slate-900 uppercase tracking-wider text-xs">SENDING SCHEDULE</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">Control when ContactReachout is allowed to submit website contact-form messages.</p>
+                </div>
+              </div>
+
+              {/* Timezone Selector */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Timezone</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <select
+                    value={timezoneMode}
+                    onChange={(e) => setTimezoneMode(e.target.value as any)}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 focus:border-blue-500 outline-none cursor-pointer"
+                  >
+                    <option value="account">My timezone</option>
+                    <option value="prospect">Prospect's timezone</option>
+                    <option value="custom">Custom timezone</option>
+                  </select>
+
+                  {timezoneMode === 'custom' && (
+                    <select
+                      value={customTimezone}
+                      onChange={(e) => setCustomTimezone(e.target.value)}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 focus:border-blue-500 outline-none cursor-pointer"
+                    >
+                      <option value="America/New_York">America/New_York (US Eastern Time)</option>
+                      <option value="America/Chicago">America/Chicago (US Central Time)</option>
+                      <option value="America/Denver">America/Denver (US Mountain Time)</option>
+                      <option value="America/Los_Angeles">America/Los_Angeles (US Pacific Time)</option>
+                      <option value="Europe/London">Europe/London (UK / GMT/BST)</option>
+                      <option value="Europe/Paris">Europe/Paris (Central European Time)</option>
+                      <option value="Europe/Berlin">Europe/Berlin (Central European Time)</option>
+                      <option value="Asia/Dhaka">Asia/Dhaka (Bangladesh Standard Time)</option>
+                      <option value="Asia/Tokyo">Asia/Tokyo (Japan Standard Time)</option>
+                      <option value="Asia/Kolkata">Asia/Kolkata (India Standard Time)</option>
+                      <option value="Australia/Sydney">Australia/Sydney (Australian Eastern Time)</option>
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              {/* Sending Days */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Sending Days</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key: 'monday', label: 'Mon' },
+                    { key: 'tuesday', label: 'Tue' },
+                    { key: 'wednesday', label: 'Wed' },
+                    { key: 'thursday', label: 'Thu' },
+                    { key: 'friday', label: 'Fri' },
+                    { key: 'saturday', label: 'Sat' },
+                    { key: 'sunday', label: 'Sun' },
+                  ].map((day) => {
+                    const isChecked = Boolean(sendingDays[day.key as keyof typeof sendingDays]);
+                    return (
+                      <button
+                        key={day.key}
+                        type="button"
+                        onClick={() =>
+                          setSendingDays((prev) => ({
+                            ...prev,
+                            [day.key]: !isChecked,
+                          }))
+                        }
+                        className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                          isChecked
+                            ? 'bg-[#0e6de4] text-white shadow-xs'
+                            : 'bg-white border border-slate-300 text-slate-500 hover:border-slate-400'
+                        }`}
+                      >
+                        {isChecked ? `✓ ${day.label}` : day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sending Hours */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Sending Hours</label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={sendingHours.enabled}
+                      onChange={(e) => setSendingHours((prev) => ({ ...prev, enabled: e.target.checked }))}
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-slate-700">Limit submissions to specific hours</span>
+                  </label>
+                </div>
+
+                {!sendingHours.enabled ? (
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-600 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wide">Anytime (OFF)</span>
+                      <span>Submissions will run <strong>immediately</strong> without hour restrictions.</span>
+                    </div>
+                    <span className="text-slate-400 text-[11px] hidden sm:inline">Check box to set custom hours</span>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-100 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold text-slate-600">From</span>
+                      <input
+                        type="time"
+                        value={sendingHours.start}
+                        onChange={(e) => setSendingHours((prev) => ({ ...prev, start: e.target.value }))}
+                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-500 outline-none shadow-2xs"
+                      />
+                      <span className="text-xs font-semibold text-slate-600">To</span>
+                      <input
+                        type="time"
+                        value={sendingHours.end}
+                        onChange={(e) => setSendingHours((prev) => ({ ...prev, end: e.target.value }))}
+                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-500 outline-none shadow-2xs"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-medium">Submissions outside this window will wait for the next allowed sending hour.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Randomize Submission Time */}
+              <label className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={randomizeSubmissionTime}
+                  onChange={(e) => setRandomizeSubmissionTime(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
+                />
+                <div>
+                  <span className="block text-xs font-bold text-slate-900">Randomize submission time</span>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">Add natural variation within the selected sending window.</p>
+                </div>
+              </label>
+            </div>
+
+            {/* Advanced Safety Settings */}
+            <div className="rounded-2xl border border-slate-200 p-5 space-y-4">
+              <h3 className="font-extrabold text-slate-900 uppercase tracking-wider text-xs">ADVANCED SAFETY SETTINGS</h3>
+              <div className="space-y-4">
+                <label className="flex items-center justify-between gap-4 cursor-pointer">
+                  <span>
+                    <span className="block font-semibold text-slate-800 text-xs">Prevent duplicate submissions</span>
+                    <span className="text-xs text-slate-500">Skip contacts already submitted in this campaign.</span>
+                  </span>
+                  <input type="checkbox" checked={preventDuplicateSubmissions} onChange={(event) => setPreventDuplicateSubmissions(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <label className="text-xs font-semibold text-slate-700">
+                    Retry failed submissions
+                    <select value={retryFailedSubmissions} onChange={(event) => setRetryFailedSubmissions(Number(event.target.value))} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-blue-500">
+                      <option value={0}>No retry</option>
+                      <option value={1}>1 retry</option>
+                      <option value={2}>2 retries</option>
+                      <option value={3}>3 retries</option>
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-slate-700">
+                    Pause after consecutive failures
+                    <input type="number" min={1} max={50} value={failureThreshold} onChange={(event) => setFailureThreshold(Number(event.target.value))} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-blue-500" />
+                  </label>
+                </div>
+
+                <label className="flex items-center justify-between gap-4 cursor-pointer pt-2">
+                  <span>
+                    <span className="block font-semibold text-slate-800 text-xs">Send uncertain forms to review</span>
+                    <span className="text-xs text-slate-500">Route uncertain mappings to manual review.</span>
+                  </span>
+                  <input type="checkbox" checked={humanReviewUncertainForms} onChange={(event) => setHumanReviewUncertainForms(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                </label>
+
+                <label className="flex items-center justify-between gap-4 cursor-pointer">
+                  <span>
+                    <span className="block font-semibold text-slate-800 text-xs">Stop on security challenge</span>
+                    <span className="text-xs text-slate-500">Stop on CAPTCHA, Cloudflare, or similar challenges.</span>
+                  </span>
+                  <input type="checkbox" checked={stopOnSecurityChallenge} onChange={(event) => setStopOnSecurityChallenge(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                </label>
+              </div>
+            </div>
+
+            {/* REAL CAMPAIGN SCHEDULE SUMMARY CARD */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-100/70 p-5 space-y-3">
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">CAMPAIGN SCHEDULE SUMMARY</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-400 font-semibold block text-[11px]">Schedule</span>
+                  <span className="font-bold text-slate-900">
+                    {Object.entries(sendingDays).filter(([, v]) => v).map(([k]) => k.slice(0, 3).toUpperCase()).join(', ') || 'None selected'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-semibold block text-[11px]">Hours</span>
+                  <span className="font-bold text-slate-900">
+                    {sendingHours.enabled ? `${sendingHours.start} – ${sendingHours.end}` : 'Anytime (OFF)'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-semibold block text-[11px]">Timezone</span>
+                  <span className="font-bold text-slate-900 truncate block">
+                    {timezoneMode === 'account' ? 'My timezone' : timezoneMode === 'prospect' ? "Prospect's timezone" : customTimezone}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-semibold block text-[11px]">Daily Limit</span>
+                  <span className="font-bold text-slate-900">{dailySubmissionLimit} submissions</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-semibold block text-[11px]">Randomization</span>
+                  <span className="font-bold text-emerald-700">{randomizeSubmissionTime ? 'ON' : 'OFF'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* REAL CAMPAIGN CREDIT REQUIREMENTS CARD */}
+            <div className="rounded-2xl border border-blue-100 bg-white p-5 space-y-3 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-[#0e6de4]" />
+                  <span>CREDIT REQUIREMENTS</span>
+                </h4>
+                <span className="text-xs font-mono font-bold text-slate-700">
+                  Available: <strong className="text-blue-600">{availableCredits}</strong>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block">Available Credits</span>
+                  <span className="font-extrabold text-slate-900 text-sm">{availableCredits}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block">Campaign Prospects</span>
+                  <span className="font-extrabold text-slate-900 text-sm">{selectedLeads.length}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block">Max Required</span>
+                  <span className="font-extrabold text-slate-900 text-sm">{selectedLeads.length}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block">Capacity Status</span>
+                  {selectedLeads.length <= availableCredits ? (
+                    <span className="font-extrabold text-emerald-700 text-xs flex items-center gap-1">
+                      ✓ Sufficient
+                    </span>
+                  ) : (
+                    <span className="font-extrabold text-rose-600 text-xs flex items-center gap-1">
+                      ✕ Shortage
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {selectedLeads.length <= availableCredits ? (
+                <p className="text-xs text-emerald-800 bg-emerald-50/80 p-3 rounded-xl border border-emerald-200 font-medium">
+                  ✓ {selectedLeads.length} prospects can be processed with your current {availableCredits} available credits.
+                </p>
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-2">
+                  <p className="font-bold">
+                    Not enough credits. Your current plan has {availableCredits} available credits, but this campaign contains {selectedLeads.length} prospects.
+                  </p>
+                  <div className="flex gap-2 pt-1">
+                    <a
+                      href="/pricing"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 text-xs font-bold inline-block shadow-xs"
+                    >
+                      Upgrade Plan
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('prospects')}
+                      className="rounded-xl border border-rose-300 bg-white hover:bg-rose-50 text-rose-800 px-4 py-2 text-xs font-bold shadow-xs cursor-pointer"
+                    >
+                      Reduce Prospects
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </section>
+    )}
     </div>
+
+    {/* RESET TO DEFAULTS CONFIRMATION MODAL */}
+    {showResetConfirmModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 animate-in fade-in duration-150">
+        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+              <RotateCcw className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Reset to Defaults?</h3>
+              <p className="text-xs text-slate-500 font-medium">This will restore the recommended ContactReachout campaign settings.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setShowResetConfirmModal(false)}
+              className="rounded-xl border border-slate-300 bg-white hover:bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-700 transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsDryRun(CANONICAL_DEFAULT_SAFETY_CONFIG.isDryRun);
+                setRateLimitPerMinute(CANONICAL_DEFAULT_SAFETY_CONFIG.rateLimitPerMinute);
+                setMaxConcurrency(CANONICAL_DEFAULT_SAFETY_CONFIG.maxConcurrency);
+                setSubmissionDelaySeconds(CANONICAL_DEFAULT_SAFETY_CONFIG.submissionDelaySeconds);
+                setDailySubmissionLimit(CANONICAL_DEFAULT_SAFETY_CONFIG.dailySubmissionLimit);
+                setPreventDuplicateSubmissions(CANONICAL_DEFAULT_SAFETY_CONFIG.preventDuplicateSubmissions);
+                setRetryFailedSubmissions(CANONICAL_DEFAULT_SAFETY_CONFIG.retryFailedSubmissions);
+                setFailureThreshold(CANONICAL_DEFAULT_SAFETY_CONFIG.pauseAfterConsecutiveFailures);
+                setHumanReviewUncertainForms(CANONICAL_DEFAULT_SAFETY_CONFIG.humanReviewUncertainForms);
+                setStopOnSecurityChallenge(CANONICAL_DEFAULT_SAFETY_CONFIG.stopOnSecurityChallenge);
+                setTimezoneMode(CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.timezoneMode);
+                setCustomTimezone(CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.customTimezone);
+                setSendingDays({ ...CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays });
+                setSendingHours({ ...CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours });
+                setRandomizeSubmissionTime(CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.randomizeSubmissionTime);
+                setShowResetConfirmModal(false);
+              }}
+              className="rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-6 py-2.5 text-xs font-extrabold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+            >
+              Reset to Defaults
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* START CAMPAIGN CONFIRMATION MODAL */}
+    {showStartCampaignConfirmModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 animate-in fade-in duration-150">
+        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Start this campaign?</h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Your campaign will begin processing eligible prospects according to your saved schedule and safety settings.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              disabled={isStarting}
+              onClick={() => setShowStartCampaignConfirmModal(false)}
+              className="rounded-xl border border-slate-300 bg-white hover:bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-700 transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={isStarting}
+              onClick={async () => {
+                setShowStartCampaignConfirmModal(false);
+                await saveCampaign(true);
+              }}
+              className="rounded-xl bg-[#0e6de4] hover:bg-blue-700 text-white px-6 py-2.5 text-xs font-extrabold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+            >
+              {isStarting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Starting Campaign...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 stroke-[2.5]" />
+                  <span>Start Campaign</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* CREDIT SHORTFALL & CAPACITY WARNING MODAL */}
+    {showCreditShortfallModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 animate-in fade-in duration-150 font-sans">
+        <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-5 border border-slate-100">
+          <div className="flex items-start gap-3.5">
+            <div className="h-11 w-11 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+              <AlertCircle className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">
+                {creditShortfallData?.reason === 'AI_NOT_AVAILABLE_ON_FREE' ? 'AI Personalization Upgrade Required' : 'Not Enough Credits'}
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                {creditShortfallData?.message || 'Your account credit balance is insufficient to start processing this campaign.'}
+              </p>
+            </div>
+          </div>
+
+          {creditShortfallData && creditShortfallData.requiredCredits && (
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono space-y-1.5">
+              <div className="flex justify-between text-slate-600">
+                <span>Available Credits:</span>
+                <strong className="text-slate-900">{creditShortfallData.availableCredits ?? availableCredits}</strong>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Campaign Prospects:</span>
+                <strong className="text-slate-900">{creditShortfallData.requiredCredits ?? selectedLeads.length}</strong>
+              </div>
+              {creditShortfallData.shortfall > 0 && (
+                <div className="flex justify-between text-rose-700 font-bold border-t border-slate-200 pt-1.5">
+                  <span>Credit Shortfall:</span>
+                  <span>-{creditShortfallData.shortfall} credits</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreditShortfallModal(false);
+                setActiveTab('prospects');
+              }}
+              className="rounded-xl border border-slate-300 bg-white hover:bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 transition-all cursor-pointer"
+            >
+              Reduce Prospects
+            </button>
+            <Link
+              href="/pricing"
+              target="_blank"
+              onClick={() => setShowCreditShortfallModal(false)}
+              className="rounded-xl bg-[#0e6de4] hover:bg-blue-700 text-white px-5 py-2.5 text-xs font-extrabold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+            >
+              Upgrade Plan →
+            </Link>
+          </div>
+        </div>
+      </div>
+    )}
   </>);
 }

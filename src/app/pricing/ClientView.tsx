@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ArrowRight,
   HelpCircle,
+  Gift,
 } from 'lucide-react';
 import { PricingService, PLAN_PRICING_DETAILS } from '@/lib/services/pricing-service';
 import { LandingHeader } from '@/components/layout/LandingHeader';
@@ -358,6 +359,23 @@ export default function PricingPage() {
                 </button>
               </Link>
             </div>
+          </div>
+
+          {/* Secondary Referral Benefit Note */}
+          <div className="mt-8 p-4 rounded-2xl border border-blue-100 bg-blue-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs max-w-4xl mx-auto shadow-2xs font-sans">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-white text-[#0e6de4] shadow-2xs shrink-0">
+                <Gift className="h-5 w-5" />
+              </div>
+              <div>
+                <span className="font-extrabold text-slate-900 block text-xs">Want extra credits?</span>
+                <span className="text-slate-600 text-xs">Refer a new ContactReachout user and earn 100 bonus credits. Your referral receives 50 bonus credits after email verification.</span>
+              </div>
+            </div>
+            <Link href="/referral" className="rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white px-4 py-2 text-xs font-bold shrink-0 transition-colors shadow-2xs flex items-center gap-1">
+              Refer & Earn
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </section>
 

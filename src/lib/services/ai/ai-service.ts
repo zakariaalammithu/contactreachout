@@ -32,16 +32,36 @@ export class NoneProvider implements AIProvider {
   public async generatePersonalizedMessage(
     context: AIPersonalizationContext
   ): Promise<AIPersonalizationResponse> {
-    const greeting = context.contactPersonName
-      ? `Hi ${context.contactPersonName},`
-      : `Hello ${context.companyName} Team,`;
+    const hasPerson = Boolean(
+      context.contactPersonName &&
+      context.contactPersonName !== 'Not available' &&
+      context.contactPersonName !== 'there' &&
+      !/^(http|www\.)/i.test(context.contactPersonName)
+    );
+    const hasCompany = Boolean(
+      context.companyName &&
+      context.companyName !== 'Not available' &&
+      !/^(http|www\.)/i.test(context.companyName) &&
+      !/\.(com|org|net|io|co)$/i.test(context.companyName)
+    );
 
-    const industryNote = context.industry
+    const greeting = hasPerson
+      ? `Hi ${context.contactPersonName},`
+      : hasCompany
+      ? `Hello ${context.companyName} Team,`
+      : `Hello there,`;
+
+    const industryNote = context.industry && context.industry !== 'Not available'
       ? ` regarding your work in the ${context.industry} space`
       : '';
 
-    const subject = `Partnership inquiry regarding ${context.companyName}`;
-    const body = `${greeting}\n\nI came across ${context.companyName}${industryNote} and wanted to reach out regarding potential B2B collaboration opportunities.\n\nWe offer specialized software services tailored for growing organizations.\n\nWould you be open to a brief intro conversation next week?\n\nBest regards,\nContactReachout\nhello@contactreachout.com\nAustin, TX 73301, USA`;
+    const subject = hasCompany
+      ? `Partnership inquiry regarding ${context.companyName}`
+      : `Partnership inquiry`;
+
+    const body = hasCompany
+      ? `${greeting}\n\nI came across ${context.companyName}${industryNote} and wanted to reach out regarding potential B2B collaboration opportunities.\n\nWe offer specialized software services tailored for growing organizations.\n\nWould you be open to a brief intro conversation next week?\n\nBest regards,\nContactReachout\nhello@contactreachout.com\nAustin, TX 73301, USA`
+      : `${greeting}\n\nI came across your business${industryNote} and wanted to reach out regarding potential B2B collaboration opportunities.\n\nWe offer specialized software services tailored for growing organizations.\n\nWould you be open to a brief intro conversation next week?\n\nBest regards,\nContactReachout\nhello@contactreachout.com\nAustin, TX 73301, USA`;
 
     return {
       subject,

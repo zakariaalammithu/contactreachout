@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from '@/lib/auth/session';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 import { OutreachPipelineOrchestrator } from '@/lib/services/outreach-orchestrator';
+import { validateSendingSchedule } from '@/lib/services/processing-controls-service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +28,28 @@ export async function POST(req: NextRequest) {
 
     const isDryRun = Boolean(options.dryRun);
 
-    // 1. Server-Side Credit Pre-Check for Live Mode Submissions
+    // 1. Server-Side Sending Schedule Enforcement
+    const scheduleCheck = validateSendingSchedule(options.schedule, lead.location || lead.country || lead.city);
+    if (!scheduleCheck.isWithinWindow) {
+      return NextResponse.json({
+        success: true,
+        status: 'SCHEDULED',
+        isOutsideSendingWindow: true,
+        reason: scheduleCheck.reason,
+        telemetry: {
+          leadId: lead.id,
+          companyName: lead.company_name,
+          domain: lead.website.replace(/^https?:\/\//, '').split('/')[0],
+          url: lead.website,
+          status: 'UNCONTACTED',
+          code: scheduleCheck.reason || 'Scheduled — outside sending window',
+          time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          isDryRun,
+        },
+      });
+    }
+
+    // 2. Server-Side Credit Pre-Check for Live Mode Submissions
     if (!isDryRun) {
       const wallet = CreditWalletService.getWallet(userId);
       if (wallet.totalCreditsAvailable < 1) {
@@ -43,7 +65,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Execute Real Lead Outreach Pipeline
+    // 3. Execute Real Lead Outreach Pipeline
     const startTime = Date.now();
     const result = await OutreachPipelineOrchestrator.processLead({
       lead,

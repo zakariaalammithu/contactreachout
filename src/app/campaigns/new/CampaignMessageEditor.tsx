@@ -3,12 +3,28 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
-  AlertTriangle, AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Bot, Code, Eye,
-  Italic, Link as LinkIcon, List, ListOrdered, Loader2, Save, Sparkles, Underline, Undo2, Redo2,
+  AlertTriangle, AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Bookmark, Bot, Code, Eye,
+  Italic, Link as LinkIcon, List, ListOrdered, Loader2, Save, Sparkles, Underline, Undo2, Redo2, Lock, ArrowUpRight, CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { interpolateTemplate } from '@/lib/services/template-engine';
 import type { CampaignSequenceStep, Lead } from '@/types';
+
+import { SavedTemplatesDropdown } from './SavedTemplatesDropdown';
+import { SaveAsTemplateModal } from './SaveAsTemplateModal';
+import { EditTemplateModal } from './EditTemplateModal';
+import { DeleteTemplateModal } from './DeleteTemplateModal';
+import { AIUpgradeModal } from '@/components/ui/AIUpgradeModal';
+import {
+  getUserTemplates,
+  saveUserTemplate,
+  updateUserTemplate,
+  duplicateUserTemplate,
+  deleteUserTemplate,
+  recordTemplateUsage,
+  getCurrentUserEmail,
+  UserMessageTemplate,
+} from '@/lib/services/message-template-service';
 
 interface CampaignMessageEditorProps {
   sequence: CampaignSequenceStep & { replyInThread?: boolean };
@@ -101,12 +117,98 @@ export function CampaignMessageEditor({
   const [spinMenuTarget, setSpinMenuTarget] = useState<'subject' | 'body' | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLeadIndex, setPreviewLeadIndex] = useState(0);
-  const [spamCheckOpen, setSpamCheckOpen] = useState(false);
   const [bodySourceMode, setBodySourceMode] = useState(false);
   const subjectInputRef = useRef<HTMLInputElement>(null);
   const bodyEditorRef = useRef<HTMLDivElement>(null);
   const sampleLead = selectedLeads[previewLeadIndex] || selectedLeads[0];
   const timingAmount = sequence.delayUnit === 'weeks' ? sequence.delayDays / 7 : sequence.delayDays;
+
+  // Saved Templates States
+  const currentUserEmail = useMemo(() => getCurrentUserEmail(), []);
+  const [templates, setTemplates] = useState<UserMessageTemplate[]>([]);
+  const [saveAsModalOpen, setSaveAsModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [templateToEdit, setTemplateToEdit] = useState<UserMessageTemplate | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<UserMessageTemplate | null>(null);
+
+  // AI Access Control States
+  const [isPaidPlan, setIsPaidPlan] = useState(false);
+  const [providerChoice, setProviderChoice] = useState<'contactreachout' | 'user_openai'>('contactreachout');
+  const [aiUpgradeModalOpen, setAiUpgradeModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/user/ai-settings')
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          setIsPaidPlan(Boolean(data.isPaidPlan));
+          if (data.providerChoice) setProviderChoice(data.providerChoice);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const refreshTemplates = () => {
+    setTemplates(getUserTemplates(currentUserEmail));
+  };
+
+  useEffect(() => {
+    refreshTemplates();
+  }, [currentUserEmail]);
+
+  const handleUseTemplate = (template: UserMessageTemplate) => {
+    recordTemplateUsage(template.id, currentUserEmail);
+
+    onSequenceChange((current) => ({
+      ...current,
+      subject: template.subject !== undefined && template.subject !== null ? template.subject : current.subject,
+      body: template.body || '',
+    }));
+
+    if (bodyEditorRef.current) {
+      bodyEditorRef.current.innerHTML = template.body || '';
+    }
+    refreshTemplates();
+  };
+
+  const handleSaveNewTemplate = (data: {
+    name: string;
+    subject: string;
+    body: string;
+    category: 'initial' | 'followup' | 'general';
+  }) => {
+    saveUserTemplate(data, currentUserEmail);
+    refreshTemplates();
+  };
+
+  const handleSaveEditTemplate = (
+    id: string,
+    data: {
+      name: string;
+      subject: string;
+      body: string;
+      category: 'initial' | 'followup' | 'general';
+    }
+  ) => {
+    updateUserTemplate(id, data, currentUserEmail);
+    refreshTemplates();
+    setTemplateToEdit(null);
+  };
+
+  const handleDuplicateTemplate = (id: string) => {
+    duplicateUserTemplate(id, currentUserEmail);
+    refreshTemplates();
+  };
+
+  const handleConfirmDeleteTemplate = () => {
+    if (templateToDelete) {
+      deleteUserTemplate(templateToDelete.id, currentUserEmail);
+      refreshTemplates();
+      setTemplateToDelete(null);
+      setDeleteModalOpen(false);
+    }
+  };
 
   const insertTemplateToken = (target: 'subject' | 'body', token: string) => {
     if (target === 'subject') {
@@ -167,6 +269,7 @@ export function CampaignMessageEditor({
       resolvedCustomFields: (previewContext as any).custom_fields,
     }));
   }, [sampleLead]);
+
   const sanitizePreviewHtml = (html: string) => {
     const parsed = new DOMParser().parseFromString(`<div>${html || ''}</div>`, 'text/html');
     parsed.querySelectorAll('script, style, iframe, object, embed').forEach((element) => element.remove());
@@ -181,21 +284,6 @@ export function CampaignMessageEditor({
   };
   const previewSubject = interpolateTemplate(sequence.subject || '', previewContext);
   const previewBodyHtml = sanitizePreviewHtml(interpolateTemplate(sequence.body || '', previewContext));
-  const previewPlainText = new DOMParser().parseFromString(previewBodyHtml, 'text/html').body.textContent || '';
-
-  const spamChecks = useMemo(() => {
-    const content = `${previewSubject}\n${previewPlainText}`.trim();
-    const words = content.split(/\s+/).filter(Boolean);
-    const shoutWords = words.filter((word) => word.length >= 4 && word === word.toUpperCase() && /[A-Z]/.test(word));
-    const links = content.match(/https?:\/\/\S+/gi) || [];
-    return [
-      { label: 'Common spam phrases', passed: !/(free money|guaranteed|act now|risk[- ]free|no obligation|make money fast|limited time offer)/i.test(content), detail: 'Checks for common unsolicited-mail phrases.' },
-      { label: 'Excessive capitalization', passed: words.length === 0 || shoutWords.length / words.length <= 0.3, detail: 'Keeps uppercase words below 30% of the message.' },
-      { label: 'Excessive punctuation', passed: (content.match(/!/g) || []).length <= 2, detail: 'Uses no more than two exclamation marks.' },
-      { label: 'Link density', passed: links.length <= 2, detail: 'Uses no more than two links.' },
-      { label: 'Message length', passed: content.length <= 1200, detail: 'Keeps the rendered message under 1,200 characters.' },
-    ];
-  }, [previewSubject, previewPlainText]);
 
   const cleanPreviousSub = previousSubject ? previousSubject.replace(/^(?:re:\s*)+/i, '').trim() : '';
 
@@ -204,11 +292,10 @@ export function CampaignMessageEditor({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-slate-900">Message and personalization</h2>
-          <p className="text-sm text-slate-500">Editing <span className="font-bold text-[#0e6de4]">{sequenceName}</span> · create the message, insert lead variables, and use supported variations.</p>
+          <p className="text-sm text-slate-500">Editing <span className="font-bold text-[#0e6de4]">{sequenceName}</span> · create the contact-form message, insert lead variables, and use supported variations.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)} className="px-4 py-2.5"><Eye className="mr-2 h-4 w-4" />Preview and Test</Button>
-          <Button type="button" variant="outline" onClick={() => setSpamCheckOpen(true)} className="px-4 py-2.5"><AlertTriangle className="mr-2 h-4 w-4" />Check Spam</Button>
+          <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)} className="px-4 py-2.5"><Eye className="mr-2 h-4 w-4" />Preview & Test</Button>
           <Link href={editId ? `/ai-personalization?campaign=${editId}` : '/ai-personalization'} className="self-center text-sm font-black text-[#0e6de4]">AI Personalization →</Link>
         </div>
       </div>
@@ -231,13 +318,13 @@ export function CampaignMessageEditor({
                 </label>
                 {sequence.replyInThread ?? true ? (
                   <span className="inline-flex items-center rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-[#0e6de4]">
-                    Re: {cleanPreviousSub || 'previous email subject'}
+                    Re: {cleanPreviousSub || 'previous message subject'}
                   </span>
                 ) : null}
               </div>
             ) : (
               <span className="rounded-full bg-slate-200/80 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                Initial Email Step
+                Initial Message Step
               </span>
             )}
           </div>
@@ -245,7 +332,7 @@ export function CampaignMessageEditor({
           <div className="flex flex-wrap items-center gap-3">
             {sequenceIndex > 0 && (
               <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                <span>Send this email</span>
+                <span>Send this message</span>
                 <input
                   type="number"
                   min={1}
@@ -262,7 +349,7 @@ export function CampaignMessageEditor({
                   <option value="days">days</option>
                   <option value="weeks">weeks</option>
                 </select>
-                <span>after last email</span>
+                <span>after last message</span>
               </div>
             )}
 
@@ -278,19 +365,25 @@ export function CampaignMessageEditor({
           </div>
         </div>
 
+        {/* Optional Subject Section */}
         <div className="relative mt-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-slate-700">Subject</label>
-              {sequenceIndex > 0 && sequence.replyInThread && cleanPreviousSub && (
-                <span className="text-xs text-slate-400 font-medium">
-                  (Threaded to: "{cleanPreviousSub}")
-                </span>
-              )}
+            <div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-bold text-slate-900">Optional Subject</label>
+                {sequenceIndex > 0 && sequence.replyInThread && cleanPreviousSub && (
+                  <span className="text-xs text-slate-400 font-medium">
+                    (Threaded to: &quot;{cleanPreviousSub}&quot;)
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                Used only when the target contact form provides a compatible Subject field.
+              </p>
             </div>
-            <div className="relative flex gap-2">
-              <Button type="button" variant="outline" onClick={() => { setVariableMenuTarget(variableMenuTarget === 'subject' ? null : 'subject'); setSpinMenuTarget(null); }} className="px-3 py-1.5 text-xs cursor-pointer">Personalize</Button>
-              <Button type="button" variant="outline" onClick={() => { setSpinMenuTarget(spinMenuTarget === 'subject' ? null : 'subject'); setVariableMenuTarget(null); }} className="px-3 py-1.5 text-xs cursor-pointer">Spin</Button>
+            <div className="relative flex flex-wrap items-center gap-2">
+              <Button type="button" variant="outline" onClick={() => { setVariableMenuTarget(variableMenuTarget === 'subject' ? null : 'subject'); setSpinMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900">Personalize</Button>
+              <Button type="button" variant="outline" onClick={() => { setSpinMenuTarget(spinMenuTarget === 'subject' ? null : 'subject'); setVariableMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900">Variations</Button>
               {variableMenuTarget === 'subject' && (
                 <div className="absolute right-0 top-11 z-30 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl text-left font-sans text-xs">
                   <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -336,8 +429,8 @@ export function CampaignMessageEditor({
               )}
               {spinMenuTarget === 'subject' && (
                 <div className="absolute right-0 top-11 z-30 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-                  <p className="text-xs font-bold text-slate-900">Spin syntax</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">Use the existing spintax engine with two or more choices separated by a pipe.</p>
+                  <p className="text-xs font-bold text-slate-900">Message Variations syntax</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">Use the existing variation engine with two or more choices separated by a pipe.</p>
                   <code className="mt-2 block rounded-lg bg-slate-100 p-2 text-xs text-slate-700">{`{quick call|short note}`}</code>
                   <Button type="button" onClick={() => { insertTemplateToken('subject', '{quick call|short note}'); setSpinMenuTarget(null); }} className="mt-3 w-full px-3 py-2 text-xs cursor-pointer">Insert syntax</Button>
                 </div>
@@ -349,16 +442,47 @@ export function CampaignMessageEditor({
             value={sequence.subject}
             onChange={(event) => onSequenceChange((current) => ({ ...current, subject: event.target.value }))}
             placeholder={sequenceIndex > 0 && (sequence.replyInThread ?? true) ? `Re: ${cleanPreviousSub || 'Previous subject'}` : 'Partnership opportunity with {{COMPANY}}'}
-            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 font-medium"
+            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 font-medium text-slate-900"
           />
         </div>
 
+        {/* Message Section with Toolbar */}
         <div className="relative mt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="text-sm font-semibold text-slate-700">Body</label>
-            <div className="relative flex gap-2">
-              <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={() => { setVariableMenuTarget(variableMenuTarget === 'body' ? null : 'body'); setSpinMenuTarget(null); }} className="px-3 py-1.5 text-xs cursor-pointer">Personalize</Button>
-              <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={() => { setSpinMenuTarget(spinMenuTarget === 'body' ? null : 'body'); setVariableMenuTarget(null); }} className="px-3 py-1.5 text-xs cursor-pointer">Spin</Button>
+            <div>
+              <label className="text-sm font-bold text-slate-900">Message</label>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                Missing lead fields use safe fallbacks (e.g. &quot;there&quot; for missing names) and are never invented.
+              </p>
+            </div>
+            <div className="relative flex flex-wrap items-center gap-2">
+              <SavedTemplatesDropdown
+                templates={templates}
+                onUseTemplate={handleUseTemplate}
+                onEditTemplate={(tpl) => {
+                  setTemplateToEdit(tpl);
+                  setEditModalOpen(true);
+                }}
+                onDuplicateTemplate={handleDuplicateTemplate}
+                onDeleteTemplate={(tpl) => {
+                  setTemplateToDelete(tpl);
+                  setDeleteModalOpen(true);
+                }}
+                onCreateNewTemplate={() => setSaveAsModalOpen(true)}
+                activeSequenceType={sequenceIndex === 0 ? 'initial' : 'followup'}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSaveAsModalOpen(true)}
+                className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900 flex items-center gap-1.5"
+              >
+                <Bookmark className="h-3.5 w-3.5 text-[#0e6de4]" />
+                <span>Save as Template</span>
+              </Button>
+              <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={() => { setVariableMenuTarget(variableMenuTarget === 'body' ? null : 'body'); setSpinMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900">Personalize</Button>
+              <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={() => { setSpinMenuTarget(spinMenuTarget === 'body' ? null : 'body'); setVariableMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900">Variations</Button>
+
               {variableMenuTarget === 'body' && (
                 <div className="absolute right-0 top-11 z-30 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl text-left font-sans text-xs">
                   <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -406,37 +530,38 @@ export function CampaignMessageEditor({
               )}
               {spinMenuTarget === 'body' && (
                 <div className="absolute right-0 top-11 z-30 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-                  <p className="text-xs font-bold text-slate-900">Spin syntax</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">Use the existing spintax engine with two or more choices separated by a pipe.</p>
+                  <p className="text-xs font-bold text-slate-900">Message Variations syntax</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">Use the existing variation engine with two or more choices separated by a pipe.</p>
                   <code className="mt-2 block rounded-lg bg-slate-100 p-2 text-xs text-slate-700">{`{I reviewed|I was checking}`}</code>
-                  <Button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { insertTemplateToken('body', '{I reviewed|I was checking}'); setSpinMenuTarget(null); }} className="mt-3 w-full px-3 py-2 text-xs cursor-pointer">Insert syntax</Button>
+                  <Button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { insertTemplateToken('body', '{I reviewed|I was checking}'); setSpinMenuTarget(null); }} className="mt-[#0e6de4] w-full px-3 py-2 text-xs cursor-pointer">Insert syntax</Button>
                 </div>
               )}
             </div>
           </div>
+
           {bodySourceMode ? (
-            <textarea rows={10} value={sequence.body} onChange={(event) => onSequenceChange((current) => ({ ...current, body: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 font-mono text-sm outline-none focus:border-blue-500" />
+            <textarea rows={10} value={sequence.body} onChange={(event) => onSequenceChange((current) => ({ ...current, body: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 font-mono text-sm outline-none focus:border-blue-500 text-slate-900" />
           ) : (
-            <div className="mt-2 overflow-hidden rounded-xl border border-slate-300 focus-within:border-blue-500">
+            <div className="mt-2 overflow-hidden rounded-xl border border-slate-300 focus-within:border-blue-500 bg-white">
               <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 p-2">
-                <button type="button" onClick={() => executeFormat('bold')} aria-label="Bold" className="rounded-lg p-2 hover:bg-white"><Bold className="h-4 w-4" /></button>
-                <button type="button" onClick={() => executeFormat('italic')} aria-label="Italic" className="rounded-lg p-2 hover:bg-white"><Italic className="h-4 w-4" /></button>
-                <button type="button" onClick={() => executeFormat('underline')} aria-label="Underline" className="rounded-lg p-2 hover:bg-white"><Underline className="h-4 w-4" /></button>
+                <button type="button" onClick={() => executeFormat('bold')} aria-label="Bold" className="rounded-lg p-2 hover:bg-white"><Bold className="h-4 w-4 text-slate-700" /></button>
+                <button type="button" onClick={() => executeFormat('italic')} aria-label="Italic" className="rounded-lg p-2 hover:bg-white"><Italic className="h-4 w-4 text-slate-700" /></button>
+                <button type="button" onClick={() => executeFormat('underline')} aria-label="Underline" className="rounded-lg p-2 hover:bg-white"><Underline className="h-4 w-4 text-slate-700" /></button>
                 <span className="mx-1 h-5 w-px bg-slate-300" />
-                <select onChange={(event) => executeFormat('formatBlock', event.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold" defaultValue="p"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="pre">Preformatted</option></select>
-                <button type="button" onClick={() => executeFormat('insertUnorderedList')} aria-label="Bullet list" className="rounded-lg p-2 hover:bg-white"><List className="h-4 w-4" /></button>
-                <button type="button" onClick={() => executeFormat('insertOrderedList')} aria-label="Numbered list" className="rounded-lg p-2 hover:bg-white"><ListOrdered className="h-4 w-4" /></button>
+                <select onChange={(event) => executeFormat('formatBlock', event.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-800" defaultValue="p"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="pre">Preformatted</option></select>
+                <button type="button" onClick={() => executeFormat('insertUnorderedList')} aria-label="Bullet list" className="rounded-lg p-2 hover:bg-white"><List className="h-4 w-4 text-slate-700" /></button>
+                <button type="button" onClick={() => executeFormat('insertOrderedList')} aria-label="Numbered list" className="rounded-lg p-2 hover:bg-white"><ListOrdered className="h-4 w-4 text-slate-700" /></button>
                 <span className="mx-1 h-5 w-px bg-slate-300" />
-                <button type="button" onClick={() => executeFormat('justifyLeft')} aria-label="Align left" className="rounded-lg p-2 hover:bg-white"><AlignLeft className="h-4 w-4" /></button>
-                <button type="button" onClick={() => executeFormat('justifyCenter')} aria-label="Align center" className="rounded-lg p-2 hover:bg-white"><AlignCenter className="h-4 w-4" /></button>
-                <button type="button" onClick={() => executeFormat('justifyRight')} aria-label="Align right" className="rounded-lg p-2 hover:bg-white"><AlignRight className="h-4 w-4" /></button>
-                <button type="button" onClick={() => executeFormat('justifyFull')} aria-label="Justify" className="rounded-lg p-2 hover:bg-white"><AlignJustify className="h-4 w-4" /></button>
+                <button type="button" onClick={() => executeFormat('justifyLeft')} aria-label="Align left" className="rounded-lg p-2 hover:bg-white"><AlignLeft className="h-4 w-4 text-slate-700" /></button>
+                <button type="button" onClick={() => executeFormat('justifyCenter')} aria-label="Align center" className="rounded-lg p-2 hover:bg-white"><AlignCenter className="h-4 w-4 text-slate-700" /></button>
+                <button type="button" onClick={() => executeFormat('justifyRight')} aria-label="Align right" className="rounded-lg p-2 hover:bg-white"><AlignRight className="h-4 w-4 text-slate-700" /></button>
+                <button type="button" onClick={() => executeFormat('justifyFull')} aria-label="Justify" className="rounded-lg p-2 hover:bg-white"><AlignJustify className="h-4 w-4 text-slate-700" /></button>
                 <span className="mx-1 h-5 w-px bg-slate-300" />
-                <button type="button" onClick={() => { const url = window.prompt('Link URL'); if (url) executeFormat('createLink', url); }} aria-label="Insert link" className="rounded-lg p-2 hover:bg-white"><LinkIcon className="h-4 w-4" /></button>
-                <button type="button" onClick={() => executeFormat('undo')} aria-label="Undo" className="rounded-lg p-2 hover:bg-white"><Undo2 className="h-4 w-4" /></button>
-                <button type="button" onClick={() => executeFormat('redo')} aria-label="Redo" className="rounded-lg p-2 hover:bg-white"><Redo2 className="h-4 w-4" /></button>
+                <button type="button" onClick={() => { const url = window.prompt('Link URL'); if (url) executeFormat('createLink', url); }} aria-label="Insert link" className="rounded-lg p-2 hover:bg-white"><LinkIcon className="h-4 w-4 text-slate-700" /></button>
+                <button type="button" onClick={() => executeFormat('undo')} aria-label="Undo" className="rounded-lg p-2 hover:bg-white"><Undo2 className="h-4 w-4 text-slate-700" /></button>
+                <button type="button" onClick={() => executeFormat('redo')} aria-label="Redo" className="rounded-lg p-2 hover:bg-white"><Redo2 className="h-4 w-4 text-slate-700" /></button>
                 <button type="button" onClick={() => executeFormat('removeFormat')} className="rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 hover:bg-white">Clear</button>
-                <button type="button" onClick={() => setBodySourceMode(true)} aria-label="Edit HTML source" className="ml-auto rounded-lg p-2 hover:bg-white"><Code className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setBodySourceMode(true)} aria-label="Edit HTML source" className="ml-auto rounded-lg p-2 hover:bg-white"><Code className="h-4 w-4 text-slate-700" /></button>
               </div>
               <div ref={bodyEditorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Message body" onInput={() => onSequenceChange((current) => ({ ...current, body: bodyEditorRef.current?.innerHTML || '' }))} onBlur={() => onSequenceChange((current) => ({ ...current, body: bodyEditorRef.current?.innerHTML || '' }))} className="min-h-[260px] max-w-none px-4 py-3 text-sm leading-6 text-slate-800 outline-none" />
             </div>
@@ -445,30 +570,67 @@ export function CampaignMessageEditor({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3"><Bot className="mt-0.5 h-6 w-6 text-[#0e6de4]" /><div><h3 className="font-bold text-slate-950">AI Personalization</h3><p className="text-sm text-slate-600">Uses the configured AI provider and public lead details. If no provider key is configured, the existing deterministic fallback generates the preview.</p></div></div>
-          <input type="checkbox" aria-label="Enable AI Personalization" checked={aiPersonalizationEnabled} onChange={(event) => onAiPersonalizationEnabledChange(event.target.checked)} className="mt-1 h-5 w-5" />
-        </div>
-        {aiPersonalizationEnabled && (
-          <div className="mt-5 space-y-4">
-            <label className="block text-sm font-semibold text-slate-950">AI instructions<textarea rows={5} value={aiInstructions} onChange={(event) => onAiInstructionsChange(event.target.value)} className="mt-2 w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none focus:border-blue-500" /></label>
-            <Button type="button" variant="outline" onClick={onGeneratePreview} disabled={isGeneratingPreview}>{isGeneratingPreview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate preview for first prospect</Button>
-            {aiPreview && <div className="rounded-xl border border-blue-200 bg-white p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-bold text-slate-900">Preview for {aiPreview.companyName}</p><span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold uppercase text-[#0e6de4]">{aiPreview.isAiGenerated ? aiPreview.provider : 'Offline fallback'}</span></div><p className="text-sm font-semibold text-slate-800">{aiPreview.subject}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{aiPreview.body}</p></div>}
-            <p className="text-xs text-slate-600">Approved per-prospect messages are stored on each lead and remain available to the existing template workflow through personalized fields.</p>
+      {/* AI Personalization Container */}
+      {!isPaidPlan ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-700">
+                <Lock className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-950">AI Personalization 🔒</h3>
+                  <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-700">Available on paid plans</span>
+                </div>
+                <p className="mt-1 text-sm text-slate-600">Upgrade your plan to personalize website contact-form messages with AI.</p>
+              </div>
+            </div>
+            <Button type="button" onClick={() => setAiUpgradeModalOpen(true)} className="bg-[#0e6de4] hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 cursor-pointer shrink-0">
+              Upgrade Plan
+            </Button>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <Bot className="mt-0.5 h-6 w-6 text-[#0e6de4]" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-950">AI Personalization</h3>
+                  <span className="rounded-full bg-blue-100 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-[#0e6de4]">
+                    Provider: {providerChoice === 'user_openai' ? 'Your OpenAI API Key' : 'ContactReachout AI'}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-600 mt-0.5">Personalize the contact-form message using available prospect and company information.</p>
+              </div>
+            </div>
+            <input type="checkbox" aria-label="Enable AI Personalization" checked={aiPersonalizationEnabled} onChange={(event) => onAiPersonalizationEnabledChange(event.target.checked)} className="mt-1 h-5 w-5 cursor-pointer" />
+          </div>
+          {aiPersonalizationEnabled && (
+            <div className="mt-5 space-y-4">
+              <label className="block text-sm font-semibold text-slate-950">AI instructions<textarea rows={5} value={aiInstructions} onChange={(event) => onAiInstructionsChange(event.target.value)} className="mt-2 w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none focus:border-blue-500 font-medium" /></label>
+              <Button type="button" variant="outline" onClick={onGeneratePreview} disabled={isGeneratingPreview}>{isGeneratingPreview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate preview for first prospect</Button>
+              {aiPreview && <div className="rounded-xl border border-blue-200 bg-white p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-bold text-slate-900">Preview for {aiPreview.companyName}</p><span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold uppercase text-[#0e6de4]">{aiPreview.isAiGenerated ? aiPreview.provider : 'Offline fallback'}</span></div><p className="text-sm font-semibold text-slate-800">{aiPreview.subject}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{aiPreview.body}</p></div>}
+              <p className="text-xs text-slate-600">Approved per-prospect messages are stored on each lead and remain available to the existing template workflow through personalized fields.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {previewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
           <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Preview and test</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-slate-900">Preview & Test</h2>
+                  <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-[#0e6de4]">Website Contact-Form Submission</span>
+                </div>
                 <p className="mt-1 text-sm text-slate-500">
                   {sampleLead
-                    ? `Sample recipient: ${[sampleLead.firstName, sampleLead.lastName].filter(Boolean).join(' ') || sampleLead.companyName || sampleLead.website}`
+                    ? `Sample prospect: ${[sampleLead.firstName, sampleLead.lastName].filter(Boolean).join(' ') || sampleLead.companyName || sampleLead.website} · The message below will be submitted through the prospect's website contact form.`
                     : 'Select prospects to preview actual lead values.'}
                 </p>
                 {selectedLeads.length > 1 && (
@@ -490,21 +652,49 @@ export function CampaignMessageEditor({
               </div>
               <Button type="button" variant="outline" onClick={() => setPreviewOpen(false)} className="px-4 py-2 cursor-pointer">Close</Button>
             </div>
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5"><p className="text-xs font-bold uppercase text-slate-500">Subject</p><p className="mt-1 text-base font-bold text-slate-900">{previewSubject || 'No subject'}</p></div>
-            <div className="mt-4 rounded-2xl border border-slate-200 p-5"><p className="text-xs font-bold uppercase text-slate-500">Body</p><div className="prose prose-slate mt-2 max-w-none text-sm text-slate-800" dangerouslySetInnerHTML={{ __html: previewBodyHtml || '<p>No message</p>' }} /></div>
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5"><p className="text-xs font-bold uppercase text-slate-500">Optional Subject (if supported by target website form)</p><p className="mt-1 text-base font-bold text-slate-900">{previewSubject || 'No subject set'}</p></div>
+            <div className="mt-4 rounded-2xl border border-slate-200 p-5"><p className="text-xs font-bold uppercase text-slate-500">Message (submitted to detected contact form message field)</p><div className="prose prose-slate mt-2 max-w-none text-sm text-slate-800" dangerouslySetInnerHTML={{ __html: previewBodyHtml || '<p>No message</p>' }} /></div>
           </div>
         </div>
       )}
 
-      {spamCheckOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-bold text-slate-900">Check spam</h2><p className="mt-1 text-sm text-slate-500">Local content checks performed on the rendered subject and body.</p></div><Button type="button" variant="outline" onClick={() => setSpamCheckOpen(false)} className="px-4 py-2">Close</Button></div>
-            <div className="mt-5 space-y-3">{spamChecks.map((check) => <div key={check.label} className={`rounded-2xl border p-4 ${check.passed ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}><div className="flex items-center gap-2"><span className={`h-2.5 w-2.5 rounded-full ${check.passed ? 'bg-emerald-500' : 'bg-amber-500'}`} /><p className="text-sm font-bold text-slate-900">{check.label}</p></div><p className="mt-1 text-xs text-slate-600">{check.detail}</p></div>)}</div>
-            <p className="mt-4 text-xs text-slate-500">No external deliverability service is configured; this is a real local content check and does not guarantee inbox placement.</p>
-          </div>
-        </div>
-      )}
+      {/* SAVE AS TEMPLATE MODAL */}
+      <SaveAsTemplateModal
+        isOpen={saveAsModalOpen}
+        onClose={() => setSaveAsModalOpen(false)}
+        initialSubject={sequence.subject || ''}
+        initialBody={sequence.body || ''}
+        initialCategory={sequenceIndex === 0 ? 'initial' : 'followup'}
+        onSave={handleSaveNewTemplate}
+      />
+
+      {/* EDIT TEMPLATE MODAL */}
+      <EditTemplateModal
+        isOpen={editModalOpen}
+        template={templateToEdit}
+        onClose={() => {
+          setEditModalOpen(false);
+          setTemplateToEdit(null);
+        }}
+        onSave={handleSaveEditTemplate}
+      />
+
+      {/* DELETE TEMPLATE CONFIRMATION MODAL */}
+      <DeleteTemplateModal
+        isOpen={deleteModalOpen}
+        templateName={templateToDelete?.name || ''}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setTemplateToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteTemplate}
+      />
+
+      {/* AI UPGRADE MODAL */}
+      <AIUpgradeModal
+        isOpen={aiUpgradeModalOpen}
+        onClose={() => setAiUpgradeModalOpen(false)}
+      />
     </div>
   );
 }

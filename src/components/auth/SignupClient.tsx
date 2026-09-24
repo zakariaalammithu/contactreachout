@@ -98,8 +98,18 @@ export default function SignupClient() {
           <p className="text-xs text-slate-500 font-mono">
             Create your ContactReachout account
           </p>
-          {referralCode && <p className="text-xs font-bold text-blue-600">Referral {referralCode} applied · earn 50 extra one-time credits</p>}
         </div>
+
+        {/* Referral Indicator Card */}
+        {referralCode && (
+          <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4 text-left text-xs text-blue-900 space-y-1 shadow-2xs animate-in fade-in duration-300">
+            <div className="flex items-center gap-1.5 font-extrabold text-[#0e6de4]">
+              <span>🎁 Referral Bonus</span>
+            </div>
+            <p className="font-extrabold text-slate-900 font-sans">You're joining through a ContactReachout referral.</p>
+            <p className="text-[11px] text-blue-700 font-mono">Complete email verification and receive 50 bonus credits.</p>
+          </div>
+        )}
 
         {/* Auth Card */}
         <div className="rounded-3xl border border-blue-100 bg-white p-8 shadow-xl shadow-blue-100/60 space-y-6">

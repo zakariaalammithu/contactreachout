@@ -97,8 +97,11 @@ export default function ReferralPage() {
             <h1 className="mt-1 text-3xl font-black">Grow together with ContactReachout</h1>
           </div>
         </div>
-        <p className="mt-5 max-w-2xl text-sm leading-6 text-blue-100">
-          Share your unique referral link. A new user who registers receives 50 one-time bonus credits upon email verification. You earn 100 one-time bonus credits after their verified account is created.
+        <p className="mt-4 max-w-2xl text-base font-extrabold text-white leading-relaxed">
+          Refer a friend → They get 50 bonus credits. You get 100 bonus credits after their email verification.
+        </p>
+        <p className="mt-1.5 max-w-2xl text-xs text-blue-100 font-medium">
+          Invite a new user and earn 100 bonus credits when they complete email verification. Your referred user also receives 50 bonus credits.
         </p>
       </div>
 
@@ -223,9 +226,9 @@ export default function ReferralPage() {
         <h2 className="text-xl font-black text-slate-900">How referral rewards work</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {[
-            ['1', 'Share your link', 'Send your unique referral link or code to a new business contact.'],
-            ['2', 'They verify account', 'The referred user completes email OTP verification and receives 50 bonus credits.'],
-            ['3', 'You earn credits', 'Your account receives 100 bonus credits automatically for that verified signup.'],
+            ['1', 'Share your link', 'Send your unique referral link or code to a new user.'],
+            ['2', 'They verify their account', 'The new user signs up through your referral link and completes email verification. They receive 50 one-time bonus credits.'],
+            ['3', 'You earn credits', "You receive 100 one-time bonus credits after the referred user's account is successfully verified."],
           ].map(([number, title, description]) => (
             <div key={number} className="rounded-2xl bg-slate-50 p-5 border border-slate-100">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0e6de4] text-xs font-black text-white">
@@ -288,27 +291,27 @@ export default function ReferralPage() {
       </section>
 
       {/* Optional Wise Payment Details */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-3">
         <div className="flex items-center gap-2">
           <Mail className="h-5 w-5 text-[#0e6de4]" />
-          <h2 className="text-xl font-black text-slate-900">Payment Details</h2>
+          <h2 className="text-xl font-black text-slate-900">Affiliate Payout Settings (Optional)</h2>
         </div>
-        <p className="mt-2 text-sm text-slate-500">
-          Optional: save the email associated with your Wise account for future affiliate payout features. Credit rewards do not require Wise.
+        <p className="text-xs text-slate-500 leading-relaxed font-sans">
+          <strong>Important Note:</strong> Standard referral rewards are <strong>CREDIT rewards</strong> (+100 credits for referrer, +50 credits for referred user) and are credited automatically upon email verification. Saving a Wise email address below is optional for future cash affiliate payout programs.
         </p>
-        <div className="mt-5 flex max-w-xl flex-col gap-3 sm:flex-row">
+        <div className="flex max-w-xl flex-col gap-3 sm:flex-row pt-1">
           <input
             value={payoutEmail}
             onChange={(event) => setPayoutEmail(event.target.value)}
             type="email"
-            placeholder="alex@company.com"
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-mono"
+            placeholder="alex@company.com (Wise Account Email)"
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-xs outline-none focus:border-blue-500 font-mono"
           />
-          <Button onClick={savePayoutEmail} className="bg-[#0e6de4] text-white hover:bg-[#0758bd]">
-            Save
+          <Button onClick={savePayoutEmail} className="bg-[#0e6de4] text-white hover:bg-[#0758bd] text-xs font-bold">
+            Save Email
           </Button>
         </div>
-        {message && <p className="mt-3 text-xs font-bold text-slate-600">{message}</p>}
+        {message && <p className="text-xs font-bold text-slate-600">{message}</p>}
       </section>
     </div>
   );

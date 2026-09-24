@@ -1,7 +1,7 @@
 /**
  * Bulk Contact Form Outreach System — Template Engine Service
  * Handles deterministic variable interpolation, unknown token validation,
- * custom CSV field mapping, and Spintax resolution.
+ * custom CSV field mapping, safe missing-field fallbacks, and Spintax resolution.
  */
 
 export const STANDARD_VARIABLES = [
@@ -27,15 +27,34 @@ export interface ValidationResult {
 
 export interface InterpolationContext {
   first_name?: string | null;
+  firstName?: string | null;
   last_name?: string | null;
+  lastName?: string | null;
+  full_name?: string | null;
+  fullName?: string | null;
   company_name?: string | null;
+  companyName?: string | null;
+  company?: string | null;
   website?: string | null;
+  domain?: string | null;
   industry?: string | null;
   city?: string | null;
   state?: string | null;
   country?: string | null;
   email?: string | null;
+  phone?: string | null;
+  title?: string | null;
+  jobPosition?: string | null;
+  location?: string | null;
+  personLinkedinUrl?: string | null;
+  companyLinkedinUrl?: string | null;
+  companySize?: string | null;
+  personalizedOpeningLine?: string | null;
+  problemParagraph?: string | null;
+  pitch?: string | null;
+  cta?: string | null;
   custom_fields?: Record<string, string | number | boolean | null | undefined>;
+  customFields?: Record<string, string | number | boolean | null | undefined>;
   [key: string]: any;
 }
 
@@ -69,7 +88,6 @@ export function validateTemplate(
   const unknownVariables: string[] = [];
 
   for (const token of detected) {
-    // Check if standard variable or starts with custom. or matches custom field
     if (
       validSet.has(token) ||
       token.startsWith('custom.') ||
@@ -95,7 +113,6 @@ export function validateTemplate(
  */
 export function resolveSpintax(text: string, randomize: boolean = false): string {
   if (!text) return '';
-  // Spintax requires at least two choices separated by '|' (e.g. {Hi|Hello|Dear})
   const spintaxRegex = /\{([^{}|]+(?:\|[^{}|]+)+)\}/g;
 
   return text.replace(spintaxRegex, (_, choices) => {
@@ -110,7 +127,7 @@ export function resolveSpintax(text: string, randomize: boolean = false): string
 }
 
 /**
- * Helper to convert strings to Title Case (e.g. "alam" -> "Alam", "million verifier" -> "Million Verifier")
+ * Helper to convert strings to Title Case (e.g. "john" -> "John", "acme corp" -> "Acme Corp")
  */
 export function toTitleCase(str?: string | null): string {
   if (!str) return '';
@@ -122,8 +139,238 @@ export function toTitleCase(str?: string | null): string {
 }
 
 /**
+ * Checks if a string is a domain name or URL (e.g. "www.centrica.com", "centrica.com", "http://centrica.com").
+ * Used to prevent raw domains from being treated as person or company names.
+ */
+export function isDomainOrUrl(str?: string | null): boolean {
+  if (!str) return false;
+  const s = str.trim().toLowerCase();
+  if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('www.')) return true;
+  // Match top-level domains or domain formats
+  if (/\.(com|org|net|io|co|co\.uk|uk|us|ca|de|fr|au|app|ai|tech|dev|biz|info|gov|edu)$/i.test(s)) return true;
+  if (/^[a-z0-9-]+\.[a-z]{2,}(\.[a-z]{2,})?$/i.test(s)) return true;
+  return false;
+}
+
+/**
+ * Extracts real first_name from context without inventing fake data or parsing domains as names.
+ */
+export function getRealFirstName(context: InterpolationContext): string | null {
+  if (!context) return null;
+  const candidates = [
+    context.first_name,
+    context.firstName,
+    context.contact_person_name,
+    context.contactPersonName,
+    context.contact_person,
+    context.contactPerson,
+    context.custom_fields?.first_name,
+    context.custom_fields?.firstName,
+    context.customFields?.first_name,
+    context.customFields?.firstName,
+  ];
+  for (const c of candidates) {
+    if (c !== undefined && c !== null && typeof c === 'string') {
+      const trimmed = c.trim();
+      const lower = trimmed.toLowerCase();
+      if (
+        trimmed &&
+        lower !== 'undefined' &&
+        lower !== 'null' &&
+        !trimmed.startsWith('{') &&
+        !isDomainOrUrl(trimmed)
+      ) {
+        return toTitleCase(trimmed);
+      }
+    }
+  }
+
+  // Check full_name / fullName if explicitly available and reliable
+  const fullNameCandidates = [
+    context.full_name,
+    context.fullName,
+    context.custom_fields?.full_name,
+    context.custom_fields?.fullName,
+    context.customFields?.full_name,
+    context.customFields?.fullName,
+  ];
+  for (const fn of fullNameCandidates) {
+    if (fn !== undefined && fn !== null && typeof fn === 'string') {
+      const trimmed = fn.trim();
+      const lower = trimmed.toLowerCase();
+      if (
+        trimmed &&
+        lower !== 'undefined' &&
+        lower !== 'null' &&
+        !trimmed.startsWith('{') &&
+        !isDomainOrUrl(trimmed)
+      ) {
+        const parts = trimmed.split(/\s+/);
+        if (parts[0] && parts[0].length > 1 && !isDomainOrUrl(parts[0])) {
+          return toTitleCase(parts[0]);
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extracts real last_name from context without inventing fake data or domain strings.
+ */
+export function getRealLastName(context: InterpolationContext): string | null {
+  if (!context) return null;
+  const candidates = [
+    context.last_name,
+    context.lastName,
+    context.custom_fields?.last_name,
+    context.custom_fields?.lastName,
+    context.customFields?.last_name,
+    context.customFields?.lastName,
+  ];
+  for (const c of candidates) {
+    if (c !== undefined && c !== null && typeof c === 'string') {
+      const trimmed = c.trim();
+      const lower = trimmed.toLowerCase();
+      if (
+        trimmed &&
+        lower !== 'undefined' &&
+        lower !== 'null' &&
+        !trimmed.startsWith('{') &&
+        !isDomainOrUrl(trimmed)
+      ) {
+        return toTitleCase(trimmed);
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Extracts real company_name from context without inventing fake data,
+ * domain strings (e.g. www.centrica.com), or generic placeholders.
+ */
+export function getRealCompanyName(context: InterpolationContext): string | null {
+  if (!context) return null;
+  const candidates = [
+    context.company_name,
+    context.companyName,
+    context.company,
+    context.custom_fields?.company_name,
+    context.custom_fields?.companyName,
+    context.customFields?.company_name,
+    context.customFields?.companyName,
+    context.custom_fields?.company,
+    context.customFields?.company,
+  ];
+
+  const genericPlaceholders = new Set([
+    'company',
+    'company name',
+    'unknown company',
+    'target lead account',
+    'target account',
+    'n/a',
+    'na',
+    'none',
+    'null',
+    'undefined',
+    '--',
+    '-',
+  ]);
+
+  for (const c of candidates) {
+    if (c !== undefined && c !== null && typeof c === 'string') {
+      const trimmed = c.trim();
+      const lower = trimmed.toLowerCase();
+      if (
+        trimmed &&
+        !genericPlaceholders.has(lower) &&
+        !trimmed.startsWith('{') &&
+        !isDomainOrUrl(trimmed)
+      ) {
+        return toTitleCase(trimmed);
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Extracts real website / domain from context without inventing fake data.
+ */
+export function getRealWebsite(context: InterpolationContext): string | null {
+  if (!context) return null;
+  const candidates = [
+    context.website,
+    context.domain,
+    context.custom_fields?.website,
+    context.customFields?.website,
+    context.custom_fields?.domain,
+    context.customFields?.domain,
+  ];
+  for (const c of candidates) {
+    if (c !== undefined && c !== null && typeof c === 'string') {
+      const trimmed = c.trim();
+      const lower = trimmed.toLowerCase();
+      if (
+        trimmed &&
+        lower !== 'undefined' &&
+        lower !== 'null'
+      ) {
+        return trimmed;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Canonical grammar and whitespace cleanup after variable replacement.
+ * Fixes orphan prepositions, double spaces, orphan commas, and trailing punctuation.
+ */
+export function cleanInterpolatedText(text: string): string {
+  if (!text) return '';
+
+  let cleaned = text;
+
+  // 1. Clean orphan prepositions before spaces/punctuation resulting from missing company_name or variables
+  // e.g., "reaching out to  regarding" -> "reaching out regarding"
+  // "reaching out to  for" -> "reaching out for"
+  // "team at  is" -> "team is"
+  // "solutions for  in" -> "solutions in"
+  // "partner with  to" -> "partner to"
+  // "website of  is" -> "website is"
+  cleaned = cleaned.replace(/\b(to|at|for|with|of|on|in|from)\s{2,}(regarding|for|to|in|on|with|about|is|are|we|our|a|an|the|\n|[,.;!?])/gi, '$2');
+
+  // 2. Clean trailing prepositions before punctuation
+  // e.g. "Partnership with ." -> "Partnership."
+  // "reaching out to." -> "reaching out."
+  cleaned = cleaned.replace(/\b(to|at|for|with|of|on|in|from)\s*([,.;!?])/gi, '$2');
+
+  // 3. Clean orphan trailing prepositions at line ends
+  cleaned = cleaned.replace(/\b(to|at|for|with|of|on|in|from)\s*$/gim, '');
+
+  // 4. Clean double or orphan commas / punctuation
+  cleaned = cleaned.replace(/\s*,\s*,+/g, ',');
+  cleaned = cleaned.replace(/,\s*([.;!?])/g, '$1');
+
+  // 5. Clean space before punctuation
+  cleaned = cleaned.replace(/\s+([,.;!?])/g, '$1');
+
+  // 6. Clean multiple consecutive spaces on the same line
+  cleaned = cleaned.split('\n').map((line) => line.replace(/[ \t]{2,}/g, ' ').trimEnd()).join('\n');
+
+  // 7. Clean more than two consecutive empty lines
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+  return cleaned.trim();
+}
+
+/**
  * Replaces {{variable}} tokens with actual lead values.
- * Supports standard fields, custom JSONB fields, case-insensitive tokens, and fallback syntax.
+ * SINGLE CANONICAL RESOLVER for Preview, AI, and Campaign Submissions.
  */
 export function interpolateTemplate(
   template: string,
@@ -140,42 +387,24 @@ export function interpolateTemplate(
   // 1. Resolve Spintax first (e.g. {Hi|Hello|Hey})
   let resolvedText = resolveSpintax(template, randomizeSpintax);
 
-  // Extract Lead Fields with Title-Case formatting and clean fallbacks
-  const rawFirstName =
-    context.first_name ||
-    context.firstName ||
-    context.contact_person ||
-    context.contactPerson ||
-    context.custom_fields?.first_name ||
-    context.custom_fields?.firstName ||
-    '';
-  const firstName = rawFirstName ? toTitleCase(String(rawFirstName)) : 'there';
+  // Extract Real Lead Fields safely (NO fake names, NO hallucinated company names)
+  const realFirstName = getRealFirstName(context);
+  const realLastName = getRealLastName(context);
+  const realCompanyName = getRealCompanyName(context);
+  const realWebsite = getRealWebsite(context);
 
-  const rawLastName =
-    context.last_name ||
-    context.lastName ||
-    context.custom_fields?.last_name ||
-    context.custom_fields?.lastName ||
-    '';
-  const lastName = rawLastName ? toTitleCase(String(rawLastName)) : '';
+  // Missing first_name fallback: "there" (for neutral greeting "Hello there,")
+  const firstName = realFirstName ? realFirstName : 'there';
+  const lastName = realLastName ? realLastName : '';
+  const fullName = realFirstName && realLastName ? `${realFirstName} ${realLastName}` : realFirstName ? realFirstName : '';
+  const company = realCompanyName ? realCompanyName : '';
 
-  const fullName = firstName && lastName && firstName !== 'there' ? `${firstName} ${lastName}` : firstName !== 'there' ? firstName : '';
-
-  const rawCompany =
-    context.company_name ||
-    context.companyName ||
-    context.company ||
-    context.custom_fields?.company_name ||
-    context.custom_fields?.companyName ||
-    '';
-  const company = rawCompany ? toTitleCase(String(rawCompany)) : 'your team';
-
-  const email = context.email || context.custom_fields?.email || '';
-  const website = context.website || context.custom_fields?.website || '';
-  const industry = context.industry || context.custom_fields?.industry || 'B2B SaaS';
-  const city = context.city || context.custom_fields?.city || '';
-  const state = context.state || context.custom_fields?.state || '';
-  const country = context.country || context.custom_fields?.country || '';
+  const email = context.email || context.custom_fields?.email || context.customFields?.email || '';
+  const website = realWebsite || '';
+  const industry = context.industry || context.custom_fields?.industry || context.customFields?.industry || '';
+  const city = context.city || context.custom_fields?.city || context.customFields?.city || '';
+  const state = context.state || context.custom_fields?.state || context.customFields?.state || '';
+  const country = context.country || context.custom_fields?.country || context.customFields?.country || '';
 
   // Custom Fields (CUSTOM 1 through 10 / custom_1..10)
   const getCustomVal = (num: number): string => {
@@ -330,21 +559,29 @@ export function interpolateTemplate(
       return tagMap[normalizedKey];
     }
 
-    // Direct context property check
     if (rawInner in context && context[rawInner] !== undefined && context[rawInner] !== null) {
-      return String(context[rawInner]);
+      const val = String(context[rawInner]);
+      if (val.toLowerCase() !== 'undefined' && val.toLowerCase() !== 'null') {
+        return val;
+      }
     }
 
     if (context.custom_fields && rawInner in context.custom_fields && context.custom_fields[rawInner] != null) {
-      return String(context.custom_fields[rawInner]);
+      const val = String(context.custom_fields[rawInner]);
+      if (val.toLowerCase() !== 'undefined' && val.toLowerCase() !== 'null') {
+        return val;
+      }
     }
     if (context.customFields && rawInner in context.customFields && context.customFields[rawInner] != null) {
-      return String(context.customFields[rawInner]);
+      const val = String(context.customFields[rawInner]);
+      if (val.toLowerCase() !== 'undefined' && val.toLowerCase() !== 'null') {
+        return val;
+      }
     }
 
     return options.fallbackPlaceholder !== undefined ? options.fallbackPlaceholder : '';
   });
 
-  return resolvedText;
+  // 3. Apply canonical grammar and space cleanup
+  return cleanInterpolatedText(resolvedText);
 }
-

@@ -20,6 +20,9 @@ export interface UserAccount {
   isSuspended: boolean;
   company?: string;
   plan?: string;
+  replyEmail?: string;
+  unverifiedReplyEmail?: string;
+  replyEmailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
@@ -83,6 +86,8 @@ export class AuthStore {
         bonusCredits: 0,
         paidCredits: 0,
         isEmailVerified: true,
+        replyEmail: this.PRIMARY_SUPER_ADMIN_EMAIL,
+        replyEmailVerified: true,
         isSuspended: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -103,6 +108,8 @@ export class AuthStore {
         bonusCredits: 0,
         paidCredits: 0,
         isEmailVerified: true,
+        replyEmail: 'operator@bulkreach.io',
+        replyEmailVerified: true,
         isSuspended: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -123,6 +130,8 @@ export class AuthStore {
         bonusCredits: 0,
         paidCredits: 0,
         isEmailVerified: true,
+        replyEmail: 'user@demo.com',
+        replyEmailVerified: true,
         isSuspended: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -213,7 +222,13 @@ export class AuthStore {
   // --- USER ACCOUNT MANAGEMENT ---
   public static getUserByEmail(email: string): UserAccount | null {
     this.initialize();
-    return userRegistry.get(email.toLowerCase().trim()) || null;
+    const user = userRegistry.get(email.toLowerCase().trim());
+    if (user && !user.replyEmail && user.isEmailVerified) {
+      user.replyEmail = user.email;
+      user.replyEmailVerified = true;
+      userRegistry.set(user.email, user);
+    }
+    return user || null;
   }
 
   public static getUserByGoogleSub(googleSub: string): UserAccount | null {
@@ -237,6 +252,7 @@ export class AuthStore {
     referredByCode?: string;
     company?: string;
     plan?: string;
+    replyEmail?: string;
   }): UserAccount {
     this.initialize();
     const emailKey = params.email.toLowerCase().trim();
@@ -260,6 +276,9 @@ export class AuthStore {
       referrer = null;
     }
 
+    const isVerified = params.isEmailVerified ?? false;
+    const initialReplyEmail = params.replyEmail || (isVerified ? emailKey : undefined);
+
     const newUser: UserAccount = {
       id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       name: params.name,
@@ -274,7 +293,9 @@ export class AuthStore {
       referredByUserId: referrer?.id,
       bonusCredits: referrer ? 50 : 0,
       paidCredits: 0,
-      isEmailVerified: params.isEmailVerified ?? false,
+      isEmailVerified: isVerified,
+      replyEmail: initialReplyEmail,
+      replyEmailVerified: isVerified && Boolean(initialReplyEmail),
       isSuspended: false,
       company: params.company,
       plan: params.plan || 'Free',

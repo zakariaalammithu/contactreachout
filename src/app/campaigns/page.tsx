@@ -160,7 +160,15 @@ export default function CampaignsPage() {
         captchaCount: 0,
         logs: [],
         prospectsList: [],
-        sequences: [],
+        sequences: [{
+          id: `step-${Date.now()}`,
+          sequenceNumber: 1,
+          stepType: 'initial_email',
+          subject: 'Partnership Inquiry',
+          body: `Hello {{first_name}},\n\nReaching out to {{company_name}} regarding a potential partnership.\n\nBest regards`,
+          delayDays: 0,
+          condition: 'always',
+        }],
         ownerEmail: activeAccount,
       };
 
@@ -228,8 +236,8 @@ export default function CampaignsPage() {
               .filter((c: any) => {
                 if (deletedIds.includes(c.id)) return false;
                 if (!isAdmin) {
-                  // Normal User: strictly require owner match if ownerEmail exists
-                  if (c.ownerEmail && c.ownerEmail.toLowerCase() !== userEmail) return false;
+                  // Normal User: strictly require owner match to prevent cross-account campaign leakage
+                  if (!c.ownerEmail || c.ownerEmail.toLowerCase().trim() !== userEmail.toLowerCase().trim()) return false;
                 }
                 return true;
               })
@@ -360,7 +368,7 @@ export default function CampaignsPage() {
               const data = await res.json();
               if (data.telemetry) {
                 rawCamp.logs = [data.telemetry, ...logs];
-                if (data.telemetry.status === 'DELIVERED') {
+                if (data.telemetry.status === 'DELIVERED' || data.telemetry.status === 'DRY_RUN_COMPLETED') {
                   rawCamp.sentCount = (rawCamp.sentCount || 0) + 1;
                 } else if (data.telemetry.status === 'FAILED') {
                   rawCamp.failedCount = (rawCamp.failedCount || 0) + 1;
@@ -372,6 +380,10 @@ export default function CampaignsPage() {
                 updatedAny = true;
               }
             }
+          } else if (leads.length > 0 && processedLeadIds.size >= leads.length) {
+            // All leads in this campaign have been processed
+            rawCamp.status = 'paused';
+            updatedAny = true;
           }
         }
 
@@ -995,7 +1007,7 @@ export default function CampaignsPage() {
                 onClick={handleCreateCampaignSubmit}
                 className="rounded-xl bg-[#0e6de4] hover:bg-blue-700 text-white px-5 py-2.5 text-xs font-bold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
               >
-                {isCreating ? 'Creating...' : 'Create'}
+                {isCreating ? 'Creating...' : 'Next Step →'}
               </button>
             </div>
           </div>
