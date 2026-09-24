@@ -415,51 +415,62 @@ export default function CampaignsPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const safeString = (val: any, fallback = 'N/A'): string => {
+    if (val === null || val === undefined) return fallback;
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+    if (typeof val === 'object') {
+      return String(val.message || val.error || val.code || val.diagnostic || JSON.stringify(val));
+    }
+    return fallback;
+  };
+
   // Retrieve Campaign-Specific Prospect Audit Logs strictly from actual recorded telemetry
   const getCampaignAuditLogs = (camp: CampaignItem) => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('user_campaigns');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const rawCamp = parsed.find((c: any) => c.id === camp.id);
+    if (!camp || typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem('user_campaigns');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const rawCamp = parsed.find((c: any) => c && c.id === camp.id);
 
           // Check if campaign has actual recorded telemetry logs
           if (rawCamp && Array.isArray(rawCamp.logs) && rawCamp.logs.length > 0) {
             return rawCamp.logs.map((log: any) => ({
-              domain: log.domain || log.website || 'N/A',
-              url: log.url || log.contactUrl || 'N/A',
-              techStack: log.techStack || log.cms || 'HTML Form',
-              domainAge: log.domainAge || 'Verified',
-              lastUpdated: log.lastUpdated || new Date().toLocaleDateString(),
-              status: log.status || 'PENDING',
-              code: log.code || log.diagnostic || 'N/A',
-              time: log.time || (log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : 'N/A'),
-              isDryRun: log.isDryRun,
+              domain: safeString(log.domain || log.website),
+              url: safeString(log.url || log.contactUrl),
+              techStack: safeString(log.techStack || log.cms, 'HTML Form'),
+              domainAge: safeString(log.domainAge, 'Verified'),
+              lastUpdated: safeString(log.lastUpdated, new Date().toLocaleDateString()),
+              status: safeString(log.status, 'PENDING'),
+              code: safeString(log.code || log.diagnostic),
+              time: safeString(log.time || (log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : 'N/A')),
+              isDryRun: Boolean(log.isDryRun),
             }));
           }
 
           // Check if campaign has prospect list records that are unprocessed
           if (rawCamp && Array.isArray(rawCamp.prospectsList) && rawCamp.prospectsList.length > 0) {
             return rawCamp.prospectsList.map((ld: any) => {
-              const rawDomain = ld.website || ld.domain || '';
-              const domain = rawDomain ? (rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`) : 'N/A';
+              const rawDomain = safeString(ld.website || ld.domain, '');
+              const domain = rawDomain && rawDomain !== 'N/A' ? (rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`) : 'N/A';
               return {
                 domain,
-                url: ld.contactUrl || (domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A'),
-                techStack: ld.techStack || 'HTML Form',
+                url: safeString(ld.contactUrl, domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A'),
+                techStack: safeString(ld.techStack, 'HTML Form'),
                 domainAge: 'Verified',
                 lastUpdated: new Date().toLocaleDateString(),
-                status: ld.status || 'PENDING',
+                status: safeString(ld.status, 'PENDING'),
                 code: 'Queued in pacing worker line',
                 time: ld.createdAt ? new Date(ld.createdAt).toLocaleTimeString() : 'Awaiting execution',
               };
             });
           }
         }
-      } catch (e) {
-        console.error('Error loading audit logs:', e);
       }
+    } catch (e) {
+      console.error('Error loading audit logs:', e);
     }
 
     return [];
@@ -467,7 +478,7 @@ export default function CampaignsPage() {
 
   // Export Dedicated Single Campaign CSV Report with Flat Horizontal Excel Columns (19 Columns)
   const handleExportSingleCampaignCSV = (camp: CampaignItem) => {
-    if (!isActionAuthorized(camp.id)) {
+    if (!camp || !isActionAuthorized(camp.id)) {
       alert('Unauthorized: You do not have permission to export telemetry for this campaign.');
       return;
     }
@@ -479,6 +490,10 @@ export default function CampaignsPage() {
     const captcha = camp.captchaBlocked || 0;
     const pending = Math.max(0, camp.prospects - delivered - failed - noPage - captcha);
     const yieldPct = camp.prospects > 0 ? Math.round((delivered / camp.prospects) * 100) : 0;
+    const campNameSafe = String(camp.name || 'Campaign');
+    const campIdSafe = String(camp.id || '');
+    const campDateSafe = String(camp.date || '');
+    const campStatusSafe = String(camp.status || 'DRAFT').toUpperCase();
 
     const tableHeaders = [
       'Campaign Name',
@@ -504,32 +519,32 @@ export default function CampaignsPage() {
 
     const tableRows = auditLogs.length > 0
       ? auditLogs.map((log: any) => [
-          `"${camp.name.replace(/"/g, '""')}"`,
-          `"${camp.id}"`,
-          `"${camp.date}"`,
-          `"${camp.status.toUpperCase()}"`,
-          camp.prospects,
+          `"${campNameSafe.replace(/"/g, '""')}"`,
+          `"${campIdSafe}"`,
+          `"${campDateSafe}"`,
+          `"${campStatusSafe}"`,
+          camp.prospects || 0,
           delivered,
           failed,
           noPage,
           captcha,
           pending,
           `"${yieldPct}%"`,
-          `"${log.domain}"`,
-          `"${log.url}"`,
-          `"${log.techStack}"`,
-          `"${log.domainAge}"`,
-          `"${log.lastUpdated}"`,
-          `"${log.status}"`,
-          `"${log.code.replace(/"/g, '""')}"`,
-          `"${log.time}"`,
+          `"${safeString(log.domain).replace(/"/g, '""')}"`,
+          `"${safeString(log.url).replace(/"/g, '""')}"`,
+          `"${safeString(log.techStack).replace(/"/g, '""')}"`,
+          `"${safeString(log.domainAge).replace(/"/g, '""')}"`,
+          `"${safeString(log.lastUpdated).replace(/"/g, '""')}"`,
+          `"${safeString(log.status).replace(/"/g, '""')}"`,
+          `"${safeString(log.code).replace(/"/g, '""')}"`,
+          `"${safeString(log.time).replace(/"/g, '""')}"`,
         ])
       : [[
-          `"${camp.name.replace(/"/g, '""')}"`,
-          `"${camp.id}"`,
-          `"${camp.date}"`,
-          `"${camp.status.toUpperCase()}"`,
-          camp.prospects,
+          `"${campNameSafe.replace(/"/g, '""')}"`,
+          `"${campIdSafe}"`,
+          `"${campDateSafe}"`,
+          `"${campStatusSafe}"`,
+          camp.prospects || 0,
           delivered,
           failed,
           noPage,
@@ -552,7 +567,7 @@ export default function CampaignsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const sanitizedName = camp.name.replace(/[^a-zA-Z0-9]/g, '_');
+    const sanitizedName = campNameSafe.replace(/[^a-zA-Z0-9]/g, '_');
     link.setAttribute('download', `${sanitizedName}_Outreach_Report.csv`);
     document.body.appendChild(link);
     link.click();
