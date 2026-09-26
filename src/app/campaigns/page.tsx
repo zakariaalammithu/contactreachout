@@ -1185,7 +1185,12 @@ export default function CampaignsPage() {
               return (
                 <div
                   key={camp.id}
-                  onClick={() => setSelectedReportCamp(camp)}
+                  onClick={() => router.push(`/campaigns/new?id=${encodeURIComponent(camp.id)}`)}
+                  onMouseEnter={() => {
+                    try {
+                      router.prefetch(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
+                    } catch (e) {}
+                  }}
                   className={`grid grid-cols-12 items-center px-6 py-3.5 rounded-2xl border transition-all cursor-pointer group shadow-2xs ${
                     selectedIds.includes(camp.id)
                       ? 'border-blue-400 bg-blue-50/30'
@@ -1193,10 +1198,11 @@ export default function CampaignsPage() {
                   }`}
                 >
                   {/* Col 1: Checkbox + Status Indicator + Name & Tags */}
-                  <div className="col-span-3 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <div className="col-span-3 flex items-center gap-3">
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(camp.id)}
+                      onClick={(e) => e.stopPropagation()}
                       onChange={() => toggleSelect(camp.id)}
                       className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
                     />
@@ -1224,10 +1230,6 @@ export default function CampaignsPage() {
                     {/* Campaign Name & Subtitle Meta */}
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <h3
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
-                        }}
                         className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate cursor-pointer hover:underline"
                         title="Click to edit campaign"
                       >
