@@ -931,7 +931,26 @@ export default function CampaignEditorClient() {
         </div>
       </div>
       {error && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">{error}</div>}
-      <div className="flex overflow-x-auto scrollbar-none flex-nowrap sm:flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2">{tabs.map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>{tab.label}</button>)}</div>
+      <div className="flex overflow-x-auto scrollbar-none flex-nowrap sm:flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => {
+              React.startTransition(() => {
+                setActiveTab(tab.id);
+              });
+            }}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-75 active:scale-95 cursor-pointer ${
+              activeTab === tab.id
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {activeTab === 'setup' && (
         <div className="space-y-6">
