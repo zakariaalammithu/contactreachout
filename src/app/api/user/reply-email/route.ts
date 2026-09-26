@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
       // If user is restoring to their own verified account email, verify immediately
       if (targetEmail === user.email.toLowerCase().trim() && user.isEmailVerified) {
-        AuthStore.updateUser(session.email, {
+        AuthStore.updateUser(user.email, {
           replyEmail: targetEmail,
           replyEmailVerified: true,
           unverifiedReplyEmail: undefined,
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Store pending unverified email and send verification OTP code
-      AuthStore.updateUser(session.email, {
+      AuthStore.updateUser(user.email, {
         unverifiedReplyEmail: targetEmail,
       });
 
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Promote to active verified reply email
-      const updatedUser = AuthStore.updateUser(session.email, {
+      const updatedUser = AuthStore.updateUser(user.email, {
         replyEmail: targetEmail,
         replyEmailVerified: true,
         unverifiedReplyEmail: undefined,
