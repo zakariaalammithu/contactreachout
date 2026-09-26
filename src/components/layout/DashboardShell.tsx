@@ -18,50 +18,57 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isPublicRoute || isAdminRoute) return;
     let cancelled = false;
+
     const verify = async () => {
-      // A transient serverless/network failure must not log a user out.
-      for (let attempt = 0; attempt < 3 && !cancelled; attempt += 1) {
-        try {
-          const response = await fetch('/api/auth/session', { cache: 'no-store' });
-          if (response.ok) {
-            if (!cancelled) {
-              const data = await response.json().catch(() => ({}));
-              if (!cancelled && data?.user?.email) {
-                const userName = data.user.name || data.user.email.split('@')[0];
-                setSessionUser({ name: userName, email: data.user.email });
-                const currentEmail = data?.user?.email?.toLowerCase?.();
-                if (currentEmail && typeof window !== 'undefined') {
-                  const previousEmail = localStorage.getItem('active_account_email');
-                  if (previousEmail && previousEmail !== currentEmail) {
-                    ['user_campaigns', 'user_sender_profile', 'user_lead_lists', 'user_imported_leads', 'user_credit_wallet', 'user_credit_transactions'].forEach((key) => localStorage.removeItem(key));
-                  }
-                  localStorage.setItem('active_account_email', currentEmail);
-                  localStorage.setItem('user_auth_email', currentEmail);
-                  const profile = {
-                    name: userName,
-                    email: currentEmail,
-                    company: 'ContactReachout',
-                    website: 'https://contactreachout.com',
-                  };
-                  localStorage.setItem('user_sender_profile', JSON.stringify(profile));
-                }
-                setSessionVerified(true);
+      try {
+        const response = await fetch('/api/auth/session', { cache: 'no-store' });
+        if (response.ok) {
+          const data = await response.json().catch(() => ({}));
+          if (!cancelled && data?.authenticated && data?.user?.email) {
+            const userName = data.user.name || data.user.email.split('@')[0];
+            setSessionUser({ name: userName, email: data.user.email });
+            const currentEmail = data.user.email.toLowerCase().trim();
+            if (typeof window !== 'undefined') {
+              const previousEmail = localStorage.getItem('active_account_email');
+              if (previousEmail && previousEmail !== currentEmail) {
+                ['user_campaigns', 'user_sender_profile', 'user_lead_lists', 'user_imported_leads', 'user_credit_wallet', 'user_credit_transactions'].forEach((key) => localStorage.removeItem(key));
               }
+              localStorage.setItem('active_account_email', currentEmail);
+              localStorage.setItem('user_auth_email', currentEmail);
+              const profile = {
+                name: userName,
+                email: currentEmail,
+                company: 'ContactReachout',
+                website: 'https://contactreachout.com',
+              };
+              localStorage.setItem('user_sender_profile', JSON.stringify(profile));
             }
+            setSessionVerified(true);
             return;
           }
-          if (response.status === 401) break;
-        } catch { /* retry */ }
-        await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+        }
+      } catch (e) {
+        console.error('Session verify error:', e);
       }
-      if (!cancelled) router.replace(`/login?tab=signin&next=${encodeURIComponent(pathname)}`);
+
+      // Fallback to active local storage account if server cookie session is transient/unauthenticated
+      if (typeof window !== 'undefined') {
+        const localEmail = (localStorage.getItem('active_account_email') || localStorage.getItem('user_auth_email') || '').toLowerCase().trim();
+        if (localEmail && !cancelled) {
+          setSessionUser({ name: localEmail.split('@')[0], email: localEmail });
+          setSessionVerified(true);
+          return;
+        }
+      }
+
+      if (!cancelled) {
+        router.replace(`/login?tab=signin&next=${encodeURIComponent(pathname)}`);
+      }
     };
+
     verify();
     return () => { cancelled = true; };
-  // Verify on the initial protected shell mount only. Internal route changes
-  // must preserve the authenticated shell instead of flashing a blank screen.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPublicRoute, router]);
+  }, [isPublicRoute, isAdminRoute, pathname, router]);
 
   useEffect(() => {
     if (isPublicRoute || isAdminRoute) return;
