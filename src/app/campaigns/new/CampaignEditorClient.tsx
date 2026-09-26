@@ -11,6 +11,7 @@ import { parseSpreadsheetPreview } from '@/lib/services/import-service';
 import { CANONICAL_DEFAULT_SAFETY_CONFIG, SendingScheduleConfig } from '@/lib/services/processing-controls-service';
 import { MatchDataModal } from '@/components/leads/MatchDataModal';
 import { CampaignMessageEditor } from './CampaignMessageEditor';
+import { ContactReplySettings } from '@/components/profile/ContactReplySettings';
 
 type EditorTab = 'setup' | 'prospects' | 'message' | 'settings';
 type MessageSequence = { id: string; name: string; condition: string; subject: string; body: string; date: string; delayAmount: number; delayUnit: 'days' | 'weeks'; replyInThread?: boolean };
@@ -1335,47 +1336,7 @@ export default function CampaignEditorClient() {
             </div>
 
             {/* CONTACT & REPLY SETTINGS SECTION */}
-            <div className="rounded-2xl border border-blue-100 bg-white p-6 space-y-4 shadow-2xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3.5">
-                <div className="flex items-center gap-2.5">
-                  <Mail className="h-5 w-5 text-[#0e6de4] shrink-0" />
-                  <div>
-                    <h3 className="font-extrabold text-slate-900 uppercase tracking-wider text-xs">CONTACT & REPLY SETTINGS</h3>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">Campaign Reply Email Identity</p>
-                  </div>
-                </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200 self-start sm:self-auto">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                  Status: Verified
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Reply Email
-                </label>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <input
-                    type="email"
-                    readOnly
-                    value={accountEmail || 'mithusquare@gmail.com'}
-                    className="w-full max-w-md rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
-                  />
-                  <a
-                    href="/profile"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-[#0e6de4] shadow-2xs transition-colors whitespace-nowrap cursor-pointer shrink-0"
-                  >
-                    <span>Change Reply Email</span>
-                    <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
-                  </a>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                  This verified email will be used when target website contact forms require an email address. Replies will appear in your <strong>ContactReachout Inbox</strong> and be delivered to this email inbox.
-                </p>
-              </div>
-            </div>
+            <ContactReplySettings />
 
             {/* SENDING SCHEDULE SECTION */}
             <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 space-y-5">
