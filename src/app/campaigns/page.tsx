@@ -913,38 +913,43 @@ export default function CampaignsPage() {
     }
   };
 
-  // Filtered campaigns (with safe string conversion and null checks)
-  const filtered = campaigns.filter((c) => {
-    if (!c) return false;
-    const cName = String(c.name || '');
-    const cTag = String(c.tag || '');
+  // Filtered campaigns (memoized for rendering speed)
+  const filtered = React.useMemo(() => {
+    return campaigns.filter((c) => {
+      if (!c) return false;
+      const cName = String(c.name || '');
+      const cTag = String(c.tag || '');
 
-    if (tagFilter !== 'All Tags' && cTag !== tagFilter) {
-      return false;
-    }
-    if (folderFilter !== 'All Folders') {
-      const lowerFolder = folderFilter.toLowerCase();
-      const lowerName = cName.toLowerCase();
-      const lowerTag = cTag.toLowerCase();
-      if (!lowerName.includes(lowerFolder) && !lowerTag.includes(lowerFolder)) {
+      if (tagFilter !== 'All Tags' && cTag !== tagFilter) {
         return false;
       }
-    }
-    if (statusFilter === 'Active') return c.status === 'active';
-    if (statusFilter === 'Paused') return c.status === 'paused';
-    if (statusFilter === 'Draft') return c.status === 'draft';
-    if (statusFilter === 'Archived') return c.status === 'archived';
-    return c.status !== 'archived';
-  });
+      if (folderFilter !== 'All Folders') {
+        const lowerFolder = folderFilter.toLowerCase();
+        const lowerName = cName.toLowerCase();
+        const lowerTag = cTag.toLowerCase();
+        if (!lowerName.includes(lowerFolder) && !lowerTag.includes(lowerFolder)) {
+          return false;
+        }
+      }
+      if (statusFilter === 'Active') return c.status === 'active';
+      if (statusFilter === 'Paused') return c.status === 'paused';
+      if (statusFilter === 'Draft') return c.status === 'draft';
+      if (statusFilter === 'Archived') return c.status === 'archived';
+      return c.status !== 'archived';
+    });
+  }, [campaigns, tagFilter, folderFilter, statusFilter]);
 
-  // Calculate Column Totals for Bulk Contact Outreach
-  const totalProspects = filtered.reduce((acc, c) => acc + (c.prospects || 0), 0);
-  const totalDelivered = filtered.reduce((acc, c) => acc + (c.reached || 0), 0);
-  const totalFailed = filtered.reduce((acc, c) => acc + (c.failed || 0), 0);
-  const totalNoForm = filtered.reduce((acc, c) => acc + (c.noContactPage || 0), 0);
-  const totalCaptcha = filtered.reduce((acc, c) => acc + (c.captchaBlocked || 0), 0);
-  const totalPending = filtered.reduce((acc, c) => acc + Math.max(0, c.prospects - (c.reached || 0) - (c.failed || 0) - (c.noContactPage || 0) - (c.captchaBlocked || 0)), 0);
-  const totalReplied = filtered.reduce((acc, c) => acc + (c.replied || 0), 0);
+  // Calculate Column Totals for Bulk Contact Outreach (memoized)
+  const totals = React.useMemo(() => {
+    const totalProspects = filtered.reduce((acc, c) => acc + (c.prospects || 0), 0);
+    const totalDelivered = filtered.reduce((acc, c) => acc + (c.reached || 0), 0);
+    const totalFailed = filtered.reduce((acc, c) => acc + (c.failed || 0), 0);
+    const totalNoForm = filtered.reduce((acc, c) => acc + (c.noContactPage || 0), 0);
+    const totalCaptcha = filtered.reduce((acc, c) => acc + (c.captchaBlocked || 0), 0);
+    const totalPending = filtered.reduce((acc, c) => acc + Math.max(0, c.prospects - (c.reached || 0) - (c.failed || 0) - (c.noContactPage || 0) - (c.captchaBlocked || 0)), 0);
+    const totalReplied = filtered.reduce((acc, c) => acc + (c.replied || 0), 0);
+    return { totalProspects, totalDelivered, totalFailed, totalNoForm, totalCaptcha, totalPending, totalReplied };
+  }, [filtered]);
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-16 font-sans">
@@ -1112,9 +1117,10 @@ export default function CampaignsPage() {
         </div>
       )}
 
-      {/* 2. Main Campaigns Table with 8 Real Bulk Contact Outreach Columns */}
-      <div className="space-y-3">
-        {/* Frozen / Sticky Table Header Columns */}
+      {/* 2. Main Campaigns Table with 8 Real Bulk Contact Outreach Columns (Responsive Wrapper) */}
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/40 p-1">
+        <div className="min-w-[900px] lg:min-w-0 space-y-3">
+          {/* Frozen / Sticky Table Header Columns */}
         <div className="sticky top-0 z-20 grid grid-cols-12 items-center px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 font-mono bg-slate-100/95 backdrop-blur-md border-y border-slate-200/90 shadow-2xs rounded-xl">
           <div className="col-span-3 flex items-center gap-3">
             <input
@@ -1409,31 +1415,31 @@ export default function CampaignsPage() {
           </div>
 
           <div className="col-span-1 text-center font-mono font-bold text-slate-900">
-            {totalProspects}
+            {totals.totalProspects}
           </div>
 
           <div className="col-span-1 text-center font-mono font-bold text-emerald-600">
-            {totalDelivered}
+            {totals.totalDelivered}
           </div>
 
           <div className="col-span-1 text-center font-mono font-bold text-blue-600">
-            {totalPending}
+            {totals.totalPending}
           </div>
 
           <div className="col-span-1 text-center font-mono font-bold text-rose-600">
-            {totalFailed}
+            {totals.totalFailed}
           </div>
 
           <div className="col-span-1 text-center font-mono font-bold text-amber-600">
-            {totalNoForm}
+            {totals.totalNoForm}
           </div>
 
           <div className="col-span-1 text-center font-mono font-bold text-purple-600">
-            {totalCaptcha}
+            {totals.totalCaptcha}
           </div>
 
           <div className="col-span-1 text-center font-mono font-bold text-indigo-600">
-            {totalReplied}
+            {totals.totalReplied}
           </div>
 
           <div className="col-span-2 text-center text-[10px] text-slate-400 font-mono">
@@ -1441,6 +1447,7 @@ export default function CampaignsPage() {
           </div>
         </div>
       </div>
+    </div>
 
       {/* DETAILED CAMPAIGN GRAPH & METRICS REPORT MODAL */}
       {selectedReportCamp && (

@@ -60,11 +60,15 @@ const supportItems: NavItem[] = [
   { name: 'Privacy Policy', href: '/privacy', icon: LockKeyhole },
 ];
 
-export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
+export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: boolean; onClose?: () => void; currentUserProfile?: { name: string; email: string; role?: string } }) {
   const pathname = usePathname();
   const router = useRouter();
   const [availableCredits, setAvailableCredits] = React.useState(0);
-  const [currentUser, setCurrentUser] = React.useState<{ name: string; email: string; role: string }>({ name: 'User', email: '', role: 'USER' });
+  const [currentUser, setCurrentUser] = React.useState<{ name: string; email: string; role: string }>({
+    name: currentUserProfile?.name || 'User',
+    email: currentUserProfile?.email || '',
+    role: currentUserProfile?.role || 'USER',
+  });
 
   const handleLogout = async () => {
     await fetch('/api/auth/signout', { method: 'POST' }).catch(() => undefined);
@@ -73,8 +77,16 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
   };
 
   React.useEffect(() => {
+    if (currentUserProfile) {
+      setCurrentUser({
+        name: currentUserProfile.name,
+        email: currentUserProfile.email,
+        role: currentUserProfile.role || 'USER',
+      });
+      return;
+    }
     let isMounted = true;
-    fetch('/api/auth/session', { cache: 'no-store' })
+    fetch('/api/auth/session')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (isMounted && data?.authenticated && data?.user) {
@@ -87,7 +99,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
       })
       .catch(() => undefined);
     return () => { isMounted = false; };
-  }, [pathname]);
+  }, [currentUserProfile]);
 
   React.useEffect(() => {
     const refreshCredits = () => setAvailableCredits(CreditWalletService.getWallet().totalCreditsAvailable);

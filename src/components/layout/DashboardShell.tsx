@@ -17,6 +17,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isPublicRoute || isAdminRoute) return;
+    if (sessionVerified && sessionUser) return;
     let cancelled = false;
 
     const verify = async () => {
@@ -68,7 +69,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
     verify();
     return () => { cancelled = true; };
-  }, [isPublicRoute, isAdminRoute, pathname, router]);
+  }, [isPublicRoute, isAdminRoute, pathname, router, sessionVerified, sessionUser]);
 
   useEffect(() => {
     if (isPublicRoute || isAdminRoute) return;
@@ -96,7 +97,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-dashboard-shell flex min-h-screen bg-[#f4f8fd] text-slate-950">
       {/* Sidebar */}
-      <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+      <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} currentUserProfile={sessionUser || undefined} />
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">

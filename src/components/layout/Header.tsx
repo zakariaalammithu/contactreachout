@@ -70,7 +70,11 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
 
   useEffect(() => {
     fetch('/api/notifications', { cache: 'no-store' }).then(response => response.json()).then(data => setNotifications(data.notifications || [])).catch(() => undefined);
-    fetch('/api/auth/session', { cache: 'no-store' })
+    if (initialUserProfile?.email) {
+      setUserProfile(initialUserProfile);
+      return;
+    }
+    fetch('/api/auth/session')
       .then(res => (res.ok ? res.json() : null))
       .then(data => {
         if (data?.authenticated && data?.user) {
@@ -81,7 +85,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
         }
       })
       .catch(() => undefined);
-  }, []);
+  }, [initialUserProfile]);
 
   // Listen for campaign name updates from editor. Next.js will prefetch links on demand.
   useEffect(() => {
