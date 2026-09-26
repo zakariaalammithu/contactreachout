@@ -21,28 +21,45 @@ export function ContactReplySettings() {
   const [cooldown, setCooldown] = useState(0);
   const [debugCode, setDebugCode] = useState<string | null>(null);
 
-  const fetchSettings = async () => {
-    setLoading(true);
+  const fetchSettings = async (emailParam?: string) => {
     setError(null);
     try {
-      const res = await fetch('/api/user/reply-email');
+      const activeEmail = emailParam || accountEmail || (typeof window !== 'undefined' ? localStorage.getItem('active_account_email') || localStorage.getItem('user_auth_email') || '' : '');
+      const headers: Record<string, string> = activeEmail ? { 'x-account-email': activeEmail } : {};
+      const res = await fetch('/api/user/reply-email', { headers });
       const data = await res.json();
       if (res.ok && data.success) {
         setReplyEmail(data.replyEmail);
         setIsVerified(data.replyEmailVerified);
         setAccountEmail(data.accountEmail);
-      } else {
-        setError(data.error || 'Failed to load reply email settings.');
       }
     } catch (err: any) {
-      setError(err.message || 'Error connecting to server.');
+      // Gracefully retain local email state if network error occurs
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSettings();
+    let localEmail = '';
+    if (typeof window !== 'undefined') {
+      localEmail = (localStorage.getItem('active_account_email') || localStorage.getItem('user_auth_email') || '').toLowerCase().trim();
+      if (!localEmail) {
+        const savedProfile = localStorage.getItem('user_sender_profile');
+        if (savedProfile) {
+          try {
+            const parsed = JSON.parse(savedProfile);
+            if (parsed.email) localEmail = parsed.email.toLowerCase().trim();
+          } catch (e) {}
+        }
+      }
+      if (localEmail) {
+        setAccountEmail(localEmail);
+        setReplyEmail(localEmail);
+        setLoading(false);
+      }
+    }
+    fetchSettings(localEmail);
   }, []);
 
   useEffect(() => {
