@@ -121,16 +121,26 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
     }
   };
 
+  const safeParseJSON = <T,>(jsonString: string | null, fallback: T): T => {
+    if (!jsonString || typeof jsonString !== 'string') return fallback;
+    try {
+      const parsed = JSON.parse(jsonString);
+      return parsed !== null && parsed !== undefined ? (parsed as T) : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   const handleMatchImportSuccess = (validLeads: any[], listInfo: any) => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('user_imported_leads');
-      const existing = stored ? JSON.parse(stored) : [];
+      const existing = safeParseJSON<any[]>(stored, []);
       const mergedLeads = [...validLeads, ...existing];
       localStorage.setItem('user_imported_leads', JSON.stringify(mergedLeads));
 
       // Save list metadata
       const storedLists = localStorage.getItem('user_lead_lists');
-      const existingLists = storedLists ? JSON.parse(storedLists) : [];
+      const existingLists = safeParseJSON<any[]>(storedLists, []);
       localStorage.setItem('user_lead_lists', JSON.stringify([listInfo, ...existingLists]));
 
       // Dispatch custom event so active page updates immediately
@@ -145,7 +155,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
     const finalName = inputCampaignName.trim() || `Campaign ${new Date().toLocaleDateString()}`;
     const now = new Date().toISOString();
     const id = `campaign-${Date.now()}`;
-    const campaigns = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+    const campaigns = safeParseJSON<any[]>(localStorage.getItem('user_campaigns'), []);
     campaigns.unshift({ id, name: finalName, tag: 'CUSTOM', status: 'draft', createdAt: now, updatedAt: now, selectedListId: '', prospectsList: [], sequences: [], isDryRun: true, rateLimitPerMinute: 10, maxConcurrency: 5, sentCount: 0, failedCount: 0, noFormCount: 0, captchaCount: 0 });
     localStorage.setItem('user_campaigns', JSON.stringify(campaigns));
     setShowNameModal(false);
