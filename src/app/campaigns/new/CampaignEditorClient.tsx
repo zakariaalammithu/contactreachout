@@ -1235,26 +1235,8 @@ export default function CampaignEditorClient() {
         </section>
       )}
 
-      {activeTab !== 'prospects' && (
+      {(activeTab === 'message' || activeTab === 'settings') && (
         <section id="campaign-lead-lists" className={`${activeTab === 'message' ? 'lg:ml-64' : ''} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8`}>
-          {activeTab === 'setup' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Campaign details</h2>
-                <p className="text-sm text-slate-500">Manage internal campaign configuration and tags.</p>
-              </div>
-
-              <label className="block text-sm font-semibold text-slate-700">
-                Tag
-                <input
-                  value={tag}
-                  onChange={(event) => setTag(event.target.value)}
-                  placeholder="CUSTOM"
-                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
-                />
-              </label>
-            </div>
-          )}
 
         {activeTab === 'message' && selectedMessageSequence && (
           <CampaignMessageEditor
