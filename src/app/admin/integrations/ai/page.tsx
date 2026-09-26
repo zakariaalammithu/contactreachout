@@ -17,6 +17,10 @@ import {
   Loader2,
   Check,
   Info,
+  Server,
+  Lock,
+  Trash2,
+  UserCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -25,13 +29,17 @@ export default function AIProvidersSettingsPage() {
   const [activeProvider, setActiveProvider] = useState('none');
   const [openaiKey, setOpenaiKey] = useState('');
   const [anthropicKey, setAnthropicKey] = useState('');
-  
+
   const [openaiConfigured, setOpenaiConfigured] = useState(false);
   const [openaiStatusText, setOpenaiStatusText] = useState('Not Configured');
+  const [openaiSource, setOpenaiSource] = useState<'env' | 'global' | 'user' | 'none'>('none');
+  const [openaiIsOverride, setOpenaiIsOverride] = useState(false);
   const [openaiMasked, setOpenaiMasked] = useState('NOT_CONFIGURED');
-  
+
   const [anthropicConfigured, setAnthropicConfigured] = useState(false);
   const [anthropicStatusText, setAnthropicStatusText] = useState('Not Configured');
+  const [anthropicSource, setAnthropicSource] = useState<'env' | 'global' | 'user' | 'none'>('none');
+  const [anthropicIsOverride, setAnthropicIsOverride] = useState(false);
   const [anthropicMasked, setAnthropicMasked] = useState('NOT_CONFIGURED');
 
   const [isLoading, setIsLoading] = useState(true);
@@ -42,31 +50,36 @@ export default function AIProvidersSettingsPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<any | null>(null);
 
-  useEffect(() => {
-    async function fetchConfig() {
-      try {
-        setIsLoading(true);
-        const res = await fetch('/api/admin/integrations/ai');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.currentProvider) setActiveProvider(data.currentProvider);
-          if (data.openai) {
-            setOpenaiConfigured(Boolean(data.openai.configured));
-            setOpenaiStatusText(data.openai.statusText || 'Not Configured');
-            setOpenaiMasked(data.openai.maskedApiKey || 'NOT_CONFIGURED');
-          }
-          if (data.anthropic) {
-            setAnthropicConfigured(Boolean(data.anthropic.configured));
-            setAnthropicStatusText(data.anthropic.statusText || 'Not Configured');
-            setAnthropicMasked(data.anthropic.maskedApiKey || 'NOT_CONFIGURED');
-          }
+  const fetchConfig = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/admin/integrations/ai');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.currentProvider) setActiveProvider(data.currentProvider);
+        if (data.openai) {
+          setOpenaiConfigured(Boolean(data.openai.configured));
+          setOpenaiStatusText(data.openai.statusText || 'Not Configured');
+          setOpenaiSource(data.openai.source || 'none');
+          setOpenaiIsOverride(Boolean(data.openai.isOverrideActive));
+          setOpenaiMasked(data.openai.maskedApiKey || 'NOT_CONFIGURED');
         }
-      } catch (err) {
-        console.error('Failed to fetch AI provider config:', err);
-      } finally {
-        setIsLoading(false);
+        if (data.anthropic) {
+          setAnthropicConfigured(Boolean(data.anthropic.configured));
+          setAnthropicStatusText(data.anthropic.statusText || 'Not Configured');
+          setAnthropicSource(data.anthropic.source || 'none');
+          setAnthropicIsOverride(Boolean(data.anthropic.isOverrideActive));
+          setAnthropicMasked(data.anthropic.maskedApiKey || 'NOT_CONFIGURED');
+        }
       }
+    } catch (err) {
+      console.error('Failed to fetch AI provider config:', err);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchConfig();
   }, []);
 
@@ -97,22 +110,55 @@ export default function AIProvidersSettingsPage() {
       if (data.openai) {
         setOpenaiConfigured(Boolean(data.openai.configured));
         setOpenaiStatusText(data.openai.statusText || 'Not Configured');
+        setOpenaiSource(data.openai.source || 'none');
+        setOpenaiIsOverride(Boolean(data.openai.isOverrideActive));
         setOpenaiMasked(data.openai.maskedApiKey || 'NOT_CONFIGURED');
       }
       if (data.anthropic) {
         setAnthropicConfigured(Boolean(data.anthropic.configured));
         setAnthropicStatusText(data.anthropic.statusText || 'Not Configured');
+        setAnthropicSource(data.anthropic.source || 'none');
+        setAnthropicIsOverride(Boolean(data.anthropic.isOverrideActive));
         setAnthropicMasked(data.anthropic.maskedApiKey || 'NOT_CONFIGURED');
       }
 
       setOpenaiKey('');
       setAnthropicKey('');
-      setSaveSuccess(data.message || 'AI Provider settings saved and encrypted successfully.');
+      setSaveSuccess(data.message || 'AI Provider settings saved successfully.');
       setTimeout(() => setSaveSuccess(null), 4000);
     } catch (err: any) {
       setSaveError(err.message || 'Failed to save settings.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleClearOverride = async (keyName: string) => {
+    try {
+      const res = await fetch('/api/admin/integrations/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clear_override', clearKey: keyName }),
+      });
+      const data = await res.json();
+      if (data.openai) {
+        setOpenaiConfigured(Boolean(data.openai.configured));
+        setOpenaiStatusText(data.openai.statusText);
+        setOpenaiSource(data.openai.source);
+        setOpenaiIsOverride(Boolean(data.openai.isOverrideActive));
+        setOpenaiMasked(data.openai.maskedApiKey);
+      }
+      if (data.anthropic) {
+        setAnthropicConfigured(Boolean(data.anthropic.configured));
+        setAnthropicStatusText(data.anthropic.statusText);
+        setAnthropicSource(data.anthropic.source);
+        setAnthropicIsOverride(Boolean(data.anthropic.isOverrideActive));
+        setAnthropicMasked(data.anthropic.maskedApiKey);
+      }
+      setSaveSuccess(`Vault override for ${keyName} cleared.`);
+      setTimeout(() => setSaveSuccess(null), 4000);
+    } catch (err: any) {
+      setSaveError(err.message || 'Failed to clear override.');
     }
   };
 
@@ -158,10 +204,10 @@ export default function AIProvidersSettingsPage() {
             <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
               <Bot className="h-5 w-5" />
             </div>
-            <span>AI Providers & Personalization Studio</span>
+            <span>AI Personalization Engine Settings</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Configure LLM providers with enforced non-deceptive anti-hallucination guardrails and deterministic offline fallback.
+            Global LLM key management & server environment architecture status.
           </p>
         </div>
       </div>
@@ -186,12 +232,12 @@ export default function AIProvidersSettingsPage() {
       <Card className="p-6 space-y-6 border-slate-200 bg-white shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
-            <h3 className="font-extrabold text-slate-900 text-sm">Active AI Engine</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Select which engine powers automatic lead message customization.</p>
+            <h3 className="font-extrabold text-slate-900 text-sm">Active System AI Provider</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Select the global AI provider for system-wide personalization.</p>
           </div>
 
           <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-200 shrink-0">
-            ENGINE: {activeProvider.toUpperCase()}
+            ACTIVE ENGINE: {activeProvider.toUpperCase()}
           </span>
         </div>
 
@@ -230,70 +276,121 @@ export default function AIProvidersSettingsPage() {
             ))}
           </div>
 
-          {/* OpenAI API Key */}
-          <div className="space-y-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+          {/* OpenAI Configuration Box */}
+          <div className="space-y-2.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <KeyRound className="h-3.5 w-3.5 text-[#0e6de4]" />
-                OpenAI API Key
+                OpenAI Key Configuration
               </label>
+
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-slate-500">Key: {openaiMasked}</span>
-                <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
-                    openaiConfigured
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                      : 'bg-slate-100 border-slate-200 text-slate-600'
-                  }`}
-                >
-                  {openaiStatusText}
-                </span>
+                <span className="text-[11px] font-mono text-slate-500 font-medium">Preview: {openaiMasked}</span>
+                {openaiIsOverride ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    <Lock className="h-3 w-3 text-amber-700" />
+                    Custom Encrypted Vault Override
+                  </span>
+                ) : openaiSource === 'env' ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#0e6de4] border border-blue-200">
+                    <Server className="h-3 w-3 text-[#0e6de4]" />
+                    ✓ Managed via Server Environment
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                    Not Configured
+                  </span>
+                )}
               </div>
             </div>
+
+            {openaiIsOverride && (
+              <div className="flex items-center justify-between bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-xs text-amber-900">
+                <span>An encrypted vault override is currently overriding the server environment key.</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleClearOverride('OPENAI_API_KEY')}
+                  className="h-7 text-[11px] font-bold border-amber-300 text-amber-900 hover:bg-amber-100"
+                >
+                  <Trash2 className="h-3 w-3 mr-1 text-amber-700" />
+                  Clear Override
+                </Button>
+              </div>
+            )}
+
             <input
               type="password"
-              placeholder="sk-proj-••••••••••••••••••••••••"
+              placeholder="sk-proj-•••••••••••••••••••••••• (Leave blank to keep server environment key)"
               value={openaiKey}
               onChange={(e) => setOpenaiKey(e.target.value)}
               className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
             />
           </div>
 
-          {/* Anthropic API Key */}
-          <div className="space-y-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+          {/* Anthropic Configuration Box */}
+          <div className="space-y-2.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <KeyRound className="h-3.5 w-3.5 text-[#0e6de4]" />
-                Anthropic Claude API Key
+                Anthropic Claude Key Configuration
               </label>
+
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-slate-500">Key: {anthropicMasked}</span>
-                <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
-                    anthropicConfigured
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                      : 'bg-slate-100 border-slate-200 text-slate-600'
-                  }`}
-                >
-                  {anthropicStatusText}
-                </span>
+                <span className="text-[11px] font-mono text-slate-500 font-medium">Preview: {anthropicMasked}</span>
+                {anthropicIsOverride ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    <Lock className="h-3 w-3 text-amber-700" />
+                    Custom Encrypted Vault Override
+                  </span>
+                ) : anthropicSource === 'env' ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#0e6de4] border border-blue-200">
+                    <Server className="h-3 w-3 text-[#0e6de4]" />
+                    ✓ Managed via Server Environment
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                    Not Configured
+                  </span>
+                )}
               </div>
             </div>
+
+            {anthropicIsOverride && (
+              <div className="flex items-center justify-between bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-xs text-amber-900">
+                <span>An encrypted vault override is currently overriding the server environment key.</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleClearOverride('ANTHROPIC_API_KEY')}
+                  className="h-7 text-[11px] font-bold border-amber-300 text-amber-900 hover:bg-amber-100"
+                >
+                  <Trash2 className="h-3 w-3 mr-1 text-amber-700" />
+                  Clear Override
+                </Button>
+              </div>
+            )}
+
             <input
               type="password"
-              placeholder="sk-ant-••••••••••••••••••••••••"
+              placeholder="sk-ant-•••••••••••••••••••••••• (Leave blank to keep server environment key)"
               value={anthropicKey}
               onChange={(e) => setAnthropicKey(e.target.value)}
               className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
             />
           </div>
 
-          {/* Truthfulness Safety Banner */}
-          <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/70 text-xs text-slate-800 flex items-start gap-2.5">
-            <ShieldCheck className="h-4 w-4 text-[#0e6de4] shrink-0 mt-0.5" />
-            <p className="text-[11px] leading-relaxed text-slate-700">
-              <strong className="text-slate-900">Enforced Anti-Hallucination Policy:</strong> The AI provider system prompt strictly forbids inventing company interactions, fabricating quotes, or claiming prior business relationships.
-            </p>
+          {/* Paid User BYOK Architecture Note */}
+          <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/70 text-xs text-slate-800 flex items-start gap-2.5">
+            <UserCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold text-emerald-950">Paid User BYOK (Bring Your Own Key) Policy:</span>
+              <p className="text-[11px] leading-relaxed text-emerald-900">
+                Free users access standard outreach tools without API keys. Paid subscribers may optionally enter their own user-level OpenAI API Key in Settings to power personal campaign personalization. User-level keys remain strictly isolated and never override global admin keys.
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center justify-end pt-3 border-t border-slate-100">

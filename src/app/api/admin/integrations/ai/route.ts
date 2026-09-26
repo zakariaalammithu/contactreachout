@@ -15,22 +15,26 @@ export async function GET(req: NextRequest) {
       'none'
     ).toLowerCase().trim();
 
-    const hasOpenAI = SecretManager.hasSecret('OPENAI_API_KEY') || Boolean(process.env.OPENAI_API_KEY);
-    const hasAnthropic = SecretManager.hasSecret('ANTHROPIC_API_KEY') || Boolean(process.env.ANTHROPIC_API_KEY);
+    const openaiInfo = SecretManager.getSecretInfo('OPENAI_API_KEY');
+    const anthropicInfo = SecretManager.getSecretInfo('ANTHROPIC_API_KEY');
 
     return NextResponse.json({
       success: true,
       currentProvider,
       openai: {
-        configured: hasOpenAI,
-        statusText: hasOpenAI ? 'Configured' : 'Not Configured',
-        maskedApiKey: hasOpenAI ? SecretManager.getMaskedSecret('OPENAI_API_KEY') : 'NOT_CONFIGURED',
+        configured: openaiInfo.configured,
+        statusText: openaiInfo.sourceText,
+        source: openaiInfo.source,
+        isOverrideActive: openaiInfo.isOverrideActive,
+        maskedApiKey: openaiInfo.maskedPreview,
         model: 'gpt-4o-mini',
       },
       anthropic: {
-        configured: hasAnthropic,
-        statusText: hasAnthropic ? 'Configured' : 'Not Configured',
-        maskedApiKey: hasAnthropic ? SecretManager.getMaskedSecret('ANTHROPIC_API_KEY') : 'NOT_CONFIGURED',
+        configured: anthropicInfo.configured,
+        statusText: anthropicInfo.sourceText,
+        source: anthropicInfo.source,
+        isOverrideActive: anthropicInfo.isOverrideActive,
+        maskedApiKey: anthropicInfo.maskedPreview,
         model: 'claude-3-5-sonnet-20241022',
       },
     });
@@ -46,13 +50,50 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { provider, openaiKey, anthropicKey, model, action } = body;
+    const { provider, openaiKey, anthropicKey, model, action, clearKey } = body;
     const activeProvider = (
       provider ||
       SecretManager.getSecret('AI_PROVIDER') ||
       process.env.AI_PROVIDER ||
       'none'
     ).toLowerCase().trim();
+
+    // 0. Action: Clear Override
+    if (action === 'clear_override' && clearKey) {
+      if (clearKey === 'OPENAI_API_KEY' || clearKey === 'ANTHROPIC_API_KEY') {
+        SecretManager.deleteSecret(clearKey);
+        AIService.resetCache();
+        AuditLogService.log({
+          userId: session.userId,
+          userEmail: session.email,
+          action: 'ai_override_cleared',
+          resourceType: 'integration_ai',
+          metadata: { key: clearKey },
+        });
+      }
+      const openaiInfo = SecretManager.getSecretInfo('OPENAI_API_KEY');
+      const anthropicInfo = SecretManager.getSecretInfo('ANTHROPIC_API_KEY');
+
+      return NextResponse.json({
+        success: true,
+        message: `Custom override for ${clearKey} cleared. Reverted to Server Environment credential.`,
+        currentProvider: activeProvider,
+        openai: {
+          configured: openaiInfo.configured,
+          statusText: openaiInfo.sourceText,
+          source: openaiInfo.source,
+          isOverrideActive: openaiInfo.isOverrideActive,
+          maskedApiKey: openaiInfo.maskedPreview,
+        },
+        anthropic: {
+          configured: anthropicInfo.configured,
+          statusText: anthropicInfo.sourceText,
+          source: anthropicInfo.source,
+          isOverrideActive: anthropicInfo.isOverrideActive,
+          maskedApiKey: anthropicInfo.maskedPreview,
+        },
+      });
+    }
 
     // 1. Action: Test AI Message Generation
     if (action === 'test_ai') {
@@ -116,8 +157,8 @@ export async function POST(req: NextRequest) {
 
     AIService.resetCache();
 
-    const hasOpenAI = SecretManager.hasSecret('OPENAI_API_KEY') || Boolean(process.env.OPENAI_API_KEY);
-    const hasAnthropic = SecretManager.hasSecret('ANTHROPIC_API_KEY') || Boolean(process.env.ANTHROPIC_API_KEY);
+    const openaiInfo = SecretManager.getSecretInfo('OPENAI_API_KEY');
+    const anthropicInfo = SecretManager.getSecretInfo('ANTHROPIC_API_KEY');
 
     AuditLogService.log({
       userId: session.userId,
@@ -132,14 +173,18 @@ export async function POST(req: NextRequest) {
       message: 'AI Provider configuration saved and encrypted successfully.',
       currentProvider: provider || activeProvider,
       openai: {
-        configured: hasOpenAI,
-        statusText: hasOpenAI ? 'Configured' : 'Not Configured',
-        maskedApiKey: hasOpenAI ? SecretManager.getMaskedSecret('OPENAI_API_KEY') : 'NOT_CONFIGURED',
+        configured: openaiInfo.configured,
+        statusText: openaiInfo.sourceText,
+        source: openaiInfo.source,
+        isOverrideActive: openaiInfo.isOverrideActive,
+        maskedApiKey: openaiInfo.maskedPreview,
       },
       anthropic: {
-        configured: hasAnthropic,
-        statusText: hasAnthropic ? 'Configured' : 'Not Configured',
-        maskedApiKey: hasAnthropic ? SecretManager.getMaskedSecret('ANTHROPIC_API_KEY') : 'NOT_CONFIGURED',
+        configured: anthropicInfo.configured,
+        statusText: anthropicInfo.sourceText,
+        source: anthropicInfo.source,
+        isOverrideActive: anthropicInfo.isOverrideActive,
+        maskedApiKey: anthropicInfo.maskedPreview,
       },
     });
   } catch (err: any) {
@@ -149,3 +194,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

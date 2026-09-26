@@ -11,6 +11,9 @@ export async function GET(req: NextRequest) {
     const rawClientId = SecretManager.getSecret('GOOGLE_CLIENT_ID') || process.env.GOOGLE_CLIENT_ID || '';
     const hasClientSecret = SecretManager.hasSecret('GOOGLE_CLIENT_SECRET') || Boolean(process.env.GOOGLE_CLIENT_SECRET);
 
+    const clientIdInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_ID');
+    const secretInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_SECRET');
+
     // OAuth Client ID must NOT be an email address
     const isValidClientIdFormat = Boolean(
       rawClientId &&
@@ -31,9 +34,11 @@ export async function GET(req: NextRequest) {
       success: true,
       enabled: isConfigured,
       isConfigured: isConfigured,
-      statusText: isConfigured ? 'Configured' : 'Not Configured',
-      maskedClientId: isValidClientIdFormat ? SecretManager.maskSecret(rawClientId) : 'NOT_CONFIGURED',
-      maskedClientSecret: hasClientSecret ? SecretManager.getMaskedSecret('GOOGLE_CLIENT_SECRET') : 'NOT_CONFIGURED',
+      statusText: clientIdInfo.sourceText,
+      source: clientIdInfo.source,
+      isOverrideActive: clientIdInfo.isOverrideActive || secretInfo.isOverrideActive,
+      maskedClientId: isValidClientIdFormat ? clientIdInfo.maskedPreview : 'NOT_CONFIGURED',
+      maskedClientSecret: hasClientSecret ? secretInfo.maskedPreview : 'NOT_CONFIGURED',
       redirectUri,
       allowedScopes: [
         'https://www.googleapis.com/auth/spreadsheets',
@@ -52,7 +57,32 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { clientId, clientSecret, redirectUri, enabled } = body;
+    const { clientId, clientSecret, redirectUri, enabled, action } = body;
+
+    // 0. Action: Clear Override
+    if (action === 'clear_override') {
+      SecretManager.deleteSecret('GOOGLE_CLIENT_ID');
+      SecretManager.deleteSecret('GOOGLE_CLIENT_SECRET');
+      SecretManager.deleteSecret('GOOGLE_REDIRECT_URI');
+      const clientIdInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_ID');
+      const secretInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_SECRET');
+      AuditLogService.log({
+        userId: session.userId,
+        userEmail: session.email,
+        action: 'google_oauth_override_cleared',
+        resourceType: 'integration_google_sheets',
+        metadata: {},
+      });
+      return NextResponse.json({
+        success: true,
+        message: 'Google OAuth vault overrides cleared. Reverted to Server Environment settings.',
+        statusText: clientIdInfo.sourceText,
+        source: clientIdInfo.source,
+        isOverrideActive: clientIdInfo.isOverrideActive || secretInfo.isOverrideActive,
+        maskedClientId: clientIdInfo.maskedPreview,
+        maskedClientSecret: secretInfo.maskedPreview,
+      });
+    }
 
     // Server-side validation: Client ID format check
     if (clientId && clientId.trim().length > 0) {
@@ -101,26 +131,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const rawClientId = SecretManager.getSecret('GOOGLE_CLIENT_ID') || '';
-    const hasClientSecret = SecretManager.hasSecret('GOOGLE_CLIENT_SECRET');
-    const isValidClientIdFormat = Boolean(rawClientId && !rawClientId.includes('@'));
-    const isConfigured = isValidClientIdFormat && hasClientSecret;
+    const clientIdInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_ID');
+    const secretInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_SECRET');
 
     AuditLogService.log({
       userId: session.userId,
       userEmail: session.email,
       action: 'google_sheets_oauth_updated',
       resourceType: 'integration_google_sheets',
-      metadata: { enabled: Boolean(enabled), isConfigured, redirectUri },
+      metadata: { enabled: Boolean(enabled), redirectUri },
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Google Sheets OAuth configuration saved securely in encrypted vault.',
-      isConfigured,
-      statusText: isConfigured ? 'Configured' : 'Not Configured',
-      maskedClientId: isValidClientIdFormat ? SecretManager.maskSecret(rawClientId) : 'NOT_CONFIGURED',
-      maskedClientSecret: hasClientSecret ? SecretManager.getMaskedSecret('GOOGLE_CLIENT_SECRET') : 'NOT_CONFIGURED',
+      message: 'Google Sheets OAuth configuration saved securely.',
+      isConfigured: clientIdInfo.configured && secretInfo.configured,
+      statusText: clientIdInfo.sourceText,
+      source: clientIdInfo.source,
+      isOverrideActive: clientIdInfo.isOverrideActive || secretInfo.isOverrideActive,
+      maskedClientId: clientIdInfo.maskedPreview,
+      maskedClientSecret: secretInfo.maskedPreview,
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -129,3 +159,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

@@ -177,6 +177,46 @@ export class SecretManager {
   }
 
   /**
+   * Gets detailed status metadata about a secret (source, masked preview, override state).
+   */
+  public static getSecretInfo(keyName: string, orgId?: string | null): {
+    configured: boolean;
+    maskedPreview: string;
+    source: 'user' | 'global' | 'env' | 'none';
+    sourceText: string;
+    isOverrideActive: boolean;
+  } {
+    let source: 'user' | 'global' | 'env' | 'none' = 'none';
+    let masked = 'NOT_CONFIGURED';
+
+    if (orgId && secretStore.has(`${orgId}::${keyName}`)) {
+      source = 'user';
+      masked = secretStore.get(`${orgId}::${keyName}`)!.maskedPreview;
+    } else if (secretStore.has(`global::${keyName}`)) {
+      source = 'global';
+      masked = secretStore.get(`global::${keyName}`)!.maskedPreview;
+    } else if (process.env[keyName] && process.env[keyName]!.trim().length > 0) {
+      source = 'env';
+      masked = this.maskSecret(process.env[keyName]);
+    }
+
+    const sourceText =
+      source === 'env'
+        ? 'Managed via Server Environment'
+        : source === 'global' || source === 'user'
+        ? 'Custom Encrypted Vault Override'
+        : 'Not Configured';
+
+    return {
+      configured: source !== 'none',
+      maskedPreview: masked,
+      source,
+      sourceText,
+      isOverrideActive: source === 'global' || source === 'user',
+    };
+  }
+
+  /**
    * Returns a list of all configured integrations with masked previews (SAFE for UI).
    */
   public static getAllIntegrationsStatus(orgId?: string | null): Record<string, {

@@ -173,7 +173,7 @@ export default function CampaignsPage() {
       };
 
       const stored = localStorage.getItem('user_campaigns');
-      const parsed = stored ? JSON.parse(stored) : [];
+      const parsed = safeParseJSON<any[]>(stored, []);
       parsed.unshift(rawCampaign);
       localStorage.setItem('user_campaigns', JSON.stringify(parsed));
 
@@ -197,6 +197,53 @@ export default function CampaignsPage() {
   }, [openMenuCampId]);
 
   const [currentUser, setCurrentUser] = useState<{ email: string; role: string } | null>(null);
+
+  // Safe JSON parsing helper to prevent SyntaxError from corrupted localStorage
+  const safeParseJSON = <T,>(jsonString: string | null, fallback: T): T => {
+    if (!jsonString || typeof jsonString !== 'string') return fallback;
+    try {
+      const parsed = JSON.parse(jsonString);
+      return parsed !== null && parsed !== undefined ? (parsed as T) : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  // Safe Time Formatting helper (prevents RangeError: Invalid time value)
+  const safeFormatTime = (val: any, fallback = 'N/A'): string => {
+    if (!val) return fallback;
+    if (typeof val === 'string' && (val.includes(':') || val.includes('AM') || val.includes('PM'))) return val;
+    try {
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+    } catch (e) {}
+    return fallback;
+  };
+
+  // Safe Date Formatting helper
+  const safeFormatDate = (val: any, fallback = 'Recently'): string => {
+    if (!val) return fallback;
+    try {
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      }
+    } catch (e) {}
+    return fallback;
+  };
+
+  // Safe string coercion helper
+  const safeString = (val: any, fallback = 'N/A'): string => {
+    if (val === null || val === undefined) return fallback;
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+    if (typeof val === 'object') {
+      return String(val.message || val.error || val.code || val.diagnostic || JSON.stringify(val));
+    }
+    return fallback;
+  };
 
   // Load custom campaigns from session & localStorage with strict user isolation
   useEffect(() => {
@@ -223,47 +270,40 @@ export default function CampaignsPage() {
       const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userEmail === 'mithusquare@gmail.com';
 
       try {
-        const deletedIdsStr = localStorage.getItem('user_deleted_campaign_ids');
-        const deletedIds: string[] = deletedIdsStr ? JSON.parse(deletedIdsStr) : [];
-
+        const deletedIds: string[] = safeParseJSON(localStorage.getItem('user_deleted_campaign_ids'), []);
         const stored = localStorage.getItem('user_campaigns');
         let mappedUserCamps: CampaignItem[] = [];
 
         if (stored) {
-          const parsed = JSON.parse(stored);
+          const parsed = safeParseJSON<any[]>(stored, []);
           if (Array.isArray(parsed)) {
             mappedUserCamps = parsed
               .filter((c: any) => {
                 if (!c || typeof c !== 'object') return false;
                 if (c.id && deletedIds.includes(c.id)) return false;
-                if (!isAdmin) {
-                  // Normal User: strictly require owner match to prevent cross-account campaign leakage
+                if (!isAdmin && userEmail) {
+                  // Normal User: check owner match (allow if ownerEmail is not set or matches userEmail)
                   const owner = typeof c.ownerEmail === 'string' ? c.ownerEmail.toLowerCase().trim() : '';
-                  if (!owner || owner !== userEmail.toLowerCase().trim()) return false;
+                  if (owner && owner !== userEmail.toLowerCase().trim()) return false;
                 }
                 return true;
               })
               .map((c: any) => {
-                const total = Array.isArray(c.prospectsList) ? c.prospectsList.length : typeof c.totalLeads === 'number' ? c.totalLeads : typeof c.prospects === 'number' ? c.prospects : 0;
-                const sent = typeof c.sentCount === 'number' ? c.sentCount : typeof c.reached === 'number' ? c.reached : 0;
-                const failed = typeof c.failedCount === 'number' ? c.failedCount : typeof c.failed === 'number' ? c.failed : 0;
-                const noForm = typeof c.noFormCount === 'number' ? c.noFormCount : typeof c.noContactPage === 'number' ? c.noContactPage : 0;
-                const captcha = typeof c.captchaCount === 'number' ? c.captchaCount : typeof c.captchaBlocked === 'number' ? c.captchaBlocked : 0;
-                const replied = typeof c.repliedCount === 'number' ? c.repliedCount : typeof c.replied === 'number' ? c.replied : 0;
-                
-                let dateStr = 'Recently';
-                try {
-                  const d = new Date(c.createdAt || Date.now());
-                  if (!isNaN(d.getTime())) {
-                    dateStr = d.toLocaleDateString('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    });
-                  }
-                } catch (e) {
-                  dateStr = 'Recently';
-                }
+                const total = Array.isArray(c.prospectsList)
+                  ? c.prospectsList.length
+                  : typeof c.totalLeads === 'number'
+                  ? c.totalLeads
+                  : typeof c.prospects === 'number'
+                  ? c.prospects
+                  : Number(c.totalLeads) || Number(c.prospects) || 0;
+
+                const sent = typeof c.sentCount === 'number' ? c.sentCount : typeof c.reached === 'number' ? c.reached : Number(c.sentCount) || Number(c.reached) || 0;
+                const failed = typeof c.failedCount === 'number' ? c.failedCount : typeof c.failed === 'number' ? c.failed : Number(c.failedCount) || Number(c.failed) || 0;
+                const noForm = typeof c.noFormCount === 'number' ? c.noFormCount : typeof c.noContactPage === 'number' ? c.noContactPage : Number(c.noFormCount) || Number(c.noContactPage) || 0;
+                const captcha = typeof c.captchaCount === 'number' ? c.captchaCount : typeof c.captchaBlocked === 'number' ? c.captchaBlocked : Number(c.captchaCount) || Number(c.captchaBlocked) || 0;
+                const replied = typeof c.repliedCount === 'number' ? c.repliedCount : typeof c.replied === 'number' ? c.replied : Number(c.repliedCount) || Number(c.replied) || 0;
+
+                const dateStr = safeFormatDate(c.createdAt, 'Recently');
 
                 return {
                   id: String(c.id || `camp-${Date.now()}`),
@@ -285,8 +325,7 @@ export default function CampaignsPage() {
         }
 
         if (isAdmin) {
-          // Authorized Admin: Combine custom campaigns with platform initial campaigns (if not deleted)
-          const filteredInitial = initialCampaignsList.filter((c) => !deletedIds.includes(c.id));
+          const filteredInitial = initialCampaignsList.filter((c) => c && c.id && !deletedIds.includes(c.id));
           const customIds = new Set(mappedUserCamps.map((c) => c.id));
           const combined = [
             ...mappedUserCamps,
@@ -294,7 +333,6 @@ export default function CampaignsPage() {
           ];
           setCampaigns(combined);
         } else {
-          // Normal User: ONLY show their own custom campaigns (or empty list if none)
           setCampaigns(mappedUserCamps);
         }
       } catch (err) {
@@ -320,18 +358,24 @@ export default function CampaignsPage() {
           return;
         }
 
-        const userCamps = JSON.parse(stored);
+        const userCamps = safeParseJSON<any[]>(stored, []);
+        if (!Array.isArray(userCamps) || userCamps.length === 0) {
+          isBusy = false;
+          return;
+        }
+
         let updatedAny = false;
 
         for (const rawCamp of userCamps) {
+          if (!rawCamp || typeof rawCamp !== 'object') continue;
           if (rawCamp.status !== 'running' && rawCamp.status !== 'active') continue;
 
           const leads: any[] = Array.isArray(rawCamp.prospectsList) ? rawCamp.prospectsList : [];
           const logs: any[] = Array.isArray(rawCamp.logs) ? rawCamp.logs : [];
-          const processedLeadIds = new Set(logs.map((l: any) => l.leadId || l.id));
+          const processedLeadIds = new Set(logs.map((l: any) => (l && (l.leadId || l.id)) || ''));
 
           // Find next uncontacted lead in sequence
-          const nextLead = leads.find((l: any) => l.id && !processedLeadIds.has(l.id));
+          const nextLead = leads.find((l: any) => l && l.id && !processedLeadIds.has(l.id));
 
           if (nextLead) {
             const template = {
@@ -355,6 +399,7 @@ export default function CampaignsPage() {
                 template,
                 options: {
                   dryRun: Boolean(rawCamp.isDryRun),
+                  schedule: rawCamp.schedule,
                 },
               }),
             });
@@ -368,7 +413,7 @@ export default function CampaignsPage() {
                   domain: nextLead.website || 'N/A',
                   status: 'FAILED',
                   code: 'BLOCKED_NO_CREDITS - Available credit balance is 0. Campaign paused.',
-                  time: new Date().toLocaleTimeString(),
+                  time: safeFormatTime(new Date()),
                   timestamp: new Date().toISOString(),
                 },
                 ...logs,
@@ -415,57 +460,51 @@ export default function CampaignsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const safeString = (val: any, fallback = 'N/A'): string => {
-    if (val === null || val === undefined) return fallback;
-    if (typeof val === 'string') return val;
-    if (typeof val === 'number' || typeof val === 'boolean') return String(val);
-    if (typeof val === 'object') {
-      return String(val.message || val.error || val.code || val.diagnostic || JSON.stringify(val));
-    }
-    return fallback;
-  };
-
   // Retrieve Campaign-Specific Prospect Audit Logs strictly from actual recorded telemetry
   const getCampaignAuditLogs = (camp: CampaignItem) => {
     if (!camp || typeof window === 'undefined') return [];
     try {
       const stored = localStorage.getItem('user_campaigns');
       if (stored) {
-        const parsed = JSON.parse(stored);
+        const parsed = safeParseJSON<any[]>(stored, []);
         if (Array.isArray(parsed)) {
           const rawCamp = parsed.find((c: any) => c && c.id === camp.id);
 
           // Check if campaign has actual recorded telemetry logs
           if (rawCamp && Array.isArray(rawCamp.logs) && rawCamp.logs.length > 0) {
-            return rawCamp.logs.map((log: any) => ({
-              domain: safeString(log.domain || log.website),
-              url: safeString(log.url || log.contactUrl),
-              techStack: safeString(log.techStack || log.cms, 'HTML Form'),
-              domainAge: safeString(log.domainAge, 'Verified'),
-              lastUpdated: safeString(log.lastUpdated, new Date().toLocaleDateString()),
-              status: safeString(log.status, 'PENDING'),
-              code: safeString(log.code || log.diagnostic),
-              time: safeString(log.time || (log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : 'N/A')),
-              isDryRun: Boolean(log.isDryRun),
-            }));
+            return rawCamp.logs
+              .filter((log: any) => log && typeof log === 'object')
+              .map((log: any) => ({
+                domain: safeString(log.domain || log.website),
+                url: safeString(log.url || log.contactUrl),
+                techStack: safeString(log.techStack || log.cms, 'HTML Form'),
+                domainAge: safeString(log.domainAge, 'Verified'),
+                lastUpdated: safeString(log.lastUpdated, safeFormatDate(new Date())),
+                status: safeString(log.status, 'PENDING'),
+                code: safeString(log.code || log.diagnostic),
+                time: safeFormatTime(log.time || log.timestamp),
+                isDryRun: Boolean(log.isDryRun),
+              }));
           }
 
           // Check if campaign has prospect list records that are unprocessed
           if (rawCamp && Array.isArray(rawCamp.prospectsList) && rawCamp.prospectsList.length > 0) {
-            return rawCamp.prospectsList.map((ld: any) => {
-              const rawDomain = safeString(ld.website || ld.domain, '');
-              const domain = rawDomain && rawDomain !== 'N/A' ? (rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`) : 'N/A';
-              return {
-                domain,
-                url: safeString(ld.contactUrl, domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A'),
-                techStack: safeString(ld.techStack, 'HTML Form'),
-                domainAge: 'Verified',
-                lastUpdated: new Date().toLocaleDateString(),
-                status: safeString(ld.status, 'PENDING'),
-                code: 'Queued in pacing worker line',
-                time: ld.createdAt ? new Date(ld.createdAt).toLocaleTimeString() : 'Awaiting execution',
-              };
-            });
+            return rawCamp.prospectsList
+              .filter((ld: any) => ld && typeof ld === 'object')
+              .map((ld: any) => {
+                const rawDomain = safeString(ld.website || ld.domain, '');
+                const domain = rawDomain && rawDomain !== 'N/A' ? (rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`) : 'N/A';
+                return {
+                  domain,
+                  url: safeString(ld.contactUrl, domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A'),
+                  techStack: safeString(ld.techStack, 'HTML Form'),
+                  domainAge: 'Verified',
+                  lastUpdated: safeFormatDate(new Date()),
+                  status: safeString(ld.status, 'PENDING'),
+                  code: 'Queued in pacing worker line',
+                  time: safeFormatTime(ld.createdAt, 'Awaiting execution'),
+                };
+              });
           }
         }
       }
@@ -633,8 +672,8 @@ export default function CampaignsPage() {
     try {
       const stored = localStorage.getItem('user_campaigns');
       if (stored) {
-        const parsed = JSON.parse(stored);
-        const camp = parsed.find((c: any) => c.id === campId);
+        const parsed = safeParseJSON<any[]>(stored, []);
+        const camp = parsed.find((c: any) => c && c.id === campId);
         if (camp && camp.ownerEmail && camp.ownerEmail.toLowerCase() !== currentUser.email.toLowerCase()) {
           return false;
         }
@@ -673,9 +712,9 @@ export default function CampaignsPage() {
           try {
             const stored = localStorage.getItem('user_campaigns');
             if (stored) {
-              const parsed = JSON.parse(stored);
+              const parsed = safeParseJSON<any[]>(stored, []);
               const updated = parsed.map((item: any) =>
-                item.id === id ? { ...item, status: newStatus === 'active' ? 'running' : 'paused' } : item
+                item && item.id === id ? { ...item, status: newStatus === 'active' ? 'running' : 'paused' } : item
               );
               localStorage.setItem('user_campaigns', JSON.stringify(updated));
             }
@@ -697,14 +736,14 @@ export default function CampaignsPage() {
 
       try {
         const deletedIdsStr = localStorage.getItem('user_deleted_campaign_ids');
-        const deletedIds: string[] = deletedIdsStr ? JSON.parse(deletedIdsStr) : [];
+        const deletedIds: string[] = safeParseJSON(deletedIdsStr, []);
         const updatedDeleted = Array.from(new Set([...deletedIds, ...selectedIds]));
         localStorage.setItem('user_deleted_campaign_ids', JSON.stringify(updatedDeleted));
 
         const stored = localStorage.getItem('user_campaigns');
         if (stored) {
-          const parsed = JSON.parse(stored);
-          const updatedStored = parsed.filter((c: any) => !selectedIds.includes(c.id));
+          const parsed = safeParseJSON<any[]>(stored, []);
+          const updatedStored = parsed.filter((c: any) => c && !selectedIds.includes(c.id));
           localStorage.setItem('user_campaigns', JSON.stringify(updatedStored));
         }
       } catch (e) {
@@ -728,7 +767,7 @@ export default function CampaignsPage() {
 
       try {
         const deletedIdsStr = localStorage.getItem('user_deleted_campaign_ids');
-        const deletedIds: string[] = deletedIdsStr ? JSON.parse(deletedIdsStr) : [];
+        const deletedIds: string[] = safeParseJSON(deletedIdsStr, []);
         if (!deletedIds.includes(id)) {
           deletedIds.push(id);
           localStorage.setItem('user_deleted_campaign_ids', JSON.stringify(deletedIds));
@@ -736,8 +775,8 @@ export default function CampaignsPage() {
 
         const stored = localStorage.getItem('user_campaigns');
         if (stored) {
-          const parsed = JSON.parse(stored);
-          const updatedStored = parsed.filter((c: any) => c.id !== id);
+          const parsed = safeParseJSON<any[]>(stored, []);
+          const updatedStored = parsed.filter((c: any) => c && c.id !== id);
           localStorage.setItem('user_campaigns', JSON.stringify(updatedStored));
         }
       } catch (e) {
@@ -790,8 +829,8 @@ export default function CampaignsPage() {
 
     try {
       const stored = localStorage.getItem('user_campaigns');
-      const parsed = stored ? JSON.parse(stored) : [];
-      const existingRaw = parsed.find((c: any) => c.id === campId);
+      const parsed = safeParseJSON<any[]>(stored, []);
+      const existingRaw = parsed.find((c: any) => c && c.id === campId);
 
       const rawCopy = existingRaw
         ? {
@@ -846,9 +885,9 @@ export default function CampaignsPage() {
     try {
       const stored = localStorage.getItem('user_campaigns');
       if (stored) {
-        const parsed = JSON.parse(stored);
+        const parsed = safeParseJSON<any[]>(stored, []);
         const updated = parsed.map((c: any) =>
-          c.id === campId ? { ...c, status: 'archived' } : c
+          c && c.id === campId ? { ...c, status: 'archived' } : c
         );
         localStorage.setItem('user_campaigns', JSON.stringify(updated));
       }
@@ -866,7 +905,7 @@ export default function CampaignsPage() {
 
       try {
         const deletedIdsStr = localStorage.getItem('user_deleted_campaign_ids');
-        const deletedIds: string[] = deletedIdsStr ? JSON.parse(deletedIdsStr) : [];
+        const deletedIds: string[] = safeParseJSON(deletedIdsStr, []);
         const updatedDeleted = Array.from(new Set([...deletedIds, ...allIds, 'camp-new', 'camp-01', 'camp-02', 'camp-03', 'camp-04']));
         localStorage.setItem('user_deleted_campaign_ids', JSON.stringify(updatedDeleted));
         localStorage.setItem('user_campaigns', JSON.stringify([]));

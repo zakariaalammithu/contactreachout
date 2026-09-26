@@ -12,19 +12,21 @@ export async function GET(req: NextRequest) {
   if (errorResponse) return errorResponse;
 
   try {
-    const hasKey = SecretManager.hasSecret('RESEND_API_KEY');
-    const maskedKey = SecretManager.getMaskedSecret('RESEND_API_KEY');
+    const info = SecretManager.getSecretInfo('RESEND_API_KEY');
     const sender = getEmailSenderConfig();
 
     return NextResponse.json({
       success: true,
-      enabled: hasKey,
-      maskedApiKey: maskedKey,
+      enabled: info.configured,
+      maskedApiKey: info.maskedPreview,
+      source: info.source,
+      sourceText: info.sourceText,
+      isOverrideActive: info.isOverrideActive,
       fromEmail: sender.fromEmail,
       fromName: sender.fromName,
       replyToEmail: sender.replyToEmail,
       provider: 'Resend',
-      lastTestStatus: hasKey ? 'CHECKING' : 'NOT_CONFIGURED',
+      lastTestStatus: info.configured ? 'CHECKING' : 'NOT_CONFIGURED',
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to retrieve email integration config.';
@@ -40,6 +42,31 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { apiKey, fromEmail, fromName, replyToEmail, testEmailRecipient, action } = body;
     const currentSender = getEmailSenderConfig();
+
+    // 0. Action: Clear Override
+    if (action === 'clear_override') {
+      SecretManager.deleteSecret('RESEND_API_KEY');
+      const info = SecretManager.getSecretInfo('RESEND_API_KEY');
+      const sender = getEmailSenderConfig();
+      AuditLogService.log({
+        userId: session.userId,
+        userEmail: session.email,
+        action: 'resend_override_cleared',
+        resourceType: 'integration_email',
+        metadata: { provider: 'Resend' },
+      });
+      return NextResponse.json({
+        success: true,
+        message: 'Custom encrypted vault override cleared. System reverted to Server Environment configuration.',
+        maskedApiKey: info.maskedPreview,
+        source: info.source,
+        sourceText: info.sourceText,
+        isOverrideActive: info.isOverrideActive,
+        fromEmail: sender.fromEmail,
+        fromName: sender.fromName,
+        replyToEmail: sender.replyToEmail,
+      });
+    }
 
     // 1. Action: Test Connection
     if (action === 'test_connection') {
@@ -173,6 +200,7 @@ export async function POST(req: NextRequest) {
     }
 
     const updatedSender = getEmailSenderConfig();
+    const updatedInfo = SecretManager.getSecretInfo('RESEND_API_KEY');
 
     AuditLogService.log({
       userId: session.userId,
@@ -185,7 +213,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Resend email configuration saved and encrypted successfully.',
-      maskedApiKey: SecretManager.getMaskedSecret('RESEND_API_KEY'),
+      maskedApiKey: updatedInfo.maskedPreview,
+      source: updatedInfo.source,
+      sourceText: updatedInfo.sourceText,
+      isOverrideActive: updatedInfo.isOverrideActive,
       fromEmail: updatedSender.fromEmail,
       fromName: updatedSender.fromName,
       replyToEmail: updatedSender.replyToEmail,

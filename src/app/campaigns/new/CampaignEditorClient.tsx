@@ -109,6 +109,16 @@ export default function CampaignEditorClient() {
   const [isRenaming, setIsRenaming] = useState(false);
   const [editingName, setEditingName] = useState('');
 
+  const safeParseJSON = <T,>(jsonString: string | null, fallback: T): T => {
+    if (!jsonString || typeof jsonString !== 'string') return fallback;
+    try {
+      const parsed = JSON.parse(jsonString);
+      return parsed !== null && parsed !== undefined ? (parsed as T) : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   const saveInlineRename = () => {
     const trimmed = editingName.trim();
     if (trimmed) {
@@ -117,8 +127,8 @@ export default function CampaignEditorClient() {
         try {
           const stored = localStorage.getItem('user_campaigns');
           if (stored) {
-            const parsed = JSON.parse(stored);
-            const updated = parsed.map((c: any) => c.id === editId ? { ...c, name: trimmed, updatedAt: new Date().toISOString() } : c);
+            const parsed = safeParseJSON<any[]>(stored, []);
+            const updated = parsed.map((c: any) => c && c.id === editId ? { ...c, name: trimmed, updatedAt: new Date().toISOString() } : c);
             localStorage.setItem('user_campaigns', JSON.stringify(updated));
           }
         } catch (e) {}
@@ -201,8 +211,8 @@ export default function CampaignEditorClient() {
       const domain = cleanUrl.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
       return { id: `manual-${Date.now()}-${index}`, firstName: '', companyName: '', website: cleanUrl, domain, listId, listName, ownerEmail: activeAccount, status: 'UNCONTACTED', createdAt: new Date().toISOString() } as Lead;
     });
-    const storedLists = JSON.parse(localStorage.getItem('user_lead_lists') || '[]');
-    const storedLeads = JSON.parse(localStorage.getItem('user_imported_leads') || '[]');
+    const storedLists = safeParseJSON<any[]>(localStorage.getItem('user_lead_lists'), []);
+    const storedLeads = safeParseJSON<any[]>(localStorage.getItem('user_imported_leads'), []);
     localStorage.setItem('user_lead_lists', JSON.stringify([newList, ...storedLists]));
     localStorage.setItem('user_imported_leads', JSON.stringify([...newLeads, ...storedLeads]));
 
@@ -216,8 +226,8 @@ export default function CampaignEditorClient() {
     // Automatically attach list & prospects to current active campaign and persist to localStorage
     if (editId) {
       try {
-        const storedCamps = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
-        const campIndex = storedCamps.findIndex((c: any) => c.id === editId);
+        const storedCamps = safeParseJSON<any[]>(localStorage.getItem('user_campaigns'), []);
+        const campIndex = storedCamps.findIndex((c: any) => c && c.id === editId);
         if (campIndex !== -1) {
           const currentProspects = Array.isArray(storedCamps[campIndex].prospectsList) ? storedCamps[campIndex].prospectsList : [];
           const existingLeadKeys = new Set(currentProspects.map((l: any) => l.website || l.id));
@@ -281,10 +291,10 @@ export default function CampaignEditorClient() {
   useEffect(() => {
     try {
       const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
-      const storedLists: LeadList[] = JSON.parse(localStorage.getItem('user_lead_lists') || '[]');
+      const storedLists: LeadList[] = safeParseJSON<LeadList[]>(localStorage.getItem('user_lead_lists'), []);
       const ownedLists = storedLists.map((list) => list.ownerEmail ? list : { ...list, ownerEmail: activeAccount });
-      if (activeAccount && ownedLists.some((list, index) => list.ownerEmail !== storedLists[index].ownerEmail)) localStorage.setItem('user_lead_lists', JSON.stringify(ownedLists));
-      const storedLeads = JSON.parse(localStorage.getItem('user_imported_leads') || '[]');
+      if (activeAccount && ownedLists.some((list, index) => list.ownerEmail !== storedLists[index]?.ownerEmail)) localStorage.setItem('user_lead_lists', JSON.stringify(ownedLists));
+      const storedLeads = safeParseJSON<any[]>(localStorage.getItem('user_imported_leads'), []);
       setAccountEmail(activeAccount);
       setLeadLists(Array.isArray(ownedLists) ? ownedLists : []);
       setLeads(Array.isArray(storedLeads) ? storedLeads : []);
@@ -298,8 +308,8 @@ export default function CampaignEditorClient() {
         })
         .catch(() => {});
       if (editId) {
-        const campaigns: StoredCampaign[] = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
-        const campaign = campaigns.find((item) => item.id === editId);
+        const campaigns: StoredCampaign[] = safeParseJSON<StoredCampaign[]>(localStorage.getItem('user_campaigns'), []);
+        const campaign = campaigns.find((item) => item && item.id === editId);
         if (campaign) {
           const campaignOwner = (campaign as any).ownerEmail ? (campaign as any).ownerEmail.toLowerCase().trim() : '';
           const isAdmin = activeAccount === 'mithusquare@gmail.com';
@@ -577,8 +587,8 @@ export default function CampaignEditorClient() {
         }
       }
 
-      const campaigns: StoredCampaign[] = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
-      const existing = editId ? campaigns.find((item) => item.id === editId) : undefined;
+      const campaigns: StoredCampaign[] = safeParseJSON<StoredCampaign[]>(localStorage.getItem('user_campaigns'), []);
+      const existing = editId ? campaigns.find((item) => item && item.id === editId) : undefined;
       const now = new Date().toISOString();
       const activeAccount = accountEmail || (localStorage.getItem('active_account_email') || '').toLowerCase();
 
@@ -641,7 +651,7 @@ export default function CampaignEditorClient() {
         aiInstructions: aiInstructions.trim(),
         aiPreview,
       };
-      const updated = existing ? campaigns.map((item) => item.id === existing.id ? campaign : item) : [campaign, ...campaigns];
+      const updated = existing ? campaigns.map((item) => item && item.id === existing.id ? campaign : item) : [campaign, ...campaigns];
       localStorage.setItem('user_campaigns', JSON.stringify(updated));
       setError('');
       if (advance) {
@@ -662,7 +672,7 @@ export default function CampaignEditorClient() {
   ];
 
   return (<>
-    <MatchDataModal isOpen={showMatchModal} onClose={() => setShowMatchModal(false)} fileName={uploadData.fileName} headers={uploadData.headers} sampleRows={uploadData.sampleRows} allRawRows={uploadData.allRawRows} onImportSuccess={(importedLeads, listInfo) => { const newList = { ...listInfo, ownerEmail: accountEmail, totalLeads: importedLeads.length, columns: Object.keys(importedLeads[0] || {}), createdAt: listInfo.uploadedAt || new Date().toISOString() }; const taggedLeads = importedLeads.map((lead) => ({ ...lead, listId: newList.id, listName: newList.name, ownerEmail: accountEmail })); const storedLists = JSON.parse(localStorage.getItem('user_lead_lists') || '[]'); localStorage.setItem('user_lead_lists', JSON.stringify([newList, ...storedLists.filter((l: any) => l.id !== newList.id)])); const storedLeads = JSON.parse(localStorage.getItem('user_imported_leads') || '[]'); localStorage.setItem('user_imported_leads', JSON.stringify([...taggedLeads, ...storedLeads])); setLeadLists((items) => [newList, ...items.filter((l) => l.id !== newList.id)]); setLeads((items) => [...taggedLeads, ...items]); setSelectedListId(newList.id); setSelectedListIds((prev) => Array.from(new Set([...prev, newList.id]))); setShowMatchModal(false); setError(`${importedLeads.length} leads imported successfully.`); }} />
+    <MatchDataModal isOpen={showMatchModal} onClose={() => setShowMatchModal(false)} fileName={uploadData.fileName} headers={uploadData.headers} sampleRows={uploadData.sampleRows} allRawRows={uploadData.allRawRows} onImportSuccess={(importedLeads, listInfo) => { const newList = { ...listInfo, ownerEmail: accountEmail, totalLeads: importedLeads.length, columns: Object.keys(importedLeads[0] || {}), createdAt: listInfo.uploadedAt || new Date().toISOString() }; const taggedLeads = importedLeads.map((lead) => ({ ...lead, listId: newList.id, listName: newList.name, ownerEmail: accountEmail })); const storedLists = safeParseJSON<any[]>(localStorage.getItem('user_lead_lists'), []); localStorage.setItem('user_lead_lists', JSON.stringify([newList, ...storedLists.filter((l: any) => l && l.id !== newList.id)])); const storedLeads = safeParseJSON<any[]>(localStorage.getItem('user_imported_leads'), []); localStorage.setItem('user_imported_leads', JSON.stringify([...taggedLeads, ...storedLeads])); setLeadLists((items) => [newList, ...items.filter((l) => l.id !== newList.id)]); setLeads((items) => [...taggedLeads, ...items]); setSelectedListId(newList.id); setSelectedListIds((prev) => Array.from(new Set([...prev, newList.id]))); setShowMatchModal(false); setError(`${importedLeads.length} leads imported successfully.`); }} />
 
     {/* UPLOAD CSV / XLSX MODAL */}
     {uploadModalOpen && (
