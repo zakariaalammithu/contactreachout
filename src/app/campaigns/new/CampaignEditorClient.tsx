@@ -1,10 +1,9 @@
-// @ts-nocheck
 'use client';
 
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, AlertCircle, Bot, CheckCircle2, Clock, Calendar, Coins, Edit2, FileSpreadsheet, Globe, Loader2, RotateCcw, Save, ShieldCheck, Sparkles, Sliders, Users, Upload, UploadCloud, UserPlus, List, X } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Bot, CheckCircle2, Clock, Calendar, Coins, Edit2, FileSpreadsheet, Globe, Loader2, Mail, RotateCcw, Save, ShieldCheck, Sparkles, Sliders, Users, Upload, UploadCloud, UserPlus, List, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { CampaignSequenceStep, Lead, LeadList } from '@/types';
 import { downloadSampleCsv } from '@/lib/services/sample-templates';
@@ -209,7 +208,7 @@ export default function CampaignEditorClient() {
     const newLeads = websites.map((website, index) => {
       const cleanUrl = /^https?:\/\//i.test(website) ? website : `https://${website}`;
       const domain = cleanUrl.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
-      return { id: `manual-${Date.now()}-${index}`, firstName: '', companyName: '', website: cleanUrl, domain, listId, listName, ownerEmail: activeAccount, status: 'UNCONTACTED', createdAt: new Date().toISOString() } as Lead;
+      return { id: `manual-${Date.now()}-${index}`, firstName: '', companyName: '', website: cleanUrl, domain, listId, listName, ownerEmail: activeAccount, status: 'UNCONTACTED', createdAt: new Date().toISOString() } as unknown as Lead;
     });
     const storedLists = safeParseJSON<any[]>(localStorage.getItem('user_lead_lists'), []);
     const storedLeads = safeParseJSON<any[]>(localStorage.getItem('user_imported_leads'), []);
@@ -470,7 +469,8 @@ export default function CampaignEditorClient() {
     const selectedNames = new Set(leadLists.filter((list) => selectedListIdSet.has(list.id)).map((list) => list.name));
 
     const rawSelected = leads.filter((lead) => {
-      if (accountEmail && lead.ownerEmail && lead.ownerEmail.toLowerCase() !== accountEmail.toLowerCase()) {
+      const owner = (lead as any).ownerEmail;
+      if (accountEmail && owner && owner.toLowerCase() !== accountEmail.toLowerCase()) {
         return false;
       }
       return (
@@ -1694,7 +1694,11 @@ export default function CampaignEditorClient() {
                 setTimezoneMode(CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.timezoneMode);
                 setCustomTimezone(CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.customTimezone);
                 setSendingDays({ ...CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingDays });
-                setSendingHours({ ...CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours });
+                setSendingHours({
+                  enabled: CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours.enabled ?? false,
+                  start: CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours.start || '09:00',
+                  end: CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.sendingHours.end || '17:00',
+                });
                 setRandomizeSubmissionTime(CANONICAL_DEFAULT_SAFETY_CONFIG.schedule.randomizeSubmissionTime);
                 setShowResetConfirmModal(false);
               }}
