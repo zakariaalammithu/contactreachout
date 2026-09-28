@@ -215,7 +215,14 @@ export class FormSubmitter {
             const selector = field.fieldSelector || `[name="${field.fieldName}"]`;
             const value = field.valueToFill || '';
             try {
-              if (await page.$(selector)) {
+              if (field.tag === 'select') {
+                if (value) await page.selectOption(selector, { label: value }).catch(() => page.selectOption(selector, value));
+              } else if (field.normalizedType === 'checkbox') {
+                if (field.isRequired && !value) throw new Error(`Required consent field is not mapped: ${field.fieldName || field.fieldSelector}`);
+                if (value && !/newsletter|marketing|promotional|subscribe/i.test(field.fieldLabel || field.fieldName || '')) await page.check(selector);
+              } else if (field.normalizedType === 'radio') {
+                if (value) await page.check(selector);
+              } else if (await page.$(selector)) {
                 await page.fill(selector, value);
               } else if (field.normalizedType === 'email') {
                 await page.fill('input[type="email"], input[name*="email"]', value);
@@ -282,6 +289,33 @@ export class FormSubmitter {
 
           if (submitted) {
             await page.waitForTimeout(2500);
+            const verification = await page.evaluate(() => ({
+              url: window.location.href,
+              bodyText: document.body?.innerText || '',
+              forms: document.querySelectorAll('form').length,
+              visibleInputs: Array.from(document.querySelectorAll('form input, form textarea')).filter((el) => {
+                const node = el as HTMLElement;
+                return node.offsetParent !== null && (el as HTMLInputElement).value;
+              }).length,
+            })).catch(() => ({ url: contactPageUrl, bodyText: '', forms: 0, visibleInputs: 0 }));
+            const outcome = analyzeSubmissionResponse(verification.bodyText);
+            const verified = outcome.isSuccess || verification.url !== contactPageUrl || verification.forms === 0 || verification.visibleInputs === 0;
+            if (!verified) {
+              await page.close().catch(() => {});
+              await context.close().catch(() => {});
+              await browser.close().catch(() => {});
+              return {
+                status: 'FAILED',
+                isDryRun: false,
+                isTestMode: false,
+                httpStatus: 200,
+                fieldsFilledCount: fieldsToFill.length,
+                honeypotsNeutralizedCount: honeypotFields.length,
+                errorMessage: 'Submission click completed without a verifiable success state.',
+                executionDurationMs: Date.now() - startTime,
+                submittedAt: new Date().toISOString(),
+              };
+            }
             await page.close().catch(() => {});
             await context.close().catch(() => {});
             await browser.close().catch(() => {});
@@ -293,7 +327,7 @@ export class FormSubmitter {
               httpStatus: 200,
               fieldsFilledCount: fieldsToFill.length,
               honeypotsNeutralizedCount: honeypotFields.length,
-              confirmationMessage: 'Browser automation submitted contact form successfully.',
+              confirmationMessage: outcome.matchedMessage || 'Browser automation submitted contact form successfully.',
               executionDurationMs: Date.now() - startTime,
               submittedAt: new Date().toISOString(),
             };

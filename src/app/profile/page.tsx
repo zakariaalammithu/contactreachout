@@ -3,6 +3,8 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { Camera, Save, UserCircle, Bot, User } from 'lucide-react';
 import { AIPersonalizationSettings } from '@/components/profile/AIPersonalizationSettings';
+import { ContactReplySettings } from '@/components/profile/ContactReplySettings';
+
 
 type Profile = { name: string; email: string; phone: string; avatarUrl: string; replyEmail?: string; createdAt?: string };
 
@@ -93,39 +95,7 @@ export default function ProfilePage() {
 
       {activeTab === 'profile' ? (
         <div className="space-y-6">
-          <form onSubmit={save} className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm sm:p-8">
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-              <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-blue-50 text-[#0e6de4]">
-                {profile.avatarUrl ? (
-                  <img src={profile.avatarUrl} alt="Profile" className="h-full w-full object-cover" />
-                ) : (
-                  <UserCircle className="h-14 w-14" />
-                )}
-              </div>
-              <div>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-black text-[#0e6de4]">
-                  <Camera className="h-4 w-4" />
-                  Change profile image
-                  <input type="file" accept="image/*" className="hidden" onChange={choosePhoto} />
-                </label>
-                <p className="mt-2 text-xs text-slate-400">PNG or JPG, maximum 1 MB.</p>
-              </div>
-            </div>
-            <div className="mt-8 grid gap-5 sm:grid-cols-2">
-              <ProfileField label="Name" value={profile.name} onChange={(value) => setProfile({ ...profile, name: value })} />
-              <ProfileField label="Email" value={profile.email} disabled />
-              <ProfileField label="Phone" value={profile.phone} onChange={(value) => setProfile({ ...profile, phone: value })} />
-              <ProfileField label="Member since" value={profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'} disabled />
-            </div>
-            <button
-              type="submit"
-              disabled={saving}
-              className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#0e6de4] px-5 py-3 text-sm font-black text-white hover:bg-[#0758bd] disabled:opacity-60 cursor-pointer"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? 'Saving…' : 'Save Profile'}
-            </button>
-          </form>
+          <ContactReplySettings />
         </div>
       ) : (
         <AIPersonalizationSettings />

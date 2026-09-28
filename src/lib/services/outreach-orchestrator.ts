@@ -24,6 +24,13 @@ export interface PipelineExecutionInput {
     state?: string | null;
     country?: string | null;
     custom_fields?: Record<string, any>;
+    whatsApp?: string | null;
+  };
+  user_contact_identity?: {
+    fullName?: string | null;
+    replyEmail?: string | null;
+    phone?: string | null;
+    whatsApp?: string | null;
   };
   template: {
     id: string;
@@ -202,11 +209,13 @@ export class OutreachPipelineOrchestrator {
       website: lead.website,
       email: lead.email,
       phone: lead.phone,
+      whatsApp: lead.whatsApp,
       industry: lead.industry,
       city: lead.city,
       state: lead.state,
       country: lead.country,
       custom_fields: lead.custom_fields,
+      user_contact_identity: input.user_contact_identity,
     };
 
     const renderedSubject = interpolateTemplate(template.subjectTemplate, leadContext);

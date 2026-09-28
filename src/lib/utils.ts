@@ -20,3 +20,19 @@ export function truncateText(text: string, maxLength: number = 50): string {
   if (!text) return "";
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
+
+export function generateNextUniqueCampaignName(existingCampaigns: Array<{ name?: string }>): string {
+  const existingNames = new Set(
+    (existingCampaigns || []).map((c) => (c?.name || '').trim().toLowerCase())
+  );
+
+  let index = 1;
+  while (true) {
+    const candidate = `New Campaign ${index}`;
+    if (!existingNames.has(candidate.toLowerCase())) {
+      return candidate;
+    }
+    index++;
+  }
+}
+

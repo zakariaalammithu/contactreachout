@@ -4,6 +4,8 @@ import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 import { OutreachPipelineOrchestrator } from '@/lib/services/outreach-orchestrator';
 import { validateSendingSchedule } from '@/lib/services/processing-controls-service';
 
+import { AuthStore } from '@/lib/auth/auth-store';
+
 export async function POST(req: NextRequest) {
   try {
     const session = SessionManager.getSessionFromRequest(req);
@@ -65,10 +67,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const userAccount = AuthStore.getUserByEmail(userId);
+    const userContactIdentity = userAccount
+      ? {
+          fullName: userAccount.name,
+          replyEmail: userAccount.replyEmail || userAccount.email,
+          phone: userAccount.phone,
+          whatsApp: userAccount.whatsApp,
+        }
+      : undefined;
+
     // 3. Execute Real Lead Outreach Pipeline
     const startTime = Date.now();
     const result = await OutreachPipelineOrchestrator.processLead({
       lead,
+      user_contact_identity: userContactIdentity,
       template,
       options: {
         dryRun: isDryRun,

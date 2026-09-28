@@ -6,6 +6,7 @@ export interface UserAccount {
   name: string;
   email: string;
   phone?: string;
+  whatsApp?: string;
   passwordHash?: string;
   salt?: string;
   googleSub?: string;
@@ -86,9 +87,10 @@ export class AuthStore {
       );
       userRegistry.set(this.PRIMARY_SUPER_ADMIN_EMAIL, {
         id: 'usr-superadmin-001',
-        name: 'Ethan Carter',
+        name: '',
         email: this.PRIMARY_SUPER_ADMIN_EMAIL,
-        phone: '+8801700000000',
+        // Phone numbers are supplied only by the account owner.
+        phone: '',
         passwordHash: hash,
         salt,
         role: 'SUPER_ADMIN',
@@ -108,9 +110,9 @@ export class AuthStore {
       const { hash, salt } = this.hashPassword(this.bootstrapPassword(undefined, 'OperatorPass123!'));
       userRegistry.set('operator@bulkreach.io', {
         id: 'usr-admin-002',
-        name: 'System Operator',
+        name: '',
         email: 'operator@bulkreach.io',
-        phone: '+15550001111',
+        phone: '',
         passwordHash: hash,
         salt,
         role: 'ADMIN',
@@ -130,9 +132,9 @@ export class AuthStore {
       const { hash, salt } = this.hashPassword(this.bootstrapPassword(undefined, 'DemoUser123!'));
       userRegistry.set('user@demo.com', {
         id: 'usr-user-003',
-        name: 'Demo Customer',
+        name: '',
         email: 'user@demo.com',
-        phone: '+15552223333',
+        phone: '',
         passwordHash: hash,
         salt,
         role: 'USER',

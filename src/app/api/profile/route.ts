@@ -11,14 +11,15 @@ export async function GET(request: NextRequest) {
   const user = AuthStore.getUserByEmail(session.email);
   if (!user) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
 
-  const activeReplyEmail = user.replyEmail || (user.isEmailVerified ? user.email : '');
+  const activeReplyEmail = user.replyEmail || '';
   const replyEmailVerified = user.replyEmailVerified ?? user.isEmailVerified;
 
   return NextResponse.json({
     user: {
-      name: user.name,
+      name: user.name || '',
       email: user.email,
       phone: user.phone || '',
+      whatsApp: user.whatsApp || '',
       avatarUrl: user.avatarUrl || '',
       replyEmail: activeReplyEmail,
       replyEmailVerified,
@@ -29,8 +30,9 @@ export async function GET(request: NextRequest) {
 }
 
 const profileSchema = z.object({
-  name: z.string().trim().min(2).max(100),
-  phone: z.string().trim().max(30).optional().default(''),
+  name: z.string().trim().max(100).optional().default(''),
+  phone: z.string().trim().max(50).optional().default(''),
+  whatsApp: z.string().trim().max(50).optional().default(''),
   avatarUrl: z.string().max(1_500_000).optional().default(''),
 });
 
@@ -41,15 +43,16 @@ export async function PATCH(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid profile.' }, { status: 400 });
 
   const user = AuthStore.updateUser(session.email, parsed.data);
-  const activeReplyEmail = user.replyEmail || (user.isEmailVerified ? user.email : '');
+  const activeReplyEmail = user.replyEmail || '';
   const replyEmailVerified = user.replyEmailVerified ?? user.isEmailVerified;
 
   return NextResponse.json({
     success: true,
     user: {
-      name: user.name,
+      name: user.name || '',
       email: user.email,
       phone: user.phone || '',
+      whatsApp: user.whatsApp || '',
       avatarUrl: user.avatarUrl || '',
       replyEmail: activeReplyEmail,
       replyEmailVerified,

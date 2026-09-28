@@ -1,13 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Mail, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, KeyRound, Check } from 'lucide-react';
+import { Mail, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, KeyRound, Check, Save } from 'lucide-react';
 
 export function ContactReplySettings() {
+  const [fullName, setFullName] = useState('');
   const [replyEmail, setReplyEmail] = useState('');
   const [accountEmail, setAccountEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [whatsApp, setWhatsApp] = useState('');
   const [isVerified, setIsVerified] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -21,10 +25,23 @@ export function ContactReplySettings() {
   const [cooldown, setCooldown] = useState(0);
   const [debugCode, setDebugCode] = useState<string | null>(null);
 
-  const fetchSettings = async (emailParam?: string) => {
+  const fetchSettings = async () => {
     setError(null);
     try {
-      const activeEmail = emailParam || accountEmail || (typeof window !== 'undefined' ? localStorage.getItem('active_account_email') || localStorage.getItem('user_auth_email') || '' : '');
+      const profileRes = await fetch('/api/profile', { cache: 'no-store' });
+      if (profileRes.ok) {
+        const pData = await profileRes.json();
+        if (pData.user) {
+          setFullName(pData.user.name || '');
+          setPhone(pData.user.phone || '');
+          setWhatsApp(pData.user.whatsApp || '');
+          setAccountEmail(pData.user.email || '');
+          setReplyEmail(pData.user.replyEmail || pData.user.email || '');
+          setIsVerified(Boolean(pData.user.replyEmailVerified));
+        }
+      }
+
+      const activeEmail = (typeof window !== 'undefined' ? localStorage.getItem('active_account_email') || localStorage.getItem('user_auth_email') || '' : '');
       const headers: Record<string, string> = activeEmail ? { 'x-account-email': activeEmail } : {};
       const res = await fetch('/api/user/reply-email', { headers });
       const data = await res.json();
@@ -34,32 +51,14 @@ export function ContactReplySettings() {
         setAccountEmail(data.accountEmail);
       }
     } catch (err: any) {
-      // Gracefully retain local email state if network error occurs
+      // Gracefully retain local state if network error occurs
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    let localEmail = '';
-    if (typeof window !== 'undefined') {
-      localEmail = (localStorage.getItem('active_account_email') || localStorage.getItem('user_auth_email') || '').toLowerCase().trim();
-      if (!localEmail) {
-        const savedProfile = localStorage.getItem('user_sender_profile');
-        if (savedProfile) {
-          try {
-            const parsed = JSON.parse(savedProfile);
-            if (parsed.email) localEmail = parsed.email.toLowerCase().trim();
-          } catch (e) {}
-        }
-      }
-      if (localEmail) {
-        setAccountEmail(localEmail);
-        setReplyEmail(localEmail);
-        setLoading(false);
-      }
-    }
-    fetchSettings(localEmail);
+    fetchSettings();
   }, []);
 
   useEffect(() => {
@@ -69,6 +68,48 @@ export function ContactReplySettings() {
     }
     return () => clearInterval(timer);
   }, [cooldown]);
+
+  const handleSaveContactIdentity = async () => {
+    setSaving(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fullName.trim(),
+          phone: phone.trim(),
+          whatsApp: whatsApp.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSuccessMsg('✓ Contact identity updated successfully!');
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('user_sender_profile');
+          const parsed = stored ? JSON.parse(stored) : {};
+          localStorage.setItem(
+            'user_sender_profile',
+            JSON.stringify({
+              ...parsed,
+              name: fullName.trim(),
+              phone: phone.trim(),
+              whatsApp: whatsApp.trim(),
+            })
+          );
+        }
+      } else {
+        setError(data.error || 'Failed to update contact identity.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error saving contact identity.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleRequestOtp = async () => {
     if (!newEmail.trim() || !newEmail.includes('@')) {
@@ -159,11 +200,14 @@ export function ContactReplySettings() {
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-[#0e6de4]">
-            Contact & Reply Settings
+            CONTACT & REPLY IDENTITY
           </p>
           <h3 className="mt-1 text-lg font-black text-slate-900">
-            Campaign Reply Email Identity
+            Account Contact Identity Settings
           </h3>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Manage your account contact details. All four fields are optional and automatically fill website contact forms.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {isVerified ? (
@@ -195,53 +239,99 @@ export function ContactReplySettings() {
 
       {loading ? (
         <div className="p-6 text-center text-xs font-bold text-slate-400 animate-pulse">
-          Loading reply email settings...
+          Loading contact identity settings...
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-12 items-end">
-            <div className="sm:col-span-8 space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                Reply Email Address
+        <div className="space-y-6">
+          <div className="grid gap-5 sm:grid-cols-2">
+            {/* 1. Full Name */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Full Name <span className="text-[10px] font-normal text-slate-400">(Optional)</span>
               </label>
-              <div className="relative flex items-center">
-                <Mail className="absolute left-3.5 h-4 w-4 text-slate-400" />
-                <input
-                  type="email"
-                  readOnly
-                  value={replyEmail || accountEmail}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm font-bold text-slate-800 outline-none"
-                />
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="e.g. Alex Morgan"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+
+            {/* 2. Reply Email */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                <span>Reply Email</span>
+                <span className="text-[10px] text-emerald-600 font-bold font-mono">Verified</span>
+              </label>
+              <div className="relative flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="email"
+                    readOnly
+                    value={replyEmail || accountEmail}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm font-bold text-slate-800 outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(true);
+                    setStep('input');
+                    setNewEmail('');
+                    setOtpCode('');
+                    setError(null);
+                  }}
+                  className="shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0e6de4] px-3.5 py-3 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Change Email
+                </button>
               </div>
             </div>
 
-            <div className="sm:col-span-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowModal(true);
-                  setStep('input');
-                  setNewEmail('');
-                  setOtpCode('');
-                  setError(null);
-                }}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-4 py-3 text-xs font-bold text-white hover:bg-[#0758bd] transition-all cursor-pointer shadow-xs active:scale-95"
-              >
-                <span>Change Reply Email</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+            {/* 3. Phone Number */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Phone Number <span className="text-[10px] font-normal text-slate-400">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. +1 (555) 234-5678"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+
+            {/* 4. WhatsApp Number */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                WhatsApp Number <span className="text-[10px] font-normal text-slate-400">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={whatsApp}
+                onChange={(e) => setWhatsApp(e.target.value)}
+                placeholder="e.g. +1 (555) 987-6543"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
             </div>
           </div>
 
-          <p className="text-xs text-slate-500 leading-relaxed">
-            This email is used when a website contact form requires an email address. Replies from prospects may also be delivered to this inbox.
-          </p>
-
-          <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 text-xs text-slate-600 space-y-1 font-mono">
-            <p className="font-bold text-slate-800 font-sans">Default Reply Email Behavior:</p>
-            <p>• Account Verified Email: <strong>{accountEmail}</strong></p>
-            <p>• Active Campaign Submission Email: <strong>{replyEmail || accountEmail}</strong></p>
-            <p>• Incoming prospect replies automatically forward to this address and appear in your ContactReachout Inbox.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-4">
+            <p className="text-xs text-slate-500 leading-relaxed max-w-xl">
+              All four fields are optional. When a target website form requests your contact identity, ContactReachout uses these values automatically.
+            </p>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={handleSaveContactIdentity}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-6 py-3 text-xs font-bold text-white hover:bg-[#0758bd] disabled:opacity-60 cursor-pointer shadow-xs active:scale-95 transition-all"
+            >
+              <Save className="h-4 w-4" />
+              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+            </button>
           </div>
         </div>
       )}

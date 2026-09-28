@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   AlertTriangle, AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Bookmark, Bot, Code, Eye,
-  Italic, Link as LinkIcon, List, ListOrdered, Loader2, Save, Sparkles, Underline, Undo2, Redo2, Lock, ArrowUpRight, CheckCircle2,
+  Italic, Link as LinkIcon, List, ListOrdered, Loader2, Save, Sparkles, Underline, Undo2, Redo2, Lock, ArrowUpRight, CheckCircle2, ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { interpolateTemplate } from '@/lib/services/template-engine';
@@ -625,6 +625,10 @@ export function CampaignMessageEditor({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={() => setPreviewOpen(false)} className="mr-1 inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold cursor-pointer">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </Button>
                   <h2 className="text-lg font-bold text-slate-900">Preview & Test</h2>
                   <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-[#0e6de4]">Website Contact-Form Submission</span>
                 </div>

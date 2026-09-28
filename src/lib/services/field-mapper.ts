@@ -11,6 +11,7 @@ export interface LeadMappingContext {
   name?: string | null;
   email?: string | null;
   phone?: string | null;
+  whatsApp?: string | null;
   company_name?: string | null;
   website?: string | null;
   job_title?: string | null;
@@ -18,6 +19,12 @@ export interface LeadMappingContext {
   state?: string | null;
   country?: string | null;
   custom_fields?: Record<string, any>;
+  user_contact_identity?: {
+    fullName?: string | null;
+    replyEmail?: string | null;
+    phone?: string | null;
+    whatsApp?: string | null;
+  };
   [key: string]: any;
 }
 
@@ -172,7 +179,7 @@ export function mapLeadToFormFields(
       continue;
     }
 
-    // 3. Map based on normalized field type
+    // 3. Map based on normalized field type (Lead Data Priority > User Contact Identity Fallback > Blank)
     switch (field.normalizedType) {
       case 'first_name':
         if (lead.first_name) {
@@ -184,10 +191,16 @@ export function mapLeadToFormFields(
           strategy = 'direct_first_name';
           sourceLeadField = 'name';
           confidence *= 0.85;
-        } else {
-          valueToFill = (lead as any).sender_name?.split(' ')[0] || 'Alex';
+        } else if (lead.user_contact_identity?.fullName) {
+          valueToFill = String(lead.user_contact_identity.fullName).trim().split(' ')[0] || '';
+          strategy = 'direct_first_name';
+          sourceLeadField = 'user_contact_identity.fullName';
+        } else if ((lead as any).sender_name) {
+          valueToFill = String((lead as any).sender_name).split(' ')[0] || '';
           strategy = 'direct_first_name';
           sourceLeadField = 'sender_name';
+        } else {
+          valueToFill = '';
         }
         break;
 
@@ -202,19 +215,26 @@ export function mapLeadToFormFields(
           strategy = 'direct_last_name';
           sourceLeadField = 'name';
           confidence *= 0.85;
-        } else {
-          valueToFill = (lead as any).sender_name?.split(' ').slice(1).join(' ') || 'Morgan';
+        } else if (lead.user_contact_identity?.fullName) {
+          const parts = String(lead.user_contact_identity.fullName).trim().split(' ');
+          valueToFill = parts.slice(1).join(' ') || '';
           strategy = 'direct_last_name';
-          sourceLeadField = 'sender_name';
+          sourceLeadField = 'user_contact_identity.fullName';
+        } else {
+          valueToFill = '';
         }
         break;
 
       case 'full_name':
-        const fullName = constructFullName(lead.first_name, lead.last_name) || lead.name || (lead as any).sender_name || 'Alex Morgan';
-        if (fullName) {
-          valueToFill = String(fullName).trim();
+        const leadFullName = constructFullName(lead.first_name, lead.last_name) || lead.name;
+        const identityFullName = lead.user_contact_identity?.fullName || (lead as any).sender_name;
+        const finalFullName = leadFullName || identityFullName || '';
+        if (finalFullName) {
+          valueToFill = String(finalFullName).trim();
           strategy = 'composite_full_name';
-          sourceLeadField = 'first_name + last_name';
+          sourceLeadField = leadFullName ? 'lead_name' : 'user_contact_identity.fullName';
+        } else {
+          valueToFill = '';
         }
         break;
 
@@ -223,10 +243,16 @@ export function mapLeadToFormFields(
           valueToFill = String(lead.email).trim();
           strategy = 'direct_email';
           sourceLeadField = 'email';
-        } else {
-          valueToFill = (lead as any).sender_email || 'mithusquare@gmail.com';
+        } else if (lead.user_contact_identity?.replyEmail) {
+          valueToFill = String(lead.user_contact_identity.replyEmail).trim();
+          strategy = 'direct_email';
+          sourceLeadField = 'user_contact_identity.replyEmail';
+        } else if ((lead as any).sender_email) {
+          valueToFill = String((lead as any).sender_email).trim();
           strategy = 'direct_email';
           sourceLeadField = 'sender_email';
+        } else {
+          valueToFill = '';
         }
         break;
 
@@ -235,10 +261,34 @@ export function mapLeadToFormFields(
           valueToFill = String(lead.phone).trim();
           strategy = 'direct_phone';
           sourceLeadField = 'phone';
-        } else {
-          valueToFill = '+1 (555) 234-5678';
+        } else if (lead.user_contact_identity?.phone) {
+          valueToFill = String(lead.user_contact_identity.phone).trim();
           strategy = 'direct_phone';
-          sourceLeadField = 'default_phone_fallback';
+          sourceLeadField = 'user_contact_identity.phone';
+        } else {
+          valueToFill = '';
+        }
+        break;
+
+      case 'whatsApp':
+        if (lead.whatsApp || (lead as any).whatsapp) {
+          valueToFill = String(lead.whatsApp || (lead as any).whatsapp).trim();
+          strategy = 'direct_phone';
+          sourceLeadField = 'whatsApp';
+        } else if (lead.user_contact_identity?.whatsApp) {
+          valueToFill = String(lead.user_contact_identity.whatsApp).trim();
+          strategy = 'direct_phone';
+          sourceLeadField = 'user_contact_identity.whatsApp';
+        } else if (lead.phone) {
+          valueToFill = String(lead.phone).trim();
+          strategy = 'direct_phone';
+          sourceLeadField = 'phone';
+        } else if (lead.user_contact_identity?.phone) {
+          valueToFill = String(lead.user_contact_identity.phone).trim();
+          strategy = 'direct_phone';
+          sourceLeadField = 'user_contact_identity.phone';
+        } else {
+          valueToFill = '';
         }
         break;
 
@@ -248,9 +298,7 @@ export function mapLeadToFormFields(
           strategy = 'direct_company';
           sourceLeadField = 'company_name';
         } else {
-          valueToFill = 'B2B Growth Services';
-          strategy = 'direct_company';
-          sourceLeadField = 'default_company_fallback';
+          valueToFill = '';
         }
         break;
 
@@ -260,9 +308,7 @@ export function mapLeadToFormFields(
           strategy = 'direct_website';
           sourceLeadField = 'website';
         } else {
-          valueToFill = 'https://freeoutreach.com';
-          strategy = 'direct_website';
-          sourceLeadField = 'default_website_fallback';
+          valueToFill = '';
         }
         break;
 
@@ -272,9 +318,7 @@ export function mapLeadToFormFields(
           strategy = 'direct_job_title';
           sourceLeadField = 'job_title';
         } else {
-          valueToFill = 'CEO / Business Owner';
-          strategy = 'direct_job_title';
-          sourceLeadField = 'default_job_title_fallback';
+          valueToFill = '';
         }
         break;
 

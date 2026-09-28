@@ -287,6 +287,9 @@ export class ContactPageFinder {
           waitUntil: 'domcontentloaded',
           timeout: navigationTimeoutMs,
         });
+        // Allow SPA frameworks and form plugins to mount before inspecting
+        // rendered links/forms, with a bounded wait for long-lived requests.
+        await page.waitForLoadState('networkidle', { timeout: Math.min(navigationTimeoutMs, 3000) }).catch(() => {});
 
         httpStatus = response?.status() || null;
         pageTitle = await page.title();
@@ -371,6 +374,7 @@ export class ContactPageFinder {
               waitUntil: 'domcontentloaded',
               timeout: 5000,
             });
+            await page.waitForLoadState('networkidle', { timeout: 1500 }).catch(() => {});
 
             if (probeRes && probeRes.status() >= 200 && probeRes.status() < 400) {
               const probeTitle = await page.title();

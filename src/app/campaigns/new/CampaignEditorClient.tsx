@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, AlertCircle, Bot, CheckCircle2, Clock, Calendar, Coins, Edit2, FileSpreadsheet, Globe, Loader2, Mail, RotateCcw, Save, ShieldCheck, Sparkles, Sliders, Users, Upload, UploadCloud, UserPlus, List, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { generateNextUniqueCampaignName } from '@/lib/utils';
+
 import type { CampaignSequenceStep, Lead, LeadList } from '@/types';
 import { downloadSampleCsv } from '@/lib/services/sample-templates';
 import { parseSpreadsheetPreview } from '@/lib/services/import-service';
@@ -82,6 +84,19 @@ export default function CampaignEditorClient() {
   const [availableCredits, setAvailableCredits] = useState(100);
   const [showCreditShortfallModal, setShowCreditShortfallModal] = useState(false);
   const [creditShortfallData, setCreditShortfallData] = useState<any>(null);
+  const [userProfileSummary, setUserProfileSummary] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+    whatsApp?: string;
+    replyEmail?: string;
+    replyEmailVerified?: boolean;
+  }>({});
+  const [editingContactIdentity, setEditingContactIdentity] = useState(true);
+  const [contactIdentityDraft, setContactIdentityDraft] = useState({ name: '', phone: '', whatsApp: '' });
+  const [savingContactIdentity, setSavingContactIdentity] = useState(false);
+  const [contactIdentityMessage, setContactIdentityMessage] = useState('');
+
 
   const [aiPersonalizationEnabled, setAiPersonalizationEnabled] = useState(false);
   const [aiInstructions, setAiInstructions] = useState('Write a short, professional outreach message for this business. Mention something relevant about the target website and keep the message natural and concise.');
@@ -299,6 +314,16 @@ export default function CampaignEditorClient() {
       setLeadLists(Array.isArray(ownedLists) ? ownedLists : []);
       setLeads(Array.isArray(storedLeads) ? storedLeads : []);
 
+      fetch('/api/profile', { cache: 'no-store' })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) {
+            setUserProfileSummary(data.user);
+            setContactIdentityDraft({ name: data.user.name || '', phone: data.user.phone || '', whatsApp: data.user.whatsApp || '' });
+          }
+        })
+        .catch(() => {});
+
       fetch('/api/credits')
         .then((res) => res.json())
         .then((data) => {
@@ -363,6 +388,14 @@ export default function CampaignEditorClient() {
         } else setError('The requested campaign could not be found. You can save this setup as a new campaign.');
       } else {
         setSelectedListId(''); setSelectedListIds([]);
+        if (!campaignName) {
+          const campaigns: StoredCampaign[] = safeParseJSON<StoredCampaign[]>(localStorage.getItem('user_campaigns'), []);
+          const userCamps = campaigns.filter((c: any) => {
+            const owner = typeof c?.ownerEmail === 'string' ? c.ownerEmail.toLowerCase().trim() : '';
+            return !owner || owner === activeAccount;
+          });
+          setCampaignName(generateNextUniqueCampaignName(userCamps));
+        }
       }
     } catch { setError('Campaign data could not be loaded from this browser.'); }
   }, [editId]);
@@ -671,6 +704,33 @@ export default function CampaignEditorClient() {
     { id: 'setup', label: 'Campaign setup' }, { id: 'prospects', label: `Prospects (${selectedLeads.length})` },
     { id: 'message', label: 'Message' }, { id: 'settings', label: 'Safety & pacing' },
   ];
+
+  const saveContactIdentityInline = async () => {
+    setSavingContactIdentity(true);
+    setContactIdentityMessage('');
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: contactIdentityDraft.name.trim(),
+          phone: contactIdentityDraft.phone.trim(),
+          whatsApp: contactIdentityDraft.whatsApp.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to update contact identity.');
+      const updatedUser = data.user || { ...userProfileSummary, ...contactIdentityDraft };
+      setUserProfileSummary(updatedUser);
+      setContactIdentityDraft({ name: updatedUser.name || '', phone: updatedUser.phone || '', whatsApp: updatedUser.whatsApp || '' });
+      setEditingContactIdentity(false);
+      setContactIdentityMessage('Contact identity updated successfully.');
+    } catch (error: any) {
+      setContactIdentityMessage(error?.message || 'Failed to update contact identity.');
+    } finally {
+      setSavingContactIdentity(false);
+    }
+  };
 
   return (<>
     <MatchDataModal isOpen={showMatchModal} onClose={() => setShowMatchModal(false)} fileName={uploadData.fileName} headers={uploadData.headers} sampleRows={uploadData.sampleRows} allRawRows={uploadData.allRawRows} onImportSuccess={(importedLeads, listInfo) => { const newList = { ...listInfo, ownerEmail: accountEmail, totalLeads: importedLeads.length, columns: Object.keys(importedLeads[0] || {}), createdAt: listInfo.uploadedAt || new Date().toISOString() }; const taggedLeads = importedLeads.map((lead) => ({ ...lead, listId: newList.id, listName: newList.name, ownerEmail: accountEmail })); const storedLists = safeParseJSON<any[]>(localStorage.getItem('user_lead_lists'), []); localStorage.setItem('user_lead_lists', JSON.stringify([newList, ...storedLists.filter((l: any) => l && l.id !== newList.id)])); const storedLeads = safeParseJSON<any[]>(localStorage.getItem('user_imported_leads'), []); localStorage.setItem('user_imported_leads', JSON.stringify([...taggedLeads, ...storedLeads])); setLeadLists((items) => [newList, ...items.filter((l) => l.id !== newList.id)]); setLeads((items) => [...taggedLeads, ...items]); setSelectedListId(newList.id); setSelectedListIds((prev) => Array.from(new Set([...prev, newList.id]))); setShowMatchModal(false); setError(`${importedLeads.length} leads imported successfully.`); }} />
@@ -1508,6 +1568,72 @@ export default function CampaignEditorClient() {
                   <input type="checkbox" checked={stopOnSecurityChallenge} onChange={(event) => setStopOnSecurityChallenge(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-blue-600 cursor-pointer" />
                 </label>
               </div>
+            </div>
+
+            {/* CONTACT & REPLY IDENTITY SUMMARY CARD */}
+            <div className="rounded-2xl border border-blue-100 bg-white p-5 space-y-4 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
+                <div>
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-[#0e6de4]" />
+                    <span>CONTACT & REPLY IDENTITY SUMMARY</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Account-level identity used for filling contact form sender details.
+                  </p>
+                </div>
+              </div>
+
+              {editingContactIdentity ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {([['name', 'Full Name'], ['phone', 'Phone Number'], ['whatsApp', 'WhatsApp Number']] as const).map(([key, label]) => (
+                    <label key={key} className="text-[11px] font-semibold text-slate-500">
+                      {label}
+                      <input value={contactIdentityDraft[key]} onChange={(event) => setContactIdentityDraft((draft) => ({ ...draft, [key]: event.target.value }))} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-blue-500" />
+                    </label>
+                  ))}
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <span className="text-[11px] font-semibold text-slate-400 block">Reply Email</span>
+                    <span className="font-extrabold text-slate-900 truncate block">{userProfileSummary?.replyEmail || ''}</span>
+                    <span className="text-[10px] text-emerald-600 font-bold block font-mono">{userProfileSummary?.replyEmailVerified ? '✓ Verified' : 'Pending'}</span>
+                  </div>
+                  <div className="sm:col-span-2 flex items-center gap-2">
+                    <button type="button" disabled={savingContactIdentity} onClick={saveContactIdentityInline} className="rounded-xl bg-[#0e6de4] px-4 py-2 text-xs font-bold text-white disabled:opacity-60">{savingContactIdentity ? 'Saving...' : 'Save Changes'}</button>
+                  </div>
+                </div>
+              ) : <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block">Full Name</span>
+                  <span className="font-extrabold text-slate-900 truncate block">
+                    {userProfileSummary?.name || ''}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block">Reply Email</span>
+                  <span className="font-extrabold text-slate-900 truncate block">
+                    {userProfileSummary?.replyEmail || ''}
+                  </span>
+                  <span className="text-[10px] text-emerald-600 font-bold block font-mono">
+                    {userProfileSummary?.replyEmailVerified ? '✓ Verified' : 'Pending'}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block">Phone Number</span>
+                  <span className="font-extrabold text-slate-900 truncate block">
+                    {userProfileSummary?.phone || ''}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block">WhatsApp Number</span>
+                  <span className="font-extrabold text-slate-900 truncate block">
+                    {userProfileSummary?.whatsApp || ''}
+                  </span>
+                </div>
+              </div>}
+              {contactIdentityMessage && <p className={`text-xs font-semibold ${contactIdentityMessage.includes('successfully') ? 'text-emerald-600' : 'text-red-600'}`}>{contactIdentityMessage}</p>}
             </div>
 
             {/* REAL CAMPAIGN SCHEDULE SUMMARY CARD */}

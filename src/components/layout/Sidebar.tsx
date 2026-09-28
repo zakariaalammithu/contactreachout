@@ -85,20 +85,6 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
       });
       return;
     }
-    let isMounted = true;
-    fetch('/api/auth/session')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (isMounted && data?.authenticated && data?.user) {
-          setCurrentUser({
-            name: data.user.name || data.user.email.split('@')[0],
-            email: data.user.email,
-            role: data.user.role || 'USER',
-          });
-        }
-      })
-      .catch(() => undefined);
-    return () => { isMounted = false; };
   }, [currentUserProfile]);
 
   React.useEffect(() => {

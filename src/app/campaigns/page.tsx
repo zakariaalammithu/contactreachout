@@ -33,6 +33,8 @@ import {
   Archive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { generateNextUniqueCampaignName } from '@/lib/utils';
+
 
 interface CampaignItem {
   id: string;
@@ -92,7 +94,17 @@ export default function CampaignsPage() {
   // Focus and select input text when modal opens
   useEffect(() => {
     if (isCreateModalOpen) {
-      setNewCampaignName('New Campaign');
+      const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
+      const stored = localStorage.getItem('user_campaigns');
+      const deletedIds: string[] = safeParseJSON(localStorage.getItem('user_deleted_campaign_ids'), []);
+      const parsed = safeParseJSON<any[]>(stored, []);
+      const userCamps = parsed.filter((c: any) => {
+        if (!c || typeof c !== 'object') return false;
+        if (c.id && deletedIds.includes(c.id)) return false;
+        const owner = typeof c.ownerEmail === 'string' ? c.ownerEmail.toLowerCase().trim() : '';
+        return !owner || owner === activeAccount;
+      });
+      setNewCampaignName(generateNextUniqueCampaignName(userCamps.length > 0 ? userCamps : campaigns));
       setNameError('');
       setTimeout(() => {
         if (inputRef.current) {
@@ -101,21 +113,32 @@ export default function CampaignsPage() {
         }
       }, 50);
     }
-  }, [isCreateModalOpen]);
+  }, [isCreateModalOpen, campaigns]);
 
-  // Create Campaign submit handler
-  const handleCreateCampaignSubmit = () => {
-    const trimmedName = newCampaignName.trim();
-    if (!trimmedName) {
-      setNameError('Campaign name is required.');
-      return;
-    }
+  // Create Campaign submit handler (Direct creation with automatic unique default name)
+  const handleCreateCampaignSubmit = (customName?: string) => {
     if (isCreating) return;
     setIsCreating(true);
 
     try {
       const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
+      const stored = localStorage.getItem('user_campaigns');
+      const deletedIds: string[] = safeParseJSON(localStorage.getItem('user_deleted_campaign_ids'), []);
+      const parsed = safeParseJSON<any[]>(stored, []);
+
+      const userCamps = parsed.filter((c: any) => {
+        if (!c || typeof c !== 'object') return false;
+        if (c.id && deletedIds.includes(c.id)) return false;
+        const owner = typeof c.ownerEmail === 'string' ? c.ownerEmail.toLowerCase().trim() : '';
+        return !owner || owner === activeAccount;
+      });
+
+      const trimmedInput = typeof customName === 'string' ? customName.trim() : newCampaignName.trim();
+      const trimmedName = (trimmedInput && trimmedInput !== 'New Campaign')
+        ? trimmedInput
+        : generateNextUniqueCampaignName(userCamps.length > 0 ? userCamps : campaigns);
       const newId = `camp-${Date.now()}`;
+
       const todayDate = new Date().toLocaleDateString('en-GB', {
         day: '2-digit',
         month: 'short',
@@ -170,12 +193,11 @@ export default function CampaignsPage() {
         ownerEmail: activeAccount,
       };
 
-      const stored = localStorage.getItem('user_campaigns');
-      const parsed = safeParseJSON<any[]>(stored, []);
       parsed.unshift(rawCampaign);
       localStorage.setItem('user_campaigns', JSON.stringify(parsed));
 
-      setCampaigns((prev) => [newCampItem, ...prev]);
+      // Navigate immediately after persistence. Updating the large campaigns
+      // list here caused an unnecessary render before the editor opened.
       setIsCreateModalOpen(false);
       setIsCreating(false);
       router.push(`/campaigns/new?id=${encodeURIComponent(newId)}`);
@@ -370,7 +392,18 @@ export default function CampaignsPage() {
 
           const leads: any[] = Array.isArray(rawCamp.prospectsList) ? rawCamp.prospectsList : [];
           const logs: any[] = Array.isArray(rawCamp.logs) ? rawCamp.logs : [];
-          const processedLeadIds = new Set(logs.map((l: any) => (l && (l.leadId || l.id)) || ''));
+          const resolveLeadWebsite = (lead: any): string => {
+            if (!lead || typeof lead !== 'object') return '';
+            const candidates = [lead.website, lead.website_url, lead.Website, lead.Website_URL, lead.url];
+            const direct = candidates.find((value) => typeof value === 'string' && value.trim());
+            return direct ? String(direct).trim() : '';
+          };
+          // Only terminal outcomes count as processed. A scheduled/temporary
+          // response must remain eligible for the next polling cycle.
+          const terminalStatuses = new Set(['DELIVERED', 'DRY_RUN_COMPLETED', 'FAILED', 'NO-FORM', 'REVIEW']);
+          const processedLeadIds = new Set(logs
+            .filter((l: any) => terminalStatuses.has(String(l?.status || '').toUpperCase()))
+            .map((l: any) => (l && (l.leadId || l.id)) || ''));
 
           // Find next uncontacted lead in sequence
           const nextLead = leads.find((l: any) => l && l.id && !processedLeadIds.has(l.id));
@@ -389,10 +422,15 @@ export default function CampaignsPage() {
                 campaignId: rawCamp.id,
                 lead: {
                   id: nextLead.id,
-                  company_name: nextLead.companyName || nextLead.company_name || nextLead.domain || 'Target Business',
-                  website: nextLead.website || (nextLead.domain ? `https://${nextLead.domain}` : ''),
+                  company_name: nextLead.companyName || nextLead.company_name || '',
+                  website: resolveLeadWebsite(nextLead),
                   first_name: nextLead.firstName || nextLead.first_name || '',
                   email: nextLead.email || '',
+                  phone: nextLead.phone || '',
+                  whatsApp: nextLead.whatsApp || nextLead.whatsapp || '',
+                  custom_fields: nextLead.custom_fields || nextLead.customFields || {},
+                  country: nextLead.country || '',
+                  city: nextLead.city || '',
                 },
                 template,
                 options: {
@@ -408,7 +446,7 @@ export default function CampaignsPage() {
               rawCamp.logs = [
                 {
                   leadId: nextLead.id,
-                  domain: nextLead.website || 'N/A',
+                  domain: resolveLeadWebsite(nextLead) || 'N/A',
                   status: 'FAILED',
                   code: 'BLOCKED_NO_CREDITS - Available credit balance is 0. Campaign paused.',
                   time: safeFormatTime(new Date()),
@@ -435,6 +473,18 @@ export default function CampaignsPage() {
                 }
                 updatedAny = true;
               }
+            } else {
+              const errorBody = await res.json().catch(() => ({}));
+              rawCamp.logs = [{
+                leadId: nextLead.id,
+                domain: resolveLeadWebsite(nextLead) || 'N/A',
+                status: 'FAILED',
+                code: errorBody.error || `PROCESS_API_ERROR_${res.status}`,
+                time: safeFormatTime(new Date()),
+                timestamp: new Date().toISOString(),
+              }, ...logs];
+              rawCamp.failedCount = (rawCamp.failedCount || 0) + 1;
+              updatedAny = true;
             }
           } else if (leads.length > 0 && processedLeadIds.size >= leads.length) {
             // All leads in this campaign have been processed
@@ -454,6 +504,9 @@ export default function CampaignsPage() {
       }
     };
 
+    // Process once immediately when the campaign workspace mounts so an
+    // active campaign does not wait for the first polling interval.
+    void processActiveCampaigns();
     const interval = setInterval(processActiveCampaigns, 6000);
     return () => clearInterval(interval);
   }, []);
@@ -1008,7 +1061,7 @@ export default function CampaignsPage() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => handleCreateCampaignSubmit()}
             id="create-new-campaign-btn"
             className="rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-5 py-2.5 text-xs font-extrabold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-2 shrink-0"
           >
@@ -1078,7 +1131,7 @@ export default function CampaignsPage() {
               <button
                 type="button"
                 disabled={isCreating}
-                onClick={handleCreateCampaignSubmit}
+                onClick={() => handleCreateCampaignSubmit()}
                 className="rounded-xl bg-[#0e6de4] hover:bg-blue-700 text-white px-5 py-2.5 text-xs font-bold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
               >
                 {isCreating ? 'Creating...' : 'Next Step →'}

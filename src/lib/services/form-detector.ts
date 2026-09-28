@@ -9,6 +9,7 @@ export type NormalizedFieldType =
   | 'full_name'
   | 'email'
   | 'phone'
+  | 'whatsApp'
   | 'company'
   | 'website'
   | 'job_title'
@@ -121,6 +122,12 @@ export const FIELD_CLASSIFIERS: Array<{
     type: 'email',
     regex: /(e[_\-\s]*mail|mail|contact[_\-\s]*email|business[_\-\s]*email|work[_\-\s]*email)/i,
     autocomplete: /email/i,
+    weight: 0.98,
+  },
+  {
+    type: 'whatsApp',
+    regex: /(whatsapp|whats[_\-\s]*app|wa[_\-\s]*number|wa[_\-\s]*phone)/i,
+    autocomplete: /tel/i,
     weight: 0.98,
   },
   {

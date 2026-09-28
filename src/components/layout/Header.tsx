@@ -72,19 +72,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
     fetch('/api/notifications', { cache: 'no-store' }).then(response => response.json()).then(data => setNotifications(data.notifications || [])).catch(() => undefined);
     if (initialUserProfile?.email) {
       setUserProfile(initialUserProfile);
-      return;
     }
-    fetch('/api/auth/session')
-      .then(res => (res.ok ? res.json() : null))
-      .then(data => {
-        if (data?.authenticated && data?.user) {
-          setUserProfile({
-            name: data.user.name || data.user.email.split('@')[0],
-            email: data.user.email,
-          });
-        }
-      })
-      .catch(() => undefined);
   }, [initialUserProfile]);
 
   // Listen for campaign name updates from editor. Next.js will prefetch links on demand.

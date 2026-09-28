@@ -431,10 +431,36 @@ export default function LeadsPage() {
     if (selectedLeadIds.length === 0) return;
     const selectedLeads = allLeads.filter((l) => selectedLeadIds.includes(l.id));
     if (typeof window !== 'undefined') {
+      const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
+      const campaignId = `campaign-${Date.now()}`;
+      const selectedListIds = Array.from(new Set(selectedLeads.map((lead: any) => lead.listId).filter(Boolean)));
+      const now = new Date().toISOString();
+      const storedCampaigns = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+      const campaign = {
+        id: campaignId,
+        name: `Campaign with ${selectedLeads.length} Leads`,
+        tag: 'CUSTOM',
+        status: 'draft',
+        createdAt: now,
+        updatedAt: now,
+        ownerEmail: activeAccount,
+        selectedListId: selectedListIds[0] || '',
+        selectedListIds,
+        prospectsList: selectedLeads,
+        sequences: [],
+        isDryRun: true,
+        rateLimitPerMinute: 10,
+        maxConcurrency: 5,
+        sentCount: 0,
+        failedCount: 0,
+        noFormCount: 0,
+        captchaCount: 0,
+      };
+      localStorage.setItem('user_campaigns', JSON.stringify([campaign, ...storedCampaigns]));
       localStorage.setItem('user_imported_leads', JSON.stringify(selectedLeads));
+      router.push(`/campaigns/new?edit=${encodeURIComponent(campaignId)}`);
+      return;
     }
-    const campName = `Campaign with ${selectedLeads.length} Leads`;
-    router.push(`/campaigns/new?name=${encodeURIComponent(campName)}`);
   };
 
   return (
