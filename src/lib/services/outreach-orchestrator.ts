@@ -44,6 +44,7 @@ export interface PipelineExecutionInput {
     suppressionList?: string[];
     minConfidenceThreshold?: number;
     timeoutMs?: number;
+    runtimeMode?: 'live' | 'test' | 'disabled';
   };
 }
 
@@ -262,14 +263,18 @@ export class OutreachPipelineOrchestrator {
     const submission = await FormSubmitter.executeSubmission({
       contactPageUrl: discovery.contactPageUrl,
       formSelector: detection.selectedForm.formSelector,
+      formAction: detection.selectedForm.action,
       mappedFields: mapping.mappedFields,
       dryRun,
+      runtimeMode: options.runtimeMode || 'live',
     });
 
     addLog('FORM_SUBMISSION', `Execution completed with outcome status: ${submission.status}`);
 
     const finalStatus =
       submission.status === 'DRY_RUN_COMPLETED'
+        ? 'DRY_RUN_COMPLETED'
+        : submission.status === 'TEST_MODE_COMPLETED'
         ? 'DRY_RUN_COMPLETED'
         : submission.status === 'SUCCESS'
         ? 'SUCCESS'

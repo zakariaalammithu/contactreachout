@@ -457,6 +457,9 @@ export class FormDetector {
 
             return {
               formSelector,
+              formId: form.id || undefined,
+              action: form.getAttribute('action') || undefined,
+              method: (form.getAttribute('method') || 'post').toLowerCase(),
               html,
               inputs,
             };
@@ -515,6 +518,9 @@ export class FormDetector {
 
           return {
             formSelector: f.formSelector,
+            formId: f.formId,
+            action: f.action,
+            method: f.method,
             formScore,
             isContactForm: formScore >= 40,
             isLoginOrAuthForm,
@@ -593,12 +599,12 @@ export class FormDetector {
         };
       }
     } catch (err: any) {
-      return httpFallbackFormDetection(url);
+      return httpFallbackFormDetection(url, err?.message);
     }
   }
 }
 
-async function httpFallbackFormDetection(url: string): Promise<FormDetectionResult> {
+async function httpFallbackFormDetection(url: string, browserError?: string): Promise<FormDetectionResult> {
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -612,6 +618,11 @@ async function httpFallbackFormDetection(url: string): Promise<FormDetectionResu
     if (res.ok) {
       const html = await res.text();
       const lowerHtml = html.toLowerCase();
+
+      const formTagMatch = html.match(/<form\b[^>]*>/i);
+      const formTag = formTagMatch?.[0] || '';
+      const actionMatch = formTag.match(/\baction\s*=\s*["']([^"']*)["']/i);
+      const methodMatch = formTag.match(/\bmethod\s*=\s*["']([^"']*)["']/i);
 
       // Extract form field signatures via regex
       const mockFields: DetectedFormField[] = [];
@@ -667,6 +678,8 @@ async function httpFallbackFormDetection(url: string): Promise<FormDetectionResu
         hasContactForm: true,
         selectedForm: {
           formSelector: 'form',
+          action: actionMatch?.[1] || undefined,
+          method: (methodMatch?.[1] || 'post').toLowerCase(),
           formScore: 90,
           isContactForm: true,
           isLoginOrAuthForm: false,
@@ -686,31 +699,16 @@ async function httpFallbackFormDetection(url: string): Promise<FormDetectionResu
     // Fallback default
   }
 
-  const defaultFields: DetectedFormField[] = [
-    { selector: 'input[name="name"]', tag: 'input', htmlType: 'text', normalizedType: 'full_name', confidence: 0.9, isRequired: true, isHoneypot: false },
-    { selector: 'input[name="email"]', tag: 'input', htmlType: 'email', normalizedType: 'email', confidence: 0.95, isRequired: true, isHoneypot: false },
-    { selector: 'textarea[name="message"]', tag: 'textarea', htmlType: 'textarea', normalizedType: 'message', confidence: 0.95, isRequired: true, isHoneypot: false },
-    { selector: 'button[type="submit"]', tag: 'button', htmlType: 'submit', normalizedType: 'submit', confidence: 0.9, isRequired: false, isHoneypot: false },
-  ];
-
   return {
     targetUrl: url,
-    hasContactForm: true,
-    selectedForm: {
-      formSelector: 'form',
-      formScore: 85,
-      isContactForm: true,
-      isLoginOrAuthForm: false,
-      isSearchForm: false,
-      isNewsletterForm: false,
-      hasCaptcha: false,
-      hasFileRequired: false,
-      detectedFields: defaultFields,
-    },
-    allFormsCount: 1,
-    status: 'DETECTED',
-    confidenceScore: 85,
+    hasContactForm: false,
+    selectedForm: null,
+    allFormsCount: 0,
+    status: 'ERROR',
+    confidenceScore: 0,
     detectedAt: new Date().toISOString(),
+    errorCode: browserError ? 'BROWSER_LAUNCH_FAILED' : 'ERR_FORM_DETECTION_FAILED',
+    errorMessage: browserError || 'Contact form could not be verified from the target response.',
   };
 }
 

@@ -15,6 +15,7 @@ export interface SubmissionRequest {
   isTestMode?: boolean;
   timeoutMs?: number;
   captureScreenshots?: boolean;
+  runtimeMode?: 'live' | 'test' | 'disabled';
 }
 
 export type SubmissionOutcomeStatus =
@@ -39,6 +40,9 @@ export interface SubmissionExecutionResult {
   postSubmissionScreenshotBase64?: string;
   confirmationMessage?: string;
   errorMessage?: string;
+  diagnosticCode?: string;
+  successVerified: boolean;
+  submitAttempted: boolean;
   executionDurationMs: number;
   submittedAt: string;
 }
@@ -134,6 +138,7 @@ export class FormSubmitter {
       dryRun = false,
       isTestMode = false,
       timeoutMs = 25000,
+      runtimeMode = 'live',
     } = request;
 
     // Filter fields to fill
@@ -143,11 +148,11 @@ export class FormSubmitter {
     const honeypotFields = mappedFields.filter((f) => f.isHoneypot);
 
     // 1. Dry Run / Test Mode Execution
-    if (dryRun || isTestMode) {
+    if (dryRun || isTestMode || runtimeMode !== 'live') {
       return {
-        status: isTestMode ? 'TEST_MODE_COMPLETED' : 'DRY_RUN_COMPLETED',
-        isDryRun: Boolean(dryRun),
-        isTestMode: Boolean(isTestMode),
+        status: isTestMode || runtimeMode !== 'live' ? 'TEST_MODE_COMPLETED' : 'DRY_RUN_COMPLETED',
+        isDryRun: Boolean(dryRun || runtimeMode !== 'live'),
+        isTestMode: Boolean(isTestMode || runtimeMode !== 'live'),
         httpStatus: 200,
         fieldsFilledCount: fieldsToFill.length,
         honeypotsNeutralizedCount: honeypotFields.length,
@@ -156,6 +161,9 @@ export class FormSubmitter {
           : `[DRY-RUN] Simulated filling ${fieldsToFill.length} fields on ${formSelector}. Submission was safely bypassed.`,
         executionDurationMs: Date.now() - startTime,
         submittedAt: new Date().toISOString(),
+        diagnosticCode: runtimeMode === 'disabled' ? 'SUBMISSION_DISABLED' : 'DRY_RUN_COMPLETED',
+        successVerified: false,
+        submitAttempted: false,
       };
     }
 
@@ -171,6 +179,9 @@ export class FormSubmitter {
         confirmationMessage: 'Thank you for your message. We will be in touch shortly.',
         executionDurationMs: 65,
         submittedAt: new Date().toISOString(),
+        diagnosticCode: 'FIXTURE_SUCCESS_VERIFIED',
+        successVerified: true,
+        submitAttempted: true,
       };
     }
 
@@ -299,7 +310,26 @@ export class FormSubmitter {
               }).length,
             })).catch(() => ({ url: contactPageUrl, bodyText: '', forms: 0, visibleInputs: 0 }));
             const outcome = analyzeSubmissionResponse(verification.bodyText);
-            const verified = outcome.isSuccess || verification.url !== contactPageUrl || verification.forms === 0 || verification.visibleInputs === 0;
+            const verified = !outcome.isCaptcha && (outcome.isSuccess || verification.url !== contactPageUrl || verification.forms === 0 || verification.visibleInputs === 0);
+            if (outcome.isCaptcha) {
+              await page.close().catch(() => {});
+              await context.close().catch(() => {});
+              await browser.close().catch(() => {});
+              return {
+                status: 'CAPTCHA_DETECTED',
+                isDryRun: false,
+                isTestMode: false,
+                httpStatus: 200,
+                fieldsFilledCount: fieldsToFill.length,
+                honeypotsNeutralizedCount: honeypotFields.length,
+                errorMessage: outcome.matchedMessage || 'CAPTCHA challenge encountered after submit action.',
+                executionDurationMs: Date.now() - startTime,
+                submittedAt: new Date().toISOString(),
+                diagnosticCode: 'CAPTCHA_DETECTED',
+                successVerified: false,
+                submitAttempted: true,
+              };
+            }
             if (!verified) {
               await page.close().catch(() => {});
               await context.close().catch(() => {});
@@ -314,6 +344,9 @@ export class FormSubmitter {
                 errorMessage: 'Submission click completed without a verifiable success state.',
                 executionDurationMs: Date.now() - startTime,
                 submittedAt: new Date().toISOString(),
+                diagnosticCode: 'SUCCESS_VERIFICATION_FAILED',
+                successVerified: false,
+                submitAttempted: true,
               };
             }
             await page.close().catch(() => {});
@@ -330,6 +363,9 @@ export class FormSubmitter {
               confirmationMessage: outcome.matchedMessage || 'Browser automation submitted contact form successfully.',
               executionDurationMs: Date.now() - startTime,
               submittedAt: new Date().toISOString(),
+              diagnosticCode: 'SUCCESS_VERIFIED',
+              successVerified: true,
+              submitAttempted: true,
             };
           }
           await page.close().catch(() => {});
@@ -475,6 +511,9 @@ export class FormSubmitter {
           errorMessage: 'Target website connection timed out (Server Unreachable)',
           executionDurationMs: Date.now() - startTime,
           submittedAt: new Date().toISOString(),
+          diagnosticCode: 'TARGET_SERVER_UNREACHABLE',
+          successVerified: false,
+          submitAttempted: false,
         };
       }
 
@@ -487,14 +526,14 @@ export class FormSubmitter {
       }
       const outcome = analyzeSubmissionResponse(responseText);
 
-      let status: SubmissionOutcomeStatus = 'SUCCESS';
+      let status: SubmissionOutcomeStatus = 'FAILED';
       if (outcome.isCaptcha) {
         status = 'CAPTCHA_DETECTED';
-      } else if (response.ok || httpStatus === 200 || httpStatus === 201 || httpStatus === 302 || httpStatus === 204) {
-        status = 'SUCCESS';
-      } else {
+      } else if (outcome.isSuccess || httpStatus === 204) {
         status = 'SUCCESS';
       }
+
+      const successVerified = status === 'SUCCESS';
 
       return {
         status,
@@ -503,9 +542,13 @@ export class FormSubmitter {
         httpStatus: httpStatus || 200,
         fieldsFilledCount: fieldsToFill.length,
         honeypotsNeutralizedCount: honeypotFields.length,
-        confirmationMessage: outcome.matchedMessage || `Outreach form message submitted successfully (HTTP ${httpStatus || 200}).`,
+        confirmationMessage: successVerified ? (outcome.matchedMessage || `Submission accepted with HTTP ${httpStatus}.`) : undefined,
+        errorMessage: successVerified ? undefined : `Submission response did not contain a verifiable success signal (HTTP ${httpStatus}).`,
         executionDurationMs: Date.now() - startTime,
         submittedAt: new Date().toISOString(),
+        diagnosticCode: outcome.isCaptcha ? 'CAPTCHA_DETECTED' : successVerified ? 'SUCCESS_VERIFIED' : 'SUCCESS_VERIFICATION_FAILED',
+        successVerified,
+        submitAttempted: true,
       };
     } catch (err: any) {
       const isTimeout = err.name === 'AbortError' || err.message?.includes('timeout');
@@ -519,6 +562,9 @@ export class FormSubmitter {
         errorMessage: err.message || 'Target website server connection timed out',
         executionDurationMs: Date.now() - startTime,
         submittedAt: new Date().toISOString(),
+        diagnosticCode: isTimeout ? 'TARGET_SERVER_UNREACHABLE' : 'FORM_SUBMISSION_FAILED',
+        successVerified: false,
+        submitAttempted: true,
       };
     }
   }

@@ -436,7 +436,7 @@ export class ContactPageFinder {
         };
       }
     } catch (err: any) {
-      return httpFallbackDiscovery(websiteUrl, domain, normalizedUrl, startTime);
+      return httpFallbackDiscovery(websiteUrl, domain, normalizedUrl, startTime, err?.message);
     }
   }
 }
@@ -445,7 +445,8 @@ async function httpFallbackDiscovery(
   websiteUrl: string,
   domain: string,
   normalizedUrl: string,
-  startTime: number
+  startTime: number,
+  browserError?: string
 ): Promise<ContactDiscoveryResult> {
   const candidatePaths = [
     '',
@@ -515,11 +516,13 @@ async function httpFallbackDiscovery(
   return {
     targetWebsite: websiteUrl,
     targetDomain: domain,
-    contactPageUrl: `${baseUrl}/contact`,
-    discoveryMethod: 'path_probe',
-    confidenceScore: 75,
-    status: 'FOUND',
-    httpStatus: 200,
+    contactPageUrl: null,
+    discoveryMethod: 'none',
+    confidenceScore: 0,
+    status: 'NOT_FOUND',
+    httpStatus: null,
+    errorCode: browserError ? 'BROWSER_LAUNCH_FAILED' : 'CONTACT_PAGE_FAILED',
+    errorMessage: browserError || 'No reachable public contact page was verified.',
     discoveredAt: new Date().toISOString(),
     durationMs: Date.now() - startTime,
   };

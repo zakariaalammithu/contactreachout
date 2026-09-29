@@ -626,8 +626,9 @@ export default function CampaignEditorClient() {
       const now = new Date().toISOString();
       const activeAccount = accountEmail || (localStorage.getItem('active_account_email') || '').toLowerCase();
 
-      // When user launches/starts the campaign, disable dry-run unless safety setting specifically overrides
-      const effectiveIsDryRun = launch ? false : isDryRun;
+      // Launch must preserve the user's explicit safety choice. Dry-run may never
+      // be silently promoted to a live external submission.
+      const effectiveIsDryRun = isDryRun;
 
       const finalMessageSequences = messageSequences.map((item) =>
         item.id === selectedSequenceId

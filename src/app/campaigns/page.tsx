@@ -31,9 +31,15 @@ import {
   X,
   Copy,
   Archive,
+  FileText,
+  Eye,
+  Info,
+  ExternalLink,
+  Printer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { generateNextUniqueCampaignName } from '@/lib/utils';
+import { generateCampaignPDFReport } from '@/lib/services/pdf-report-service';
 
 
 interface CampaignItem {
@@ -82,6 +88,7 @@ export default function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedReportCamp, setSelectedReportCamp] = useState<CampaignItem | null>(null);
+  const [selectedProspectDetail, setSelectedProspectDetail] = useState<any | null>(null);
   const [openMenuCampId, setOpenMenuCampId] = useState<string | null>(null);
 
   // Create Campaign Modal state
@@ -265,6 +272,93 @@ export default function CampaignsPage() {
     return fallback;
   };
 
+  // Helper to sync state directly from storage and keep open modal live with fresh telemetry
+  const syncCampaignsFromStorage = React.useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    let userEmail = (localStorage.getItem('active_account_email') || '').toLowerCase();
+    let userRole = currentUser?.role || 'USER';
+    const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userEmail === 'mithusquare@gmail.com';
+
+    try {
+      const deletedIds: string[] = safeParseJSON(localStorage.getItem('user_deleted_campaign_ids'), []);
+      const stored = localStorage.getItem('user_campaigns');
+      let mappedUserCamps: CampaignItem[] = [];
+
+      if (stored) {
+        const parsed = safeParseJSON<any[]>(stored, []);
+        if (Array.isArray(parsed)) {
+          mappedUserCamps = parsed
+            .filter((c: any) => {
+              if (!c || typeof c !== 'object') return false;
+              if (c.id && deletedIds.includes(c.id)) return false;
+              if (!isAdmin && userEmail) {
+                const owner = typeof c.ownerEmail === 'string' ? c.ownerEmail.toLowerCase().trim() : '';
+                if (owner && owner !== userEmail.toLowerCase().trim()) return false;
+              }
+              return true;
+            })
+            .map((c: any) => {
+              const total = Array.isArray(c.prospectsList)
+                ? c.prospectsList.length
+                : typeof c.totalLeads === 'number'
+                ? c.totalLeads
+                : typeof c.prospects === 'number'
+                ? c.prospects
+                : Number(c.totalLeads) || Number(c.prospects) || 0;
+
+              const sent = typeof c.sentCount === 'number' ? c.sentCount : typeof c.reached === 'number' ? c.reached : Number(c.sentCount) || Number(c.reached) || 0;
+              const failed = typeof c.failedCount === 'number' ? c.failedCount : typeof c.failed === 'number' ? c.failed : Number(c.failedCount) || Number(c.failed) || 0;
+              const noForm = typeof c.noFormCount === 'number' ? c.noFormCount : typeof c.noContactPage === 'number' ? c.noContactPage : Number(c.noFormCount) || Number(c.noContactPage) || 0;
+              const captcha = typeof c.captchaCount === 'number' ? c.captchaCount : typeof c.captchaBlocked === 'number' ? c.captchaBlocked : Number(c.captchaCount) || Number(c.captchaBlocked) || 0;
+              const replied = typeof c.repliedCount === 'number' ? c.repliedCount : typeof c.replied === 'number' ? c.replied : Number(c.repliedCount) || Number(c.replied) || 0;
+
+              const dateStr = safeFormatDate(c.createdAt, 'Recently');
+
+              return {
+                id: String(c.id || `camp-${Date.now()}`),
+                name: String(c.name || 'Untitled Campaign'),
+                date: dateStr,
+                sendersCount: typeof c.sendersCount === 'number' ? c.sendersCount : 3,
+                tag: String(c.tag || 'CUSTOM'),
+                status: c.status === 'running' || c.status === 'active' ? 'active' : c.status === 'paused' ? 'paused' : c.status === 'archived' ? 'archived' : 'draft',
+                prospects: total,
+                reached: sent,
+                failed,
+                noContactPage: noForm,
+                captchaBlocked: captcha,
+                reachedPercent: total > 0 ? Math.round((sent / total) * 100) : 0,
+                replied,
+              };
+            });
+        }
+      }
+
+      let combined: CampaignItem[] = [];
+      if (isAdmin) {
+        const filteredInitial = initialCampaignsList.filter((c) => c && c.id && !deletedIds.includes(c.id));
+        const customIds = new Set(mappedUserCamps.map((c) => c.id));
+        combined = [
+          ...mappedUserCamps,
+          ...filteredInitial.filter((c) => !customIds.has(c.id)),
+        ];
+      } else {
+        combined = mappedUserCamps;
+      }
+
+      setCampaigns(combined);
+
+      // Keep open Campaign Details modal live with fresh telemetry metrics!
+      setSelectedReportCamp((prev) => {
+        if (!prev) return null;
+        const fresh = combined.find((c) => c.id === prev.id);
+        return fresh || prev;
+      });
+    } catch (err) {
+      console.error('Error syncing campaigns from storage:', err);
+    }
+  }, [currentUser]);
+
   // Load custom campaigns from session & localStorage with strict user isolation
   useEffect(() => {
     async function loadSessionAndCampaigns() {
@@ -286,84 +380,28 @@ export default function CampaignsPage() {
       } catch (e) {
         console.error('Session fetch error in campaigns:', e);
       }
-
-      const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userEmail === 'mithusquare@gmail.com';
-
-      try {
-        const deletedIds: string[] = safeParseJSON(localStorage.getItem('user_deleted_campaign_ids'), []);
-        const stored = localStorage.getItem('user_campaigns');
-        let mappedUserCamps: CampaignItem[] = [];
-
-        if (stored) {
-          const parsed = safeParseJSON<any[]>(stored, []);
-          if (Array.isArray(parsed)) {
-            mappedUserCamps = parsed
-              .filter((c: any) => {
-                if (!c || typeof c !== 'object') return false;
-                if (c.id && deletedIds.includes(c.id)) return false;
-                if (!isAdmin && userEmail) {
-                  // Normal User: check owner match (allow if ownerEmail is not set or matches userEmail)
-                  const owner = typeof c.ownerEmail === 'string' ? c.ownerEmail.toLowerCase().trim() : '';
-                  if (owner && owner !== userEmail.toLowerCase().trim()) return false;
-                }
-                return true;
-              })
-              .map((c: any) => {
-                const total = Array.isArray(c.prospectsList)
-                  ? c.prospectsList.length
-                  : typeof c.totalLeads === 'number'
-                  ? c.totalLeads
-                  : typeof c.prospects === 'number'
-                  ? c.prospects
-                  : Number(c.totalLeads) || Number(c.prospects) || 0;
-
-                const sent = typeof c.sentCount === 'number' ? c.sentCount : typeof c.reached === 'number' ? c.reached : Number(c.sentCount) || Number(c.reached) || 0;
-                const failed = typeof c.failedCount === 'number' ? c.failedCount : typeof c.failed === 'number' ? c.failed : Number(c.failedCount) || Number(c.failed) || 0;
-                const noForm = typeof c.noFormCount === 'number' ? c.noFormCount : typeof c.noContactPage === 'number' ? c.noContactPage : Number(c.noFormCount) || Number(c.noContactPage) || 0;
-                const captcha = typeof c.captchaCount === 'number' ? c.captchaCount : typeof c.captchaBlocked === 'number' ? c.captchaBlocked : Number(c.captchaCount) || Number(c.captchaBlocked) || 0;
-                const replied = typeof c.repliedCount === 'number' ? c.repliedCount : typeof c.replied === 'number' ? c.replied : Number(c.repliedCount) || Number(c.replied) || 0;
-
-                const dateStr = safeFormatDate(c.createdAt, 'Recently');
-
-                return {
-                  id: String(c.id || `camp-${Date.now()}`),
-                  name: String(c.name || 'Untitled Campaign'),
-                  date: dateStr,
-                  sendersCount: typeof c.sendersCount === 'number' ? c.sendersCount : 3,
-                  tag: String(c.tag || 'CUSTOM'),
-                  status: c.status === 'running' || c.status === 'active' ? 'active' : c.status === 'paused' ? 'paused' : c.status === 'archived' ? 'archived' : 'draft',
-                  prospects: total,
-                  reached: sent,
-                  failed,
-                  noContactPage: noForm,
-                  captchaBlocked: captcha,
-                  reachedPercent: total > 0 ? Math.round((sent / total) * 100) : 0,
-                  replied,
-                };
-              });
-          }
-        }
-
-        if (isAdmin) {
-          const filteredInitial = initialCampaignsList.filter((c) => c && c.id && !deletedIds.includes(c.id));
-          const customIds = new Set(mappedUserCamps.map((c) => c.id));
-          const combined = [
-            ...mappedUserCamps,
-            ...filteredInitial.filter((c) => !customIds.has(c.id)),
-          ];
-          setCampaigns(combined);
-        } else {
-          setCampaigns(mappedUserCamps);
-        }
-      } catch (err) {
-        console.error('Error reading campaigns in page:', err);
-      }
     }
 
     loadSessionAndCampaigns();
   }, []);
 
-  // Real Active Campaign Pacing Execution (Server Validated)
+  // Sync state whenever storage or custom campaign update events fire
+  useEffect(() => {
+    syncCampaignsFromStorage();
+
+    const handleStorageChange = () => {
+      syncCampaignsFromStorage();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('campaigns_updated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('campaigns_updated', handleStorageChange);
+    };
+  }, [syncCampaignsFromStorage]);
+
+  // Real Active Campaign Pacing Execution (Server Validated with Live UI Sync)
   useEffect(() => {
     let isBusy = false;
 
@@ -460,9 +498,17 @@ export default function CampaignsPage() {
 
             if (res.ok) {
               const data = await res.json();
+              if (data.wallet && typeof window !== 'undefined') {
+                try {
+                  const activeEmail = (localStorage.getItem('active_account_email') || '').toLowerCase().trim();
+                  const walletKey = `user_credit_wallet_${activeEmail || data.wallet.userId}`;
+                  localStorage.setItem(walletKey, JSON.stringify(data.wallet));
+                } catch (e) {}
+              }
+
               if (data.telemetry) {
                 rawCamp.logs = [data.telemetry, ...logs];
-                if (data.telemetry.status === 'DELIVERED' || data.telemetry.status === 'DRY_RUN_COMPLETED') {
+                if (data.telemetry.status === 'DELIVERED' && !data.telemetry.isDryRun) {
                   rawCamp.sentCount = (rawCamp.sentCount || 0) + 1;
                 } else if (data.telemetry.status === 'FAILED') {
                   rawCamp.failedCount = (rawCamp.failedCount || 0) + 1;
@@ -495,7 +541,8 @@ export default function CampaignsPage() {
 
         if (updatedAny) {
           localStorage.setItem('user_campaigns', JSON.stringify(userCamps));
-          window.dispatchEvent(new Event('storage'));
+          window.dispatchEvent(new CustomEvent('campaigns_updated'));
+          syncCampaignsFromStorage();
         }
       } catch (err) {
         console.error('Real campaign processing error:', err);
@@ -504,12 +551,11 @@ export default function CampaignsPage() {
       }
     };
 
-    // Process once immediately when the campaign workspace mounts so an
-    // active campaign does not wait for the first polling interval.
+    // Process once immediately when the campaign workspace mounts
     void processActiveCampaigns();
-    const interval = setInterval(processActiveCampaigns, 6000);
+    const interval = setInterval(processActiveCampaigns, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [syncCampaignsFromStorage]);
 
   // Retrieve Campaign-Specific Prospect Audit Logs strictly from actual recorded telemetry
   const getCampaignAuditLogs = (camp: CampaignItem) => {
@@ -525,17 +571,58 @@ export default function CampaignsPage() {
           if (rawCamp && Array.isArray(rawCamp.logs) && rawCamp.logs.length > 0) {
             return rawCamp.logs
               .filter((log: any) => log && typeof log === 'object')
-              .map((log: any) => ({
-                domain: safeString(log.domain || log.website),
-                url: safeString(log.url || log.contactUrl),
-                techStack: safeString(log.techStack || log.cms, 'HTML Form'),
-                domainAge: safeString(log.domainAge, 'Verified'),
-                lastUpdated: safeString(log.lastUpdated, safeFormatDate(new Date())),
-                status: safeString(log.status, 'PENDING'),
-                code: safeString(log.code || log.diagnostic),
-                time: safeFormatTime(log.time || log.timestamp),
-                isDryRun: Boolean(log.isDryRun),
-              }));
+              .map((log: any) => {
+                const rawDomain = safeString(log.domain || log.website, '');
+                const domain = rawDomain && rawDomain !== 'N/A' ? (rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`) : 'N/A';
+                const rawUrl = safeString(log.url || log.contactUrl, '');
+                const url = rawUrl && rawUrl !== 'N/A' ? rawUrl : (domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A');
+
+                const finalStatus = safeString(log.status, 'PENDING');
+                const formStatus = log.formStatus || (log.selectedForm || url !== 'N/A' ? 'DETECTED' : 'NOT_DETECTED');
+                const fieldsDetected = log.fieldsDetected || (log.mappedFields ? Object.keys(log.mappedFields).join(', ') : 'N/A');
+                const submissionStatus = log.submissionStatus || finalStatus;
+
+                let successVerification = 'N/A';
+                if (finalStatus === 'DELIVERED') {
+                  successVerification = 'VERIFIED_HTTP_200';
+                } else if (finalStatus === 'FAILED' || finalStatus === 'SUBMIT_FAILED') {
+                  successVerification = 'FAILED';
+                } else if (finalStatus === 'CAPTCHA_REVIEW' || finalStatus === 'REVIEW') {
+                  successVerification = 'CAPTCHA_BLOCKED';
+                } else if (finalStatus === 'NO_CONTACT_PAGE' || finalStatus === 'NO-FORM') {
+                  successVerification = 'NOT_FOUND';
+                } else if (finalStatus === 'PENDING') {
+                  successVerification = 'NOT_ATTEMPTED';
+                }
+
+                const techStack = (log.techStack && log.techStack !== 'HTML Form' && log.techStack !== 'Not detected') ? log.techStack : 'NOT_DETECTED';
+                const domainAge = (log.domainAge && log.domainAge !== 'Verified' && log.domainAge !== 'Verified Active Domain') ? log.domainAge : 'N/A';
+                const lastUpdated = log.lastUpdated && log.lastUpdated !== 'N/A' ? log.lastUpdated : 'N/A';
+
+                return {
+                  domain,
+                  url,
+                  formStatus,
+                  fieldsDetected,
+                  submissionStatus,
+                  successVerification,
+                  finalStatus,
+                  techStack,
+                  domainAge,
+                  lastUpdated,
+                  code: safeString(log.code || log.diagnostic, 'STAGE_EXECUTION'),
+                  details: safeString(log.details || log.diagnosticMessage || log.code, 'Execution stage complete'),
+                  time: safeFormatTime(log.time || log.timestamp),
+                  startedAt: log.startedAt,
+                  completedAt: log.completedAt,
+                  durationMs: log.durationMs,
+                  isDryRun: Boolean(log.isDryRun),
+                  httpStatus: log.httpStatus,
+                  renderedSubject: log.renderedSubject,
+                  renderedMessage: log.renderedMessage,
+                  companyName: log.companyName,
+                };
+              });
           }
 
           // Check if campaign has prospect list records that are unprocessed
@@ -545,15 +632,23 @@ export default function CampaignsPage() {
               .map((ld: any) => {
                 const rawDomain = safeString(ld.website || ld.domain, '');
                 const domain = rawDomain && rawDomain !== 'N/A' ? (rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`) : 'N/A';
+                const url = safeString(ld.contactUrl, domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A');
                 return {
                   domain,
-                  url: safeString(ld.contactUrl, domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A'),
-                  techStack: safeString(ld.techStack, 'HTML Form'),
-                  domainAge: 'Verified',
-                  lastUpdated: safeFormatDate(new Date()),
-                  status: safeString(ld.status, 'PENDING'),
-                  code: 'Queued in pacing worker line',
+                  url,
+                  formStatus: 'NOT_DETECTED',
+                  fieldsDetected: 'N/A',
+                  submissionStatus: 'PENDING',
+                  successVerification: 'NOT_ATTEMPTED',
+                  finalStatus: safeString(ld.status, 'PENDING'),
+                  techStack: 'NOT_DETECTED',
+                  domainAge: 'N/A',
+                  lastUpdated: 'N/A',
+                  code: 'QUEUED_PACING',
+                  details: 'Queued in pacing worker line awaiting worker execution',
                   time: safeFormatTime(ld.createdAt, 'Awaiting execution'),
+                  isDryRun: false,
+                  companyName: ld.company_name || ld.companyName,
                 };
               });
           }
@@ -566,7 +661,7 @@ export default function CampaignsPage() {
     return [];
   };
 
-  // Export Dedicated Single Campaign CSV Report with Flat Horizontal Excel Columns (19 Columns)
+  // Export Dedicated Single Campaign CSV Report with Flat Horizontal Excel Columns
   const handleExportSingleCampaignCSV = (camp: CampaignItem) => {
     if (!camp || !isActionAuthorized(camp.id)) {
       alert('Unauthorized: You do not have permission to export telemetry for this campaign.');
@@ -579,6 +674,7 @@ export default function CampaignsPage() {
     const noPage = camp.noContactPage || 0;
     const captcha = camp.captchaBlocked || 0;
     const pending = Math.max(0, camp.prospects - delivered - failed - noPage - captcha);
+    const replied = camp.replied || 0;
     const yieldPct = camp.prospects > 0 ? Math.round((delivered / camp.prospects) * 100) : 0;
     const campNameSafe = String(camp.name || 'Campaign');
     const campIdSafe = String(camp.id || '');
@@ -596,14 +692,20 @@ export default function CampaignsPage() {
       'No Contact Page Found',
       'CAPTCHA / Review Required',
       'Pending',
+      'Replied',
       'Success Yield %',
       'Website Domain',
       'Contact Page URL',
-      'Detected Tech Stack (CMS/Framework)',
-      'Domain Registration Date / Age',
+      'Form Status',
+      'Fields Detected',
+      'Submission Status',
+      'Success Verification',
+      'Final Status',
+      'Detected Tech Stack',
+      'Domain Registration / Age',
       'Last Website Edit Date',
-      'Outreach Status',
-      'Diagnostic Code / Details',
+      'Diagnostic Code',
+      'Diagnostic Details',
       'Timestamp',
     ];
 
@@ -619,14 +721,20 @@ export default function CampaignsPage() {
           noPage,
           captcha,
           pending,
+          replied,
           `"${yieldPct}%"`,
           `"${safeString(log.domain).replace(/"/g, '""')}"`,
           `"${safeString(log.url).replace(/"/g, '""')}"`,
+          `"${safeString(log.formStatus).replace(/"/g, '""')}"`,
+          `"${safeString(log.fieldsDetected).replace(/"/g, '""')}"`,
+          `"${safeString(log.submissionStatus).replace(/"/g, '""')}"`,
+          `"${safeString(log.successVerification).replace(/"/g, '""')}"`,
+          `"${safeString(log.finalStatus).replace(/"/g, '""')}"`,
           `"${safeString(log.techStack).replace(/"/g, '""')}"`,
           `"${safeString(log.domainAge).replace(/"/g, '""')}"`,
           `"${safeString(log.lastUpdated).replace(/"/g, '""')}"`,
-          `"${safeString(log.status).replace(/"/g, '""')}"`,
           `"${safeString(log.code).replace(/"/g, '""')}"`,
+          `"${safeString(log.details).replace(/"/g, '""')}"`,
           `"${safeString(log.time).replace(/"/g, '""')}"`,
         ])
       : [[
@@ -640,13 +748,19 @@ export default function CampaignsPage() {
           noPage,
           captcha,
           pending,
+          replied,
           `"${yieldPct}%"`,
           '"N/A"',
           '"N/A"',
-          '"Not detected"',
+          '"NOT_DETECTED"',
           '"N/A"',
           '"N/A"',
+          '"NOT_ATTEMPTED"',
           '"N/A"',
+          '"NOT_DETECTED"',
+          '"N/A"',
+          '"N/A"',
+          '"NO_RECORDS"',
           '"No website audit records found for this campaign"',
           '"N/A"',
         ]];
@@ -662,6 +776,16 @@ export default function CampaignsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Export Single Campaign PDF Report
+  const handleExportSingleCampaignPDF = (camp: CampaignItem) => {
+    if (!camp || !isActionAuthorized(camp.id)) {
+      alert('Unauthorized: You do not have permission to export telemetry for this campaign.');
+      return;
+    }
+    const auditLogs = getCampaignAuditLogs(camp);
+    generateCampaignPDFReport(camp, auditLogs, currentUser?.email || 'User');
   };
 
   // Export All Campaign Summary Reports as CSV
@@ -768,6 +892,7 @@ export default function CampaignsPage() {
                 item && item.id === id ? { ...item, status: newStatus === 'active' ? 'running' : 'paused' } : item
               );
               localStorage.setItem('user_campaigns', JSON.stringify(updated));
+              window.dispatchEvent(new CustomEvent('campaigns_updated'));
             }
           } catch (err) {}
           return { ...c, status: newStatus };
@@ -1235,15 +1360,11 @@ export default function CampaignsPage() {
           ) : (
             filtered.map((camp) => {
               const pendingCount = Math.max(0, camp.prospects - camp.reached - (camp.failed || 0) - (camp.noContactPage || 0) - (camp.captchaBlocked || 0));
+              const processedCount = Math.min(camp.prospects, camp.reached + (camp.failed || 0) + (camp.noContactPage || 0) + (camp.captchaBlocked || 0));
               return (
                 <div
                   key={camp.id}
-                  onClick={() => router.push(`/campaigns/new?id=${encodeURIComponent(camp.id)}`)}
-                  onMouseEnter={() => {
-                    try {
-                      router.prefetch(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
-                    } catch (e) {}
-                  }}
+                  onClick={() => setSelectedReportCamp(camp)}
                   className={`grid grid-cols-12 items-center px-6 py-3.5 rounded-2xl border transition-all cursor-pointer group shadow-2xs ${
                     selectedIds.includes(camp.id)
                       ? 'border-blue-400 bg-blue-50/30'
@@ -1261,9 +1382,15 @@ export default function CampaignsPage() {
                     />
 
                     {/* Left Status Bar / Icon */}
-                    <div className="flex items-center justify-center w-3 shrink-0">
+                    <div className="flex items-center justify-center shrink-0">
                       {camp.status === 'active' && (
-                        <div className="h-4 w-1.5 rounded-full bg-emerald-500 shadow-xs" title="Active Running" />
+                        <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200" title="Active Running">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                          <span className="text-[9px] font-extrabold text-emerald-700 tracking-wider font-mono uppercase">RUNNING</span>
+                        </div>
                       )}
                       {camp.status === 'paused' && (
                         <div className="h-3.5 w-3.5 rounded-full border-2 border-slate-400 flex items-center justify-center text-[9px] font-bold text-slate-500" title="Paused">
@@ -1284,7 +1411,7 @@ export default function CampaignsPage() {
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <h3
                         className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate cursor-pointer hover:underline"
-                        title="Click to edit campaign"
+                        title="Click to view campaign details & telemetry report"
                       >
                         {camp.name}
                       </h3>
@@ -1292,6 +1419,14 @@ export default function CampaignsPage() {
                         <span>{camp.date}</span>
                         <span>•</span>
                         <span className="text-slate-500">✈ {camp.sendersCount} Senders</span>
+                        {camp.status === 'active' && (
+                          <>
+                            <span>•</span>
+                            <span className="text-emerald-700 font-bold font-mono">
+                              Progress {processedCount}/{camp.prospects}
+                            </span>
+                          </>
+                        )}
                         {camp.tag && (
                           <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold">
                             {camp.tag}
@@ -1375,6 +1510,11 @@ export default function CampaignsPage() {
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
+                      }}
+                      onMouseEnter={() => {
+                        try {
+                          router.prefetch(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
+                        } catch (e) {}
                       }}
                       className="p-1 rounded-lg text-slate-400 hover:text-[#0e6de4] hover:bg-blue-50 transition-colors cursor-pointer"
                       title="Edit Campaign"
@@ -1507,162 +1647,342 @@ export default function CampaignsPage() {
       {/* DETAILED CAMPAIGN GRAPH & METRICS REPORT MODAL */}
       {selectedReportCamp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5 overflow-hidden font-sans">
+            {/* Header */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-blue-50 text-blue-600">
-                  <BarChart2 className="h-5 w-5" />
+                <div className="p-2.5 rounded-2xl bg-blue-50 text-[#0e6de4]">
+                  <BarChart2 className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
                     <span>{selectedReportCamp.name}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-mono font-bold">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0e6de4] font-mono font-bold">
                       {selectedReportCamp.status.toUpperCase()}
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-500 font-mono">
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">
                     Campaign ID: {selectedReportCamp.id} • Created: {selectedReportCamp.date}
                   </p>
                 </div>
               </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/campaigns/new?id=${encodeURIComponent(selectedReportCamp.id)}`)}
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+                >
+                  <Edit2 className="h-3.5 w-3.5 text-slate-500" />
+                  <span>Edit Campaign</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportSingleCampaignCSV(selectedReportCamp)}
+                  className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-800 transition-colors cursor-pointer"
+                  title="Download CSV Report"
+                >
+                  <Download className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Download CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportSingleCampaignPDF(selectedReportCamp)}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#0e6de4] hover:bg-blue-700 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                  title="Download Executive PDF Report"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedReportCamp(null)}
+                  className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer ml-1"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body Container (Scrollable) */}
+            <div className="overflow-y-auto space-y-5 pr-1 flex-1">
+              {/* 7 KPI Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+                <div className="p-3 rounded-2xl border border-slate-200 bg-slate-50/80 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Total Prospects</span>
+                  <p className="text-lg font-extrabold text-slate-900 font-mono">{selectedReportCamp.prospects}</p>
+                </div>
+
+                <div className="p-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 space-y-1">
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider font-mono">Form Delivered</span>
+                  <p className="text-lg font-extrabold text-emerald-800 font-mono">{selectedReportCamp.reached}</p>
+                </div>
+
+                <div className="p-3 rounded-2xl border border-rose-200 bg-rose-50/70 space-y-1">
+                  <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider font-mono">Submit Failed</span>
+                  <p className="text-lg font-extrabold text-rose-800 font-mono">{selectedReportCamp.failed || 0}</p>
+                </div>
+
+                <div className="p-3 rounded-2xl border border-amber-200 bg-amber-50/70 space-y-1">
+                  <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider font-mono">No Contact Page</span>
+                  <p className="text-lg font-extrabold text-amber-800 font-mono">{selectedReportCamp.noContactPage || 0}</p>
+                </div>
+
+                <div className="p-3 rounded-2xl border border-purple-200 bg-purple-50/70 space-y-1">
+                  <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider font-mono">CAPTCHA / Review</span>
+                  <p className="text-lg font-extrabold text-purple-800 font-mono">{selectedReportCamp.captchaBlocked || 0}</p>
+                </div>
+
+                <div className="p-3 rounded-2xl border border-blue-200 bg-blue-50/70 space-y-1">
+                  <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider font-mono">Pending</span>
+                  <p className="text-lg font-extrabold text-blue-800 font-mono">
+                    {Math.max(0, selectedReportCamp.prospects - selectedReportCamp.reached - (selectedReportCamp.failed || 0) - (selectedReportCamp.noContactPage || 0) - (selectedReportCamp.captchaBlocked || 0))}
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 space-y-1">
+                  <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider font-mono">Replied</span>
+                  <p className="text-lg font-extrabold text-indigo-800 font-mono">{selectedReportCamp.replied || 0}</p>
+                </div>
+              </div>
+
+              {/* Outreach Success Yield Performance Box */}
+              <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-2 shadow-2xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold font-mono">
+                  <span className="text-slate-700 uppercase tracking-wider">Outreach Deliverability Yield</span>
+                  <span className="text-emerald-600 font-extrabold text-sm">
+                    {selectedReportCamp.prospects > 0 ? Math.round((selectedReportCamp.reached / selectedReportCamp.prospects) * 100) : 0}% Form Deliverability Rate ({selectedReportCamp.reached} / {selectedReportCamp.prospects})
+                  </span>
+                </div>
+                <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden p-0.5 border border-slate-200">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-[#0e6de4] transition-all duration-500"
+                    style={{
+                      width: `${selectedReportCamp.prospects > 0 ? Math.min(100, Math.round((selectedReportCamp.reached / selectedReportCamp.prospects) * 100)) : 0}%`,
+                    }}
+                  />
+                </div>
+                {(() => {
+                  const logs = getCampaignAuditLogs(selectedReportCamp);
+                  const validStarts = logs.map((l: any) => l.startedAt).filter(Boolean);
+                  const validEnds = logs.map((l: any) => l.completedAt).filter(Boolean);
+                  const startedAtStr = validStarts.length > 0 ? new Date(validStarts[0]).toLocaleString('en-GB') : selectedReportCamp.date;
+                  const finishedAtStr = validEnds.length > 0 ? new Date(validEnds[validEnds.length - 1]).toLocaleString('en-GB') : (selectedReportCamp.status === 'active' ? 'In Progress' : 'Completed');
+                  const totalMs = logs.reduce((acc: number, l: any) => acc + (l.durationMs || 0), 0);
+                  const seconds = Math.floor(totalMs / 1000);
+                  const mins = Math.floor(seconds / 60);
+                  const durationStr = totalMs > 0 ? (mins > 0 ? `${mins}m ${seconds % 60}s` : `${seconds}s`) : 'N/A';
+
+                  return (
+                    <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 font-mono pt-1">
+                      <span>Started At: <strong className="text-slate-700">{startedAtStr}</strong></span>
+                      <span>Finished At: <strong className="text-slate-700">{finishedAtStr}</strong></span>
+                      <span>Duration: <strong className="text-blue-600">{durationStr}</strong></span>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Target Website Audit Breakdown Table */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono flex items-center gap-2">
+                    <span>Target Website Audit Breakdown</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-normal">
+                      {getCampaignAuditLogs(selectedReportCamp).length} Prospects Logged
+                    </span>
+                  </h4>
+                  <span className="text-[10px] text-slate-400 font-mono">Canonical Telemetry Feed</span>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-extrabold text-slate-600 uppercase tracking-wider font-mono">
+                        <th className="p-2.5">Website Domain</th>
+                        <th className="p-2.5">Contact Page URL</th>
+                        <th className="p-2.5">Form Status</th>
+                        <th className="p-2.5">Fields Detected</th>
+                        <th className="p-2.5">Submission</th>
+                        <th className="p-2.5">Verification</th>
+                        <th className="p-2.5">Final Status</th>
+                        <th className="p-2.5">Diagnostic</th>
+                        <th className="p-2.5">Time</th>
+                        <th className="p-2.5 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-sans text-[11px]">
+                      {getCampaignAuditLogs(selectedReportCamp).length === 0 ? (
+                        <tr>
+                          <td colSpan={10} className="p-8 text-center text-xs font-mono text-slate-500 bg-slate-50/50">
+                            No website audit records found for this campaign.
+                          </td>
+                        </tr>
+                      ) : (
+                        getCampaignAuditLogs(selectedReportCamp).map((item: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
+                            <td className="p-2.5 font-bold text-slate-900 font-mono">{item.domain}</td>
+                            <td className="p-2.5 text-slate-600 font-mono text-[10px] max-w-[140px] truncate" title={item.url}>
+                              {item.url}
+                            </td>
+                            <td className="p-2.5">
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
+                                item.formStatus === 'DETECTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {item.formStatus}
+                              </span>
+                            </td>
+                            <td className="p-2.5 text-slate-600 text-[10px] max-w-[110px] truncate" title={item.fieldsDetected}>
+                              {item.fieldsDetected}
+                            </td>
+                            <td className="p-2.5 font-mono text-[10px] font-semibold">{item.submissionStatus}</td>
+                            <td className="p-2.5 font-mono text-[10px] text-slate-600">{item.successVerification}</td>
+                            <td className="p-2.5">
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${
+                                item.finalStatus === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                                item.finalStatus === 'FAILED' || item.finalStatus === 'SUBMIT_FAILED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                                item.finalStatus === 'NO_CONTACT_PAGE' || item.finalStatus === 'NO-FORM' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                                item.finalStatus === 'CAPTCHA_REVIEW' || item.finalStatus === 'REVIEW' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
+                                'bg-blue-100 text-blue-800 border border-blue-300'
+                              }`}>
+                                {item.finalStatus}
+                              </span>
+                            </td>
+                            <td className="p-2.5 text-[10px] text-slate-500 max-w-[130px] truncate font-mono" title={item.details || item.code}>
+                              {item.details || item.code}
+                            </td>
+                            <td className="p-2.5 text-[10px] text-slate-400 font-mono shrink-0">{item.time}</td>
+                            <td className="p-2.5 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedProspectDetail(item)}
+                                className="px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-400 text-slate-700 hover:text-[#0e6de4] text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                title="View detailed prospect telemetry log"
+                              >
+                                <Eye className="h-3 w-3 text-[#0e6de4]" />
+                                <span>View Log</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 shrink-0">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExportSingleCampaignCSV(selectedReportCamp)}
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                >
+                  <Download className="h-4 w-4 text-emerald-600" />
+                  <span>Download Report CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportSingleCampaignPDF(selectedReportCamp)}
+                  className="flex items-center gap-1.5 rounded-xl border border-blue-300 bg-blue-50 hover:bg-blue-100 px-4 py-2 text-xs font-bold text-[#0e6de4] shadow-2xs transition-colors cursor-pointer"
+                >
+                  <Printer className="h-4 w-4 text-[#0e6de4]" />
+                  <span>Download Report PDF</span>
+                </button>
+              </div>
+
               <button
+                type="button"
                 onClick={() => setSelectedReportCamp(null)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+                className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+              >
+                Close Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PROSPECT DETAILED TELEMETRY DRAWER / MODAL */}
+      {selectedProspectDetail && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-xl overflow-hidden rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 font-sans">
+            {/* Prospect Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-slate-900 font-mono flex items-center gap-2">
+                    <span>{selectedProspectDetail.domain}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                      selectedProspectDetail.finalStatus === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}>
+                      {selectedProspectDetail.finalStatus}
+                    </span>
+                  </h4>
+                  <p className="text-xs text-slate-500 font-mono">Prospect Audit Telemetry Inspector</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedProspectDetail(null)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Live Progress Metrics Cards (5 Detailed Telemetry Cards) */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-              <div className="p-3 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Total Prospects</span>
-                <p className="text-base font-extrabold text-slate-900 font-mono">{selectedReportCamp.prospects}</p>
+            {/* Prospect Telemetry Body */}
+            <div className="space-y-3 max-h-[70vh] overflow-y-auto text-xs">
+              {/* URLs & Target Details */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px] font-mono">Target Website URLs</div>
+                <div className="grid grid-cols-1 gap-1 font-mono text-[11px]">
+                  <div><span className="text-slate-500">Domain:</span> <span className="font-bold text-slate-900">{selectedProspectDetail.domain}</span></div>
+                  <div><span className="text-slate-500">Contact URL:</span> <a href={selectedProspectDetail.url} target="_blank" rel="noreferrer" className="text-[#0e6de4] underline">{selectedProspectDetail.url}</a></div>
+                </div>
               </div>
 
-              <div className="p-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 space-y-1">
-                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider font-mono">🟢 Form Delivered</span>
-                <p className="text-base font-extrabold text-emerald-800 font-mono">{selectedReportCamp.reached}</p>
+              {/* Form Inspection & Detection */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px] font-mono">Form Detection & Field Mapping</div>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div><span className="text-slate-500">Form Status:</span> <strong className="text-slate-900 font-mono">{selectedProspectDetail.formStatus}</strong></div>
+                  <div><span className="text-slate-500">Fields Mapped:</span> <strong className="text-slate-900">{selectedProspectDetail.fieldsDetected}</strong></div>
+                  <div><span className="text-slate-500">Tech Stack:</span> <span className="font-mono text-slate-700">{selectedProspectDetail.techStack}</span></div>
+                  <div><span className="text-slate-500">Domain Registration/Age:</span> <span className="font-mono text-slate-700">{selectedProspectDetail.domainAge}</span></div>
+                </div>
               </div>
 
-              <div className="p-3 rounded-2xl border border-rose-200 bg-rose-50/60 space-y-1">
-                <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider font-mono">🔴 Submit Failed</span>
-                <p className="text-base font-extrabold text-rose-800 font-mono">{selectedReportCamp.failed || 0}</p>
-              </div>
-
-              <div className="p-3 rounded-2xl border border-amber-200 bg-amber-50/60 space-y-1">
-                <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider font-mono">🟡 No Contact Page</span>
-                <p className="text-base font-extrabold text-amber-800 font-mono">{selectedReportCamp.noContactPage || 0}</p>
-              </div>
-
-              <div className="p-3 rounded-2xl border border-purple-200 bg-purple-50/60 space-y-1">
-                <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider font-mono">🟠 CAPTCHA / Review</span>
-                <p className="text-base font-extrabold text-purple-800 font-mono">{selectedReportCamp.captchaBlocked || 0}</p>
-              </div>
-            </div>
-
-            {/* Live Sending Progress Bar */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-bold font-mono">
-                <span className="text-slate-700">Outreach Success Yield</span>
-                <span className="text-emerald-600">
-                  {selectedReportCamp.prospects > 0 ? Math.round((selectedReportCamp.reached / selectedReportCamp.prospects) * 100) : 0}% Form Deliverability Rate
-                </span>
-              </div>
-              <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden p-0.5 border border-slate-200">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 transition-all duration-500"
-                  style={{
-                    width: `${selectedReportCamp.prospects > 0 ? Math.min(100, Math.round((selectedReportCamp.reached / selectedReportCamp.prospects) * 100)) : 0}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Granular Prospect Outreach Audit Log Table */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono flex items-center gap-2">
-                  <span>Target Website Audit Breakdown</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-normal">
-                    {getCampaignAuditLogs(selectedReportCamp).length} Websites Logged
-                  </span>
-                </h4>
-                <span className="text-[10px] text-slate-400 font-mono">Live Telemetry Feed</span>
-              </div>
-
-              <div className="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/50 p-2 space-y-1.5">
-                {getCampaignAuditLogs(selectedReportCamp).length === 0 ? (
-                  <div className="p-8 text-center text-xs font-mono text-slate-500 bg-white rounded-xl border border-slate-200">
-                    No website audit records found for this campaign.
+              {/* Submission Outcome & Verification */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px] font-mono">Execution & Verification Details</div>
+                <div className="space-y-1 text-[11px]">
+                  <div><span className="text-slate-500">Submission Outcome:</span> <strong className="text-slate-900 font-mono">{selectedProspectDetail.submissionStatus}</strong></div>
+                  <div><span className="text-slate-500">Success Verification:</span> <strong className="text-emerald-700 font-mono">{selectedProspectDetail.successVerification}</strong></div>
+                  <div><span className="text-slate-500">Diagnostic Code:</span> <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800 font-mono">{selectedProspectDetail.code}</code></div>
+                  <div><span className="text-slate-500">Diagnostic Details:</span> <p className="mt-0.5 p-2 rounded bg-white border border-slate-200 text-slate-800 font-mono text-[10px] leading-relaxed">{selectedProspectDetail.details}</p></div>
+                  <div className="pt-1 flex justify-between text-slate-500 font-mono text-[10px]">
+                    <span>Timestamp: {selectedProspectDetail.time}</span>
+                    <span>Mode: {selectedProspectDetail.isDryRun ? 'Dry Run' : 'Live Submission'}</span>
                   </div>
-                ) : (
-                  getCampaignAuditLogs(selectedReportCamp).map((item: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs shadow-2xs">
-                      <div className="space-y-0.5 min-w-0 flex-1 pr-2">
-                        <div className="font-bold text-slate-900 font-mono flex flex-wrap items-center gap-1.5 truncate">
-                          <span>{item.domain}</span>
-                          <span className="text-[10px] text-slate-400 font-normal truncate">({item.url})</span>
-                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-bold border border-slate-200 font-mono">
-                            ⚙️ {item.techStack}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 font-mono">
-                          <span>{item.code}</span>
-                          <span>•</span>
-                          <span className="text-blue-700 font-bold">📅 {item.domainAge}</span>
-                          <span>•</span>
-                          <span className="text-emerald-700 font-bold">📝 {item.lastUpdated}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${
-                          item.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                          item.status === 'FAILED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
-                          item.status === 'NO_CONTACT_PAGE' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                          item.status === 'CAPTCHA_REVIEW' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
-                          'bg-blue-100 text-blue-800 border border-blue-300'
-                        }`}>
-                          {item.status === 'DELIVERED' ? '🟢 DELIVERED' : item.status === 'FAILED' ? '🔴 FAILED' : item.status === 'NO_CONTACT_PAGE' ? '🟡 NO CONTACT PAGE' : item.status === 'CAPTCHA_REVIEW' ? '🟠 CAPTCHA REVIEW' : '⏳ PENDING'}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">{item.time}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
+                </div>
               </div>
             </div>
 
-            {/* Modal Actions */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+            {/* Modal Footer */}
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
               <button
-                onClick={() => handleExportSingleCampaignCSV(selectedReportCamp)}
-                className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer"
-                title={`Download CSV report specifically for ${selectedReportCamp.name}`}
+                type="button"
+                onClick={() => setSelectedProspectDetail(null)}
+                className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-xs font-bold transition-colors cursor-pointer"
               >
-                <Download className="h-4 w-4 text-blue-600" />
-                <span>Download Report CSV ({selectedReportCamp.name})</span>
+                Close Inspector
               </button>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setSelectedReportCamp(null);
-                    router.push('/campaigns/new');
-                  }}
-                  className="rounded-xl border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-2 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
-                >
-                  Edit Campaign Steps
-                </button>
-
-                <button
-                  onClick={() => setSelectedReportCamp(null)}
-                  className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
-                >
-                  Close Report
-                </button>
-              </div>
             </div>
           </div>
         </div>

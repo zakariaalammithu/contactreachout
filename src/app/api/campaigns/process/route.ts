@@ -28,7 +28,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isDryRun = Boolean(options.dryRun);
+    const hasExplicitDryRun = typeof options.dryRun === 'boolean';
+    const dryRunDefault = process.env.ENFORCE_DRY_RUN_DEFAULT === 'true';
+    const configuredMode = (process.env.CONTACT_FORM_MODE || (process.env.NODE_ENV === 'production' ? 'live' : 'test')).toLowerCase();
+    const runtimeMode: 'live' | 'test' | 'disabled' = configuredMode === 'disabled' ? 'disabled' : configuredMode === 'live' ? 'live' : 'test';
+    const campaignDryRun = hasExplicitDryRun ? options.dryRun : dryRunDefault;
+    const isDryRun = Boolean(campaignDryRun || runtimeMode !== 'live');
 
     // 1. Server-Side Sending Schedule Enforcement
     const scheduleCheck = validateSendingSchedule(options.schedule, lead.location || lead.country || lead.city);
@@ -86,6 +91,7 @@ export async function POST(req: NextRequest) {
       options: {
         dryRun: isDryRun,
         timeoutMs: options.timeoutMs || 20000,
+        runtimeMode,
       },
     });
 
@@ -104,7 +110,7 @@ export async function POST(req: NextRequest) {
       diagnosticMessage = result.submission?.confirmationMessage || '[DRY RUN] Submission safely simulated';
     } else if (result.finalStatus === 'NO_CONTACT_PAGE' || result.finalStatus === 'NO_FORM_DETECTED') {
       campaignStatus = 'NO-FORM';
-      diagnosticMessage = 'No usable public contact page or form detected';
+      diagnosticMessage = result.discovery?.errorMessage || result.detection?.errorMessage || 'No usable public contact page or form detected';
     } else if (
       result.finalStatus === 'CAPTCHA_DETECTED' ||
       result.finalStatus === 'REVIEW_REQUIRED' ||
