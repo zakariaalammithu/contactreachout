@@ -109,8 +109,22 @@ export async function POST(req: NextRequest) {
       campaignStatus = 'DRY_RUN_COMPLETED';
       diagnosticMessage = result.submission?.confirmationMessage || '[DRY RUN] Submission safely simulated';
     } else if (result.finalStatus === 'NO_CONTACT_PAGE' || result.finalStatus === 'NO_FORM_DETECTED') {
-      campaignStatus = 'NO-FORM';
-      diagnosticMessage = result.discovery?.errorMessage || result.detection?.errorMessage || 'No usable public contact page or form detected';
+      const isBrowserError =
+        result.discovery?.status === 'ERROR' ||
+        result.discovery?.errorCode === 'BROWSER_LAUNCH_FAILED' ||
+        (result.discovery?.errorMessage && (
+          result.discovery.errorMessage.includes('Executable doesn\'t exist') ||
+          result.discovery.errorMessage.includes('browserType.launch') ||
+          result.discovery.errorMessage.includes('playwright')
+        ));
+
+      if (isBrowserError) {
+        campaignStatus = 'FAILED';
+        diagnosticMessage = result.discovery?.errorMessage || 'EXECUTION_ERROR - Playwright browser executable missing or runtime error';
+      } else {
+        campaignStatus = 'NO-FORM';
+        diagnosticMessage = result.discovery?.errorMessage || result.detection?.errorMessage || 'No usable public contact page or form detected';
+      }
     } else if (
       result.finalStatus === 'CAPTCHA_DETECTED' ||
       result.finalStatus === 'REVIEW_REQUIRED' ||

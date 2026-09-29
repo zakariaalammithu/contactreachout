@@ -519,7 +519,7 @@ async function httpFallbackDiscovery(
     contactPageUrl: null,
     discoveryMethod: 'none',
     confidenceScore: 0,
-    status: 'NOT_FOUND',
+    status: browserError ? 'ERROR' : 'NOT_FOUND',
     httpStatus: null,
     errorCode: browserError ? 'BROWSER_LAUNCH_FAILED' : 'CONTACT_PAGE_FAILED',
     errorMessage: browserError || 'No reachable public contact page was verified.',

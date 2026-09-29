@@ -140,6 +140,22 @@ export class OutreachPipelineOrchestrator {
       };
     }
 
+    if (discovery.status === 'ERROR' || discovery.errorCode === 'BROWSER_LAUNCH_FAILED') {
+      addLog('CONTACT_PAGE_DISCOVERY', `Infrastructure / browser runtime error on ${lead.website}: ${discovery.errorMessage}`);
+      return {
+        leadId: lead.id,
+        targetWebsite: lead.website,
+        finalStatus: 'FAILED',
+        currentStage: 'CONTACT_PAGE_DISCOVERY',
+        discovery,
+        renderedSubject: '',
+        renderedBody: '',
+        totalDurationMs: Date.now() - startTime,
+        completedAt: new Date().toISOString(),
+        logs,
+      };
+    }
+
     if (discovery.status !== 'FOUND' || !discovery.contactPageUrl) {
       addLog('CONTACT_PAGE_DISCOVERY', `No public contact page found on ${lead.website}`);
       return {

@@ -5,6 +5,7 @@ export interface CampaignReportItem {
   status: string;
   prospects: number;
   reached: number;
+  dryRunCompleted?: number;
   failed?: number;
   noContactPage?: number;
   captchaBlocked?: number;
@@ -48,11 +49,12 @@ export function generateCampaignPDFReport(
 
   const totalProspects = campaign.prospects || 0;
   const delivered = campaign.reached || 0;
+  const dryRunCompleted = campaign.dryRunCompleted || 0;
   const failed = campaign.failed || 0;
   const noForm = campaign.noContactPage || 0;
   const captcha = campaign.captchaBlocked || 0;
   const replied = campaign.replied || 0;
-  const pending = Math.max(0, totalProspects - delivered - failed - noForm - captcha);
+  const pending = Math.max(0, totalProspects - delivered - dryRunCompleted - failed - noForm - captcha);
   const yieldPct = totalProspects > 0 ? Math.round((delivered / totalProspects) * 100) : 0;
 
   // Calculate Timeline details

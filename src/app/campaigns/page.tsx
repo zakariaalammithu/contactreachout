@@ -51,6 +51,7 @@ interface CampaignItem {
   status: 'active' | 'paused' | 'draft' | 'archived';
   prospects: number;
   reached: number;
+  dryRunCompleted?: number;
   failed?: number;
   noContactPage?: number;
   captchaBlocked?: number;
@@ -90,6 +91,7 @@ export default function CampaignsPage() {
   const [selectedReportCamp, setSelectedReportCamp] = useState<CampaignItem | null>(null);
   const [selectedProspectDetail, setSelectedProspectDetail] = useState<any | null>(null);
   const [openMenuCampId, setOpenMenuCampId] = useState<string | null>(null);
+  const [isStatusGuideOpen, setIsStatusGuideOpen] = useState(false);
 
   // Create Campaign Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -308,6 +310,13 @@ export default function CampaignsPage() {
                 : Number(c.totalLeads) || Number(c.prospects) || 0;
 
               const sent = typeof c.sentCount === 'number' ? c.sentCount : typeof c.reached === 'number' ? c.reached : Number(c.sentCount) || Number(c.reached) || 0;
+              const dryRunCompleted = typeof c.dryRunCompletedCount === 'number'
+                ? c.dryRunCompletedCount
+                : typeof c.dryRunCompleted === 'number'
+                ? c.dryRunCompleted
+                : Array.isArray(c.logs)
+                ? c.logs.filter((l: any) => String(l?.status || '').toUpperCase() === 'DRY_RUN_COMPLETED').length
+                : 0;
               const failed = typeof c.failedCount === 'number' ? c.failedCount : typeof c.failed === 'number' ? c.failed : Number(c.failedCount) || Number(c.failed) || 0;
               const noForm = typeof c.noFormCount === 'number' ? c.noFormCount : typeof c.noContactPage === 'number' ? c.noContactPage : Number(c.noFormCount) || Number(c.noContactPage) || 0;
               const captcha = typeof c.captchaCount === 'number' ? c.captchaCount : typeof c.captchaBlocked === 'number' ? c.captchaBlocked : Number(c.captchaCount) || Number(c.captchaBlocked) || 0;
@@ -324,6 +333,7 @@ export default function CampaignsPage() {
                 status: c.status === 'running' || c.status === 'active' ? 'active' : c.status === 'paused' ? 'paused' : c.status === 'archived' ? 'archived' : 'draft',
                 prospects: total,
                 reached: sent,
+                dryRunCompleted,
                 failed,
                 noContactPage: noForm,
                 captchaBlocked: captcha,
@@ -510,6 +520,8 @@ export default function CampaignsPage() {
                 rawCamp.logs = [data.telemetry, ...logs];
                 if (data.telemetry.status === 'DELIVERED' && !data.telemetry.isDryRun) {
                   rawCamp.sentCount = (rawCamp.sentCount || 0) + 1;
+                } else if (data.telemetry.status === 'DRY_RUN_COMPLETED') {
+                  rawCamp.dryRunCompletedCount = (rawCamp.dryRunCompletedCount || 0) + 1;
                 } else if (data.telemetry.status === 'FAILED') {
                   rawCamp.failedCount = (rawCamp.failedCount || 0) + 1;
                 } else if (data.telemetry.status === 'NO-FORM') {
@@ -578,21 +590,66 @@ export default function CampaignsPage() {
                 const url = rawUrl && rawUrl !== 'N/A' ? rawUrl : (domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A');
 
                 const finalStatus = safeString(log.status, 'PENDING');
-                const formStatus = log.formStatus || (log.selectedForm || url !== 'N/A' ? 'DETECTED' : 'NOT_DETECTED');
-                const fieldsDetected = log.fieldsDetected || (log.mappedFields ? Object.keys(log.mappedFields).join(', ') : 'N/A');
-                const submissionStatus = log.submissionStatus || finalStatus;
+                const rawCode = safeString(log.code || log.diagnostic, '');
+                const rawDetails = safeString(log.details || log.diagnosticMessage || log.code, '');
 
+                const isBrowserError =
+                  rawCode.includes('browserType') ||
+                  rawCode.includes('Executable') ||
+                  rawCode.includes('BROWSER_LAUNCH_FAILED') ||
+                  rawDetails.includes('browserType') ||
+                  rawDetails.includes('Executable') ||
+                  rawDetails.includes('Playwright');
+
+                let formStatus = log.formStatus || (log.selectedForm || url !== 'N/A' ? 'DETECTED' : 'NOT_DETECTED');
+                let rawFields = log.fieldsDetected || (log.mappedFields ? Object.keys(log.mappedFields).join(', ') : 'N/A');
+                let fieldsDetected = (rawFields && rawFields !== 'NaN' && rawFields !== 'undefined') ? String(rawFields) : 'N/A';
+                let submissionStatus = log.submissionStatus || finalStatus;
                 let successVerification = 'N/A';
-                if (finalStatus === 'DELIVERED') {
+                let code = rawCode || 'STAGE_EXECUTION';
+                let details = rawDetails || 'Execution stage complete';
+
+                if (isBrowserError) {
+                  formStatus = 'NOT_VERIFIED';
+                  fieldsDetected = 'N/A';
+                  submissionStatus = 'NOT_ATTEMPTED';
+                  successVerification = 'N/A';
+                  code = 'EXECUTION_ERROR';
+                  details = 'EXECUTION_ERROR - Playwright browser executable missing or runtime error';
+                } else if (finalStatus === 'DRY_RUN_COMPLETED') {
+                  formStatus = log.formStatus || 'DETECTED';
+                  submissionStatus = 'DRY_RUN';
+                  successVerification = 'N/A';
+                } else if (finalStatus === 'DELIVERED') {
                   successVerification = 'VERIFIED_HTTP_200';
                 } else if (finalStatus === 'FAILED' || finalStatus === 'SUBMIT_FAILED') {
                   successVerification = 'FAILED';
                 } else if (finalStatus === 'CAPTCHA_REVIEW' || finalStatus === 'REVIEW') {
                   successVerification = 'CAPTCHA_BLOCKED';
                 } else if (finalStatus === 'NO_CONTACT_PAGE' || finalStatus === 'NO-FORM') {
+                  formStatus = 'NOT_DETECTED';
+                  fieldsDetected = 'N/A';
                   successVerification = 'NOT_FOUND';
                 } else if (finalStatus === 'PENDING') {
                   successVerification = 'NOT_ATTEMPTED';
+                }
+
+                let websiteStatus: 'Reachable' | 'Unreachable' | 'Not Checked' = 'Not Checked';
+                if (finalStatus === 'PENDING') {
+                  websiteStatus = 'Not Checked';
+                } else if (
+                  code.includes('UNREACHABLE') ||
+                  code.includes('DNS') ||
+                  details.includes('DNS') ||
+                  details.includes('ECONNREFUSED') ||
+                  details.includes('ENOTFOUND') ||
+                  details.includes('timeout')
+                ) {
+                  websiteStatus = 'Unreachable';
+                } else if (isBrowserError) {
+                  websiteStatus = 'Not Checked';
+                } else {
+                  websiteStatus = 'Reachable';
                 }
 
                 const techStack = (log.techStack && log.techStack !== 'HTML Form' && log.techStack !== 'Not detected') ? log.techStack : 'NOT_DETECTED';
@@ -602,6 +659,7 @@ export default function CampaignsPage() {
                 return {
                   domain,
                   url,
+                  websiteStatus,
                   formStatus,
                   fieldsDetected,
                   submissionStatus,
@@ -610,8 +668,8 @@ export default function CampaignsPage() {
                   techStack,
                   domainAge,
                   lastUpdated,
-                  code: safeString(log.code || log.diagnostic, 'STAGE_EXECUTION'),
-                  details: safeString(log.details || log.diagnosticMessage || log.code, 'Execution stage complete'),
+                  code,
+                  details,
                   time: safeFormatTime(log.time || log.timestamp),
                   startedAt: log.startedAt,
                   completedAt: log.completedAt,
@@ -636,6 +694,7 @@ export default function CampaignsPage() {
                 return {
                   domain,
                   url,
+                  websiteStatus: 'Not Checked',
                   formStatus: 'NOT_DETECTED',
                   fieldsDetected: 'N/A',
                   submissionStatus: 'PENDING',
@@ -670,10 +729,11 @@ export default function CampaignsPage() {
 
     const auditLogs = getCampaignAuditLogs(camp);
     const delivered = camp.reached || 0;
+    const dryRun = camp.dryRunCompleted || 0;
     const failed = camp.failed || 0;
     const noPage = camp.noContactPage || 0;
     const captcha = camp.captchaBlocked || 0;
-    const pending = Math.max(0, camp.prospects - delivered - failed - noPage - captcha);
+    const pending = Math.max(0, camp.prospects - delivered - dryRun - failed - noPage - captcha);
     const replied = camp.replied || 0;
     const yieldPct = camp.prospects > 0 ? Math.round((delivered / camp.prospects) * 100) : 0;
     const campNameSafe = String(camp.name || 'Campaign');
@@ -688,6 +748,7 @@ export default function CampaignsPage() {
       'Status',
       'Total Prospects',
       'Form Delivered (Sent)',
+      'Dry Run Completed',
       'Failed Submissions',
       'No Contact Page Found',
       'CAPTCHA / Review Required',
@@ -717,6 +778,7 @@ export default function CampaignsPage() {
           `"${campStatusSafe}"`,
           camp.prospects || 0,
           delivered,
+          dryRun,
           failed,
           noPage,
           captcha,
@@ -744,6 +806,7 @@ export default function CampaignsPage() {
           `"${campStatusSafe}"`,
           camp.prospects || 0,
           delivered,
+          dryRun,
           failed,
           noPage,
           captcha,
@@ -797,6 +860,7 @@ export default function CampaignsPage() {
       'Status',
       'Total Prospects',
       'Sent (Form Delivered)',
+      'Dry Run Completed',
       'Failed Submissions',
       'No Contact Page Found',
       'CAPTCHA / Review Blocked',
@@ -805,10 +869,11 @@ export default function CampaignsPage() {
     ];
     const rows = campaigns.map((c) => {
       const delivered = c.reached || 0;
+      const dryRun = c.dryRunCompleted || 0;
       const failed = c.failed || 0;
       const noPage = c.noContactPage || 0;
       const captcha = c.captchaBlocked || 0;
-      const pending = Math.max(0, c.prospects - delivered - failed - noPage - captcha);
+      const pending = Math.max(0, c.prospects - delivered - dryRun - failed - noPage - captcha);
       const yieldPct = c.prospects > 0 ? Math.round((delivered / c.prospects) * 100) : 0;
 
       return [
@@ -1121,12 +1186,13 @@ export default function CampaignsPage() {
   const totals = React.useMemo(() => {
     const totalProspects = filtered.reduce((acc, c) => acc + (c.prospects || 0), 0);
     const totalDelivered = filtered.reduce((acc, c) => acc + (c.reached || 0), 0);
+    const totalDryRun = filtered.reduce((acc, c) => acc + (c.dryRunCompleted || 0), 0);
     const totalFailed = filtered.reduce((acc, c) => acc + (c.failed || 0), 0);
     const totalNoForm = filtered.reduce((acc, c) => acc + (c.noContactPage || 0), 0);
     const totalCaptcha = filtered.reduce((acc, c) => acc + (c.captchaBlocked || 0), 0);
-    const totalPending = filtered.reduce((acc, c) => acc + Math.max(0, c.prospects - (c.reached || 0) - (c.failed || 0) - (c.noContactPage || 0) - (c.captchaBlocked || 0)), 0);
+    const totalPending = filtered.reduce((acc, c) => acc + Math.max(0, c.prospects - (c.reached || 0) - (c.dryRunCompleted || 0) - (c.failed || 0) - (c.noContactPage || 0) - (c.captchaBlocked || 0)), 0);
     const totalReplied = filtered.reduce((acc, c) => acc + (c.replied || 0), 0);
-    return { totalProspects, totalDelivered, totalFailed, totalNoForm, totalCaptcha, totalPending, totalReplied };
+    return { totalProspects, totalDelivered, totalDryRun, totalFailed, totalNoForm, totalCaptcha, totalPending, totalReplied };
   }, [filtered]);
 
   return (
@@ -1359,8 +1425,8 @@ export default function CampaignsPage() {
             </div>
           ) : (
             filtered.map((camp) => {
-              const pendingCount = Math.max(0, camp.prospects - camp.reached - (camp.failed || 0) - (camp.noContactPage || 0) - (camp.captchaBlocked || 0));
-              const processedCount = Math.min(camp.prospects, camp.reached + (camp.failed || 0) + (camp.noContactPage || 0) + (camp.captchaBlocked || 0));
+              const pendingCount = Math.max(0, camp.prospects - camp.reached - (camp.dryRunCompleted || 0) - (camp.failed || 0) - (camp.noContactPage || 0) - (camp.captchaBlocked || 0));
+              const processedCount = Math.min(camp.prospects, camp.reached + (camp.dryRunCompleted || 0) + (camp.failed || 0) + (camp.noContactPage || 0) + (camp.captchaBlocked || 0));
               return (
                 <div
                   key={camp.id}
@@ -1706,16 +1772,21 @@ export default function CampaignsPage() {
 
             {/* Modal Body Container (Scrollable) */}
             <div className="overflow-y-auto space-y-5 pr-1 flex-1">
-              {/* 7 KPI Cards Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+              {/* 8 KPI Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
                 <div className="p-3 rounded-2xl border border-slate-200 bg-slate-50/80 space-y-1">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Total Prospects</span>
                   <p className="text-lg font-extrabold text-slate-900 font-mono">{selectedReportCamp.prospects}</p>
                 </div>
 
                 <div className="p-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 space-y-1">
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider font-mono">Form Delivered</span>
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider font-mono">Real Delivered</span>
                   <p className="text-lg font-extrabold text-emerald-800 font-mono">{selectedReportCamp.reached}</p>
+                </div>
+
+                <div className="p-3 rounded-2xl border border-teal-200 bg-teal-50/70 space-y-1">
+                  <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider font-mono">Dry Run Done</span>
+                  <p className="text-lg font-extrabold text-teal-800 font-mono">{selectedReportCamp.dryRunCompleted || 0}</p>
                 </div>
 
                 <div className="p-3 rounded-2xl border border-rose-200 bg-rose-50/70 space-y-1">
@@ -1736,7 +1807,7 @@ export default function CampaignsPage() {
                 <div className="p-3 rounded-2xl border border-blue-200 bg-blue-50/70 space-y-1">
                   <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider font-mono">Pending</span>
                   <p className="text-lg font-extrabold text-blue-800 font-mono">
-                    {Math.max(0, selectedReportCamp.prospects - selectedReportCamp.reached - (selectedReportCamp.failed || 0) - (selectedReportCamp.noContactPage || 0) - (selectedReportCamp.captchaBlocked || 0))}
+                    {Math.max(0, selectedReportCamp.prospects - selectedReportCamp.reached - (selectedReportCamp.dryRunCompleted || 0) - (selectedReportCamp.failed || 0) - (selectedReportCamp.noContactPage || 0) - (selectedReportCamp.captchaBlocked || 0))}
                   </p>
                 </div>
 
@@ -1783,6 +1854,117 @@ export default function CampaignsPage() {
                 })()}
               </div>
 
+              {/* Execution Flow Diagram */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 shadow-2xs">
+                <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider font-mono">
+                  Outreach Execution Flow Lifecycle
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono font-bold text-slate-700">
+                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Website</span>
+                  <span className="text-slate-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Contact Page</span>
+                  <span className="text-slate-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Form</span>
+                  <span className="text-slate-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Fields</span>
+                  <span className="text-slate-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Submission</span>
+                  <span className="text-slate-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Verification</span>
+                  <span className="text-slate-400">→</span>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-[#0e6de4] text-white shadow-2xs font-extrabold">Final Status</span>
+                </div>
+              </div>
+
+              {/* Collapsible Status Guide */}
+              <div className="rounded-2xl border border-blue-100 bg-blue-50/40 overflow-hidden text-xs">
+                <button
+                  type="button"
+                  onClick={() => setIsStatusGuideOpen(!isStatusGuideOpen)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-left font-bold text-[#0e6de4] hover:bg-blue-50/80 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-[#0e6de4]" />
+                    <span>Status Guide / What does this mean?</span>
+                  </div>
+                  <span className="text-xs font-mono font-normal text-slate-500">
+                    {isStatusGuideOpen ? 'Hide Guide ▲' : 'Show Guide ▼'}
+                  </span>
+                </button>
+
+                {isStatusGuideOpen && (
+                  <div className="p-4 border-t border-blue-100/80 bg-white space-y-2 animate-in fade-in duration-150">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 font-sans">
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-mono font-bold text-[10px]">
+                            DRY_RUN_COMPLETED
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          Website and form processing was completed in test/simulation mode; no real submission was made.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono font-bold text-[10px]">
+                            DELIVERED
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          A real message was submitted to the website contact form and success was verified.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-mono font-bold text-[10px]">
+                            SUBMISSION_FAILED
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          The website and contact form were found, but the real submission was not successfully completed or verified.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-mono font-bold text-[10px]">
+                            UNREACHABLE
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          The target website could not be reached/loaded, such as DNS, timeout, or connection error.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-mono font-bold text-[10px]">
+                            NO_FORM
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          The target website/contact page was successfully reached, but no contact form was found.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-mono font-bold text-[10px]">
+                            REVIEW_REQUIRED
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          The website/form was found, but CAPTCHA, bot protection, required-field uncertainty, or another safety condition prevented automated submission.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Target Website Audit Breakdown Table */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -1800,6 +1982,7 @@ export default function CampaignsPage() {
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-extrabold text-slate-600 uppercase tracking-wider font-mono">
                         <th className="p-2.5">Website Domain</th>
+                        <th className="p-2.5">Website Status</th>
                         <th className="p-2.5">Contact Page URL</th>
                         <th className="p-2.5">Form Status</th>
                         <th className="p-2.5">Fields Detected</th>
@@ -1814,7 +1997,7 @@ export default function CampaignsPage() {
                     <tbody className="divide-y divide-slate-100 font-sans text-[11px]">
                       {getCampaignAuditLogs(selectedReportCamp).length === 0 ? (
                         <tr>
-                          <td colSpan={10} className="p-8 text-center text-xs font-mono text-slate-500 bg-slate-50/50">
+                          <td colSpan={11} className="p-8 text-center text-xs font-mono text-slate-500 bg-slate-50/50">
                             No website audit records found for this campaign.
                           </td>
                         </tr>
@@ -1822,6 +2005,17 @@ export default function CampaignsPage() {
                         getCampaignAuditLogs(selectedReportCamp).map((item: any, idx: number) => (
                           <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
                             <td className="p-2.5 font-bold text-slate-900 font-mono">{item.domain}</td>
+                            <td className="p-2.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                item.websiteStatus === 'Reachable'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  : item.websiteStatus === 'Unreachable'
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                  : 'bg-slate-100 text-slate-600 border border-slate-200'
+                              }`}>
+                                {item.websiteStatus}
+                              </span>
+                            </td>
                             <td className="p-2.5 text-slate-600 font-mono text-[10px] max-w-[140px] truncate" title={item.url}>
                               {item.url}
                             </td>
