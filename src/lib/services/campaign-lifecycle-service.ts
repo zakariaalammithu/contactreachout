@@ -81,7 +81,7 @@ export class CampaignLifecycleService {
       reviewRequired: campaignData.reviewRequired,
       readyToProcess,
       submissionMode: campaignData.submissionMode || 'manual_approval',
-      isDryRun: campaignData.isDryRun ?? true,
+      isDryRun: campaignData.isDryRun ?? false,
       canLaunch,
       warnings,
     };

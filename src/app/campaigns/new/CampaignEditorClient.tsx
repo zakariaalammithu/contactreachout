@@ -345,7 +345,7 @@ export default function CampaignEditorClient() {
           setCampaignName(campaign.name || ''); setTag(campaign.tag || 'CUSTOM'); setStatus(campaign.status || 'draft');
           const savedListIds = campaign.selectedListIds?.length ? campaign.selectedListIds : campaign.selectedListId ? [campaign.selectedListId] : [];
           setSelectedListId(campaign.selectedListId || savedListIds[0] || ''); setSelectedListIds(savedListIds); setSequence(campaign.sequences?.[0] || defaultSequence());
-          setIsDryRun(campaign.isDryRun ?? true); setRateLimitPerMinute(campaign.rateLimitPerMinute || 10);
+          setIsDryRun(campaign.isDryRun ?? false); setRateLimitPerMinute(campaign.rateLimitPerMinute || 10);
           setMaxConcurrency(campaign.maxConcurrency || 5); setCreatedAt(campaign.createdAt);
           if (campaign.sequences?.length) {
             const loaded = campaign.sequences.map((item: any, index: number) => ({ id: item.id || `sequence-${index + 1}`, name: index === 0 ? 'Initial Message' : `Follow-up Message ${index}`, condition: item.condition || 'prospects that did NOT reply', subject: item.subject || '', body: item.body || '', date: item.date || new Date().toISOString().slice(0, 10), delayAmount: item.delayDays ?? (index > 0 ? (DEFAULT_FOLLOWUP_DELAYS[index - 1] || 4) : 0), delayUnit: item.delayUnit || 'days', replyInThread: item.replyInThread !== undefined ? Boolean(item.replyInThread) : true }));

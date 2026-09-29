@@ -134,7 +134,11 @@ export async function POST(req: NextRequest) {
       diagnosticMessage = 'Anti-bot protection, CAPTCHA, or uncertain field mapping detected';
     } else {
       campaignStatus = 'FAILED';
-      diagnosticMessage = result.submission?.errorMessage || 'Form handler request failed or timed out';
+      diagnosticMessage =
+        result.submission?.errorMessage ||
+        result.discovery?.errorMessage ||
+        result.detection?.errorMessage ||
+        'Form handler request failed or timed out';
     }
 
     // 4. Perform Server-Side Credit Deduction ONLY on Successful Live Submission

@@ -148,7 +148,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
     const now = new Date().toISOString();
     const id = `campaign-${Date.now()}`;
     const campaigns = safeParseJSON<any[]>(localStorage.getItem('user_campaigns'), []);
-    campaigns.unshift({ id, name: finalName, tag: 'CUSTOM', status: 'draft', createdAt: now, updatedAt: now, selectedListId: '', prospectsList: [], sequences: [], isDryRun: true, rateLimitPerMinute: 10, maxConcurrency: 5, sentCount: 0, failedCount: 0, noFormCount: 0, captchaCount: 0 });
+    campaigns.unshift({ id, name: finalName, tag: 'CUSTOM', status: 'draft', createdAt: now, updatedAt: now, selectedListId: '', prospectsList: [], sequences: [], isDryRun: false, rateLimitPerMinute: 10, maxConcurrency: 5, sentCount: 0, failedCount: 0, noFormCount: 0, captchaCount: 0 });
     localStorage.setItem('user_campaigns', JSON.stringify(campaigns));
     setShowNameModal(false);
     setInputCampaignName('');

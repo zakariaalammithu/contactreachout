@@ -39,7 +39,7 @@ export interface CampaignSafetyPacingConfig {
 }
 
 export const CANONICAL_DEFAULT_SAFETY_CONFIG: CampaignSafetyPacingConfig = {
-  isDryRun: true,
+  isDryRun: false,
   rateLimitPerMinute: 10,
   maxConcurrency: 5,
   submissionDelaySeconds: 5,

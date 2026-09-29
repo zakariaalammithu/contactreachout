@@ -448,7 +448,7 @@ export default function LeadsPage() {
         selectedListIds,
         prospectsList: selectedLeads,
         sequences: [],
-        isDryRun: true,
+        isDryRun: false,
         rateLimitPerMinute: 10,
         maxConcurrency: 5,
         sentCount: 0,
