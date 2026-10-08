@@ -64,13 +64,15 @@ export default function LoginClient() {
         setErrorMsg(error);
       }
       const tab = searchParams.get('tab');
-      if (tab === 'signin') {
-        setActiveTab('signin');
-      } else if (tab === 'signup') {
-        setActiveTab('signup');
+      if (tab === 'signin' || tab === 'signup') {
+        setActiveTab((current) => {
+          if (current === 'otp_verify' || current === 'google_chooser') return current;
+          return tab;
+        });
       }
     }
   }, [searchParams]);
+
 
   // Handle browser Back / Forward (popstate)
   useEffect(() => {
@@ -215,7 +217,22 @@ export default function LoginClient() {
       }
 
       if (data.authenticated && data.redirectTo) {
-        window.location.replace(data.redirectTo);
+        if (typeof window !== 'undefined') {
+          const currentEmail = (data.user?.email || email).toLowerCase().trim();
+          const currentName = data.user?.name || currentEmail.split('@')[0];
+          localStorage.setItem('active_account_email', currentEmail);
+          localStorage.setItem('user_auth_email', currentEmail);
+          localStorage.setItem(
+            'user_sender_profile',
+            JSON.stringify({
+              name: currentName,
+              email: currentEmail,
+              company: 'ContactReachout',
+              website: 'https://contactreachout.com',
+            })
+          );
+        }
+        window.location.replace(data.redirectTo || '/campaigns');
         return;
       }
 
@@ -295,13 +312,30 @@ export default function LoginClient() {
         throw new Error(data.error || 'Invalid verification code.');
       }
 
-      window.location.replace(data.redirectTo || '/dashboard');
+      if (typeof window !== 'undefined') {
+        const currentEmail = (data.user?.email || email).toLowerCase().trim();
+        const currentName = data.user?.name || currentEmail.split('@')[0];
+        localStorage.setItem('active_account_email', currentEmail);
+        localStorage.setItem('user_auth_email', currentEmail);
+        localStorage.setItem(
+          'user_sender_profile',
+          JSON.stringify({
+            name: currentName,
+            email: currentEmail,
+            company: 'ContactReachout',
+            website: 'https://contactreachout.com',
+          })
+        );
+      }
+
+      window.location.replace(data.redirectTo || '/campaigns');
     } catch (err: any) {
       setErrorMsg(err.message || 'Verification failed. Please check your code.');
     } finally {
       setIsLoading(false);
     }
   };
+
 
   // 5. RESEND OTP CODE
   const handleResendOtp = async () => {

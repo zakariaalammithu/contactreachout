@@ -114,7 +114,7 @@ export const FIELD_CLASSIFIERS: Array<{
   },
   {
     type: 'full_name',
-    regex: /(^name$|full[_\-\s]*name|your[_\-\s]*name|contact[_\-\s]*name|author)/i,
+    regex: /(^name$|\bname\b|full[_\-\s]*name|your[_\-\s]*name|contact[_\-\s]*name|author)/i,
     autocomplete: /^name$/i,
     weight: 0.9,
   },
@@ -370,51 +370,72 @@ export class FormDetector {
       try {
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
 
-        // Wait brief moment for JS frameworks (React, Vue, Webflow, Wix) to render dynamic forms
-        await page.waitForTimeout(1000);
-
-        // Check for CAPTCHA & Cloudflare bot protection signatures
-        const isBotBlocked = await page.evaluate(() => {
-          const body = document.body.innerHTML.toLowerCase();
-          return (
-            body.includes('g-recaptcha') ||
-            body.includes('h-captcha') ||
-            body.includes('cf-turnstile') ||
-            body.includes('ray id:') ||
-            body.includes('verify you are human') ||
-            body.includes('access denied') ||
-            body.includes('attention required! | cloudflare')
-          );
-        });
-
-        if (isBotBlocked) {
-          await page.close();
-          await context.close();
-          await browser.close();
-          return {
-            targetUrl: url,
-            hasContactForm: false,
-            selectedForm: null,
-            allFormsCount: 0,
-            status: 'CAPTCHA_DETECTED',
-            confidenceScore: 0,
-            detectedAt: new Date().toISOString(),
-            errorCode: 'BOT_PROTECTION_DETECTED',
-            errorMessage: 'Page contains CAPTCHA or Cloudflare bot protection.',
-          };
+        // 1. Attempt trigger click on contact modal buttons if no visible forms on initial render
+        let initialFormCount = await page.evaluate(() => document.querySelectorAll('form').length);
+        if (initialFormCount === 0) {
+          try {
+            const modalButtons = [
+              'button:has-text("Contact Us")',
+              'button:has-text("Get in Touch")',
+              'button:has-text("Send Message")',
+              'button:has-text("Let\'s Talk")',
+              'button[data-target*="contact" i]',
+              'button[aria-controls*="contact" i]',
+              '[data-modal*="contact" i]',
+              'a[href="#contact"]',
+            ];
+            for (const btnSel of modalButtons) {
+              const btn = await page.$(btnSel);
+              if (btn) {
+                await btn.click().catch(() => {});
+                await page.waitForTimeout(500);
+                break;
+              }
+            }
+          } catch {
+            // Ignore modal click errors
+          }
         }
 
-        // Extract and evaluate all forms on the page
+        // 2. Check for embedded Iframe Forms (HubSpot, Typeform, JotForm, Google Forms, Calendly, WPForms)
+        const iframeInfo = await page.evaluate(() => {
+          const iframes = Array.from(document.querySelectorAll('iframe'));
+          for (const iframe of iframes) {
+            const src = (iframe.getAttribute('src') || '').toLowerCase();
+            const id = (iframe.getAttribute('id') || '').toLowerCase();
+            const title = (iframe.getAttribute('title') || '').toLowerCase();
+
+            if (
+              src.includes('hubspot') ||
+              src.includes('hsforms') ||
+              src.includes('typeform') ||
+              src.includes('jotform') ||
+              src.includes('google.com/forms') ||
+              src.includes('calendly') ||
+              src.includes('form') ||
+              id.includes('contact') ||
+              title.includes('contact')
+            ) {
+              return { hasIframe: true, iframeSrc: iframe.getAttribute('src') || '' };
+            }
+          }
+          return { hasIframe: false, iframeSrc: '' };
+        });
+
+        // 3. Extract and evaluate all forms on the page
         const formsData = await page.evaluate(() => {
           const forms = Array.from(document.querySelectorAll('form'));
           return forms.map((form, index) => {
-            const formSelector = form.id ? `form#${form.id}` : form.name ? `form[name="${form.name}"]` : `form:nth-of-type(${index + 1})`;
+            const rawName = typeof form.getAttribute === 'function' ? form.getAttribute('name') : null;
+            const formNameAttr = typeof rawName === 'string' && !rawName.includes('[object') ? rawName.trim() : null;
+            const formSelector = form.id ? `form#${form.id}` : formNameAttr ? `form[name="${formNameAttr}"]` : `form:nth-of-type(${index + 1})`;
             const html = form.outerHTML;
 
             const inputs = Array.from(form.querySelectorAll('input, textarea, select, button')).map((el, fIdx) => {
               const tag = el.tagName.toLowerCase() as 'input' | 'textarea' | 'select' | 'button';
               const htmlType = el.getAttribute('type') || (tag === 'textarea' ? 'textarea' : 'text');
-              const name = el.getAttribute('name') || '';
+              const rawInpName = el.getAttribute('name') || '';
+              const name = typeof rawInpName === 'string' && !rawInpName.includes('[object') ? rawInpName.trim() : '';
               const id = el.id || '';
               const placeholder = el.getAttribute('placeholder') || '';
               const autocomplete = el.getAttribute('autocomplete') || '';
@@ -438,7 +459,7 @@ export class FormDetector {
                 });
               }
 
-              const selector = id ? `#${id}` : name ? `[name="${name}"]` : `${tag}:nth-of-type(${fIdx + 1})`;
+              const selector = id ? `#${id}` : (name && !name.includes('[object')) ? `[name="${name}"]` : `${tag}:nth-of-type(${fIdx + 1})`;
 
               return {
                 tag,
@@ -469,6 +490,33 @@ export class FormDetector {
         await page.close();
         await context.close();
         await browser.close();
+
+        if (formsData.length === 0 && iframeInfo.hasIframe) {
+          // Embedded Iframe Form detected! Route to FORM_INACCESSIBLE / REVIEW_REQUIRED rather than NO_FORM
+          return {
+            targetUrl: url,
+            hasContactForm: true,
+            selectedForm: {
+              formSelector: 'iframe',
+              formScore: 85,
+              isContactForm: true,
+              isLoginOrAuthForm: false,
+              isSearchForm: false,
+              isNewsletterForm: false,
+              hasCaptcha: false,
+              hasFileRequired: false,
+              isInsideIframe: true,
+              iframeSrc: iframeInfo.iframeSrc,
+              detectedFields: [],
+            },
+            allFormsCount: 1,
+            status: 'FORM_INACCESSIBLE',
+            confidenceScore: 85,
+            detectedAt: new Date().toISOString(),
+            errorCode: 'EMBEDDED_IFRAME_FORM_DETECTED',
+            errorMessage: `Embedded iframe contact form detected (${iframeInfo.iframeSrc || 'cross-origin'}). Routed to REVIEW_REQUIRED.`,
+          };
+        }
 
         if (formsData.length === 0) {
           return {

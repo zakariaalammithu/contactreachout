@@ -51,9 +51,6 @@ export class EmailVerificationService {
     // Cryptographically secure 6-digit code generation
     const plainCode = crypto.randomInt(100000, 999999).toString();
 
-    // Verification codes are single-use and expire after exactly 2 minutes.
-    AuthStore.saveOtpCode(emailKey, plainCode, params.purpose, 2 * 60 * 1000, 60 * 1000);
-
     const rawApiKey = params.resendApiKey || SecretManager.getSecret('RESEND_API_KEY') || process.env.RESEND_API_KEY;
     const apiKey = rawApiKey?.trim().replace(/^[\"']|[\"']$/g, '');
     const subject = `🔑 Verification Code: ${plainCode}`;
@@ -73,6 +70,7 @@ export class EmailVerificationService {
     `;
 
     let emailDelivered = false;
+    let providerError = '';
     const sender = getEmailSenderConfig();
 
     // Attempt direct live fetch to Resend API if key is available
@@ -95,13 +93,18 @@ export class EmailVerificationService {
 
         if (fetchRes.ok) {
           emailDelivered = true;
+        } else {
+          const errorData = await fetchRes.json().catch(() => ({}));
+          providerError = errorData.message || `Resend status ${fetchRes.status}`;
+          console.error('[Resend API Error]', fetchRes.status, providerError);
         }
-      } catch (e) {
+      } catch (e: any) {
+        providerError = e.message || 'Network error connecting to email provider.';
         console.error('Direct Resend fetch error:', e);
       }
     }
 
-    if (!emailDelivered) {
+    if (!emailDelivered && !providerError) {
       // Fallback via ResendProvider adapter
       const resendProvider = new ResendProvider();
       const sendResult = await resendProvider.sendEmail({
@@ -111,34 +114,36 @@ export class EmailVerificationService {
       });
 
       emailDelivered = sendResult.success;
+      if (!sendResult.success) {
+        providerError = sendResult.errorMessage || '';
+      }
     }
 
-    // If live email was dispatched successfully
+    // IF LIVE EMAIL WAS DISPATCHED SUCCESSFULLY -> COMMIT OTP & COOLDOWN
     if (emailDelivered) {
+      AuthStore.saveOtpCode(emailKey, plainCode, params.purpose, 2 * 60 * 1000, 20 * 1000);
+
       return {
         success: true,
-        message: `✓ 6-Digit Verification code sent to ${this.maskEmail(emailKey)}. Check your inbox.`,
+        message: `Verification code sent to ${this.maskEmail(emailKey)}. Check your inbox.`,
         maskedEmail: this.maskEmail(emailKey),
-        cooldownSeconds: 60,
+        cooldownSeconds: 20,
       };
     }
 
-    if (process.env.NODE_ENV === 'production') {
-      return {
-        success: false,
-        message: 'Verification email service is unavailable. Configure RESEND_API_KEY and try again.',
-        maskedEmail: this.maskEmail(emailKey),
-        cooldownSeconds: 60,
-      };
+    // IF EMAIL DISPATCH FAILED -> CLEAN UP ANY OTP AND SET ZERO COOLDOWN
+    AuthStore.clearOtpCode(emailKey);
+
+    let userFacingError = 'Verification email could not be sent. Please check your email address or try again later.';
+    if (providerError && (providerError.includes('only send testing emails') || providerError.includes('verify a domain'))) {
+      userFacingError = 'Verification email could not be sent to this recipient address. (Resend testing domain restriction: Free mode sends only to account owner. Verify a custom domain in Resend for external recipients).';
     }
 
-    // Development-only fallback for local authentication testing.
     return {
-      success: true,
-      message: `✓ 6-Digit Code generated! (Resend API Key unconfigured in Settings). Active Code: ${plainCode}`,
+      success: false,
+      message: userFacingError,
       maskedEmail: this.maskEmail(emailKey),
-      cooldownSeconds: 60,
-      debugCode: plainCode,
+      cooldownSeconds: 0,
     };
   }
 

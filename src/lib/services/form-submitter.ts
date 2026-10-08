@@ -52,13 +52,20 @@ export const SUCCESS_SIGNATURES = [
   /thank\s*you/i,
   /thanks/i,
   /your\s*message\s*has\s*been\s*sent/i,
+  /message\s*sent/i,
   /message\s*received/i,
+  /message\s*submitted/i,
   /we('ll| will)\s*be\s*in\s*touch/i,
   /inquiry\s*submitted/i,
   /successfully\s*sent/i,
+  /successfully\s*submitted/i,
   /submission\s*received/i,
   /we\s*have\s*received\s*your\s*message/i,
   /thank\s*you\s*for\s*contacting\s*us/i,
+  /thanks\s*for\s*reaching\s*out/i,
+  /thanks\s*for\s*contacting/i,
+  /your\s*submission\s*has\s*been\s*received/i,
+  /request\s*submitted/i,
 ];
 
 // Error feedback signatures
@@ -420,16 +427,16 @@ export class FormSubmitter {
         'Referer': contactPageUrl,
       };
 
-      // Helper to extract field name from selector
+      // Helper to extract field name from selector safely
       const getFieldName = (field: any) => {
-        if (field.fieldName) return field.fieldName;
-        if (field.fieldSelector) {
+        if (field.fieldName && typeof field.fieldName === 'string' && !field.fieldName.includes('[object')) return field.fieldName;
+        if (field.fieldSelector && typeof field.fieldSelector === 'string') {
           const matchName = field.fieldSelector.match(/name=["']?([^"']+)["']?/i);
-          if (matchName && matchName[1]) return matchName[1];
+          if (matchName && matchName[1] && !matchName[1].includes('[object')) return matchName[1];
           const matchId = field.fieldSelector.match(/#([a-zA-Z0-9_-]+)/);
           if (matchId && matchId[1]) return matchId[1];
         }
-        return field.normalizedType || 'message';
+        return field.normalizedType && typeof field.normalizedType === 'string' && !field.normalizedType.includes('[object') ? field.normalizedType : 'message';
       };
 
       // Build JSON & Form Data Payloads

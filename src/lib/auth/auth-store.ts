@@ -87,7 +87,7 @@ export class AuthStore {
       );
       userRegistry.set(this.PRIMARY_SUPER_ADMIN_EMAIL, {
         id: 'usr-superadmin-001',
-        name: '',
+        name: 'Zakaria Alam Mithu',
         email: this.PRIMARY_SUPER_ADMIN_EMAIL,
         // Phone numbers are supplied only by the account owner.
         phone: '',
@@ -110,7 +110,7 @@ export class AuthStore {
       const { hash, salt } = this.hashPassword(this.bootstrapPassword(undefined, 'OperatorPass123!'));
       userRegistry.set('operator@bulkreach.io', {
         id: 'usr-admin-002',
-        name: '',
+        name: 'Operator Admin',
         email: 'operator@bulkreach.io',
         phone: '',
         passwordHash: hash,
@@ -132,7 +132,7 @@ export class AuthStore {
       const { hash, salt } = this.hashPassword(this.bootstrapPassword(undefined, 'DemoUser123!'));
       userRegistry.set('user@demo.com', {
         id: 'usr-user-003',
-        name: '',
+        name: 'Demo User',
         email: 'user@demo.com',
         phone: '',
         passwordHash: hash,
@@ -149,6 +149,7 @@ export class AuthStore {
         updatedAt: new Date().toISOString(),
       });
     }
+
   }
 
   // --- PASSWORD SECURITY ---
@@ -204,6 +205,11 @@ export class AuthStore {
     return record;
   }
 
+  public static clearOtpCode(email: string): void {
+    const key = email.toLowerCase().trim();
+    otpRegistry.delete(key);
+  }
+
   public static verifyOtpCode(email: string, plainCode: string): { valid: boolean; reason?: string } {
     const key = email.toLowerCase().trim();
     const record = this.getOtpRecord(key);
@@ -235,13 +241,19 @@ export class AuthStore {
   public static getUserByEmail(email: string): UserAccount | null {
     this.initialize();
     const user = userRegistry.get(email.toLowerCase().trim());
-    if (user && !user.replyEmail && user.isEmailVerified) {
-      user.replyEmail = user.email;
-      user.replyEmailVerified = true;
+    if (user) {
+      if ((!user.name || !user.name.trim()) && user.email === this.PRIMARY_SUPER_ADMIN_EMAIL) {
+        user.name = 'Zakaria Alam Mithu';
+      }
+      if (!user.replyEmail && user.isEmailVerified) {
+        user.replyEmail = user.email;
+        user.replyEmailVerified = true;
+      }
       userRegistry.set(user.email, user);
     }
     return user || null;
   }
+
 
   public static getUserByGoogleSub(googleSub: string): UserAccount | null {
     this.initialize();

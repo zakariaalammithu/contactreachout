@@ -362,19 +362,29 @@ export default function PricingPage() {
           </div>
 
           {/* Secondary Referral Benefit Note */}
-          <div className="mt-8 p-4 rounded-2xl border border-blue-100 bg-blue-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs max-w-4xl mx-auto shadow-2xs font-sans">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-white text-[#0e6de4] shadow-2xs shrink-0">
-                <Gift className="h-5 w-5" />
+          <div className="mt-10 p-5 sm:p-6 rounded-3xl border border-blue-200/90 bg-gradient-to-r from-blue-50/90 via-white to-blue-50/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 max-w-5xl mx-auto shadow-sm transition-all hover:border-blue-300">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="p-3 rounded-2xl bg-[#0e6de4] text-white shadow-md shadow-blue-500/20 shrink-0 mt-0.5 sm:mt-0">
+                <Gift className="h-6 w-6" />
               </div>
-              <div>
-                <span className="font-extrabold text-slate-900 block text-xs">Want extra credits?</span>
-                <span className="text-slate-600 text-xs">Refer a new ContactReachout user and earn 100 bonus credits. Your referral receives 50 bonus credits after email verification.</span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-slate-900 text-sm sm:text-base tracking-tight">Earn Bonus Credits</h3>
+                  <span className="inline-flex items-center rounded-full bg-blue-100/80 border border-blue-200 px-2.5 py-0.5 text-[10px] font-extrabold text-[#0e6de4]">
+                    Referral Program
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                  Refer a new ContactReachout user and earn <strong className="font-extrabold text-[#0e6de4]">100 bonus credits</strong>. Your referral gets <strong className="font-extrabold text-[#0e6de4]">50 bonus credits</strong> after email verification.
+                </p>
               </div>
             </div>
-            <Link href="/referral" className="rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white px-4 py-2 text-xs font-bold shrink-0 transition-colors shadow-2xs flex items-center gap-1">
-              Refer & Earn
-              <ArrowRight className="h-3.5 w-3.5" />
+            <Link
+              href="/referral"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white px-5 py-3 text-xs sm:text-sm font-black shrink-0 transition-all shadow-md shadow-blue-500/20 hover:shadow-lg"
+            >
+              <span>Refer & Earn</span>
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </section>

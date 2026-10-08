@@ -35,8 +35,10 @@ import {
   Receipt,
   KeyRound,
   Crown,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LogoutModal } from '@/components/ui/LogoutModal';
 
 interface NavItem {
   name: string;
@@ -99,6 +101,7 @@ const navSections: NavSection[] = [
       { name: 'Browser Automation', href: '/admin/system/browser', icon: Globe },
       { name: 'Campaign Settings', href: '/admin/system/campaigns', icon: Sliders },
       { name: 'System Health', href: '/admin/system/health', icon: Activity, badge: 'Healthy', badgeColor: 'bg-emerald-100 text-emerald-800' },
+      { name: 'Inbox Testing', href: '/admin/system/inbox-testing', icon: FlaskConical, badge: 'Dev', badgeColor: 'bg-blue-100 text-blue-800' },
     ],
   },
   {
@@ -115,6 +118,7 @@ const navSections: NavSection[] = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const [sessionUser, setSessionUser] = React.useState<{ email: string; name: string; role: string } | null>(null);
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -256,7 +260,7 @@ export function AdminSidebar() {
           </div>
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={() => setShowLogoutModal(true)}
             className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             title="Log Out"
           >
@@ -264,6 +268,12 @@ export function AdminSidebar() {
           </button>
         </div>
       </div>
+
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+      />
     </aside>
   );
 }

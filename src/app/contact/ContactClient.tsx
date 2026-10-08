@@ -59,7 +59,7 @@ export function ContactClient() {
     email: '',
     company: '',
     website: '',
-    subject: '',
+    subject: 'Contact Form Inquiry',
     message: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -69,7 +69,6 @@ export function ContactClient() {
   const [selectedTopicTitle, setSelectedTopicTitle] = useState('');
 
   const formRef = useRef<HTMLFormElement>(null);
-  const subjectInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -92,22 +91,12 @@ export function ContactClient() {
   };
 
   const handleSelectTopicCard = (option: HelpOption) => {
-    setFormData((prev) => ({ ...prev, subject: option.defaultSubject }));
+    setFormData((prev) => ({ ...prev, subject: `Inquiry: ${option.title}` }));
     setSelectedTopicTitle(option.title);
-    if (errors.subject) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next.subject;
-        return next;
-      });
-    }
     
-    // Smooth scroll to form & focus subject
+    // Smooth scroll to form
     if (formRef.current) {
       formRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => {
-        subjectInputRef.current?.focus();
-      }, 400);
     }
   };
 
@@ -134,10 +123,6 @@ export function ContactClient() {
       } catch {
         newErrors.website = 'Please enter a valid website URL (e.g. https://example.com)';
       }
-    }
-
-    if (!formData.subject.trim() || formData.subject.trim().length < 2) {
-      newErrors.subject = 'Please enter a subject line.';
     }
 
     if (!formData.message.trim() || formData.message.trim().length < 10) {
@@ -241,41 +226,23 @@ export function ContactClient() {
               <div className="mt-8 space-y-4">
                 <a
                   href="mailto:hello@contactreachout.com"
-                  className="flex items-start gap-4 rounded-2xl bg-white/10 p-4.5 ring-1 ring-white/15 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="flex items-center gap-4 rounded-2xl bg-white/10 p-4.5 ring-1 ring-white/15 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
                 >
                   <div className="rounded-xl bg-white/15 p-2.5 text-white">
                     <Mail className="h-5 w-5 shrink-0" />
                   </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-blue-200">Email Us</p>
-                    <p className="mt-0.5 text-sm font-black text-white underline underline-offset-4">
-                      hello@contactreachout.com
-                    </p>
-                  </div>
+                  <span className="text-sm font-black text-white underline underline-offset-4">
+                    hello@contactreachout.com
+                  </span>
                 </a>
 
-                <div className="flex items-start gap-4 rounded-2xl bg-white/10 p-4.5 ring-1 ring-white/15">
+                <div className="flex items-center gap-4 rounded-2xl bg-white/10 p-4.5 ring-1 ring-white/15">
                   <div className="rounded-xl bg-white/15 p-2.5 text-white">
                     <MapPin className="h-5 w-5 shrink-0" />
                   </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-blue-200">Office Location</p>
-                    <p className="mt-0.5 text-sm font-bold text-white">
-                      Austin, TX 73301, USA
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4 rounded-2xl bg-white/10 p-4.5 ring-1 ring-white/15">
-                  <div className="rounded-xl bg-white/15 p-2.5 text-white">
-                    <Headphones className="h-5 w-5 shrink-0" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-blue-200">Typical Support Topics</p>
-                    <p className="mt-0.5 text-xs font-medium leading-relaxed text-blue-100">
-                      Account access, campaigns, lead imports, credits, billing, AI personalization, and submission issues.
-                    </p>
-                  </div>
+                  <span className="text-sm font-bold text-white">
+                    Austin, TX 73301, USA
+                  </span>
                 </div>
               </div>
             </div>
@@ -418,27 +385,6 @@ export function ContactClient() {
                       }`}
                     />
                     {errors.website && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.website}</p>}
-                  </div>
-
-                  {/* Subject Line */}
-                  <div className="sm:col-span-2">
-                    <label htmlFor="subject" className="block text-sm font-bold text-slate-800">
-                      Subject <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      ref={subjectInputRef}
-                      id="subject"
-                      name="subject"
-                      type="text"
-                      required
-                      value={formData.subject}
-                      onChange={handleInputChange}
-                      placeholder="How can we help you?"
-                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
-                        errors.subject ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500' : 'border-slate-200 focus:border-[#0e6de4]'
-                      }`}
-                    />
-                    {errors.subject && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.subject}</p>}
                   </div>
                 </div>
 

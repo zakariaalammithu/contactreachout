@@ -68,8 +68,9 @@ export async function POST(req: NextRequest) {
     const targetEmail = (newReplyEmail || '').toLowerCase().trim();
 
     if (action === 'send_otp') {
-      if (!targetEmail || !targetEmail.includes('@')) {
-        return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 });
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+      if (!targetEmail || !emailRegex.test(targetEmail)) {
+        return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
       }
 
       // If user is restoring to their own verified account email, verify immediately
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (!result.success) {
-        return NextResponse.json({ error: result.message }, { status: 429 });
+        return NextResponse.json({ error: result.message }, { status: 400 });
       }
 
       return NextResponse.json({
@@ -107,7 +108,6 @@ export async function POST(req: NextRequest) {
         maskedEmail: result.maskedEmail,
         cooldownSeconds: result.cooldownSeconds,
         unverifiedReplyEmail: targetEmail,
-        debugCode: result.debugCode,
       });
     }
 

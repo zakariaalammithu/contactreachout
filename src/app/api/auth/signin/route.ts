@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       const session = AuthStore.createSession(user.id, user.email, user.role);
       const isAdminRole = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
       const requestedNext = next?.startsWith('/') && !next.startsWith('//') && (!next.startsWith('/admin') || isAdminRole) ? next : undefined;
-      const redirectTo = requestedNext || (isAdminRole ? '/admin' : '/dashboard');
+      const redirectTo = requestedNext || (isAdminRole ? '/admin' : '/campaigns');
       const response = NextResponse.json({
         success: true,
         authenticated: true,
@@ -74,6 +74,7 @@ export async function POST(req: Request) {
       SessionManager.setSessionCookie(response, session);
       return response;
     }
+
 
     // An existing but unverified account must finish its one-time verification.
     const dispatchResult = await EmailVerificationService.sendVerificationCode({

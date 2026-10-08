@@ -150,7 +150,7 @@ export default function AppDashboard() {
   return (
     <div className="space-y-10 max-w-7xl mx-auto pb-16">
       <section className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-black text-[#0e6de4]">Dashboard</p><h1 className="mt-1 text-3xl font-black text-slate-950">Welcome back{sessionUser?.name ? `, ${sessionUser.name}` : ''}</h1><p className="mt-2 text-sm text-slate-600">Manage bulk contact-form campaigns and AI personalization from one workspace.</p></div><Link href="/campaigns/new" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-5 py-3 text-sm font-black text-white shadow-md hover:bg-[#0758bd]"><PlusCircle className="h-4 w-4" />New Campaign</Link></div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-black text-[#0e6de4]">Dashboard</p><h1 className="mt-1 text-3xl font-black text-slate-950">Welcome back{sessionUser?.name ? `, ${sessionUser.name}` : ''}</h1><p className="mt-2 text-sm text-slate-600">Manage bulk contact-form campaigns and AI personalization from one workspace.</p></div><Link href="/campaigns/new" prefetch={true} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-5 py-3 text-sm font-black text-white shadow-md hover:bg-[#0758bd]"><PlusCircle className="h-4 w-4" />New Campaign</Link></div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
           { label: 'Available Credits', value: availableCredits.toLocaleString(), icon: CreditCard },
           { label: 'Active Campaigns', value: dashboardSummary.active.toLocaleString(), icon: Activity },

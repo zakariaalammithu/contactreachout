@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import React, { Suspense } from 'react';
 import SignupClient from '@/components/auth/SignupClient';
+
+export const metadata: Metadata = {
+  title: 'Create Account | ContactReachout',
+  robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
+};
 
 export const dynamic = 'force-dynamic';
 

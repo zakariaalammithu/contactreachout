@@ -16,6 +16,7 @@ export interface NormalizedLead {
   lastName?: string;
   title?: string;
   companyName: string;
+  companyKeywords?: string;
   email?: string;
   industry?: string;
   personLinkedinUrl?: string;
@@ -40,6 +41,7 @@ export interface ColumnMapping {
   last_name?: string;
   title?: string;
   company_name?: string;
+  company_keywords?: string;
   email?: string;
   industry?: string;
   person_linkedin_url?: string;
@@ -133,6 +135,7 @@ export function suggestColumnMappings(headers: string[]): Record<string, string>
     last_name: '',
     title: '',
     company_name: '',
+    company_keywords: '',
     email: '',
     industry: '',
     person_linkedin_url: '',
@@ -173,7 +176,14 @@ export function suggestColumnMappings(headers: string[]): Record<string, string>
       continue;
     }
 
-    // 2. Company Name vs First/Last Name
+    // 2. Company Keywords must be resolved before Company Name. Otherwise a
+    // generic "company" matcher can consume both source columns.
+    if (!suggestions.company_keywords && /(company.*keywords?|keywords?.*company)/i.test(raw)) {
+      suggestions.company_keywords = header;
+      continue;
+    }
+
+    // 3. Company Name vs First/Last Name
     if (!suggestions.company_name && (
       /(companyname|company|organization|orgname|businessname|accountname|firmname|^account$)/i.test(h) ||
       /company.*name/i.test(raw) ||
@@ -420,6 +430,7 @@ export function processImportRows(
     const rawLastName = mapping.last_name ? rawRow[mapping.last_name] : undefined;
     const rawTitle = mapping.title ? rawRow[mapping.title] : undefined;
     const rawCompanyName = mapping.company_name ? rawRow[mapping.company_name] : undefined;
+    const rawCompanyKeywords = mapping.company_keywords ? rawRow[mapping.company_keywords] : undefined;
     const rawEmail = mapping.email ? rawRow[mapping.email] : undefined;
     const rawIndustry = mapping.industry ? rawRow[mapping.industry] : undefined;
     const rawPersonLinkedinUrl = mapping.person_linkedin_url ? rawRow[mapping.person_linkedin_url] : undefined;
@@ -483,6 +494,7 @@ export function processImportRows(
       lastName: rawLastName ? String(sanitizeCellInput(rawLastName)).trim() : '',
       title: rawTitle ? String(sanitizeCellInput(rawTitle)).trim() : '',
       companyName: sanitizeCellInput(companyName),
+      companyKeywords: rawCompanyKeywords ? String(sanitizeCellInput(rawCompanyKeywords)).trim() : '',
       email: rawEmail ? String(sanitizeCellInput(rawEmail)).trim() : '',
       industry: rawIndustry ? String(sanitizeCellInput(rawIndustry)).trim() : '',
       personLinkedinUrl: rawPersonLinkedinUrl ? String(sanitizeCellInput(rawPersonLinkedinUrl)).trim() : '',

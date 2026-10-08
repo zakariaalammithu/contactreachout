@@ -20,6 +20,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const payload = body.data || body;
     const {
       prospectName,
       prospectEmail,
@@ -36,12 +37,35 @@ export async function POST(req: NextRequest) {
       externalMessageId,
       messageId,
       status,
-    } = body;
+    } = payload;
 
-    const rawTargetEmail = (userEmail || userSenderEmail || body.to || body.recipient || '').toLowerCase().trim();
-    const rawProspectEmail = (prospectEmail || body.from || body.sender || '').toLowerCase().trim();
+    const rawTargetEmail = (
+      userEmail ||
+      userSenderEmail ||
+      payload.to?.[0] ||
+      payload.to ||
+      payload.recipient ||
+      body.userEmail ||
+      body.to ||
+      ''
+    )
+      .toLowerCase()
+      .trim();
 
-    if (!rawTargetEmail || !rawProspectEmail || !replyMessage) {
+    const rawProspectEmail = (
+      prospectEmail ||
+      payload.from ||
+      payload.sender ||
+      body.prospectEmail ||
+      body.from ||
+      ''
+    )
+      .toLowerCase()
+      .trim();
+
+    const resolvedReplyMessage = (replyMessage || payload.text || payload.html || body.replyMessage || body.text || '').trim();
+
+    if (!rawTargetEmail || !rawProspectEmail || !resolvedReplyMessage) {
       return NextResponse.json(
         { error: 'Missing required reply details (targetUserEmail, prospectEmail, replyMessage)' },
         { status: 400 }
@@ -74,6 +98,9 @@ export async function POST(req: NextRequest) {
     const resolvedStatus = status || (isMatched ? 'INTERESTED' : 'UNMATCHED');
     const resolvedCampaignName = campaignName || (isMatched ? 'Outreach Campaign' : 'Unmatched / Needs Review');
 
+    const resolvedSubject = (subject || payload.subject || body.subject || 'Website Contact-Form Reply').trim();
+    const resolvedProspectName = (prospectName || payload.from_name || (rawProspectEmail ? rawProspectEmail.split('@')[0] : 'Prospect')).trim();
+
     // Idempotent save to InboxStore
     const savedMessage = InboxStore.addIncomingReply({
       userId: user.id,
@@ -82,13 +109,13 @@ export async function POST(req: NextRequest) {
       leadId,
       conversationId,
       externalMessageId: externalMessageId || messageId,
-      prospectName: prospectName || rawProspectEmail.split('@')[0],
+      prospectName: resolvedProspectName,
       email: rawProspectEmail,
       companyName,
       website,
       campaignName: resolvedCampaignName,
-      originalSubject: subject,
-      replyMessage,
+      originalSubject: resolvedSubject,
+      replyMessage: resolvedReplyMessage,
       status: resolvedStatus,
       forwardedToEmail,
     });

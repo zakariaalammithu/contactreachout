@@ -36,10 +36,15 @@ import {
   Info,
   ExternalLink,
   Printer,
+  TrendingUp,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { generateNextUniqueCampaignName } from '@/lib/utils';
 import { generateCampaignPDFReport } from '@/lib/services/pdf-report-service';
+import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 
 
 interface CampaignItem {
@@ -87,17 +92,30 @@ export default function CampaignsPage() {
   const [folderFilter, setFolderFilter] = useState('All Folders');
   const [tagFilter, setTagFilter] = useState('All Tags');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const [campaignSearch, setCampaignSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedReportCamp, setSelectedReportCamp] = useState<CampaignItem | null>(null);
   const [selectedProspectDetail, setSelectedProspectDetail] = useState<any | null>(null);
   const [openMenuCampId, setOpenMenuCampId] = useState<string | null>(null);
   const [isStatusGuideOpen, setIsStatusGuideOpen] = useState(false);
+  const [reportDateRange, setReportDateRange] = useState<'7d' | '14d' | '30d' | 'all'>('all');
+  const [activeChartSeries, setActiveChartSeries] = useState<{ [key: string]: boolean }>({
+    delivered: true,
+    processed: true,
+    failed: true,
+    noForm: true,
+    review: true,
+    executionError: true,
+  });
 
   // Create Campaign Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newCampaignName, setNewCampaignName] = useState('New Campaign');
   const [nameError, setNameError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [navigatingRoute, setNavigatingRoute] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus and select input text when modal opens
@@ -126,55 +144,20 @@ export default function CampaignsPage() {
 
   // Create Campaign submit handler (Direct creation with automatic unique default name)
   const handleCreateCampaignSubmit = (customName?: string) => {
-    if (isCreating) return;
+    if (isCreating || navigatingRoute === 'new') return;
     setIsCreating(true);
+    setNavigatingRoute('new');
 
     try {
       const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
       const stored = localStorage.getItem('user_campaigns');
-      const deletedIds: string[] = safeParseJSON(localStorage.getItem('user_deleted_campaign_ids'), []);
       const parsed = safeParseJSON<any[]>(stored, []);
-
-      const userCamps = parsed.filter((c: any) => {
-        if (!c || typeof c !== 'object') return false;
-        if (c.id && deletedIds.includes(c.id)) return false;
-        const owner = typeof c.ownerEmail === 'string' ? c.ownerEmail.toLowerCase().trim() : '';
-        return !owner || owner === activeAccount;
-      });
 
       const trimmedInput = typeof customName === 'string' ? customName.trim() : newCampaignName.trim();
       const trimmedName = (trimmedInput && trimmedInput !== 'New Campaign')
         ? trimmedInput
-        : generateNextUniqueCampaignName(userCamps.length > 0 ? userCamps : campaigns);
+        : generateNextUniqueCampaignName(campaigns.length > 0 ? campaigns : parsed);
       const newId = `camp-${Date.now()}`;
-
-      const todayDate = new Date().toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      });
-
-      const newCampItem: CampaignItem = {
-        id: newId,
-        name: trimmedName,
-        date: todayDate,
-        sendersCount: 3,
-        tag: 'CUSTOM',
-        status: 'draft',
-        prospects: 0,
-        reached: 0,
-        failed: 0,
-        noContactPage: 0,
-        captchaBlocked: 0,
-        reachedPercent: 0,
-        opened: 0,
-        clicked: 0,
-        replied: 0,
-        repliedPercent: 0,
-        interested: 0,
-        opportunities: 0,
-        last24h: 0,
-      };
 
       const rawCampaign = {
         id: newId,
@@ -202,17 +185,32 @@ export default function CampaignsPage() {
         ownerEmail: activeAccount,
       };
 
-      parsed.unshift(rawCampaign);
-      localStorage.setItem('user_campaigns', JSON.stringify(parsed));
+      const updated = [rawCampaign, ...parsed];
+      localStorage.setItem('user_campaigns', JSON.stringify(updated));
+      try {
+        window.dispatchEvent(new Event('campaigns_updated'));
+      } catch (e) {}
 
-      // Navigate immediately after persistence. Updating the large campaigns
-      // list here caused an unnecessary render before the editor opened.
       setIsCreateModalOpen(false);
-      setIsCreating(false);
-      router.push(`/campaigns/new?id=${encodeURIComponent(newId)}`);
+      const targetUrl = `/campaigns/new?id=${encodeURIComponent(newId)}`;
+
+      try {
+        router.prefetch(targetUrl);
+      } catch (e) {}
+
+      // Execute instant direct navigation without low-priority startTransition deferral
+      router.push(targetUrl);
+
+      // Fallback guard to guarantee instant navigation even under heavy dev server compilation
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && !window.location.href.includes('/campaigns/new')) {
+          window.location.assign(targetUrl);
+        }
+      }, 400);
     } catch (err) {
       console.error('Error creating new campaign:', err);
       setIsCreating(false);
+      setNavigatingRoute(null);
     }
   };
 
@@ -274,6 +272,129 @@ export default function CampaignsPage() {
     return fallback;
   };
 
+  // Helper function to calculate real sender count from campaign object
+  const computeCampaignSendersCount = (c: any, userEmail?: string): number => {
+    if (!c || typeof c !== 'object') return 0;
+    if (Array.isArray(c.senders)) return c.senders.length;
+    if (Array.isArray(c.senderIds)) return c.senderIds.length;
+    if (Array.isArray(c.senderEmails)) return c.senderEmails.length;
+    if (Array.isArray(c.sendersList)) return c.sendersList.length;
+    if (typeof c.sendersCount === 'number' && !isNaN(c.sendersCount)) return c.sendersCount;
+    if ((typeof c.senderEmail === 'string' && c.senderEmail.trim()) || (typeof c.replyEmail === 'string' && c.replyEmail.trim())) return 1;
+    const activeAcc = (userEmail || (typeof window !== 'undefined' ? localStorage.getItem('active_account_email') || '' : '')).trim();
+    if (activeAcc || c.ownerEmail) return 1;
+    return 0;
+  };
+
+  // Helper function to format sender count text according to prompt rules
+  const formatSenderCount = (count: number | undefined | null): string => {
+    if (count === null || count === undefined || isNaN(count)) {
+      return 'Sender info unavailable';
+    }
+    if (count <= 0) return 'No Senders';
+    if (count === 1) return '1 Sender';
+    return `${count} Senders`;
+  };
+
+  const normalizeCanonicalDomain = (input: string): string => {
+    if (!input || typeof input !== 'string') return '';
+    let clean = input.trim().toLowerCase();
+    clean = clean.replace(/^https?:\/\//i, '');
+    clean = clean.replace(/\/.*$/, '');
+    clean = clean.replace(/^www[0-9]*\./i, '');
+    clean = clean.replace(/^m\./i, '');
+    return clean.trim();
+  };
+
+  const getCanonicalCampaignCounts = (c: any) => {
+    const prospectsList: any[] = Array.isArray(c.prospectsList) ? c.prospectsList : [];
+    const logs: any[] = Array.isArray(c.logs) ? c.logs : [];
+
+    const totalProspects = prospectsList.length > 0
+      ? prospectsList.length
+      : typeof c.totalLeads === 'number'
+      ? c.totalLeads
+      : typeof c.prospects === 'number'
+      ? c.prospects
+      : Number(c.totalLeads) || Number(c.prospects) || 0;
+
+    if (logs.length === 0) {
+      return {
+        total: totalProspects,
+        sent: typeof c.sentCount === 'number' ? c.sentCount : Number(c.sentCount) || 0,
+        dryRunCompleted: typeof c.dryRunCompletedCount === 'number' ? c.dryRunCompletedCount : Number(c.dryRunCompletedCount) || 0,
+        failed: typeof c.failedCount === 'number' ? c.failedCount : Number(c.failedCount) || 0,
+        noForm: typeof c.noFormCount === 'number' ? c.noFormCount : Number(c.noFormCount) || 0,
+        captcha: typeof c.captchaCount === 'number' ? c.captchaCount : Number(c.captchaCount) || 0,
+        replied: typeof c.repliedCount === 'number' ? c.repliedCount : Number(c.repliedCount) || 0,
+        pending: Math.max(0, totalProspects - (c.sentCount || 0) - (c.failedCount || 0) - (c.noFormCount || 0) - (c.captchaCount || 0)),
+        reachedPercent: totalProspects > 0 ? Math.round(((c.sentCount || 0) / totalProspects) * 100) : 0,
+      };
+    }
+
+    const outcomeMap = new Map<string, string>();
+    const reversedLogs = [...logs].reverse();
+    for (const l of reversedLogs) {
+      if (!l || typeof l !== 'object') continue;
+      const st = String(l.status || l.finalStatus || '').toUpperCase();
+      if (st === 'SCHEDULED') continue;
+
+      const leadKey = l.leadId
+        ? String(l.leadId).trim()
+        : normalizeCanonicalDomain(l.domain || l.url || l.website || '');
+
+      if (!leadKey) continue;
+      outcomeMap.set(leadKey, st);
+    }
+
+    let sent = 0;
+    let dryRunCompleted = 0;
+    let failed = 0;
+    let noForm = 0;
+    let captcha = 0;
+
+    for (const status of outcomeMap.values()) {
+      if (status === 'DELIVERED') sent++;
+      else if (status === 'DRY_RUN_COMPLETED') dryRunCompleted++;
+      else if (status === 'NO-FORM' || status === 'NO_FORM' || status === 'NO_CONTACT_PAGE') noForm++;
+      else if (status === 'REVIEW' || status === 'REVIEW_REQUIRED' || status === 'CAPTCHA_REVIEW' || status === 'CAPTCHA_DETECTED') captcha++;
+      else if (status === 'FAILED' || status === 'SUBMIT_FAILED' || status === 'UNREACHABLE' || status === 'EXECUTION_ERROR') failed++;
+    }
+
+    const canonicalSent = Math.min(totalProspects > 0 ? totalProspects : sent, sent);
+    const pending = Math.max(0, totalProspects - canonicalSent - dryRunCompleted - failed - noForm - captcha);
+    const reachedPercent = totalProspects > 0 ? Math.round((canonicalSent / totalProspects) * 100) : 0;
+    const replied = typeof c.repliedCount === 'number' ? c.repliedCount : Number(c.repliedCount) || 0;
+
+    return {
+      total: totalProspects,
+      sent: canonicalSent,
+      dryRunCompleted,
+      failed,
+      noForm,
+      captcha,
+      replied,
+      pending,
+      reachedPercent,
+    };
+  };
+
+  const updateCampaignCanonicalMetrics = (camp: any) => {
+    if (!camp || typeof camp !== 'object') return;
+    const counts = getCanonicalCampaignCounts(camp);
+    camp.sentCount = counts.sent;
+    camp.dryRunCompletedCount = counts.dryRunCompleted;
+    camp.failedCount = counts.failed;
+    camp.noFormCount = counts.noForm;
+    camp.captchaCount = counts.captcha;
+    camp.repliedCount = counts.replied;
+    camp.reached = counts.sent;
+    camp.failed = counts.failed;
+    camp.noContactPage = counts.noForm;
+    camp.captchaBlocked = counts.captcha;
+    camp.reachedPercent = counts.reachedPercent;
+  };
+
   // Helper to sync state directly from storage and keep open modal live with fresh telemetry
   const syncCampaignsFromStorage = React.useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -301,44 +422,24 @@ export default function CampaignsPage() {
               return true;
             })
             .map((c: any) => {
-              const total = Array.isArray(c.prospectsList)
-                ? c.prospectsList.length
-                : typeof c.totalLeads === 'number'
-                ? c.totalLeads
-                : typeof c.prospects === 'number'
-                ? c.prospects
-                : Number(c.totalLeads) || Number(c.prospects) || 0;
-
-              const sent = typeof c.sentCount === 'number' ? c.sentCount : typeof c.reached === 'number' ? c.reached : Number(c.sentCount) || Number(c.reached) || 0;
-              const dryRunCompleted = typeof c.dryRunCompletedCount === 'number'
-                ? c.dryRunCompletedCount
-                : typeof c.dryRunCompleted === 'number'
-                ? c.dryRunCompleted
-                : Array.isArray(c.logs)
-                ? c.logs.filter((l: any) => String(l?.status || '').toUpperCase() === 'DRY_RUN_COMPLETED').length
-                : 0;
-              const failed = typeof c.failedCount === 'number' ? c.failedCount : typeof c.failed === 'number' ? c.failed : Number(c.failedCount) || Number(c.failed) || 0;
-              const noForm = typeof c.noFormCount === 'number' ? c.noFormCount : typeof c.noContactPage === 'number' ? c.noContactPage : Number(c.noFormCount) || Number(c.noContactPage) || 0;
-              const captcha = typeof c.captchaCount === 'number' ? c.captchaCount : typeof c.captchaBlocked === 'number' ? c.captchaBlocked : Number(c.captchaCount) || Number(c.captchaBlocked) || 0;
-              const replied = typeof c.repliedCount === 'number' ? c.repliedCount : typeof c.replied === 'number' ? c.replied : Number(c.repliedCount) || Number(c.replied) || 0;
-
+              const counts = getCanonicalCampaignCounts(c);
               const dateStr = safeFormatDate(c.createdAt, 'Recently');
 
               return {
                 id: String(c.id || `camp-${Date.now()}`),
                 name: String(c.name || 'Untitled Campaign'),
                 date: dateStr,
-                sendersCount: typeof c.sendersCount === 'number' ? c.sendersCount : 3,
+                sendersCount: computeCampaignSendersCount(c, userEmail),
                 tag: String(c.tag || 'CUSTOM'),
                 status: c.status === 'running' || c.status === 'active' ? 'active' : c.status === 'paused' ? 'paused' : c.status === 'archived' ? 'archived' : 'draft',
-                prospects: total,
-                reached: sent,
-                dryRunCompleted,
-                failed,
-                noContactPage: noForm,
-                captchaBlocked: captcha,
-                reachedPercent: total > 0 ? Math.round((sent / total) * 100) : 0,
-                replied,
+                prospects: counts.total,
+                reached: counts.sent,
+                dryRunCompleted: counts.dryRunCompleted,
+                failed: counts.failed,
+                noContactPage: counts.noForm,
+                captchaBlocked: counts.captcha,
+                reachedPercent: counts.reachedPercent,
+                replied: counts.replied,
               };
             });
         }
@@ -412,8 +513,11 @@ export default function CampaignsPage() {
   }, [syncCampaignsFromStorage]);
 
   // Real Active Campaign Pacing Execution (Server Validated with Live UI Sync)
+  const inFlightLeadKeysRef = React.useRef(new Set<string>());
+
   useEffect(() => {
     let isBusy = false;
+    const inFlightLeadKeys = inFlightLeadKeysRef.current;
 
     const processActiveCampaigns = async () => {
       if (isBusy || typeof window === 'undefined') return;
@@ -432,7 +536,7 @@ export default function CampaignsPage() {
           return;
         }
 
-        let updatedAny = false;
+        let hasMoreWork = false;
 
         for (const rawCamp of userCamps) {
           if (!rawCamp || typeof rawCamp !== 'object') continue;
@@ -442,119 +546,217 @@ export default function CampaignsPage() {
           const logs: any[] = Array.isArray(rawCamp.logs) ? rawCamp.logs : [];
           const resolveLeadWebsite = (lead: any): string => {
             if (!lead || typeof lead !== 'object') return '';
-            const candidates = [lead.website, lead.website_url, lead.Website, lead.Website_URL, lead.url];
-            const direct = candidates.find((value) => typeof value === 'string' && value.trim());
-            return direct ? String(direct).trim() : '';
+            const candidates = [
+              lead.website,
+              lead.websiteUrl,
+              lead.website_url,
+              lead.domain,
+              lead.url,
+              lead.Website,
+              lead.Website_URL,
+              lead.custom_fields?.website,
+              lead.customFields?.website,
+              lead.custom_fields?.domain,
+              lead.customFields?.domain,
+            ];
+            const direct = candidates.find((value) => typeof value === 'string' && value.trim() && value.trim() !== '-');
+            if (direct) {
+              const trimmed = String(direct).trim();
+              return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+            }
+            return '';
           };
-          // Only terminal outcomes count as processed. A scheduled/temporary
-          // response must remain eligible for the next polling cycle.
-          const terminalStatuses = new Set(['DELIVERED', 'DRY_RUN_COMPLETED', 'FAILED', 'NO-FORM', 'REVIEW']);
-          const processedLeadIds = new Set(logs
-            .filter((l: any) => terminalStatuses.has(String(l?.status || '').toUpperCase()))
-            .map((l: any) => (l && (l.leadId || l.id)) || ''));
+          const terminalStatuses = new Set([
+            'DELIVERED',
+            'DRY_RUN_COMPLETED',
+            'FAILED',
+            'SUBMIT_FAILED',
+            'NO-FORM',
+            'NO_FORM',
+            'NO_CONTACT_PAGE',
+            'REVIEW',
+            'REVIEW_REQUIRED',
+            'CAPTCHA_REVIEW',
+            'CAPTCHA_DETECTED',
+            'CAPTCHA_BLOCKED',
+            'EXECUTION_ERROR',
+            'UNREACHABLE',
+            'BLOCKED',
+            'BLOCKED_NO_CREDITS',
+            'BLOCKED_SUPPRESSED',
+          ]);
 
-          // Find next uncontacted lead in sequence
-          const nextLead = leads.find((l: any) => l && l.id && !processedLeadIds.has(l.id));
+          const processedLeadIds = new Set<string>();
+          const processedLeadWebsites = new Set<string>();
+          const deferredLeadIds = new Set<string>();
 
-          if (nextLead) {
+          logs.forEach((l: any) => {
+            if (!l || typeof l !== 'object') return;
+            const st = String(l.status || l.finalStatus || '').toUpperCase();
+            const code = String(l.code || l.diagnostic || '').toUpperCase();
+
+            if (st === 'SCHEDULED' || code.includes('SCHEDULED')) {
+              const retryAt = new Date(l.retryAt || 0).getTime();
+              if (retryAt > Date.now() && l.leadId) deferredLeadIds.add(String(l.leadId).trim());
+              return;
+            }
+
+            if (terminalStatuses.has(st) || code.includes('BLOCKED')) {
+              if (l.leadId) processedLeadIds.add(String(l.leadId).trim());
+              if (l.id) processedLeadIds.add(String(l.id).trim());
+              const web = (l.domain || l.url || l.website || '').replace(/^https?:\/\//i, '').replace(/\/.*$/, '').toLowerCase().trim();
+              if (web && web !== 'n/a') processedLeadWebsites.add(web);
+            }
+          });
+
+          const isLeadProcessed = (l: any): boolean => {
+            if (!l || typeof l !== 'object') return true;
+            if (l.id && processedLeadIds.has(String(l.id).trim())) return true;
+            const web = normalizeCanonicalDomain(resolveLeadWebsite(l));
+            if (web && processedLeadWebsites.has(web)) return true;
+            return false;
+          };
+
+          const isLeadDeferred = (l: any): boolean => Boolean(l?.id && deferredLeadIds.has(String(l.id).trim()));
+
+          const isLeadInFlight = (l: any): boolean => {
+            const key = rawCamp.id + ':' + (l.id ? String(l.id).trim() : normalizeCanonicalDomain(resolveLeadWebsite(l)));
+            return inFlightLeadKeys.has(key);
+          };
+
+          // Find next batch of uncontacted leads up to maxConcurrency limit
+          const maxConc = Math.min(Math.max(1, Number(rawCamp.maxConcurrency) || 5), 5);
+          const uncontactedLeads = leads.filter((l: any) => !isLeadProcessed(l) && !isLeadDeferred(l) && !isLeadInFlight(l)).slice(0, maxConc);
+
+          if (uncontactedLeads.length > 0) {
+            hasMoreWork = true;
             const template = {
               id: 'tpl-default',
               subjectTemplate: rawCamp.sequences?.[0]?.subject || 'Partnership Inquiry',
               bodyTemplate: rawCamp.sequences?.[0]?.body || 'Hello {{first_name}}, reaching out to {{company_name}}.',
             };
 
-            const res = await fetch('/api/campaigns/process', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                campaignId: rawCamp.id,
-                lead: {
-                  id: nextLead.id,
-                  company_name: nextLead.companyName || nextLead.company_name || '',
-                  website: resolveLeadWebsite(nextLead),
-                  first_name: nextLead.firstName || nextLead.first_name || '',
-                  email: nextLead.email || '',
-                  phone: nextLead.phone || '',
-                  whatsApp: nextLead.whatsApp || nextLead.whatsapp || '',
-                  custom_fields: nextLead.custom_fields || nextLead.customFields || {},
-                  country: nextLead.country || '',
-                  city: nextLead.city || '',
-                },
-                template,
-                options: {
-                  dryRun: Boolean(rawCamp.isDryRun),
-                  schedule: rawCamp.schedule,
-                },
-              }),
+            // Process each lead and immediately update UI state as each lead completes
+            const batchPromises = uncontactedLeads.map(async (nextLead: any) => {
+              const leadKey = rawCamp.id + ':' + (nextLead.id ? String(nextLead.id).trim() : normalizeCanonicalDomain(resolveLeadWebsite(nextLead)));
+              if (leadKey) inFlightLeadKeys.add(leadKey);
+
+              try {
+                const res = await fetch('/api/campaigns/process', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    campaignId: rawCamp.id,
+                    lead: {
+                      id: nextLead.id,
+                      company_name: nextLead.companyName || nextLead.company_name || '',
+                      website: resolveLeadWebsite(nextLead),
+                      first_name: nextLead.firstName || nextLead.first_name || '',
+                      email: nextLead.email || '',
+                      phone: nextLead.phone || '',
+                      whatsApp: nextLead.whatsApp || nextLead.whatsapp || '',
+                      custom_fields: nextLead.custom_fields || nextLead.customFields || {},
+                      country: nextLead.country || '',
+                      city: nextLead.city || '',
+                    },
+                    template,
+                    options: {
+                      dryRun: Boolean(rawCamp.isDryRun),
+                      schedule: rawCamp.schedule,
+                    },
+                  }),
+                });
+
+                // Immediately stream individual lead result into client state & UI
+                const currentStored = localStorage.getItem('user_campaigns');
+                if (currentStored) {
+                  const currentCamps = safeParseJSON<any[]>(currentStored, []);
+                  const campToUpdate = currentCamps.find((c: any) => c && c.id === rawCamp.id);
+                  if (campToUpdate) {
+                    if (res.status === 402) {
+                      campToUpdate.status = 'paused';
+                      campToUpdate.logs = [
+                        {
+                          leadId: nextLead.id,
+                          domain: resolveLeadWebsite(nextLead) || 'N/A',
+                          status: 'FAILED',
+                          code: 'BLOCKED_NO_CREDITS - Available credit balance is 0. Campaign paused.',
+                          time: safeFormatTime(new Date()),
+                          timestamp: new Date().toISOString(),
+                        },
+                        ...(campToUpdate.logs || []),
+                      ];
+                    } else if (res.ok) {
+                      const data = await res.json().catch(() => ({}));
+                      if (data.wallet && typeof window !== 'undefined') {
+                        CreditWalletService.syncWalletToClient(data.wallet, {
+                          campaignId: rawCamp.id,
+                          leadId: nextLead.id,
+                          companyName: nextLead.companyName || nextLead.company_name || '',
+                          resultType: 'FORM_SUBMITTED',
+                          cost: data.creditDeduction?.cost || 0,
+                          source: data.creditDeduction?.source || 'NONE',
+                        });
+                      }
+
+                      if (data.telemetry) {
+                        const st = String(data.telemetry.status || '').toUpperCase();
+                        if (st === 'SCHEDULED') {
+                          campToUpdate.logs = [
+                            data.telemetry,
+                            ...(campToUpdate.logs || []).filter((log: any) => {
+                              const sameLead = String(log?.leadId || '') === String(nextLead.id || '');
+                              const scheduled = String(log?.status || '').toUpperCase() === 'SCHEDULED' || String(log?.code || '').toUpperCase().includes('SCHEDULED');
+                              return !sameLead || !scheduled;
+                            }),
+                          ];
+                        } else {
+                          campToUpdate.logs = [data.telemetry, ...(campToUpdate.logs || [])];
+                        }
+                        updateCampaignCanonicalMetrics(campToUpdate);
+                      }
+                    } else {
+                      const errorBody = await res.json().catch(() => ({}));
+                      campToUpdate.logs = [{
+                        leadId: nextLead.id,
+                        domain: resolveLeadWebsite(nextLead) || 'N/A',
+                        status: 'FAILED',
+                        code: errorBody.error || `PROCESS_API_ERROR_${res.status}`,
+                        time: safeFormatTime(new Date()),
+                        timestamp: new Date().toISOString(),
+                      }, ...(campToUpdate.logs || [])];
+                      updateCampaignCanonicalMetrics(campToUpdate);
+                    }
+
+                    localStorage.setItem('user_campaigns', JSON.stringify(currentCamps));
+                    window.dispatchEvent(new CustomEvent('campaigns_updated'));
+                    syncCampaignsFromStorage();
+                  }
+                }
+              } catch (err) {
+                console.error(`Error processing lead ${nextLead?.id}:`, err);
+              } finally {
+                if (leadKey) inFlightLeadKeys.delete(leadKey);
+              }
             });
 
-            if (res.status === 402) {
-              // Blocked due to 0 credits! Pause campaign automatically.
+            await Promise.allSettled(batchPromises);
+          } else if (leads.length > 0) {
+            const allDone = leads.every((l: any) => isLeadProcessed(l));
+            if (allDone && (rawCamp.status === 'running' || rawCamp.status === 'active')) {
               rawCamp.status = 'paused';
-              rawCamp.logs = [
-                {
-                  leadId: nextLead.id,
-                  domain: resolveLeadWebsite(nextLead) || 'N/A',
-                  status: 'FAILED',
-                  code: 'BLOCKED_NO_CREDITS - Available credit balance is 0. Campaign paused.',
-                  time: safeFormatTime(new Date()),
-                  timestamp: new Date().toISOString(),
-                },
-                ...logs,
-              ];
-              updatedAny = true;
-              break;
+              localStorage.setItem('user_campaigns', JSON.stringify(userCamps));
+              window.dispatchEvent(new CustomEvent('campaigns_updated'));
+              syncCampaignsFromStorage();
             }
-
-            if (res.ok) {
-              const data = await res.json();
-              if (data.wallet && typeof window !== 'undefined') {
-                try {
-                  const activeEmail = (localStorage.getItem('active_account_email') || '').toLowerCase().trim();
-                  const walletKey = `user_credit_wallet_${activeEmail || data.wallet.userId}`;
-                  localStorage.setItem(walletKey, JSON.stringify(data.wallet));
-                } catch (e) {}
-              }
-
-              if (data.telemetry) {
-                rawCamp.logs = [data.telemetry, ...logs];
-                if (data.telemetry.status === 'DELIVERED' && !data.telemetry.isDryRun) {
-                  rawCamp.sentCount = (rawCamp.sentCount || 0) + 1;
-                } else if (data.telemetry.status === 'DRY_RUN_COMPLETED') {
-                  rawCamp.dryRunCompletedCount = (rawCamp.dryRunCompletedCount || 0) + 1;
-                } else if (data.telemetry.status === 'FAILED') {
-                  rawCamp.failedCount = (rawCamp.failedCount || 0) + 1;
-                } else if (data.telemetry.status === 'NO-FORM') {
-                  rawCamp.noFormCount = (rawCamp.noFormCount || 0) + 1;
-                } else if (data.telemetry.status === 'REVIEW') {
-                  rawCamp.captchaCount = (rawCamp.captchaCount || 0) + 1;
-                }
-                updatedAny = true;
-              }
-            } else {
-              const errorBody = await res.json().catch(() => ({}));
-              rawCamp.logs = [{
-                leadId: nextLead.id,
-                domain: resolveLeadWebsite(nextLead) || 'N/A',
-                status: 'FAILED',
-                code: errorBody.error || `PROCESS_API_ERROR_${res.status}`,
-                time: safeFormatTime(new Date()),
-                timestamp: new Date().toISOString(),
-              }, ...logs];
-              rawCamp.failedCount = (rawCamp.failedCount || 0) + 1;
-              updatedAny = true;
-            }
-          } else if (leads.length > 0 && processedLeadIds.size >= leads.length) {
-            // All leads in this campaign have been processed
-            rawCamp.status = 'paused';
-            updatedAny = true;
           }
         }
 
-        if (updatedAny) {
-          localStorage.setItem('user_campaigns', JSON.stringify(userCamps));
-          window.dispatchEvent(new CustomEvent('campaigns_updated'));
-          syncCampaignsFromStorage();
+        // If active campaign has more uncontacted leads, immediately trigger next batch
+        if (hasMoreWork) {
+          setTimeout(() => {
+            void processActiveCampaigns();
+          }, 50);
         }
       } catch (err) {
         console.error('Real campaign processing error:', err);
@@ -565,8 +767,17 @@ export default function CampaignsPage() {
 
     // Process once immediately when the campaign workspace mounts
     void processActiveCampaigns();
-    const interval = setInterval(processActiveCampaigns, 3000);
-    return () => clearInterval(interval);
+
+    const handleTriggerEvent = () => {
+      void processActiveCampaigns();
+    };
+    window.addEventListener('trigger_campaign_process', handleTriggerEvent);
+
+    const interval = setInterval(processActiveCampaigns, 2000);
+    return () => {
+      window.removeEventListener('trigger_campaign_process', handleTriggerEvent);
+      clearInterval(interval);
+    };
   }, [syncCampaignsFromStorage]);
 
   // Retrieve Campaign-Specific Prospect Audit Logs strictly from actual recorded telemetry
@@ -589,7 +800,7 @@ export default function CampaignsPage() {
                 const rawUrl = safeString(log.url || log.contactUrl, '');
                 const url = rawUrl && rawUrl !== 'N/A' ? rawUrl : (domain !== 'N/A' ? `${domain.replace(/\/$/, '')}/contact` : 'N/A');
 
-                const finalStatus = safeString(log.status, 'PENDING');
+                let finalStatus = safeString(log.status, 'PENDING');
                 const rawCode = safeString(log.code || log.diagnostic, '');
                 const rawDetails = safeString(log.details || log.diagnosticMessage || log.code, '');
 
@@ -600,20 +811,35 @@ export default function CampaignsPage() {
                   rawDetails.includes('browserType') ||
                   rawDetails.includes('Executable') ||
                   rawDetails.includes('Playwright');
+                const isNavigationFailure =
+                  finalStatus === 'UNREACHABLE' ||
+                  /ERR_(NETWORK_ACCESS_DENIED|NAME_NOT_RESOLVED|CONNECTION|INTERNET_DISCONNECTED|TIMED_OUT)|ENOTFOUND|ECONNREFUSED|EAI_AGAIN/i.test(rawCode) ||
+                  /ERR_(NETWORK_ACCESS_DENIED|NAME_NOT_RESOLVED|CONNECTION|INTERNET_DISCONNECTED|TIMED_OUT)|ENOTFOUND|ECONNREFUSED|EAI_AGAIN/i.test(rawDetails);
 
-                let formStatus = log.formStatus || (log.selectedForm || url !== 'N/A' ? 'DETECTED' : 'NOT_DETECTED');
-                let rawFields = log.fieldsDetected || (log.mappedFields ? Object.keys(log.mappedFields).join(', ') : 'N/A');
-                let fieldsDetected = (rawFields && rawFields !== 'NaN' && rawFields !== 'undefined') ? String(rawFields) : 'N/A';
+                // Preserve the historical raw log, but render a navigation
+                // failure truthfully when exporting or reopening old reports.
+                if (isNavigationFailure) finalStatus = 'UNREACHABLE';
+
+                let formStatus = log.formStatus || (log.selectedForm ? 'DETECTED' : 'NOT_CHECKED');
+                let rawFields = log.fieldsDetected || (log.mappedFields ? Object.keys(log.mappedFields).join(', ') : 'NOT_CHECKED');
+                let fieldsDetected = (rawFields && rawFields !== 'NaN' && rawFields !== 'undefined') ? String(rawFields) : 'NOT_CHECKED';
                 let submissionStatus = log.submissionStatus || finalStatus;
-                let successVerification = 'N/A';
+                let successVerification = log.successVerification || 'NOT_CHECKED';
                 let code = rawCode || 'STAGE_EXECUTION';
                 let details = rawDetails || 'Execution stage complete';
 
-                if (isBrowserError) {
-                  formStatus = 'NOT_VERIFIED';
-                  fieldsDetected = 'N/A';
+                if (isNavigationFailure) {
+                  formStatus = 'NOT_CHECKED';
+                  fieldsDetected = 'NOT_CHECKED';
                   submissionStatus = 'NOT_ATTEMPTED';
-                  successVerification = 'N/A';
+                  successVerification = 'NOT_CHECKED';
+                  code = rawCode || 'UNREACHABLE';
+                  details = rawDetails || 'Target website could not be reached before contact-page discovery.';
+                } else if (isBrowserError) {
+                  formStatus = 'NOT_CHECKED';
+                  fieldsDetected = 'NOT_CHECKED';
+                  submissionStatus = 'NOT_ATTEMPTED';
+                  successVerification = 'NOT_CHECKED';
                   code = 'EXECUTION_ERROR';
                   details = 'EXECUTION_ERROR - Playwright browser executable missing or runtime error';
                 } else if (finalStatus === 'DRY_RUN_COMPLETED') {
@@ -638,6 +864,7 @@ export default function CampaignsPage() {
                 if (finalStatus === 'PENDING') {
                   websiteStatus = 'Not Checked';
                 } else if (
+                  isNavigationFailure ||
                   code.includes('UNREACHABLE') ||
                   code.includes('DNS') ||
                   details.includes('DNS') ||
@@ -928,10 +1155,13 @@ export default function CampaignsPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.length === filtered.length && filtered.length > 0) {
-      setSelectedIds([]);
+    const visibleIds = paginatedCampaigns.map((campaign) => campaign.id);
+    const areAllVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+
+    if (areAllVisibleSelected) {
+      setSelectedIds((previous) => previous.filter((id) => !visibleIds.includes(id)));
     } else {
-      setSelectedIds(filtered.map((c) => c.id));
+      setSelectedIds((previous) => Array.from(new Set([...previous, ...visibleIds])));
     }
   };
 
@@ -958,6 +1188,9 @@ export default function CampaignsPage() {
               );
               localStorage.setItem('user_campaigns', JSON.stringify(updated));
               window.dispatchEvent(new CustomEvent('campaigns_updated'));
+              if (newStatus === 'active') {
+                window.dispatchEvent(new CustomEvent('trigger_campaign_process'));
+              }
             }
           } catch (err) {}
           return { ...c, status: newStatus };
@@ -1163,6 +1396,10 @@ export default function CampaignsPage() {
       const cName = String(c.name || '');
       const cTag = String(c.tag || '');
 
+      if (campaignSearch.trim() && !cName.toLowerCase().includes(campaignSearch.trim().toLowerCase())) {
+        return false;
+      }
+
       if (tagFilter !== 'All Tags' && cTag !== tagFilter) {
         return false;
       }
@@ -1180,7 +1417,36 @@ export default function CampaignsPage() {
       if (statusFilter === 'Archived') return c.status === 'archived';
       return c.status !== 'archived';
     });
-  }, [campaigns, tagFilter, folderFilter, statusFilter]);
+  }, [campaigns, campaignSearch, tagFilter, folderFilter, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const activePage = Math.min(currentPage, totalPages);
+  const pageStart = (activePage - 1) * pageSize;
+  const paginatedCampaigns = filtered.slice(pageStart, pageStart + pageSize);
+  const firstVisibleCampaign = filtered.length === 0 ? 0 : pageStart + 1;
+  const lastVisibleCampaign = Math.min(pageStart + pageSize, filtered.length);
+
+  const paginationItems = React.useMemo<(number | 'ellipsis')[]>(() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+
+    const pages = new Set([1, totalPages, activePage - 1, activePage, activePage + 1]);
+    const sortedPages = Array.from(pages)
+      .filter((page) => page >= 1 && page <= totalPages)
+      .sort((a, b) => a - b);
+
+    return sortedPages.flatMap((page, index) => {
+      const previous = sortedPages[index - 1];
+      return previous !== undefined && page - previous > 1 ? ['ellipsis', page] : [page];
+    });
+  }, [activePage, totalPages]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [campaignSearch, folderFilter, tagFilter, statusFilter, pageSize]);
 
   // Calculate Column Totals for Bulk Contact Outreach (memoized)
   const totals = React.useMemo(() => {
@@ -1197,15 +1463,29 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-16 font-sans">
-      {/* 1. Top Filter Bar & Action Controls (Exact Manyready Style) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+      {/* 1. Top Filter Bar & Action Controls (Sticky Header Bar) */}
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-5 lg:-mx-6 -mt-4 sm:-mt-5 lg:-mt-6 px-4 sm:px-5 lg:px-6 py-3 bg-[#f4f8fd]/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans">
         {/* Left Filter Dropdowns */}
         <div className="flex flex-wrap items-center gap-2">
+          <label className="relative min-w-[220px] flex-1 sm:flex-none">
+            <Search className="pointer-events-none absolute left-3 top-2 h-3.5 w-3.5 text-slate-400" />
+            <input
+              type="search"
+              value={campaignSearch}
+              onChange={(event) => setCampaignSearch(event.target.value)}
+              placeholder="Search campaigns..."
+              aria-label="Search campaigns by name"
+              className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs font-medium text-slate-700 shadow-2xs outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </label>
           {/* All Folders */}
           <div className="relative">
             <select
               value={folderFilter}
-              onChange={(e) => setFolderFilter(e.target.value)}
+              onChange={(e) => {
+                setFolderFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="appearance-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 pr-8 text-xs font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="All Folders">All Folders</option>
@@ -1220,7 +1500,10 @@ export default function CampaignsPage() {
           <div className="relative">
             <select
               value={tagFilter}
-              onChange={(e) => setTagFilter(e.target.value)}
+              onChange={(e) => {
+                setTagFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="appearance-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 pr-8 text-xs font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="All Tags">All Tags</option>
@@ -1235,7 +1518,10 @@ export default function CampaignsPage() {
           <div className="relative">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="appearance-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 pr-8 text-xs font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="All Statuses">All Statuses</option>
@@ -1252,12 +1538,27 @@ export default function CampaignsPage() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
+            disabled={isCreating || navigatingRoute === 'new'}
             onClick={() => handleCreateCampaignSubmit()}
+            onMouseEnter={() => {
+              try {
+                router.prefetch('/campaigns/new');
+              } catch (e) {}
+            }}
             id="create-new-campaign-btn"
-            className="rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-5 py-2.5 text-xs font-extrabold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-2 shrink-0"
+            className="rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-75 text-white px-5 py-2.5 text-xs font-extrabold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-2 shrink-0"
           >
-            <Plus className="h-4 w-4 stroke-[2.5]" />
-            <span>Create New Campaign</span>
+            {navigatingRoute === 'new' || isCreating ? (
+              <>
+                <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin shrink-0" />
+                <span>Opening Editor...</span>
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 stroke-[2.5]" />
+                <span>Create New Campaign</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -1369,7 +1670,7 @@ export default function CampaignsPage() {
           <div className="col-span-3 flex items-center gap-3">
             <input
               type="checkbox"
-              checked={selectedIds.length === filtered.length && filtered.length > 0}
+              checked={paginatedCampaigns.length > 0 && paginatedCampaigns.every((campaign) => selectedIds.includes(campaign.id))}
               onChange={toggleSelectAll}
               className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
             />
@@ -1424,7 +1725,7 @@ export default function CampaignsPage() {
               to start a new campaign.
             </div>
           ) : (
-            filtered.map((camp) => {
+            paginatedCampaigns.map((camp) => {
               const pendingCount = Math.max(0, camp.prospects - camp.reached - (camp.dryRunCompleted || 0) - (camp.failed || 0) - (camp.noContactPage || 0) - (camp.captchaBlocked || 0));
               const processedCount = Math.min(camp.prospects, camp.reached + (camp.dryRunCompleted || 0) + (camp.failed || 0) + (camp.noContactPage || 0) + (camp.captchaBlocked || 0));
               return (
@@ -1484,7 +1785,7 @@ export default function CampaignsPage() {
                       <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono truncate">
                         <span>{camp.date}</span>
                         <span>•</span>
-                        <span className="text-slate-500">✈ {camp.sendersCount} Senders</span>
+                        <span className="text-slate-500">✈ {formatSenderCount(camp.sendersCount)}</span>
                         {camp.status === 'active' && (
                           <>
                             <span>•</span>
@@ -1573,19 +1874,35 @@ export default function CampaignsPage() {
 
                     {/* Edit Campaign Icon Button */}
                     <button
+                      disabled={navigatingRoute === camp.id}
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
+                        if (navigatingRoute === camp.id) return;
+                        setNavigatingRoute(camp.id);
+                        const targetUrl = `/campaigns/new?id=${encodeURIComponent(camp.id)}`;
+                        try {
+                          router.prefetch(targetUrl);
+                        } catch (err) {}
+                        router.push(targetUrl);
+                        setTimeout(() => {
+                          if (typeof window !== 'undefined' && !window.location.href.includes('/campaigns/new')) {
+                            window.location.assign(targetUrl);
+                          }
+                        }, 400);
                       }}
                       onMouseEnter={() => {
                         try {
                           router.prefetch(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
                         } catch (e) {}
                       }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-[#0e6de4] hover:bg-blue-50 transition-colors cursor-pointer"
+                      className="p-1 rounded-lg text-slate-400 hover:text-[#0e6de4] hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-50"
                       title="Edit Campaign"
                     >
-                      <Edit2 className="h-3.5 w-3.5" />
+                      {navigatingRoute === camp.id ? (
+                        <div className="h-3.5 w-3.5 rounded-full border-2 border-[#0e6de4] border-t-transparent animate-spin" />
+                      ) : (
+                        <Edit2 className="h-3.5 w-3.5" />
+                      )}
                     </button>
 
                     {/* View Telemetry & Analytics Icon Button (New Action Icon) */}
@@ -1667,6 +1984,60 @@ export default function CampaignsPage() {
               );
             })
           )}
+        </div>
+
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-3 text-slate-600">
+            <span className="font-medium">
+              Showing {firstVisibleCampaign}–{lastVisibleCampaign} of {filtered.length}{campaignSearch.trim() || folderFilter !== 'All Folders' || tagFilter !== 'All Tags' || statusFilter !== 'All Statuses' ? ' matching' : ''} campaigns
+            </span>
+            <label className="flex items-center gap-2 font-medium">
+              Rows per page
+              <select
+                value={pageSize}
+                onChange={(event) => {
+                  setPageSize(Number(event.target.value));
+                  setCurrentPage(1);
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500"
+                aria-label="Campaigns per page"
+              >
+                {[10, 20, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <nav className="flex items-center gap-1" aria-label="Campaign pagination">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={activePage === 1}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" /> Previous
+            </button>
+            {paginationItems.map((item, index) => item === 'ellipsis' ? (
+              <span key={`ellipsis-${index}`} className="px-1.5 text-slate-400" aria-hidden="true">…</span>
+            ) : (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCurrentPage(item)}
+                aria-current={item === activePage ? 'page' : undefined}
+                className={`min-w-7 rounded-lg px-2 py-1.5 font-bold transition-colors ${item === activePage ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+              >
+                {item}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={activePage === totalPages}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              Next <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </nav>
         </div>
 
         {/* 3. Bottom Summary Row (Aggregating all 8 Contact Form Outreach Metrics) */}
@@ -1771,63 +2142,400 @@ export default function CampaignsPage() {
             </div>
 
             {/* Modal Body Container (Scrollable) */}
-            <div className="overflow-y-auto space-y-5 pr-1 flex-1">
-              {/* 8 KPI Cards Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
-                <div className="p-3 rounded-2xl border border-slate-200 bg-slate-50/80 space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Total Prospects</span>
-                  <p className="text-lg font-extrabold text-slate-900 font-mono">{selectedReportCamp.prospects}</p>
-                </div>
+            <div className="overflow-y-auto space-y-6 pr-1 flex-1">
+              {(() => {
+                const logs = getCampaignAuditLogs(selectedReportCamp);
+                const prospects = selectedReportCamp.prospects || 0;
+                const delivered = selectedReportCamp.reached || 0;
+                const dryRunCompleted = selectedReportCamp.dryRunCompleted || 0;
+                const failed = selectedReportCamp.failed || 0;
+                const noForm = selectedReportCamp.noContactPage || 0;
+                const reviewRequired = selectedReportCamp.captchaBlocked || 0;
 
-                <div className="p-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 space-y-1">
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider font-mono">Real Delivered</span>
-                  <p className="text-lg font-extrabold text-emerald-800 font-mono">{selectedReportCamp.reached}</p>
-                </div>
+                let executionError = 0;
+                logs.forEach((l: any) => {
+                  const code = String(l.code || l.details || '');
+                  if (code.includes('EXECUTION_ERROR') || code.includes('BROWSER_LAUNCH_FAILED')) {
+                    executionError += 1;
+                  }
+                });
 
-                <div className="p-3 rounded-2xl border border-teal-200 bg-teal-50/70 space-y-1">
-                  <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider font-mono">Dry Run Done</span>
-                  <p className="text-lg font-extrabold text-teal-800 font-mono">{selectedReportCamp.dryRunCompleted || 0}</p>
-                </div>
+                const processed = delivered + dryRunCompleted + failed + noForm + reviewRequired + executionError;
+                const pending = Math.max(0, prospects - processed);
+                const creditsUsed = delivered; // Exactly 1 credit per verified DELIVERED submission
 
-                <div className="p-3 rounded-2xl border border-rose-200 bg-rose-50/70 space-y-1">
-                  <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider font-mono">Submit Failed</span>
-                  <p className="text-lg font-extrabold text-rose-800 font-mono">{selectedReportCamp.failed || 0}</p>
-                </div>
+                // Filter logs by date range selector
+                const now = new Date();
+                let cutoffDate: Date | null = null;
+                if (reportDateRange === '7d') cutoffDate = new Date(now.getTime() - 7 * 86400000);
+                else if (reportDateRange === '14d') cutoffDate = new Date(now.getTime() - 14 * 86400000);
+                else if (reportDateRange === '30d') cutoffDate = new Date(now.getTime() - 30 * 86400000);
 
-                <div className="p-3 rounded-2xl border border-amber-200 bg-amber-50/70 space-y-1">
-                  <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider font-mono">No Contact Page</span>
-                  <p className="text-lg font-extrabold text-amber-800 font-mono">{selectedReportCamp.noContactPage || 0}</p>
-                </div>
+                const dailyMetricsMap: Record<string, {
+                  dateLabel: string;
+                  rawDate: string;
+                  processed: number;
+                  delivered: number;
+                  failed: number;
+                  noForm: number;
+                  review: number;
+                  executionError: number;
+                  dryRun: number;
+                }> = {};
 
-                <div className="p-3 rounded-2xl border border-purple-200 bg-purple-50/70 space-y-1">
-                  <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider font-mono">CAPTCHA / Review</span>
-                  <p className="text-lg font-extrabold text-purple-800 font-mono">{selectedReportCamp.captchaBlocked || 0}</p>
-                </div>
+                logs.forEach((l: any) => {
+                  const rawTime = l.startedAt || l.timestamp || l.completedAt;
+                  let d = new Date();
+                  if (rawTime) {
+                    const parsed = new Date(rawTime);
+                    if (!isNaN(parsed.getTime())) d = parsed;
+                  }
+                  if (cutoffDate && d < cutoffDate) return;
 
-                <div className="p-3 rounded-2xl border border-blue-200 bg-blue-50/70 space-y-1">
-                  <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider font-mono">Pending</span>
-                  <p className="text-lg font-extrabold text-blue-800 font-mono">
-                    {Math.max(0, selectedReportCamp.prospects - selectedReportCamp.reached - (selectedReportCamp.dryRunCompleted || 0) - (selectedReportCamp.failed || 0) - (selectedReportCamp.noContactPage || 0) - (selectedReportCamp.captchaBlocked || 0))}
-                  </p>
-                </div>
+                  const isoDate = d.toISOString().slice(0, 10);
+                  const dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-                <div className="p-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 space-y-1">
-                  <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider font-mono">Replied</span>
-                  <p className="text-lg font-extrabold text-indigo-800 font-mono">{selectedReportCamp.replied || 0}</p>
-                </div>
-              </div>
+                  if (!dailyMetricsMap[isoDate]) {
+                    dailyMetricsMap[isoDate] = {
+                      dateLabel,
+                      rawDate: isoDate,
+                      processed: 0,
+                      delivered: 0,
+                      failed: 0,
+                      noForm: 0,
+                      review: 0,
+                      executionError: 0,
+                      dryRun: 0,
+                    };
+                  }
+
+                  const st = String(l.finalStatus || l.status || '').toUpperCase();
+                  const code = String(l.code || l.details || '');
+                  const isExecErr = code.includes('EXECUTION_ERROR') || code.includes('BROWSER_LAUNCH_FAILED');
+
+                  dailyMetricsMap[isoDate].processed += 1;
+                  if (st === 'DELIVERED') dailyMetricsMap[isoDate].delivered += 1;
+                  else if (st === 'DRY_RUN_COMPLETED') dailyMetricsMap[isoDate].dryRun += 1;
+                  else if (isExecErr) dailyMetricsMap[isoDate].executionError += 1;
+                  else if (st === 'FAILED' || st === 'SUBMIT_FAILED') dailyMetricsMap[isoDate].failed += 1;
+                  else if (st === 'NO_CONTACT_PAGE' || st === 'NO-FORM') dailyMetricsMap[isoDate].noForm += 1;
+                  else if (st === 'CAPTCHA_REVIEW' || st === 'REVIEW' || st === 'CAPTCHA_DETECTED') dailyMetricsMap[isoDate].review += 1;
+                });
+
+                const chartSeriesData = Object.values(dailyMetricsMap).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+
+                return (
+                  <>
+                    {/* 1. CONTACTREACHOUT 9 KPI METRICS GRID */}
+                    <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-2 font-mono">
+                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Prospects</span>
+                        <p className="text-lg font-extrabold text-slate-900">{prospects}</p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Processed</span>
+                        <p className="text-lg font-extrabold text-slate-900">{processed}</p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl border border-blue-200 bg-white shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-[#0e6de4] uppercase tracking-wider block">Delivered</span>
+                        <p className="text-lg font-extrabold text-[#0e6de4]">{delivered}</p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Pending</span>
+                        <p className="text-lg font-extrabold text-slate-700">{pending}</p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Failed</span>
+                        <p className="text-lg font-extrabold text-slate-800">{failed}</p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">No Form</span>
+                        <p className="text-lg font-extrabold text-slate-800">{noForm}</p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Review Req</span>
+                        <p className="text-lg font-extrabold text-slate-800">{reviewRequired}</p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Exec Error</span>
+                        <p className="text-lg font-extrabold text-slate-800">{executionError}</p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl border border-blue-200 bg-white shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-[#0e6de4] uppercase tracking-wider block">Credits Used</span>
+                        <p className="text-lg font-extrabold text-[#0e6de4]">{creditsUsed}</p>
+                      </div>
+                    </div>
+
+                    {/* 2. MAIN GRAPH: CAMPAIGN ACTIVITY & RESULTS BY DATE */}
+                    <div className="p-5 rounded-3xl border border-slate-200 bg-white space-y-4 shadow-2xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <h4 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-[#0e6de4]" />
+                            <span>Campaign Activity & Results by Date</span>
+                          </h4>
+                          <p className="text-xs text-slate-500 font-sans mt-0.5">
+                            Daily timeline of website contact-form processing and verification outcomes.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-600 font-mono">Date Range:</span>
+                          <select
+                            value={reportDateRange}
+                            onChange={(e) => setReportDateRange(e.target.value as any)}
+                            className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 focus:border-[#0e6de4] outline-none cursor-pointer font-mono"
+                          >
+                            <option value="7d">Last 7 Days</option>
+                            <option value="14d">Last 14 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                            <option value="all">All Available Days</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Interactive Legend */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                        {[
+                          { key: 'delivered', label: 'Delivered', color: 'bg-[#0e6de4]' },
+                          { key: 'processed', label: 'Processed', color: 'bg-slate-700' },
+                          { key: 'failed', label: 'Failed', color: 'bg-rose-500' },
+                          { key: 'noForm', label: 'No Form', color: 'bg-amber-500' },
+                          { key: 'review', label: 'Review Req', color: 'bg-purple-500' },
+                          { key: 'executionError', label: 'Exec Error', color: 'bg-red-600' },
+                        ].map((s) => {
+                          const isActive = activeChartSeries[s.key] !== false;
+                          return (
+                            <button
+                              key={s.key}
+                              type="button"
+                              onClick={() =>
+                                setActiveChartSeries((prev) => ({
+                                  ...prev,
+                                  [s.key]: !isActive,
+                                }))
+                              }
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all cursor-pointer select-none ${
+                                isActive
+                                  ? 'bg-slate-50 border-slate-300 font-bold text-slate-800'
+                                  : 'bg-slate-50/50 border-slate-200 text-slate-400 opacity-60'
+                              }`}
+                            >
+                              <span className={`h-2.5 w-2.5 rounded-full ${s.color}`} />
+                              <span>{s.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* SVG Line Chart / Empty State */}
+                      {chartSeriesData.length === 0 || processed === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 px-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 text-center space-y-2">
+                          <BarChart2 className="h-10 w-10 text-slate-300" />
+                          <p className="text-sm font-bold text-slate-700">No campaign activity yet</p>
+                          <p className="text-xs text-slate-500 max-w-sm">
+                            {prospects > 0
+                              ? `Campaign contains ${prospects} prospects available. Results will appear here automatically after processing begins.`
+                              : 'Add prospects to this campaign to start website outreach and track daily performance.'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="relative w-full h-64 bg-slate-50/40 rounded-2xl p-4 border border-slate-200/80">
+                          {(() => {
+                            const padding = { top: 20, right: 30, bottom: 35, left: 40 };
+                            const width = 800;
+                            const height = 200;
+                            const chartW = width - padding.left - padding.right;
+                            const chartH = height - padding.top - padding.bottom;
+
+                            const maxY = Math.max(
+                              10,
+                              ...chartSeriesData.flatMap((d) => [
+                                d.processed,
+                                d.delivered,
+                                d.failed,
+                                d.noForm,
+                                d.review,
+                                d.executionError,
+                              ])
+                            );
+
+                            const pointsCount = chartSeriesData.length;
+                            const getX = (idx: number) =>
+                              padding.left + (pointsCount > 1 ? (idx / (pointsCount - 1)) * chartW : chartW / 2);
+                            const getY = (val: number) =>
+                              padding.top + chartH - (val / maxY) * chartH;
+
+                            const seriesKeys: Array<{ key: keyof typeof chartSeriesData[0]; color: string }> = [
+                              { key: 'processed', color: '#334155' },
+                              { key: 'delivered', color: '#0e6de4' },
+                              { key: 'failed', color: '#f43f5e' },
+                              { key: 'noForm', color: '#f59e0b' },
+                              { key: 'review', color: '#a855f7' },
+                              { key: 'executionError', color: '#dc2626' },
+                            ];
+
+                            return (
+                              <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${width} ${height}`}>
+                                {/* Grid Horizontal Lines */}
+                                {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+                                  const y = padding.top + chartH * (1 - ratio);
+                                  const labelVal = Math.round(maxY * ratio);
+                                  return (
+                                    <g key={i}>
+                                      <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#e2e8f0" strokeDasharray="3 3" />
+                                      <text x={padding.left - 8} y={y + 3} textAnchor="end" className="text-[9px] fill-slate-400 font-mono">
+                                        {labelVal}
+                                      </text>
+                                    </g>
+                                  );
+                                })}
+
+                                {/* Lines & Dots for each series */}
+                                {seriesKeys.map(({ key, color }) => {
+                                  if (activeChartSeries[key] === false) return null;
+                                  const points = chartSeriesData.map((d, idx) => ({
+                                    x: getX(idx),
+                                    y: getY(Number(d[key]) || 0),
+                                    val: Number(d[key]) || 0,
+                                  }));
+
+                                  const pathD = points.reduce(
+                                    (acc, p, idx) => (idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`),
+                                    ''
+                                  );
+
+                                  return (
+                                    <g key={key}>
+                                      <path d={pathD} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                      {points.map((p, idx) => (
+                                        <circle key={idx} cx={p.x} cy={p.y} r="3.5" fill="#ffffff" stroke={color} strokeWidth="2">
+                                          <title>{`${chartSeriesData[idx].dateLabel} - ${key}: ${p.val}`}</title>
+                                        </circle>
+                                      ))}
+                                    </g>
+                                  );
+                                })}
+
+                                {/* X-Axis Labels */}
+                                {chartSeriesData.map((d, idx) => (
+                                  <text key={idx} x={getX(idx)} y={height - 8} textAnchor="middle" className="text-[9px] fill-slate-500 font-mono font-bold">
+                                    {d.dateLabel}
+                                  </text>
+                                ))}
+                              </svg>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 3. OUTCOME BREAKDOWN TABLE */}
+                    <div className="p-5 rounded-3xl border border-slate-200 bg-white space-y-3 shadow-2xs">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 font-mono flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-[#0e6de4]" />
+                          <span>OUTCOME BREAKDOWN</span>
+                        </h4>
+                        <span className="text-[10px] text-slate-400 font-mono">Calculated from total {prospects} prospects</span>
+                      </div>
+
+                      <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                        <table className="w-full text-left text-xs font-sans border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-extrabold text-slate-600 uppercase tracking-wider font-mono">
+                              <th className="p-3">Outcome</th>
+                              <th className="p-3 text-center">Count</th>
+                              <th className="p-3 text-center">Percentage</th>
+                              <th className="p-3">Description</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                            {[
+                              {
+                                label: 'Delivered',
+                                count: delivered,
+                                color: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                                desc: 'Real contact-form submission verified successful (1 credit deducted per delivery).',
+                              },
+                              {
+                                label: 'Pending',
+                                count: pending,
+                                color: 'bg-slate-100 text-slate-700 border-slate-300',
+                                desc: 'Awaiting outreach processing window.',
+                              },
+                              {
+                                label: 'Failed',
+                                count: failed,
+                                color: 'bg-rose-100 text-rose-800 border-rose-300',
+                                desc: 'Form found but HTTP submission or verification failed (0 credits).',
+                              },
+                              {
+                                label: 'No Form',
+                                count: noForm,
+                                color: 'bg-amber-100 text-amber-800 border-amber-300',
+                                desc: 'Target website inspected but no public contact form verified (0 credits).',
+                              },
+                              {
+                                label: 'Review Required',
+                                count: reviewRequired,
+                                color: 'bg-purple-100 text-purple-800 border-purple-300',
+                                desc: 'CAPTCHA, bot protection, or field uncertainty routed to review (0 credits).',
+                              },
+                              {
+                                label: 'Execution Error',
+                                count: executionError,
+                                color: 'bg-red-100 text-red-800 border-red-300',
+                                desc: 'Browser launch, DNS timeout, or infrastructure runtime error (0 credits).',
+                              },
+                              {
+                                label: 'Dry Run Completed',
+                                count: dryRunCompleted,
+                                color: 'bg-teal-100 text-teal-800 border-teal-300',
+                                desc: 'Workflow simulation completed safely in test mode (0 credits).',
+                              },
+                            ].map((row, idx) => {
+                              const pct = prospects > 0 ? Math.round((row.count / prospects) * 100) : 0;
+                              return (
+                                <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                                  <td className="p-3">
+                                    <span className={`px-2.5 py-0.5 rounded-md font-bold text-[10px] border ${row.color}`}>
+                                      {row.label}
+                                    </span>
+                                  </td>
+                                  <td className="p-3 text-center font-extrabold text-slate-900">{row.count}</td>
+                                  <td className="p-3 text-center font-bold text-slate-700">{pct}%</td>
+                                  <td className="p-3 text-[10px] text-slate-500 font-sans">{row.desc}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Outreach Success Yield Performance Box */}
               <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-2 shadow-2xs">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold font-mono">
                   <span className="text-slate-700 uppercase tracking-wider">Outreach Deliverability Yield</span>
-                  <span className="text-emerald-600 font-extrabold text-sm">
+                  <span className="text-[#0e6de4] font-extrabold text-sm">
                     {selectedReportCamp.prospects > 0 ? Math.round((selectedReportCamp.reached / selectedReportCamp.prospects) * 100) : 0}% Form Deliverability Rate ({selectedReportCamp.reached} / {selectedReportCamp.prospects})
                   </span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden p-0.5 border border-slate-200">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-[#0e6de4] transition-all duration-500"
+                    className="h-full rounded-full bg-[#0e6de4] transition-all duration-500"
                     style={{
                       width: `${selectedReportCamp.prospects > 0 ? Math.min(100, Math.round((selectedReportCamp.reached / selectedReportCamp.prospects) * 100)) : 0}%`,
                     }}

@@ -23,7 +23,6 @@ export function ContactReplySettings() {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [debugCode, setDebugCode] = useState<string | null>(null);
 
   const fetchSettings = async () => {
     setError(null);
@@ -112,7 +111,10 @@ export function ContactReplySettings() {
   };
 
   const handleRequestOtp = async () => {
-    if (!newEmail.trim() || !newEmail.includes('@')) {
+    const cleanEmail = newEmail.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
       setError('Please enter a valid email address.');
       return;
     }
@@ -120,13 +122,13 @@ export function ContactReplySettings() {
     setSendingOtp(true);
     setError(null);
     setSuccessMsg(null);
-    setDebugCode(null);
+    setCooldown(0);
 
     try {
       const res = await fetch('/api/user/reply-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send_otp', newReplyEmail: newEmail.trim() }),
+        body: JSON.stringify({ action: 'send_otp', newReplyEmail: cleanEmail }),
       });
 
       const data = await res.json();
@@ -136,20 +138,19 @@ export function ContactReplySettings() {
           setReplyEmail(data.replyEmail);
           setIsVerified(true);
           setShowModal(false);
-          setSuccessMsg(`✓ Reply email successfully restored to your verified account email (${data.replyEmail}).`);
+          setSuccessMsg(`✓ Reply email successfully set to your verified account email (${data.replyEmail}).`);
         } else {
           setStep('verify');
-          setCooldown(data.cooldownSeconds || 60);
-          setSuccessMsg(data.message || 'Verification code dispatched to your new reply email.');
-          if (data.debugCode) {
-            setDebugCode(data.debugCode);
-          }
+          setCooldown(data.cooldownSeconds || 20);
+          setError(null);
         }
       } else {
-        setError(data.error || 'Failed to request verification code.');
+        setCooldown(0);
+        setError(data.error || data.message || 'Verification email could not be sent. Please check your email address or try again later.');
       }
     } catch (err: any) {
-      setError(err.message || 'Error requesting verification code.');
+      setCooldown(0);
+      setError(err.message || 'Verification email could not be sent. Please try again.');
     } finally {
       setSendingOtp(false);
     }
@@ -365,14 +366,6 @@ export function ContactReplySettings() {
               </div>
             )}
 
-            {debugCode && (
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-mono space-y-1">
-                <p className="font-bold">⚡ Sandbox Verification Code:</p>
-                <p className="text-base font-extrabold tracking-widest text-amber-700">{debugCode}</p>
-                <p className="text-[10px] text-amber-800">Resend API key unconfigured in development. Use code above to verify.</p>
-              </div>
-            )}
-
             {step === 'input' ? (
               <div className="space-y-4">
                 <div className="space-y-1.5">
@@ -381,7 +374,10 @@ export function ContactReplySettings() {
                     type="email"
                     placeholder="e.g. sales@company.com"
                     value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
+                    onChange={(e) => {
+                      setNewEmail(e.target.value);
+                      if (error) setError(null);
+                    }}
                     className="w-full rounded-xl border border-slate-300 p-3 text-xs font-bold text-slate-900 focus:border-[#0e6de4] focus:outline-none"
                   />
                   <p className="text-[11px] text-slate-400">

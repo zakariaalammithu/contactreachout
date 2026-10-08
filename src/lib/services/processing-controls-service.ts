@@ -168,6 +168,12 @@ export function validateSendingSchedule(
     targetTimezone = resolveProspectTimezone(prospectLocation) || 'America/New_York';
   }
 
+  // "Sending Hours: OFF" means Anytime. Do not apply the default weekday
+  // restriction when the campaign has not opted into a schedule window.
+  if (!mergedSchedule.sendingHours?.enabled) {
+    return { isWithinWindow: true, targetTimezone };
+  }
+
   // 2. Format current time in target timezone
   try {
     const now = new Date();

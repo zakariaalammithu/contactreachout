@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet, X, Check, Save } from 'lucide-react';
 import { suggestColumnMappings, processImportRows } from '@/lib/services/import-service';
+import { findActiveLeadListNameConflict, generateUniqueLeadListName, normalizeLeadListName, StoredLeadList } from '@/lib/services/lead-list-service';
+
 
 export interface MatchDataModalProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ const SYSTEM_FIELDS = [
   { label: 'LAST_NAME', value: 'last_name' },
   { label: 'TITLE', value: 'title' },
   { label: 'COMPANY', value: 'company_name' },
+  { label: 'COMPANY KEYWORDS', value: 'company_keywords' },
   { label: 'EMAIL', value: 'email' },
   { label: 'PHONE', value: 'phone' },
   { label: 'INDUSTRY', value: 'industry' },
@@ -57,11 +60,27 @@ export function MatchDataModal({
   const [folderName, setFolderName] = useState('Default');
   const [selectedTag, setSelectedTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [listNameError, setListNameError] = useState('');
 
   useEffect(() => {
     if (isOpen && headers && headers.length > 0) {
-      setListName(fileName ? fileName.replace(/\.[^/.]+$/, '') : 'Lead List');
+      const rawBaseName = fileName ? fileName.replace(/\.[^/.]+$/, '') : 'Lead List';
+      let autoUniqueName = rawBaseName;
+      try {
+        const storedLists = JSON.parse(localStorage.getItem('user_lead_lists') || '[]');
+        const activeAccount = (localStorage.getItem('active_account_email') || '').trim().toLowerCase();
+        autoUniqueName = generateUniqueLeadListName(
+          Array.isArray(storedLists) ? (storedLists as StoredLeadList[]) : [],
+          rawBaseName,
+          activeAccount,
+        );
+      } catch {
+        autoUniqueName = rawBaseName;
+      }
+      setListName(autoUniqueName);
+      setListNameError(validateListName(autoUniqueName));
       const suggested = suggestColumnMappings(headers);
+
 
       // Map headers to system field value
       const initialMap: Record<string, string> = {};
@@ -74,6 +93,7 @@ export function MatchDataModal({
           const hLower = h.toLowerCase().replace(/[^a-z0-9]/g, '');
           if (hLower.includes('first')) initialMap[h] = 'first_name';
           else if (hLower.includes('last')) initialMap[h] = 'last_name';
+          else if (hLower.includes('companykeywords') || hLower.includes('keywordscompany')) initialMap[h] = 'company_keywords';
           else if (hLower.includes('company')) initialMap[h] = 'company_name';
           else if (hLower.includes('email') || hLower.includes('mail')) initialMap[h] = 'email';
           else if (hLower.includes('title') || hLower.includes('role')) initialMap[h] = 'title';
@@ -96,20 +116,63 @@ export function MatchDataModal({
           else initialMap[h] = 'do_not_import';
         }
       });
+      // Suggestions are advisory only. Enforce the same one-to-one rule here
+      // before the dialog renders so duplicate automatic mappings cannot
+      // overwrite a previously selected source during import.
+      const claimedSystemFields = new Set<string>();
+      headers.forEach((h) => {
+        const field = initialMap[h];
+        if (!field || field === 'do_not_import') return;
+        if (claimedSystemFields.has(field)) initialMap[h] = 'do_not_import';
+        else claimedSystemFields.add(field);
+      });
       setColumnMappings(initialMap);
     }
   }, [isOpen, headers, fileName]);
 
   if (!isOpen) return null;
 
+  const validateListName = (candidateName: string): string => {
+    if (!normalizeLeadListName(candidateName)) return 'Please enter a list name.';
+
+    try {
+      const storedLists = JSON.parse(localStorage.getItem('user_lead_lists') || '[]');
+      const activeAccount = (localStorage.getItem('active_account_email') || '').trim().toLowerCase();
+      const conflict = findActiveLeadListNameConflict(
+        Array.isArray(storedLists) ? storedLists as StoredLeadList[] : [],
+        candidateName,
+        activeAccount,
+      );
+      return conflict ? `List name "${candidateName.trim()}" already exists. Please choose a different name.` : '';
+    } catch {
+      return 'Unable to validate the list name. Please try again.';
+    }
+  };
+
   const handleFieldSelect = (header: string, sysValue: string) => {
-    setColumnMappings((prev) => ({
-      ...prev,
-      [header]: sysValue,
-    }));
+    setColumnMappings((prev) => {
+      const next = { ...prev, [header]: sysValue };
+      // A source header may only populate one canonical field, and a canonical
+      // field may only have one source header. This prevents silent overwrite
+      // when users correct an automatically suggested mapping.
+      if (sysValue && sysValue !== 'do_not_import') {
+        Object.keys(next).forEach((otherHeader) => {
+          if (otherHeader !== header && next[otherHeader] === sysValue) next[otherHeader] = 'do_not_import';
+        });
+      }
+      return next;
+    });
   };
 
   const handleExecuteImport = () => {
+    // Re-read persisted active lists at submit time so a stale dialog cannot
+    // create a duplicate after another import has completed.
+    const nameError = validateListName(listName);
+    if (nameError) {
+      setListNameError(nameError);
+      return;
+    }
+    const activeAccount = (localStorage.getItem('active_account_email') || '').trim().toLowerCase();
     const websiteHeader = Object.entries(columnMappings).find(([, value]) => value === 'website')?.[0];
     if (!websiteHeader || !allRawRows.some((row) => String(row[websiteHeader] ?? '').trim())) {
       alert('Website is required. Please map a Website column before importing leads.');
@@ -123,6 +186,7 @@ export function MatchDataModal({
         last_name: '',
         title: '',
         company_name: '',
+        company_keywords: '',
         email: '',
         industry: '',
         person_linkedin_url: '',
@@ -158,7 +222,7 @@ export function MatchDataModal({
         : allRawRows;
 
       const generatedListId = `list-${Date.now()}`;
-      const generatedListName = listName || fileName.replace(/\.[^/.]+$/, '');
+      const generatedListName = listName.trim();
 
       const validLeads = rawRowsToUse.map((ld: any, idx: number) => {
         const keys = Object.keys(ld);
@@ -192,6 +256,7 @@ export function MatchDataModal({
         };
 
         const mappedCompanyHeader = mappingObj.company_name;
+        const mappedCompanyKeywordsHeader = mappingObj.company_keywords;
         const mappedWebsiteHeader = mappingObj.website;
         const mappedEmailHeader = mappingObj.email;
         const mappedFirstHeader = mappingObj.first_name;
@@ -201,6 +266,9 @@ export function MatchDataModal({
           ? String(ld[mappedCompanyHeader]).trim()
           : (ld.companyName || ld.company_name || findVal(['company', 'organization', 'business']) || '');
         const company = /^(http|www\.|target lead account|unknown company)/i.test(rawCompany) || /\.(com|org|net|io|co)$/i.test(rawCompany) ? '' : rawCompany;
+        const companyKeywords = (mappedCompanyKeywordsHeader && ld[mappedCompanyKeywordsHeader] !== undefined)
+          ? String(ld[mappedCompanyKeywordsHeader]).trim()
+          : (ld.companyKeywords || ld.company_keywords || '');
 
         const rawWeb = (mappedWebsiteHeader && ld[mappedWebsiteHeader])
           ? String(ld[mappedWebsiteHeader]).trim()
@@ -233,6 +301,8 @@ export function MatchDataModal({
           id: `lead-${Date.now()}-${idx}`,
           companyName: company,
           company_name: company,
+          companyKeywords,
+          company_keywords: companyKeywords,
           website: rawWeb,
           domain: rawWeb.replace(/^https?:\/\//i, '').replace(/\/.*$/, ''),
           email: email,
@@ -268,6 +338,7 @@ export function MatchDataModal({
           file_name: fileName,
           listId: generatedListId,
           listName: generatedListName,
+          ownerEmail: activeAccount,
           isNewlyImported: true,
           createdAt: new Date().toISOString(),
         };
@@ -279,6 +350,7 @@ export function MatchDataModal({
         fileName: fileName,
         count: validLeads.length,
         uploadedAt: new Date().toISOString(),
+        ownerEmail: activeAccount,
       };
 
       onImportSuccess(validLeads, listInfo);
@@ -456,10 +528,16 @@ export function MatchDataModal({
               <input
                 type="text"
                 value={listName}
-                onChange={(e) => setListName(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-blue-600 focus:outline-none shadow-2xs"
+                onChange={(e) => {
+                  const nextName = e.target.value;
+                  setListName(nextName);
+                  setListNameError(validateListName(nextName));
+                }}
+                aria-invalid={Boolean(listNameError)}
+                className={`w-full rounded-xl border px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none shadow-2xs ${listNameError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-300 focus:border-blue-600'}`}
                 placeholder="e.g. contactreachout-leads.csv"
               />
+              {listNameError && <p className="mt-1.5 text-[11px] font-semibold text-rose-600">{listNameError}</p>}
             </div>
 
             <div>

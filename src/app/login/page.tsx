@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import React, { Suspense } from 'react';
 import LoginClient from '@/components/auth/LoginClient';
+
+export const metadata: Metadata = {
+  title: 'Sign In | ContactReachout',
+  robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
+};
 
 export const dynamic = 'force-dynamic';
 

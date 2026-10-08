@@ -4,6 +4,7 @@
  */
 
 import { DetectedFormField, NormalizedFieldType } from './form-detector';
+import { convertHtmlToPlainText } from './template-engine';
 
 export interface LeadMappingContext {
   first_name?: string | null;
@@ -323,13 +324,13 @@ export function mapLeadToFormFields(
         break;
 
       case 'subject':
-        valueToFill = message.subject || fallbackSubject || 'Partnership Inquiry & Growth Solution';
+        valueToFill = convertHtmlToPlainText(message.subject || fallbackSubject || 'Partnership Inquiry & Growth Solution').trim();
         strategy = 'direct_subject';
         sourceLeadField = 'rendered_message.subject';
         break;
 
       case 'message':
-        let msgText = (message.body || '').trim();
+        let msgText = convertHtmlToPlainText(message.body || '').trim();
         if (!msgText) {
           msgText = 'Hi, I build modern high-quality websites and AI automation systems tailored for businesses to generate more leads and growth.';
         }
@@ -370,6 +371,19 @@ export function mapLeadToFormFields(
           strategy = 'custom_field';
           sourceLeadField = `custom_fields.${field.name}`;
           confidence = 0.8;
+        } else {
+          const fieldRefText = `${field.name || ''} ${field.id || ''} ${field.label || ''}`.toLowerCase();
+          if (/\bname\b/i.test(fieldRefText)) {
+            const leadFullName = constructFullName(lead.first_name, lead.last_name) || lead.name;
+            const identityFullName = lead.user_contact_identity?.fullName || (lead as any).sender_name;
+            const finalFullName = leadFullName || identityFullName || '';
+            if (finalFullName) {
+              valueToFill = String(finalFullName).trim();
+              strategy = 'composite_full_name';
+              sourceLeadField = leadFullName ? 'lead_name' : 'user_contact_identity.fullName';
+              confidence = 0.85;
+            }
+          }
         }
         break;
     }

@@ -31,6 +31,73 @@ interface StoredCampaign {
   aiPersonalizedMessages?: Record<string, string>;
 }
 
+// Imports created by older flows and external list tools may use snake_case,
+// while the campaign model uses camelCase. Preserve the original record and
+// canonicalize the company value before it reaches campaign persistence/UI.
+function normalizeLead(rawLead: any): Lead {
+  if (!rawLead || typeof rawLead !== 'object') return rawLead as Lead;
+  const customFields = rawLead.customFields || rawLead.custom_fields || {};
+  
+  // Canonical Company Name Resolution
+  const companyCandidates = [
+    rawLead.companyName,
+    rawLead.company_name,
+    rawLead.company,
+    rawLead['Company Name'],
+    customFields.companyName,
+    customFields.company_name,
+    customFields.company,
+    customFields['Company Name'],
+  ];
+  const companyName = companyCandidates.find((value) => typeof value === 'string' && value.trim())?.trim() || '';
+
+  // Canonical Website / Domain Resolution
+  const websiteCandidates = [
+    rawLead.website,
+    rawLead.websiteUrl,
+    rawLead.website_url,
+    rawLead.domain,
+    rawLead.url,
+    rawLead.Website,
+    rawLead.Website_URL,
+    rawLead['Website'],
+    rawLead['Website URL'],
+    rawLead['Domain'],
+    customFields.website,
+    customFields.websiteUrl,
+    customFields.website_url,
+    customFields.domain,
+    customFields.url,
+    customFields.Website,
+  ];
+
+  const rawWeb = websiteCandidates.find((value) => typeof value === 'string' && value.trim() && value.trim() !== '-')?.trim() || '';
+  let website = '';
+  let domain = rawLead.domain || '';
+
+  if (rawWeb) {
+    let clean = rawWeb;
+    if (!/^https?:\/\//i.test(clean)) {
+      const cleanHost = clean.replace(/\/.*$/, '').toLowerCase();
+      if (cleanHost.includes('.') && !cleanHost.includes(' ')) {
+        clean = `https://${clean}`;
+      }
+    }
+    website = clean;
+    domain = website.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').toLowerCase();
+  }
+
+  return {
+    ...rawLead,
+    companyName,
+    company_name: companyName,
+    website: website || rawLead.website || '',
+    domain: domain || rawLead.domain || '',
+  } as Lead;
+}
+
+const normalizeLeadCompanyName = normalizeLead;
+
 const defaultSequence = (): CampaignSequenceStep => ({
   id: `step-${Date.now()}`, sequenceNumber: 1, stepType: 'initial_email',
   subject: '', body: '',
@@ -309,29 +376,37 @@ export default function CampaignEditorClient() {
       const storedLists: LeadList[] = safeParseJSON<LeadList[]>(localStorage.getItem('user_lead_lists'), []);
       const ownedLists = storedLists.map((list) => list.ownerEmail ? list : { ...list, ownerEmail: activeAccount });
       if (activeAccount && ownedLists.some((list, index) => list.ownerEmail !== storedLists[index]?.ownerEmail)) localStorage.setItem('user_lead_lists', JSON.stringify(ownedLists));
-      const storedLeads = safeParseJSON<any[]>(localStorage.getItem('user_imported_leads'), []);
       setAccountEmail(activeAccount);
       setLeadLists(Array.isArray(ownedLists) ? ownedLists : []);
-      setLeads(Array.isArray(storedLeads) ? storedLeads : []);
 
-      fetch('/api/profile', { cache: 'no-store' })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.user) {
-            setUserProfileSummary(data.user);
-            setContactIdentityDraft({ name: data.user.name || '', phone: data.user.phone || '', whatsApp: data.user.whatsApp || '' });
+      // Defer loading heavy global imported leads list so editor mounts instantly
+      setTimeout(() => {
+        try {
+          const storedLeads = safeParseJSON<any[]>(localStorage.getItem('user_imported_leads'), []);
+          if (Array.isArray(storedLeads) && storedLeads.length > 0) {
+            setLeads((prev) => {
+              if (prev.length === 0) return storedLeads;
+              const existingIds = new Set(prev.map((l) => l.id || l.website));
+              const missing = storedLeads.filter((l: any) => l && (l.id || l.website) && !existingIds.has(l.id || l.website));
+              return missing.length > 0 ? [...prev, ...missing] : prev;
+            });
           }
-        })
-        .catch(() => {});
+        } catch (e) {}
+      }, 50);
 
-      fetch('/api/credits')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.wallet && typeof data.wallet.totalCreditsAvailable === 'number') {
-            setAvailableCredits(data.wallet.totalCreditsAvailable);
-          }
-        })
-        .catch(() => {});
+      // Parallelize profile and credit balance fetching
+      Promise.all([
+        fetch('/api/profile', { cache: 'no-store' }).then((res) => res.json()).catch(() => ({})),
+        fetch('/api/credits').then((res) => res.json()).catch(() => ({})),
+      ]).then(([profileData, creditData]) => {
+        if (profileData?.user) {
+          setUserProfileSummary(profileData.user);
+          setContactIdentityDraft({ name: profileData.user.name || '', phone: profileData.user.phone || '', whatsApp: profileData.user.whatsApp || '' });
+        }
+        if (creditData?.wallet?.totalCreditsAvailable !== undefined) {
+          setAvailableCredits(creditData.wallet.totalCreditsAvailable);
+        }
+      });
       if (editId) {
         const campaigns: StoredCampaign[] = safeParseJSON<StoredCampaign[]>(localStorage.getItem('user_campaigns'), []);
         const campaign = campaigns.find((item) => item && item.id === editId);
@@ -382,7 +457,7 @@ export default function CampaignEditorClient() {
             setLeads((existingLeads) => {
               const existingIds = new Set(existingLeads.map((l) => l.id || l.website));
               const missing = campaign.prospectsList.filter((l: any) => l && (l.id || l.website) && !existingIds.has(l.id || l.website));
-              return missing.length > 0 ? [...existingLeads, ...missing] : existingLeads;
+              return missing.length > 0 ? [...existingLeads, ...missing.map(normalizeLeadCompanyName)] : existingLeads;
             });
           }
         } else setError('The requested campaign could not be found. You can save this setup as a new campaign.');
@@ -566,6 +641,13 @@ export default function CampaignEditorClient() {
     finally { setIsGeneratingPreview(false); }
   };
 
+  // Prefetch /campaigns route for instant navigation when Start Campaign is clicked
+  useEffect(() => {
+    try {
+      router.prefetch('/campaigns');
+    } catch (e) {}
+  }, [router]);
+
   const saveCampaign = async (launch = false, advance = false) => {
     if (isSaving || isStarting) return;
     if (launch) setIsStarting(true);
@@ -573,16 +655,45 @@ export default function CampaignEditorClient() {
 
     try {
       const cleanName = campaignName.trim();
-      if (activeTab === 'setup' && cleanName.length < 3) { setError('Enter a campaign name with at least 3 characters.'); return; }
-      if ((activeTab === 'prospects' || launch) && (!selectedListIds.length || selectedLeads.length === 0)) { setError('Select at least one lead list containing prospects.'); setActiveTab('prospects'); return; }
-      if (launch && selectedLeads.some((lead) => !lead.website || lead.website.length < 4)) { setError('Please map a Website column and ensure every selected lead has a valid website before starting.'); setActiveTab('prospects'); return; }
-      if ((activeTab === 'message' || launch) && !sequence.body.trim()) { setError('Add a campaign message before saving.'); setActiveTab('message'); return; }
+      if (launch && selectedLeads.length === 0) {
+        setError('Add at least 1 prospect before starting this campaign.');
+        setActiveTab('prospects');
+        setIsStarting(false);
+        setIsSaving(false);
+        return;
+      }
+      if ((activeTab === 'prospects' || launch) && (!selectedListIds.length || selectedLeads.length === 0)) {
+        setError('Add at least 1 prospect before starting this campaign.');
+        setActiveTab('prospects');
+        setIsStarting(false);
+        setIsSaving(false);
+        return;
+      }
+      if (launch && selectedLeads.some((lead) => {
+        const norm = normalizeLead(lead);
+        return !norm.website || norm.website.length < 4 || !norm.website.includes('.');
+      })) {
+        setError('Please map a Website column and ensure every selected lead has a valid website before starting.');
+        setActiveTab('prospects');
+        setIsStarting(false);
+        setIsSaving(false);
+        return;
+      }
+      if ((activeTab === 'message' || launch) && !sequence.body.trim()) {
+        setError('Add a campaign message before saving.');
+        setActiveTab('message');
+        setIsStarting(false);
+        setIsSaving(false);
+        return;
+      }
 
       // Validate Sending Schedule
       const hasAnyDay = Object.values(sendingDays).some(Boolean);
       if ((activeTab === 'settings' || launch) && !hasAnyDay) {
         setError('Select at least one sending day in Safety & Pacing (e.g. Monday-Friday).');
         setActiveTab('settings');
+        setIsStarting(false);
+        setIsSaving(false);
         return;
       }
       const [sH, sM] = (sendingHours.start || '09:00').split(':').map(Number);
@@ -590,7 +701,17 @@ export default function CampaignEditorClient() {
       if ((activeTab === 'settings' || launch) && sendingHours.enabled && (sH * 60 + (sM || 0) >= eH * 60 + (eM || 0))) {
         setError('Sending start time must be earlier than end time (e.g. 09:00 AM to 05:00 PM).');
         setActiveTab('settings');
+        setIsStarting(false);
+        setIsSaving(false);
         return;
+      }
+
+      setError('');
+
+      // Fast UI Advance: If advancing steps, update active tab immediately
+      if (advance) {
+        const nextTab: EditorTab = activeTab === 'setup' ? 'prospects' : activeTab === 'prospects' ? 'message' : 'settings';
+        setActiveTab(nextTab);
       }
 
       // Server-Side Credit & AI Entitlement Validation on Campaign Launch
@@ -621,83 +742,90 @@ export default function CampaignEditorClient() {
         }
       }
 
-      const campaigns: StoredCampaign[] = safeParseJSON<StoredCampaign[]>(localStorage.getItem('user_campaigns'), []);
-      const existing = editId ? campaigns.find((item) => item && item.id === editId) : undefined;
-      const now = new Date().toISOString();
-      const activeAccount = accountEmail || (localStorage.getItem('active_account_email') || '').toLowerCase();
+      const executeSave = () => {
+        const campaigns: StoredCampaign[] = safeParseJSON<StoredCampaign[]>(localStorage.getItem('user_campaigns'), []);
+        const existing = editId ? campaigns.find((item) => item && item.id === editId) : undefined;
+        const now = new Date().toISOString();
+        const activeAccount = accountEmail || (localStorage.getItem('active_account_email') || '').toLowerCase();
+        const effectiveIsDryRun = isDryRun;
 
-      // Launch must preserve the user's explicit safety choice. Dry-run may never
-      // be silently promoted to a live external submission.
-      const effectiveIsDryRun = isDryRun;
+        const finalMessageSequences = messageSequences.map((item) =>
+          item.id === selectedSequenceId
+            ? { ...item, subject: sequence.subject, body: sequence.body, replyInThread: sequence.replyInThread ?? true }
+            : item
+        );
 
-      const finalMessageSequences = messageSequences.map((item) =>
-        item.id === selectedSequenceId
-          ? { ...item, subject: sequence.subject, body: sequence.body, replyInThread: sequence.replyInThread ?? true }
-          : item
-      );
-
-      const campaign: StoredCampaign & { ownerEmail?: string } = {
-        ...(existing || {} as StoredCampaign),
-        id: existing?.id || `campaign-${Date.now()}`,
-        name: cleanName,
-        tag: tag.trim() || 'CUSTOM',
-        status: launch ? 'running' : 'draft',
-        createdAt: createdAt || existing?.createdAt || now,
-        updatedAt: now,
-        ownerEmail: (existing as any)?.ownerEmail || activeAccount,
-        selectedListId: selectedListId || selectedListIds[0] || '',
-        selectedListIds,
-        prospectsList: selectedLeads,
-        sequences: finalMessageSequences.map((item, index) => ({
-          id: item.id,
-          sequenceNumber: index + 1,
-          stepType: index === 0 ? 'initial_email' : 'followup',
-          name: index === 0 ? 'Initial Message' : `Follow-up Message ${index}`,
-          subject: item.subject,
-          body: item.body,
-          delayDays: item.delayUnit === 'weeks' ? item.delayAmount * 7 : item.delayAmount,
-          delayUnit: item.delayUnit,
-          condition: item.condition,
-          date: item.date,
-          replyInThread: item.replyInThread ?? true,
-        })),
-        isDryRun: effectiveIsDryRun,
-        rateLimitPerMinute,
-        maxConcurrency,
-        sentCount: existing?.sentCount || 0,
-        failedCount: existing?.failedCount || 0,
-        submissionDelaySeconds,
-        dailySubmissionLimit,
-        preventDuplicateSubmissions,
-        retryFailedSubmissions,
-        failureThreshold,
-        humanReviewUncertainForms,
-        stopOnSecurityChallenge,
-        schedule: {
-          timezoneMode,
-          customTimezone,
-          sendingDays,
-          sendingHours,
-          randomizeSubmissionTime,
-        },
-        noFormCount: existing?.noFormCount || 0,
-        captchaCount: existing?.captchaCount || 0,
-        aiPersonalizationEnabled,
-        aiInstructions: aiInstructions.trim(),
-        aiPreview,
+        const campaign: StoredCampaign & { ownerEmail?: string } = {
+          ...(existing || {} as StoredCampaign),
+          id: existing?.id || `campaign-${Date.now()}`,
+          name: cleanName,
+          tag: tag.trim() || 'CUSTOM',
+          status: launch ? 'running' : 'draft',
+          createdAt: createdAt || existing?.createdAt || now,
+          updatedAt: now,
+          ownerEmail: (existing as any)?.ownerEmail || activeAccount,
+          selectedListId: selectedListId || selectedListIds[0] || '',
+          selectedListIds,
+          prospectsList: selectedLeads.map(normalizeLeadCompanyName),
+          sequences: finalMessageSequences.map((item, index) => ({
+            id: item.id,
+            sequenceNumber: index + 1,
+            stepType: index === 0 ? 'initial_email' : 'followup',
+            name: index === 0 ? 'Initial Message' : `Follow-up Message ${index}`,
+            subject: item.subject,
+            body: item.body,
+            delayDays: item.delayUnit === 'weeks' ? item.delayAmount * 7 : item.delayAmount,
+            delayUnit: item.delayUnit,
+            condition: item.condition,
+            date: item.date,
+            replyInThread: item.replyInThread ?? true,
+          })),
+          isDryRun: effectiveIsDryRun,
+          rateLimitPerMinute,
+          maxConcurrency,
+          sentCount: existing?.sentCount || 0,
+          failedCount: existing?.failedCount || 0,
+          submissionDelaySeconds,
+          dailySubmissionLimit,
+          preventDuplicateSubmissions,
+          retryFailedSubmissions,
+          failureThreshold,
+          humanReviewUncertainForms,
+          stopOnSecurityChallenge,
+          schedule: {
+            timezoneMode,
+            customTimezone,
+            sendingDays,
+            sendingHours,
+            randomizeSubmissionTime,
+          },
+          noFormCount: existing?.noFormCount || 0,
+          captchaCount: existing?.captchaCount || 0,
+          aiPersonalizationEnabled,
+          aiInstructions: aiInstructions.trim(),
+          aiPreview,
+        };
+        const updated = existing ? campaigns.map((item) => item && item.id === existing.id ? campaign : item) : [campaign, ...campaigns];
+        localStorage.setItem('user_campaigns', JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('campaigns_updated'));
+        if (launch) {
+          window.dispatchEvent(new CustomEvent('trigger_campaign_process'));
+          router.push('/campaigns');
+        } else if (!advance) {
+          router.push('/campaigns');
+        }
       };
-      const updated = existing ? campaigns.map((item) => item && item.id === existing.id ? campaign : item) : [campaign, ...campaigns];
-      localStorage.setItem('user_campaigns', JSON.stringify(updated));
-      setError('');
+
       if (advance) {
-        const nextTab: EditorTab = activeTab === 'setup' ? 'prospects' : activeTab === 'prospects' ? 'message' : 'settings';
-        setActiveTab(nextTab);
-      } else if (launch || !advance) {
-        router.push('/campaigns');
+        setTimeout(executeSave, 10);
+      } else {
+        executeSave();
       }
     } finally {
       setIsSaving(false);
-      setIsStarting(false);
+      if (!launch) {
+        setIsStarting(false);
+      }
     }
   };
 
@@ -974,6 +1102,11 @@ export default function CampaignEditorClient() {
             disabled={isSaving || isStarting}
             onClick={() => {
               if (activeTab === 'settings') {
+                if (selectedLeads.length === 0) {
+                  setError('Add at least 1 prospect before starting this campaign.');
+                  setActiveTab('prospects');
+                  return;
+                }
                 setShowStartCampaignConfirmModal(true);
               } else {
                 saveCampaign(false, true);
@@ -998,11 +1131,7 @@ export default function CampaignEditorClient() {
           <button
             key={tab.id}
             type="button"
-            onClick={() => {
-              React.startTransition(() => {
-                setActiveTab(tab.id);
-              });
-            }}
+            onClick={() => setActiveTab(tab.id)}
             className={`rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-75 active:scale-95 cursor-pointer ${
               activeTab === tab.id
                 ? 'bg-slate-900 text-white shadow-xs'
@@ -1274,7 +1403,7 @@ export default function CampaignEditorClient() {
                     <tr key={lead.id || idx} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-2.5 font-bold text-slate-400">{idx + 1}</td>
                       <td className="px-4 py-2.5 font-semibold text-slate-900 truncate max-w-[200px]">{lead.website || lead.domain || '—'}</td>
-                      <td className="px-4 py-2.5 truncate max-w-[160px]">{lead.companyName || '—'}</td>
+                      <td className="px-4 py-2.5 truncate max-w-[160px]">{lead.companyName || (lead as any).company_name || (lead as any).company || '—'}</td>
                       <td className="px-4 py-2.5 truncate max-w-[150px]">{[lead.firstName, lead.lastName].filter(Boolean).join(' ') || '—'}</td>
                       <td className="px-4 py-2.5 text-blue-600 truncate max-w-[180px]">{lead.email || '—'}</td>
                       <td className="px-4 py-2.5">
@@ -1571,72 +1700,6 @@ export default function CampaignEditorClient() {
               </div>
             </div>
 
-            {/* CONTACT & REPLY IDENTITY SUMMARY CARD */}
-            <div className="rounded-2xl border border-blue-100 bg-white p-5 space-y-4 shadow-2xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
-                <div>
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-[#0e6de4]" />
-                    <span>CONTACT & REPLY IDENTITY SUMMARY</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Account-level identity used for filling contact form sender details.
-                  </p>
-                </div>
-              </div>
-
-              {editingContactIdentity ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {([['name', 'Full Name'], ['phone', 'Phone Number'], ['whatsApp', 'WhatsApp Number']] as const).map(([key, label]) => (
-                    <label key={key} className="text-[11px] font-semibold text-slate-500">
-                      {label}
-                      <input value={contactIdentityDraft[key]} onChange={(event) => setContactIdentityDraft((draft) => ({ ...draft, [key]: event.target.value }))} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-blue-500" />
-                    </label>
-                  ))}
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                    <span className="text-[11px] font-semibold text-slate-400 block">Reply Email</span>
-                    <span className="font-extrabold text-slate-900 truncate block">{userProfileSummary?.replyEmail || ''}</span>
-                    <span className="text-[10px] text-emerald-600 font-bold block font-mono">{userProfileSummary?.replyEmailVerified ? '✓ Verified' : 'Pending'}</span>
-                  </div>
-                  <div className="sm:col-span-2 flex items-center gap-2">
-                    <button type="button" disabled={savingContactIdentity} onClick={saveContactIdentityInline} className="rounded-xl bg-[#0e6de4] px-4 py-2 text-xs font-bold text-white disabled:opacity-60">{savingContactIdentity ? 'Saving...' : 'Save Changes'}</button>
-                  </div>
-                </div>
-              ) : <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-[11px] font-semibold text-slate-400 block">Full Name</span>
-                  <span className="font-extrabold text-slate-900 truncate block">
-                    {userProfileSummary?.name || ''}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-[11px] font-semibold text-slate-400 block">Reply Email</span>
-                  <span className="font-extrabold text-slate-900 truncate block">
-                    {userProfileSummary?.replyEmail || ''}
-                  </span>
-                  <span className="text-[10px] text-emerald-600 font-bold block font-mono">
-                    {userProfileSummary?.replyEmailVerified ? '✓ Verified' : 'Pending'}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-[11px] font-semibold text-slate-400 block">Phone Number</span>
-                  <span className="font-extrabold text-slate-900 truncate block">
-                    {userProfileSummary?.phone || ''}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-[11px] font-semibold text-slate-400 block">WhatsApp Number</span>
-                  <span className="font-extrabold text-slate-900 truncate block">
-                    {userProfileSummary?.whatsApp || ''}
-                  </span>
-                </div>
-              </div>}
-              {contactIdentityMessage && <p className={`text-xs font-semibold ${contactIdentityMessage.includes('successfully') ? 'text-emerald-600' : 'text-red-600'}`}>{contactIdentityMessage}</p>}
-            </div>
-
             {/* REAL CAMPAIGN SCHEDULE SUMMARY CARD */}
             <div className="rounded-2xl border border-slate-200 bg-slate-100/70 p-5 space-y-3">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">CAMPAIGN SCHEDULE SUMMARY</h4>
@@ -1670,12 +1733,12 @@ export default function CampaignEditorClient() {
               </div>
             </div>
 
-            {/* REAL CAMPAIGN CREDIT REQUIREMENTS CARD */}
+            {/* REAL CAMPAIGN CREDIT REQUIREMENTS & READINESS CARD */}
             <div className="rounded-2xl border border-blue-100 bg-white p-5 space-y-3 shadow-2xs">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                   <Coins className="h-4 w-4 text-[#0e6de4]" />
-                  <span>CREDIT REQUIREMENTS</span>
+                  <span>CREDIT REQUIREMENTS & READINESS</span>
                 </h4>
                 <span className="text-xs font-mono font-bold text-slate-700">
                   Available: <strong className="text-blue-600">{availableCredits}</strong>
@@ -1697,7 +1760,11 @@ export default function CampaignEditorClient() {
                 </div>
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
                   <span className="text-[11px] font-semibold text-slate-400 block">Capacity Status</span>
-                  {selectedLeads.length <= availableCredits ? (
+                  {selectedLeads.length === 0 ? (
+                    <span className="font-extrabold text-amber-700 text-xs flex items-center gap-1">
+                      ✕ Not Ready
+                    </span>
+                  ) : selectedLeads.length <= availableCredits ? (
                     <span className="font-extrabold text-emerald-700 text-xs flex items-center gap-1">
                       ✓ Sufficient
                     </span>
@@ -1709,7 +1776,21 @@ export default function CampaignEditorClient() {
                 </div>
               </div>
 
-              {selectedLeads.length <= availableCredits ? (
+              {selectedLeads.length === 0 ? (
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                    <span className="font-bold">Add at least 1 prospect before starting this campaign.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('prospects')}
+                    className="rounded-xl bg-[#0e6de4] hover:bg-blue-700 text-white px-4 py-2 text-xs font-bold shrink-0 shadow-xs cursor-pointer"
+                  >
+                    Add Prospects
+                  </button>
+                </div>
+              ) : selectedLeads.length <= availableCredits ? (
                 <p className="text-xs text-emerald-800 bg-emerald-50/80 p-3 rounded-xl border border-emerald-200 font-medium">
                   ✓ {selectedLeads.length} prospects can be processed with your current {availableCredits} available credits.
                 </p>

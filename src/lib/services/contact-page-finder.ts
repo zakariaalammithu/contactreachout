@@ -29,12 +29,14 @@ export interface ScoredLink {
   text: string;
   score: number;
   matchReason: string;
+  isFooter?: boolean;
 }
 
 export interface ContactDiscoveryResult {
   targetWebsite: string;
   targetDomain: string;
   contactPageUrl: string | null;
+  candidateUrls?: ScoredLink[];
   discoveryMethod: DiscoveryMethod;
   confidenceScore: number;
   status: DiscoveryStatus;
@@ -47,39 +49,67 @@ export interface ContactDiscoveryResult {
   durationMs: number;
 }
 
-// Common public contact path candidates for safe probing
+// Common public contact path candidates for safe probing (Expanded for comprehensive coverage)
 export const COMMON_CONTACT_PATHS = [
   '/contact',
+  '/contact/',
   '/contact-us',
+  '/contact-us/',
   '/contactus',
+  '/contacts',
   '/get-in-touch',
+  '/get-in-touch/',
   '/reach-us',
+  '/reach-out',
   '/talk-to-us',
-  '/request-a-quote',
-  '/request-demo',
-  '/sales',
+  '/connect',
+  '/connect-with-us',
   '/support',
-  '/inquiry',
-  '/enquiry',
+  '/help',
+  '/customer-support',
+  '/book-a-call',
+  '/request-demo',
+  '/demo',
+  '/pages/contact',
+  '/pages/contact-us',
+  '/company/contact',
   '/about/contact',
   '/about-us',
-  '/help',
+  '/en/contact',
+  '/en-us/contact',
+  '/us/contact',
+  '/inquiry',
+  '/enquiry',
+  '/sales',
+  '/request-a-quote',
+  '/schedule-a-call',
+  '/send-message',
+  '/let-us-talk',
+  '/contact-our-team',
+  '/contact-sales',
+  '/contact-support',
+  '/contact-us-today',
+  '/book-a-consultation',
+  '/schedule-a-demo',
 ] as const;
 
-// Weighted keywords for link evaluation
+// Weighted keywords for link evaluation (Enhanced with comprehensive normalized & semantic matching)
 export const CONTACT_TEXT_PATTERNS: Array<{ regex: RegExp; score: number; reason: string }> = [
   { regex: /^(contact\s*us|contact)$/i, score: 100, reason: 'Exact "Contact" or "Contact Us" match' },
-  { regex: /^(get\s*in\s*touch|reach\s*us|talk\s*to\s*us)$/i, score: 95, reason: 'High-confidence outreach phrase' },
-  { regex: /^(request\s*a\s*quote|request\s*demo|sales|support|inquiry|enquiry)$/i, score: 90, reason: 'Inquiry/Sales phrase match' },
-  { regex: /contact/i, score: 80, reason: 'Contains "contact"' },
-  { regex: /(get\s*in\s*touch|reach\s*us|talk\s*to\s*us)/i, score: 75, reason: 'Outreach keyword match' },
-  { regex: /(customer\s*support|sales\s*inquiry|help\s*desk|inquiries|enquiries)/i, score: 60, reason: 'Support/Inquiry keyword' },
+  { regex: /^(get\s*in\s*touch|reach\s*us|talk\s*to\s*us|reach\s*out)$/i, score: 95, reason: 'High-confidence outreach phrase' },
+  { regex: /^(send\s*(us\s*)?a?\s*message|let'?s\s*talk|contact\s*our\s*team|contact\s*sales|contact\s*support)$/i, score: 94, reason: 'Strong contact CTA phrase' },
+  { regex: /^(request\s*a?\s*quote|request\s*demo|book\s*a?\s*consultation|schedule\s*a?\s*call|book\s*a?\s*call|request\s*information)$/i, score: 92, reason: 'Inquiry/Sales phrase match' },
+  { regex: /^connect(\s*with\s*us)?$/i, score: 90, reason: 'Connect phrase match' },
+  { regex: /contact/i, score: 85, reason: 'Contains "contact"' },
+  { regex: /(get\s*in\s*touch|reach\s*us|talk\s*to\s*us|reach\s*out|let'?s\s*talk)/i, score: 80, reason: 'Outreach keyword match' },
+  { regex: /(customer\s*support|sales\s*inquiry|help\s*desk|inquiries|enquiries)/i, score: 70, reason: 'Support/Inquiry keyword' },
 ];
 
 export const CONTACT_HREF_PATTERNS: Array<{ regex: RegExp; score: number; reason: string }> = [
-  { regex: /(^|\/)(contact-us|contactus|contact)($|\/|\?|#)/i, score: 90, reason: 'Standard /contact URL path' },
-  { regex: /(^|\/)(get-in-touch|reach-us|talk-to-us|request-a-quote|request-demo|inquiry|enquiry)($|\/|\?|#)/i, score: 85, reason: 'Standard outreach URL path' },
-  { regex: /(^|\/)(about\/contact|support\/contact|sales|support)($|\/|\?|#)/i, score: 70, reason: 'Nested contact path' },
+  { regex: /(^|\/)(contact-us|contactus|contact)($|\/|\?|#)/i, score: 95, reason: 'Standard /contact URL path' },
+  { regex: /(^|\/)(pages\/contact|pages\/contact-us|company\/contact|en\/contact|en-us\/contact|us\/contact)($|\/|\?|#)/i, score: 92, reason: 'Nested /pages/contact URL path' },
+  { regex: /(^|\/)(get-in-touch|reach-us|reach-out|talk-to-us|request-a-quote|request-demo|inquiry|enquiry)($|\/|\?|#)/i, score: 88, reason: 'Standard outreach URL path' },
+  { regex: /(^|\/)(about\/contact|support\/contact|sales|support|help|customer-support|book-a-call|schedule-a-call)($|\/|\?|#)/i, score: 75, reason: 'Nested support path' },
 ];
 
 /**
@@ -156,7 +186,8 @@ export function validateUrlSafety(
 export function scoreCandidateLink(
   href: string,
   linkText: string,
-  baseDomain: string
+  baseDomain: string,
+  isFooter: boolean = false
 ): ScoredLink | null {
   if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
     return null;
@@ -203,12 +234,19 @@ export function scoreCandidateLink(
     }
   }
 
+  // Footer bonus score: Footer contact links are very high-intent & reliable
+  if (isFooter && highestScore > 0) {
+    highestScore = Math.min(100, highestScore + 10);
+    matchReason += ' (Footer link)';
+  }
+
   if (highestScore > 0) {
     return {
       url: absoluteUrl,
       text: cleanText,
       score: highestScore,
       matchReason,
+      isFooter,
     };
   }
 
@@ -226,7 +264,7 @@ export class ContactPageFinder {
     input: ContactDiscoveryInput
   ): Promise<ContactDiscoveryResult> {
     const startTime = Date.now();
-    const { websiteUrl, navigationTimeoutMs = 15000, maxRedirects = 3 } = input;
+    const { websiteUrl, navigationTimeoutMs = 15000 } = input;
 
     const safetyCheck = validateUrlSafety(websiteUrl);
     if (!safetyCheck.isValid) {
@@ -234,6 +272,7 @@ export class ContactPageFinder {
         targetWebsite: websiteUrl,
         targetDomain: safetyCheck.domain || '',
         contactPageUrl: null,
+        candidateUrls: [],
         discoveryMethod: 'none',
         confidenceScore: 0,
         status: 'INVALID_URL',
@@ -249,10 +288,15 @@ export class ContactPageFinder {
 
     // Simulation / Local Fixture mode for unit testing
     if (websiteUrl.includes('test-fixture.local') || process.env.NODE_ENV === 'test') {
+      const candidateList: ScoredLink[] = [
+        { url: `${normalizedUrl}/contact`, text: 'Contact Us', score: 100, matchReason: 'Exact "Contact Us" match' },
+        { url: `${normalizedUrl}/pages/contact-us`, text: 'Reach Us', score: 95, matchReason: 'Nested contact path' },
+      ];
       return {
         targetWebsite: websiteUrl,
         targetDomain: domain,
-        contactPageUrl: `${normalizedUrl}/contact`,
+        contactPageUrl: candidateList[0].url,
+        candidateUrls: candidateList,
         discoveryMethod: 'path_probe',
         confidenceScore: 90,
         status: 'FOUND',
@@ -287,24 +331,25 @@ export class ContactPageFinder {
           waitUntil: 'domcontentloaded',
           timeout: navigationTimeoutMs,
         });
-        // Allow SPA frameworks and form plugins to mount before inspecting
-        // rendered links/forms, with a bounded wait for long-lived requests.
         await page.waitForLoadState('networkidle', { timeout: Math.min(navigationTimeoutMs, 3000) }).catch(() => {});
 
         httpStatus = response?.status() || null;
         pageTitle = await page.title();
 
-        // 1. Check if Homepage itself has a contact form
+        // 1. Check if Homepage itself has a true contact form
         const hasHomepageForm = await page.evaluate(() => {
           const forms = Array.from(document.querySelectorAll('form'));
           return forms.some((f) => {
             const html = f.innerHTML.toLowerCase();
-            return (
-              html.includes('textarea') ||
-              html.includes('email') ||
-              html.includes('contact') ||
-              html.includes('message')
-            );
+            const hasTextarea = html.includes('<textarea') || html.includes('textarea');
+            const hasEmail = html.includes('email');
+            const hasMessage = html.includes('message') || html.includes('comment') || html.includes('inquiry');
+            const hasName = html.includes('name');
+            const isNewsletter = html.includes('newsletter') || html.includes('subscribe');
+            const isSearch = html.includes('search') && !hasTextarea;
+
+            if (isNewsletter || isSearch) return false;
+            return hasTextarea || (hasEmail && (hasMessage || hasName));
           });
         });
 
@@ -316,6 +361,7 @@ export class ContactPageFinder {
             targetWebsite: websiteUrl,
             targetDomain: domain,
             contactPageUrl: normalizedUrl,
+            candidateUrls: [{ url: normalizedUrl, text: 'Homepage Form', score: 100, matchReason: 'Form detected on homepage' }],
             discoveryMethod: 'homepage_form',
             confidenceScore: 95,
             status: 'FOUND',
@@ -326,25 +372,67 @@ export class ContactPageFinder {
           };
         }
 
-        // 2. Scan Homepage Anchors for Contact Links
-        const anchors = await page.evaluate(() => {
-          return Array.from(document.querySelectorAll('a[href]')).map((a) => ({
-            href: a.getAttribute('href') || '',
-            text: (a.textContent || '').trim(),
-          }));
+        // 2. Mobile/Hamburger Menu Unfolding (Support dynamic/hidden JS menus)
+        try {
+          const menuTriggers = [
+            'button[aria-label*="menu" i]',
+            'button[class*="menu" i]',
+            '.hamburger',
+            '[data-toggle="menu"]',
+            '.nav-toggle',
+            'button:has-text("Menu")',
+          ];
+          for (const selector of menuTriggers) {
+            const el = await page.$(selector);
+            if (el) {
+              await el.click().catch(() => {});
+              await page.waitForTimeout(300);
+              break;
+            }
+          }
+        } catch {
+          // Ignore
+        }
+
+        // 3. Scan DOM Anchors (Including Header, Navigation, Footer, Mobile Menu)
+        const rawAnchors = await page.evaluate(() => {
+          const footerSelector = 'footer, [role="contentinfo"], [class*="footer" i], [id*="footer" i]';
+          const footerElement = document.querySelector(footerSelector);
+
+          return Array.from(document.querySelectorAll('a[href]')).map((a) => {
+            const href = a.getAttribute('href') || '';
+            const text = (a.textContent || '').trim();
+            const isFooter = Boolean(footerElement && footerElement.contains(a));
+            return { href, text, isFooter };
+          });
         });
 
         const scoredLinks: ScoredLink[] = [];
         const seenUrls = new Set<string>();
 
-        for (const a of anchors) {
-          const scored = scoreCandidateLink(a.href, a.text, domain);
+        for (const a of rawAnchors) {
+          const scored = scoreCandidateLink(a.href, a.text, domain, a.isFooter);
           if (scored && !seenUrls.has(scored.url)) {
             seenUrls.add(scored.url);
             scoredLinks.push(scored);
           }
         }
 
+        // Add common contact path probing candidates as backup fallback candidates
+        for (const path of COMMON_CONTACT_PATHS) {
+          const probeUrl = `${normalizedUrl.replace(/\/$/, '')}${path}`;
+          if (!seenUrls.has(probeUrl)) {
+            seenUrls.add(probeUrl);
+            scoredLinks.push({
+              url: probeUrl,
+              text: path,
+              score: path === '/contact' || path === '/contact-us' || path === '/pages/contact' ? 85 : 70,
+              matchReason: `Common path candidate (${path})`,
+            });
+          }
+        }
+
+        // Sort all discovered candidate URLs by confidence score
         scoredLinks.sort((a, b) => b.score - a.score);
 
         if (scoredLinks.length > 0) {
@@ -356,6 +444,7 @@ export class ContactPageFinder {
             targetWebsite: websiteUrl,
             targetDomain: domain,
             contactPageUrl: topCandidate.url,
+            candidateUrls: scoredLinks,
             discoveryMethod: 'homepage_anchor',
             confidenceScore: topCandidate.score,
             status: 'FOUND',
@@ -366,39 +455,6 @@ export class ContactPageFinder {
           };
         }
 
-        // 3. Fallback: Probe Common Contact Paths
-        for (const path of COMMON_CONTACT_PATHS) {
-          const probeUrl = `${normalizedUrl.replace(/\/$/, '')}${path}`;
-          try {
-            const probeRes = await page.goto(probeUrl, {
-              waitUntil: 'domcontentloaded',
-              timeout: 5000,
-            });
-            await page.waitForLoadState('networkidle', { timeout: 1500 }).catch(() => {});
-
-            if (probeRes && probeRes.status() >= 200 && probeRes.status() < 400) {
-              const probeTitle = await page.title();
-              await page.close();
-              await context.close();
-              await browser.close();
-              return {
-                targetWebsite: websiteUrl,
-                targetDomain: domain,
-                contactPageUrl: probeUrl,
-                discoveryMethod: 'path_probe',
-                confidenceScore: 80,
-                status: 'FOUND',
-                httpStatus: probeRes.status(),
-                pageTitle: probeTitle,
-                discoveredAt: new Date().toISOString(),
-                durationMs: Date.now() - startTime,
-              };
-            }
-          } catch {
-            // Ignore probe timeouts
-          }
-        }
-
         await page.close();
         await context.close();
         await browser.close();
@@ -407,6 +463,7 @@ export class ContactPageFinder {
           targetWebsite: websiteUrl,
           targetDomain: domain,
           contactPageUrl: null,
+          candidateUrls: [],
           discoveryMethod: 'none',
           confidenceScore: 0,
           status: 'NOT_FOUND',
@@ -449,7 +506,6 @@ async function httpFallbackDiscovery(
   browserError?: string
 ): Promise<ContactDiscoveryResult> {
   const candidatePaths = [
-    '',
     '/contact',
     '/contact-us',
     '/contactus',
@@ -457,6 +513,7 @@ async function httpFallbackDiscovery(
     '/reach-us',
     '/talk-to-us',
     '/request-a-quote',
+    '',
   ];
 
   const baseUrl = normalizedUrl.replace(/\/$/, '');
@@ -476,7 +533,12 @@ async function httpFallbackDiscovery(
       if (res.ok) {
         const html = await res.text();
         const lowerHtml = html.toLowerCase();
-        if (
+        const isHomepage = path === '';
+        if (isHomepage) {
+          if (lowerHtml.includes('<textarea') && (lowerHtml.includes('contact') || lowerHtml.includes('message') || lowerHtml.includes('email'))) {
+            return { target, path, status: res.status };
+          }
+        } else if (
           lowerHtml.includes('<form') ||
           lowerHtml.includes('textarea') ||
           lowerHtml.includes('contact') ||

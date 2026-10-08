@@ -516,6 +516,59 @@ export class CreditWalletService {
     }
   }
 
+  /**
+   * Client-Side Wallet & Ledger Synchronization Helper
+   * Safely synchronizes a server-calculated CreditWallet response (and transaction details) into browser localStorage.
+   * Dispatches 'credit_wallet_updated' event for real-time UI balance updates.
+   */
+  public static syncWalletToClient(
+    wallet: CreditWallet,
+    txDetails?: {
+      campaignId?: string;
+      leadId?: string;
+      companyName?: string;
+      resultType?: string;
+      cost?: number;
+      source?: 'FREE' | 'PAID' | 'NONE';
+    }
+  ): void {
+    if (typeof window === 'undefined' || !wallet || !wallet.userId) return;
+
+    const userId = wallet.userId.toLowerCase().trim();
+    const storageKey = `${STORAGE_KEY_WALLET_PREFIX}${userId}`;
+
+    try {
+      // 1. Persist canonical wallet state
+      localStorage.setItem(storageKey, JSON.stringify(wallet));
+
+      // 2. Persist ledger transaction if cost was deducted
+      if (txDetails && txDetails.cost && txDetails.cost > 0) {
+        const idempotencyKey = `usage-${txDetails.campaignId || 'manual'}-${txDetails.leadId || 'unknown'}`;
+        const transaction: CreditTransaction = {
+          id: `tx-usage-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          userId,
+          campaignId: txDetails.campaignId,
+          leadId: txDetails.leadId,
+          transactionType: 'USAGE',
+          creditSource: txDetails.source && txDetails.source !== 'NONE' ? txDetails.source : 'FREE',
+          amount: -txDetails.cost,
+          balanceBefore: wallet.totalCreditsAvailable + txDetails.cost,
+          balanceAfter: wallet.totalCreditsAvailable,
+          description: `Outreach Deduction (${txDetails.resultType || 'FORM_SUBMITTED'}) ${txDetails.companyName ? 'for ' + txDetails.companyName : ''}`,
+          idempotencyKey,
+          createdAt: new Date().toISOString(),
+        };
+
+        this.recordTransaction(transaction, userId);
+      }
+
+      // 3. Dispatch window event so Header, Sidebar, and Billing pages refresh automatically
+      window.dispatchEvent(new CustomEvent('credit_wallet_updated', { detail: wallet }));
+    } catch (err) {
+      console.error('Error synchronizing credit wallet to client:', err);
+    }
+  }
+
   private static recordTransaction(tx: CreditTransaction, userId: string) {
     if (typeof window !== 'undefined') {
       const storageKey = `${STORAGE_KEY_TRANSACTIONS_PREFIX}${userId.toLowerCase().trim()}`;

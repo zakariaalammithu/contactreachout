@@ -6,7 +6,7 @@
 
 import { ContactPageFinder, ContactDiscoveryResult } from './contact-page-finder';
 import { ContactFormDetector, FormDetectionResult } from './form-detector';
-import { interpolateTemplate, extractVariables } from './template-engine';
+import { interpolateTemplate, extractVariables, convertHtmlToPlainText } from './template-engine';
 import { mapLeadToFormFields, FieldMappingResult, LeadMappingContext } from './field-mapper';
 import { FormSubmitter, SubmissionExecutionResult } from './form-submitter';
 
@@ -174,36 +174,82 @@ export class OutreachPipelineOrchestrator {
 
     addLog('CONTACT_PAGE_DISCOVERY', `Discovered contact page: ${discovery.contactPageUrl} via ${discovery.discoveryMethod}`);
 
-    // 3. Stage 2: Form Detection
-    addLog('FORM_DETECTION', `Analyzing HTML DOM on ${discovery.contactPageUrl}`);
-    const detection = await ContactFormDetector.detectFormOnPage(discovery.contactPageUrl);
+    // 3. Stage 2: Form Detection with Multi-Candidate Fallback Loop
+    // Rather than stopping if Candidate #1 lacks a form, iterate through all discovered candidate URLs
+    const candidateList = (discovery.candidateUrls && discovery.candidateUrls.length > 0)
+      ? discovery.candidateUrls.map((c) => c.url)
+      : [discovery.contactPageUrl];
 
-    if (detection.status === 'CAPTCHA_DETECTED') {
-      addLog('FORM_DETECTION', 'CAPTCHA / Bot challenge detected on contact form. Routing to REVIEW_REQUIRED.');
-      return {
-        leadId: lead.id,
-        targetWebsite: lead.website,
-        finalStatus: 'CAPTCHA_DETECTED',
-        currentStage: 'FORM_DETECTION',
-        discovery,
-        detection,
-        renderedSubject: '',
-        renderedBody: '',
-        totalDurationMs: Date.now() - startTime,
-        completedAt: new Date().toISOString(),
-        logs,
-      };
+    let selectedDetection: FormDetectionResult | null = null;
+    let selectedContactUrl: string | null = null;
+
+    for (const candidateUrl of candidateList) {
+      if (!candidateUrl) continue;
+      addLog('FORM_DETECTION', `Analyzing HTML DOM on candidate page: ${candidateUrl}`);
+      const detectionCandidate = await ContactFormDetector.detectFormOnPage(candidateUrl);
+
+      if (detectionCandidate.status === 'CAPTCHA_DETECTED') {
+        addLog('FORM_DETECTION', `CAPTCHA / Bot challenge detected on candidate ${candidateUrl}. Routing to REVIEW_REQUIRED.`);
+        return {
+          leadId: lead.id,
+          targetWebsite: lead.website,
+          finalStatus: 'CAPTCHA_DETECTED',
+          currentStage: 'FORM_DETECTION',
+          discovery: { ...discovery, contactPageUrl: candidateUrl },
+          detection: detectionCandidate,
+          renderedSubject: '',
+          renderedBody: '',
+          totalDurationMs: Date.now() - startTime,
+          completedAt: new Date().toISOString(),
+          logs,
+        };
+      }
+
+      if (detectionCandidate.status === 'FORM_INACCESSIBLE' && detectionCandidate.selectedForm?.isInsideIframe) {
+        addLog('FORM_DETECTION', `Embedded iframe contact form detected on candidate ${candidateUrl}. Routing to REVIEW_REQUIRED.`);
+        return {
+          leadId: lead.id,
+          targetWebsite: lead.website,
+          finalStatus: 'REVIEW_REQUIRED',
+          currentStage: 'FORM_DETECTION',
+          discovery: { ...discovery, contactPageUrl: candidateUrl },
+          detection: detectionCandidate,
+          renderedSubject: '',
+          renderedBody: '',
+          totalDurationMs: Date.now() - startTime,
+          completedAt: new Date().toISOString(),
+          logs,
+        };
+      }
+
+      if (detectionCandidate.hasContactForm && detectionCandidate.selectedForm) {
+        selectedDetection = detectionCandidate;
+        selectedContactUrl = candidateUrl;
+        addLog('FORM_DETECTION', `Successfully verified contact form on candidate ${candidateUrl}`);
+        break;
+      }
     }
 
-    if (!detection.hasContactForm || !detection.selectedForm) {
-      addLog('FORM_DETECTION', 'No valid public contact form identified on page.');
+    const detection = selectedDetection;
+    const activeContactUrl = selectedContactUrl || discovery.contactPageUrl;
+
+    if (!detection || !detection.hasContactForm || !detection.selectedForm) {
+      addLog('FORM_DETECTION', 'No valid public contact form identified across all candidate contact pages.');
       return {
         leadId: lead.id,
         targetWebsite: lead.website,
         finalStatus: 'NO_FORM_DETECTED',
         currentStage: 'FORM_DETECTION',
         discovery,
-        detection,
+        detection: detection || {
+          targetUrl: activeContactUrl,
+          hasContactForm: false,
+          selectedForm: null,
+          allFormsCount: 0,
+          status: 'NO_FORM_FOUND',
+          confidenceScore: 0,
+          detectedAt: new Date().toISOString(),
+        },
         renderedSubject: '',
         renderedBody: '',
         totalDurationMs: Date.now() - startTime,
@@ -212,9 +258,12 @@ export class OutreachPipelineOrchestrator {
       };
     }
 
+    // Update discovery contactPageUrl to point to the candidate page with the verified form
+    discovery.contactPageUrl = activeContactUrl;
+
     addLog(
       'FORM_DETECTION',
-      `Identified contact form (${detection.selectedForm.formSelector}) with ${detection.selectedForm.detectedFields.length} fields.`
+      `Identified contact form (${detection.selectedForm.formSelector}) with ${detection.selectedForm.detectedFields.length} fields on ${activeContactUrl}.`
     );
 
     // 4. Stage 3: Message Template Rendering
@@ -235,11 +284,11 @@ export class OutreachPipelineOrchestrator {
       user_contact_identity: input.user_contact_identity,
     };
 
-    const renderedSubject = interpolateTemplate(template.subjectTemplate, leadContext);
-    let renderedBody = interpolateTemplate(template.bodyTemplate, leadContext);
+    const renderedSubject = convertHtmlToPlainText(interpolateTemplate(template.subjectTemplate, leadContext));
+    let renderedBody = convertHtmlToPlainText(interpolateTemplate(template.bodyTemplate, leadContext));
 
     if (template.complianceFooter) {
-      renderedBody = `${renderedBody}\n\n---\n${template.complianceFooter}`;
+      renderedBody = `${renderedBody}\n\n---\n${convertHtmlToPlainText(template.complianceFooter)}`;
     }
 
     // 5. Stage 4: Form Field Mapping

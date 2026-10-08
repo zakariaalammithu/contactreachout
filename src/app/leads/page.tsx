@@ -34,6 +34,8 @@ import {
   suggestColumnMappings,
   processImportRows,
 } from '@/lib/services/import-service';
+import { generateUniqueLeadListName } from '@/lib/services/lead-list-service';
+
 
 export default function LeadsPage() {
   const router = useRouter();
@@ -85,7 +87,16 @@ export default function LeadsPage() {
       const suggestedMapping = suggestColumnMappings(preview.detectedHeaders);
 
       const fileName = selectedFile.name;
-      const listName = fileName.replace(/\.[^/.]+$/, '');
+      const rawListName = fileName.replace(/\.[^/.]+$/, '');
+      const storedLists = typeof window !== 'undefined' ? localStorage.getItem('user_lead_lists') : null;
+      const existingLists = storedLists ? JSON.parse(storedLists) : [];
+      const activeAccount = (typeof window !== 'undefined' ? (localStorage.getItem('active_account_email') || '') : '').trim().toLowerCase();
+      const listName = generateUniqueLeadListName(
+        Array.isArray(existingLists) ? existingLists : [],
+        rawListName,
+        activeAccount,
+      );
+
 
       const importResult = processImportRows(preview.rawRows, suggestedMapping as any, {
         sourceFileName: fileName,

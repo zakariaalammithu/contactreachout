@@ -17,8 +17,12 @@ export async function POST(req: NextRequest) {
     const { prospectsCount = 0, aiPersonalizationEnabled = false } = body;
 
     const count = Number(prospectsCount);
-    if (isNaN(count) || count < 0) {
-      return NextResponse.json({ error: 'Invalid prospect count parameter.' }, { status: 400 });
+    if (isNaN(count) || count < 1) {
+      return NextResponse.json({
+        allowed: false,
+        reason: 'NO_PROSPECTS',
+        message: 'Add at least 1 prospect before starting this campaign.',
+      }, { status: 400 });
     }
 
     // 1. AI Personalization Access Control Check

@@ -22,6 +22,7 @@ export interface InboxMessage {
   date: string;
   createdAt: string;
   isUnread: boolean;
+  isArchived?: boolean;
   status: 'INTERESTED' | 'QUESTION' | 'REPLIED' | 'NEW' | 'UNMATCHED';
   originalSubject: string;
   originalMessage: string;
@@ -31,11 +32,21 @@ export interface InboxMessage {
   forwardedToEmail: string;
 }
 
-// In-memory server-side store keyed by message ID
-const messageStore = new Map<string, InboxMessage>();
+declare global {
+  /* eslint-disable no-var */
+  var __cr_inboxMessageStore: Map<string, InboxMessage> | undefined;
+  var __cr_inboxProcessedIds: Set<string> | undefined;
+  /* eslint-enable no-var */
+}
 
-// Idempotency registry keyed by externalMessageId or payload signature
-const processedExternalMessageIds = new Set<string>();
+// Global server-side persistent store (persisted on globalThis to prevent route bundle isolation)
+const messageStore =
+  globalThis.__cr_inboxMessageStore ??
+  (globalThis.__cr_inboxMessageStore = new Map<string, InboxMessage>());
+
+const processedExternalMessageIds =
+  globalThis.__cr_inboxProcessedIds ??
+  (globalThis.__cr_inboxProcessedIds = new Set<string>());
 
 export class InboxStore {
   /**
@@ -70,7 +81,7 @@ export class InboxStore {
    */
   public static getUnreadCount(userEmail: string): number {
     const messages = this.getMessagesForUser(userEmail);
-    return messages.filter((m) => m.isUnread).length;
+    return messages.filter((m) => m.isUnread && !m.isArchived).length;
   }
 
   /**
@@ -94,6 +105,39 @@ export class InboxStore {
     const msg = this.getMessageById(userEmail, messageId, isAdmin);
     if (!msg) return null;
     msg.isUnread = false;
+    messageStore.set(msg.id, msg);
+    return msg;
+  }
+
+  /**
+   * Marks a message as unread for the owner.
+   */
+  public static markAsUnread(userEmail: string, messageId: string, isAdmin = false): InboxMessage | null {
+    const msg = this.getMessageById(userEmail, messageId, isAdmin);
+    if (!msg) return null;
+    msg.isUnread = true;
+    messageStore.set(msg.id, msg);
+    return msg;
+  }
+
+  /**
+   * Archives a conversation message for the owner.
+   */
+  public static archiveMessage(userEmail: string, messageId: string, isAdmin = false): InboxMessage | null {
+    const msg = this.getMessageById(userEmail, messageId, isAdmin);
+    if (!msg) return null;
+    msg.isArchived = true;
+    messageStore.set(msg.id, msg);
+    return msg;
+  }
+
+  /**
+   * Unarchives a conversation message for the owner.
+   */
+  public static unarchiveMessage(userEmail: string, messageId: string, isAdmin = false): InboxMessage | null {
+    const msg = this.getMessageById(userEmail, messageId, isAdmin);
+    if (!msg) return null;
+    msg.isArchived = false;
     messageStore.set(msg.id, msg);
     return msg;
   }
@@ -158,6 +202,7 @@ export class InboxStore {
       date: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       createdAt: now.toISOString(),
       isUnread: true,
+      isArchived: false,
       status: params.status || 'INTERESTED',
       originalSubject: params.originalSubject?.trim() || 'Outreach Inquiry',
       originalMessage: params.originalMessage?.trim() || 'Outreach message submitted via website contact form.',

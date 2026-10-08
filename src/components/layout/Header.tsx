@@ -16,9 +16,20 @@ import {
   LogOut,
   Rocket,
   X,
+  User,
+  UserCheck,
+  Building2,
+  Settings,
+  ChevronDown,
+  Check,
+  LifeBuoy,
+  Scale,
+  LockKeyhole,
 } from 'lucide-react';
+
 import { Button } from '@/components/ui/Button';
 import { MatchDataModal } from '@/components/leads/MatchDataModal';
+import { LogoutModal } from '@/components/ui/LogoutModal';
 import {
   parseSpreadsheetPreview,
   suggestColumnMappings,
@@ -36,6 +47,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; read: boolean; createdAt: string }>>([]);
   const [showNameModal, setShowNameModal] = useState(false);
@@ -61,6 +73,15 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
     email: 'hello@contactreachout.com',
   });
 
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const getInitials = (name: string): string => {
+    if (!name) return 'ZM';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
   const handleSignOut = async () => {
     await fetch('/api/auth/signout', { method: 'POST' }).catch(() => undefined);
     if (typeof window !== 'undefined') localStorage.removeItem('active_account_email');
@@ -69,11 +90,44 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
   };
 
   useEffect(() => {
-    fetch('/api/notifications', { cache: 'no-store' }).then(response => response.json()).then(data => setNotifications(data.notifications || [])).catch(() => undefined);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/notifications', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((data) => setNotifications(data.notifications || []))
+      .catch(() => undefined);
+
     if (initialUserProfile?.email) {
       setUserProfile(initialUserProfile);
+    } else if (typeof window !== 'undefined') {
+      const localEmail = (localStorage.getItem('active_account_email') || localStorage.getItem('user_auth_email') || '').toLowerCase().trim();
+      if (localEmail) {
+        const savedSender = localStorage.getItem('user_sender_profile');
+        let savedName = '';
+        if (savedSender) {
+          try {
+            const p = JSON.parse(savedSender);
+            if (p.name && p.name.trim()) savedName = p.name.trim();
+          } catch (err) {}
+        }
+        if (!savedName) {
+          savedName = localEmail === 'mithusquare@gmail.com' ? 'Zakaria Alam Mithu' : localEmail.split('@')[0];
+        }
+        setUserProfile({ name: savedName, email: localEmail });
+      }
     }
   }, [initialUserProfile]);
+
+
+
 
   // Listen for campaign name updates from editor. Next.js will prefetch links on demand.
   useEffect(() => {
@@ -156,7 +210,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/90 px-4 sm:px-6 backdrop-blur-md font-sans">
+    <header className="sticky top-0 z-30 flex h-16 w-full shrink-0 items-center justify-between border-b border-slate-200 bg-white/95 px-4 sm:px-6 backdrop-blur-md font-sans">
       {/* Hidden File Input for Import Leads button */}
       <input
         type="file"
@@ -207,51 +261,206 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
           </div>
         )}
 
-        {/* Profile Dropdown Badge */}
-        <div className="relative">
-          <button type="button" onClick={() => setNotificationOpen(open => !open)} aria-label="Notifications" className="relative grid h-9 w-9 place-items-center rounded-full border border-blue-100 bg-white text-slate-600 hover:bg-blue-50 hover:text-[#0e6de4]"><Bell className="h-4 w-4" />{notifications.some(item => !item.read) && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />}</button>
-          {notificationOpen && <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"><div className="border-b border-slate-100 px-4 py-3"><p className="text-sm font-black text-slate-900">Notifications</p></div><div className="max-h-80 overflow-y-auto">{notifications.length ? notifications.map(item => <button key={item.id} type="button" onClick={async () => { if (!item.read) { await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id }) }); setNotifications(current => current.map(candidate => candidate.id === item.id ? {...candidate, read:true} : candidate)); } }} className={`block w-full border-b border-slate-100 px-4 py-3 text-left ${item.read ? 'bg-white' : 'bg-blue-50/70'}`}><p className="text-xs font-black text-slate-900">{item.title}</p><p className="mt-1 text-xs leading-5 text-slate-600">{item.message}</p></button>) : <p className="p-6 text-center text-sm text-slate-500">No new notifications.</p>}</div></div>}
-        </div>
-        <div className="relative">
+        {/* User Profile / Account Switcher Controls */}
+        <div className="flex items-center gap-2.5 relative" ref={userMenuRef}>
+          {/* User Full Name Pill with Dropdown Arrow */}
           <button
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1 pr-3 hover:bg-slate-100 transition-colors cursor-pointer"
+            type="button"
+            onClick={() => setUserMenuOpen((open) => !open)}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-[11px] font-bold text-white shadow-xs">
-              {(userProfile?.name || 'ContactReachout Team').split(' ').map((n) => n[0]).join('').slice(0, 2) || 'ZA'}
-            </div>
-            <span className="text-xs font-bold text-slate-700 hidden sm:inline-block">
-              {userProfile?.name || 'Account'}
+            <span className="truncate max-w-[150px] sm:max-w-[220px]">
+              {userProfile?.name || 'Zakaria Alam Mithu'}
             </span>
+            <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Profile Menu Popup */}
-          {userMenuOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white p-2 shadow-2xl border border-slate-200 z-50 animate-in fade-in slide-in-from-top-2 duration-150 font-sans">
-              <div className="px-3 py-2 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-900">{userProfile?.name || 'ContactReachout Team'}</p>
-                <p className="text-[11px] text-slate-500 truncate">{userProfile?.email || 'hello@contactreachout.com'}</p>
+          {/* Notifications Button */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setNotificationOpen((open) => !open)}
+              aria-label="Notifications"
+              className="relative grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-[#0e6de4] transition-colors cursor-pointer"
+            >
+              <Bell className="h-4 w-4" />
+              {notifications.some((item) => !item.read) && (
+                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+              )}
+            </button>
+            {notificationOpen && (
+              <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <p className="text-sm font-extrabold text-slate-900">Notifications</p>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length ? (
+                    notifications.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={async () => {
+                          if (!item.read) {
+                            await fetch('/api/notifications', {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: item.id }),
+                            });
+                            setNotifications((current) =>
+                              current.map((candidate) =>
+                                candidate.id === item.id ? { ...candidate, read: true } : candidate
+                              )
+                            );
+                          }
+                        }}
+                        className={`block w-full border-b border-slate-100 px-4 py-3 text-left ${
+                          item.read ? 'bg-white' : 'bg-blue-50/70'
+                        }`}
+                      >
+                        <p className="text-xs font-black text-slate-900">{item.title}</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-600">{item.message}</p>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="p-6 text-center text-sm text-slate-500">No new notifications.</p>
+                  )}
+                </div>
               </div>
-              <div className="py-1">
+            )}
+          </div>
+
+          {/* Avatar Circle */}
+          <button
+            type="button"
+            onClick={() => setUserMenuOpen((open) => !open)}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0e6de4] text-xs font-extrabold text-white shadow-xs hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+            title={userProfile?.name || 'Account'}
+          >
+            {getInitials(userProfile?.name || 'Zakaria Alam Mithu')}
+          </button>
+
+          {/* Manyreach-Style Profile / Account Switcher Dropdown */}
+          {userMenuOpen && (
+            <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl bg-white p-3 shadow-2xl border border-slate-200 animate-in fade-in slide-in-from-top-2 duration-150 font-sans text-slate-800">
+              {/* SECTION 1: SELECT YOUR ACCOUNT */}
+              <div className="px-2 py-1 mb-1">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  SELECT YOUR ACCOUNT
+                </p>
+              </div>
+
+              {/* Active Account Item */}
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-blue-50/80 border border-blue-100 text-xs font-semibold text-slate-900">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0e6de4] text-white font-bold text-xs shrink-0 shadow-2xs">
+                  <User className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                    <span className="truncate">{userProfile?.name || 'Zakaria Alam Mithu'}</span>
+                    <span className="text-[10px] font-mono font-bold bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded-md shrink-0">
+                      [main]
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-normal truncate">
+                    {userProfile?.email || 'hello@contactreachout.com'}
+                  </p>
+                </div>
+                <Check className="h-4 w-4 text-blue-600 shrink-0 stroke-[2.5]" />
+              </div>
+
+              <div className="my-2.5 border-b border-slate-100" />
+
+              {/* SECTION 2: WORKSPACE ACCOUNTS */}
+              <div className="px-2 py-1 flex items-center justify-between">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  WORKSPACE ACCOUNTS
+                </p>
+                <Link
+                  href="/settings"
+                  onClick={() => setUserMenuOpen(false)}
+                  className="text-slate-400 hover:text-slate-700 transition-colors"
+                  title="Workspace Settings"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+
+              <div className="space-y-0.5 pt-1">
                 <Link
                   href="/profile"
                   onClick={() => setUserMenuOpen(false)}
-                  className="block px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 rounded-xl"
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
                 >
-                  Account Settings
+                  <UserCheck className="h-4 w-4 text-slate-400" />
+                  <span>Account & Profile Settings</span>
                 </Link>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl"
+
+                <Link
+                  href="/settings"
+                  onClick={() => setUserMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
                 >
-                  <LogOut className="h-3.5 w-3.5" />
-                  Sign Out
-                </button>
+                  <Building2 className="h-4 w-4 text-slate-400" />
+                  <span>Manage Workspaces</span>
+                </Link>
               </div>
+
+              <div className="my-2.5 border-b border-slate-100" />
+
+              {/* SECTION 3: HELP & LEGAL */}
+              <div className="px-2 py-1 flex items-center justify-between">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  HELP & LEGAL
+                </p>
+              </div>
+
+              <div className="space-y-0.5 pt-1">
+                <Link
+                  href="/help"
+                  onClick={() => setUserMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
+                >
+                  <LifeBuoy className="h-4 w-4 text-slate-400" />
+                  <span>Help & Support</span>
+                </Link>
+
+                <Link
+                  href="/terms"
+                  onClick={() => setUserMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
+                >
+                  <Scale className="h-4 w-4 text-slate-400" />
+                  <span>Terms & Conditions</span>
+                </Link>
+
+                <Link
+                  href="/privacy"
+                  onClick={() => setUserMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
+                >
+                  <LockKeyhole className="h-4 w-4 text-slate-400" />
+                  <span>Privacy Policy</span>
+                </Link>
+              </div>
+
+              <div className="my-2.5 border-b border-slate-100" />
+
+              {/* SECTION 4: LOG OUT */}
+              <button
+                type="button"
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  setShowLogoutModal(true);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+              >
+                <LogOut className="h-4 w-4 text-rose-500" />
+                <span>Log Out</span>
+              </button>
             </div>
           )}
         </div>
+
       </div>
 
       {/* CREATE NEW CAMPAIGN NAME PROMPT MODAL */}
@@ -323,6 +532,12 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
         sampleRows={matchFileData.sampleRows}
         allRawRows={matchFileData.allRawRows}
         onImportSuccess={handleMatchImportSuccess}
+      />
+
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleSignOut}
       />
     </header>
   );

@@ -82,10 +82,21 @@ export async function POST(req: NextRequest) {
         if (resendRes.ok) {
           isLiveSent = true;
           deliveryMessage = `Live email transmitted successfully via Resend API to ${recipientEmail}!`;
+        } else {
+          const errData = await resendRes.json().catch(() => ({}));
+          console.error('Resend send-reply API error:', resendRes.status, errData);
+          return NextResponse.json(
+            { error: errData.message || `Email delivery provider rejected request (HTTP ${resendRes.status})` },
+            { status: 502 }
+          );
         }
       }
-    } catch (e) {
-      console.warn('Resend live dispatch fallback:', e);
+    } catch (e: any) {
+      console.warn('Resend live dispatch error:', e);
+      return NextResponse.json(
+        { error: e.message || 'Error connecting to email delivery provider' },
+        { status: 500 }
+      );
     }
 
     // Save outbound reply to server-side InboxStore if messageId is known

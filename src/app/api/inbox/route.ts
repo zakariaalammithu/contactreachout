@@ -43,13 +43,24 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { messageId } = await request.json();
+    const { messageId, action = 'mark_read' } = await request.json();
     if (!messageId) {
       return NextResponse.json({ error: 'Missing messageId' }, { status: 400 });
     }
 
     const isAdmin = session.role === 'SUPER_ADMIN';
-    const updated = InboxStore.markAsRead(session.email, messageId, isAdmin);
+    let updated = null;
+
+    if (action === 'archive') {
+      updated = InboxStore.archiveMessage(session.email, messageId, isAdmin);
+    } else if (action === 'unarchive') {
+      updated = InboxStore.unarchiveMessage(session.email, messageId, isAdmin);
+    } else if (action === 'mark_unread') {
+      updated = InboxStore.markAsUnread(session.email, messageId, isAdmin);
+    } else {
+      updated = InboxStore.markAsRead(session.email, messageId, isAdmin);
+    }
+
     if (!updated) {
       return NextResponse.json({ error: 'Message not found or access denied.' }, { status: 403 });
     }

@@ -134,9 +134,85 @@ export function toTitleCase(str?: string | null): string {
   return str
     .trim()
     .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => {
+      if (word === word.toUpperCase() || /[A-Z]/.test(word.slice(1))) {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
     .join(' ');
 }
+
+/**
+ * Converts rich text / HTML strings from campaign editor into clean plain text for contact form submission.
+ * Strips HTML comments, converts block elements & <br> to appropriate newlines, decodes HTML entities,
+ * and normalizes whitespace without breaking paragraphs or signature line breaks.
+ */
+export function convertHtmlToPlainText(html: string): string {
+  if (!html) return '';
+
+  let str = html;
+
+  // 1. Remove HTML comments (e.g. <!--hidz:s:111-->)
+  str = str.replace(/<!--[\s\S]*?-->/g, '');
+
+  // 2. Handle explicit empty paragraphs / empty line divs like <p><br></p> or <div><br></div> or <br>
+  str = str.replace(/<(p|div)[^>]*>\s*<br\s*\/?>\s*<\/(p|div)>/gi, '\n\n');
+  str = str.replace(/<br\s*\/?>/gi, '\n');
+
+  // 3. Convert links <a href='url'>text</a> -> keep text or text (url) if different
+  str = str.replace(/<a\s+[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi, (match, href, text) => {
+    const cleanText = text.replace(/<[^>]+>/g, '').trim();
+    if (!cleanText) return href;
+    if (cleanText.toLowerCase() === href.toLowerCase() || href.includes(cleanText)) {
+      return cleanText;
+    }
+    return `${cleanText} (${href})`;
+  });
+
+  // 4. Closing block tags -> single newline \n
+  str = str.replace(/<\/(p|div|h[1-6]|li|tr|blockquote|section|article)>/gi, '\n');
+
+  // List items start with bullet point
+  str = str.replace(/<li[^>]*>/gi, '• ');
+
+  // 5. Strip all remaining opening/closing HTML tags
+  str = str.replace(/<[^>]+>/g, '');
+
+  // 6. Decode HTML entities
+  str = str
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'");
+
+  // Decode numeric entities
+  str = str.replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)));
+  str = str.replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+
+  // 7. Clean up line indentation & empty lines (max 2 consecutive newlines)
+  const lines = str.split('\n').map((l) => l.trim());
+
+  const resultLines: string[] = [];
+  let emptyCount = 0;
+
+  for (const line of lines) {
+    if (!line) {
+      emptyCount++;
+      if (emptyCount <= 1 && resultLines.length > 0) {
+        resultLines.push('');
+      }
+    } else {
+      emptyCount = 0;
+      resultLines.push(line);
+    }
+  }
+
+  return resultLines.join('\n').trim();
+}
+
 
 /**
  * Checks if a string is a domain name or URL (e.g. "www.centrica.com", "centrica.com", "http://centrica.com").

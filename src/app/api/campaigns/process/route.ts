@@ -30,10 +30,12 @@ export async function POST(req: NextRequest) {
 
     const hasExplicitDryRun = typeof options.dryRun === 'boolean';
     const dryRunDefault = process.env.ENFORCE_DRY_RUN_DEFAULT === 'true';
-    const configuredMode = (process.env.CONTACT_FORM_MODE || (process.env.NODE_ENV === 'production' ? 'live' : 'test')).toLowerCase();
-    const runtimeMode: 'live' | 'test' | 'disabled' = configuredMode === 'disabled' ? 'disabled' : configuredMode === 'live' ? 'live' : 'test';
+    const envMode = process.env.CONTACT_FORM_MODE ? process.env.CONTACT_FORM_MODE.toLowerCase() : undefined;
+    
+    // Explicit campaign configuration takes precedence unless globally disabled via environment
     const campaignDryRun = hasExplicitDryRun ? options.dryRun : dryRunDefault;
-    const isDryRun = Boolean(campaignDryRun || runtimeMode !== 'live');
+    const isDryRun = envMode === 'disabled' ? true : campaignDryRun;
+    const runtimeMode: 'live' | 'test' | 'disabled' = envMode === 'disabled' ? 'disabled' : (isDryRun ? 'test' : 'live');
 
     // 1. Server-Side Sending Schedule Enforcement
     const scheduleCheck = validateSendingSchedule(options.schedule, lead.location || lead.country || lead.city);
@@ -48,9 +50,10 @@ export async function POST(req: NextRequest) {
           companyName: lead.company_name,
           domain: lead.website.replace(/^https?:\/\//, '').split('/')[0],
           url: lead.website,
-          status: 'UNCONTACTED',
+          status: 'SCHEDULED',
           code: scheduleCheck.reason || 'Scheduled — outside sending window',
           time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          retryAt: new Date(Date.now() + 60_000).toISOString(),
           isDryRun,
         },
       });
@@ -99,15 +102,36 @@ export async function POST(req: NextRequest) {
     const totalDurationMs = result.totalDurationMs || (Date.now() - startTime);
 
     // 3. Map pipeline finalStatus to standardized ContactReachout Statuses
-    let campaignStatus: 'DELIVERED' | 'FAILED' | 'NO-FORM' | 'REVIEW' | 'DRY_RUN_COMPLETED' = 'FAILED';
+    let campaignStatus: 'DELIVERED' | 'FAILED' | 'NO-FORM' | 'REVIEW' | 'DRY_RUN_COMPLETED' | 'UNREACHABLE' = 'FAILED';
     let diagnosticMessage = 'Form submission attempted';
+    const discoveryError = result.discovery?.errorMessage || '';
+    const isNavigationFailure =
+      result.currentStage === 'CONTACT_PAGE_DISCOVERY' &&
+      (result.discovery?.status === 'ERROR' ||
+        /ERR_(NETWORK_ACCESS_DENIED|NAME_NOT_RESOLVED|CONNECTION|INTERNET_DISCONNECTED|TIMED_OUT)|ENOTFOUND|ECONNREFUSED|EAI_AGAIN/i.test(discoveryError));
 
     if (result.finalStatus === 'SUCCESS') {
-      campaignStatus = 'DELIVERED';
-      diagnosticMessage = result.submission?.confirmationMessage || 'HTTP 200 - Form Submitted Successfully';
+      const isVerifiedFormSubmission =
+        result.discovery?.status === 'FOUND' &&
+        Boolean(result.detection?.hasContactForm) &&
+        (result.mapping?.status === 'READY_FOR_SUBMISSION' || (result.mapping?.status as string) === 'MAPPED') &&
+        result.submission?.status === 'SUCCESS';
+
+      if (isVerifiedFormSubmission) {
+        campaignStatus = 'DELIVERED';
+        diagnosticMessage = result.submission?.confirmationMessage || 'HTTP 200 - Form Submitted Successfully';
+      } else {
+        campaignStatus = 'FAILED';
+        diagnosticMessage = result.submission?.errorMessage || 'Form verification failed — missing mandatory form fields or submission confirmation.';
+      }
     } else if (result.finalStatus === 'DRY_RUN_COMPLETED') {
       campaignStatus = 'DRY_RUN_COMPLETED';
       diagnosticMessage = result.submission?.confirmationMessage || '[DRY RUN] Submission safely simulated';
+    } else if (isNavigationFailure) {
+      // A browser/DNS navigation failure happens before a contact page or form can
+      // be inspected. It must never be reported as a form or submission failure.
+      campaignStatus = 'UNREACHABLE';
+      diagnosticMessage = discoveryError || 'Target website could not be reached before contact-page discovery.';
     } else if (result.finalStatus === 'NO_CONTACT_PAGE' || result.finalStatus === 'NO_FORM_DETECTED') {
       const isBrowserError =
         result.discovery?.status === 'ERROR' ||
@@ -166,10 +190,18 @@ export async function POST(req: NextRequest) {
       leadId: lead.id,
       companyName: lead.company_name,
       domain: lead.website.replace(/^https?:\/\//, '').split('/')[0],
-      url: result.discovery?.contactPageUrl || lead.website,
-      techStack: result.detection?.selectedForm?.formSelector ? `Form (${result.detection.selectedForm.formSelector})` : 'HTML Form',
-      domainAge: 'Verified Active Domain',
-      lastUpdated: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      // Keep the target domain separately, but never imply that a contact page
+      // was reached when navigation stopped at discovery.
+      url: isNavigationFailure ? 'NOT_CHECKED' : (result.discovery?.contactPageUrl || lead.website),
+      websiteStatus: isNavigationFailure ? 'UNREACHABLE' : undefined,
+      contactPageStatus: isNavigationFailure ? 'NOT_CHECKED' : undefined,
+      formStatus: isNavigationFailure ? 'NOT_CHECKED' : result.detection?.selectedForm ? 'DETECTED' : undefined,
+      fieldsDetected: isNavigationFailure ? 'NOT_CHECKED' : undefined,
+      submissionStatus: isNavigationFailure ? 'NOT_ATTEMPTED' : undefined,
+      successVerification: isNavigationFailure ? 'NOT_CHECKED' : undefined,
+      techStack: result.detection?.selectedForm?.formSelector ? `Form (${result.detection.selectedForm.formSelector})` : 'NOT_DETECTED',
+      domainAge: 'N/A',
+      lastUpdated: 'N/A',
       status: campaignStatus,
       code: diagnosticMessage,
       time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),

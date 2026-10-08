@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { ArrowRight, Menu, X } from 'lucide-react';
 
 const navigation = [
-  { label: 'How It Works', href: '/#how-it-works' },
-  { label: 'Integrations', href: '/#integrations' },
-  { label: 'Features', href: '/#features' },
-  { label: 'Benefits', href: '/benefits' },
+  { label: 'How It Works', href: '/how-it-works' },
+  { label: 'Features', href: '/features' },
+  { label: 'Outreach', href: '/contact-form-outreach' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Contact', href: '/contact' },
 ];
