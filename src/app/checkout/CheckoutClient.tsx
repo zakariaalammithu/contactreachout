@@ -6,7 +6,6 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, CreditCard, Loader2, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 import { StripeService } from '@/lib/services/stripe-service';
 
 export default function CheckoutClient() {
@@ -45,11 +44,6 @@ export default function CheckoutClient() {
       .then((data) => {
         if (!active) return;
         if (data.status === 'paid' && data.credited) {
-          const claimKey = `stripe_checkout_claimed_${sessionId}`;
-          if (!localStorage.getItem(claimKey)) {
-            CreditWalletService.addPaidCredits(data.credits, sessionId);
-            localStorage.setItem(claimKey, 'true');
-          }
           setState('paid');
           setMessage(`${Number(data.credits).toLocaleString()} credits were added to your account.`);
         } else {

@@ -8,6 +8,8 @@ export const LeadSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   industry: z.string().optional(),
+  employeeCount: z.number().int().nonnegative().optional(),
+  annualRevenue: z.number().nonnegative().optional(),
   city: z.string().optional(),
   country: z.string().optional(),
   customFields: z.record(z.string()).optional(),

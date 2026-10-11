@@ -1,5 +1,3 @@
-import { AuthStore } from '@/lib/auth/auth-store';
-
 export interface PaymentRecord {
   sessionId: string;
   userId: string;
@@ -29,10 +27,9 @@ export class PaymentStore {
     const payment = payments.get(sessionId);
     if (!payment) return null;
     payment.status = 'paid';
-    if (!payment.credited) {
-      AuthStore.addPaidCredits(payment.userId, payment.credits);
-      payment.credited = true;
-    }
+    // Credit application is owned by CreditWalletService's idempotent database
+    // transaction. This in-process record is status metadata only.
+    payment.credited = true;
     payments.set(sessionId, payment);
     return payment;
   }

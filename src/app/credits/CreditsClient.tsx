@@ -48,8 +48,19 @@ export default function CreditsClient() {
         }
 
         const effectiveEmail = userEmail || 'usr_guest';
-        const w = CreditWalletService.getWallet(effectiveEmail);
-        const txs = CreditWalletService.getTransactions(effectiveEmail);
+        // The API is the authority when database persistence is configured.
+        // Local storage is retained solely for offline/unconfigured development.
+        let w: CreditWallet;
+        let txs: CreditTransaction[];
+        const walletResponse = await fetch('/api/credits', { cache: 'no-store' });
+        if (walletResponse.ok) {
+          const walletData = await walletResponse.json();
+          w = walletData.wallet;
+          txs = walletData.transactions || [];
+        } else {
+          w = CreditWalletService.getWallet(effectiveEmail);
+          txs = CreditWalletService.getTransactions(effectiveEmail);
+        }
 
         if (isMounted) {
           setWallet(w);

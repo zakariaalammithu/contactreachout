@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from '@/lib/auth/session';
 import { StripeService } from '@/lib/services/stripe-service';
 import { PaymentStore } from '@/lib/services/payment-store';
+import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 
 export async function GET(request: NextRequest) {
   const user = SessionManager.getSessionFromRequest(request);
@@ -14,7 +15,10 @@ export async function GET(request: NextRequest) {
     const purchase = StripeService.getPurchase(Number(checkout.metadata?.credits), checkout.metadata?.period === 'yearly' ? 'yearly' : 'monthly');
     if (checkout.amount_total !== purchase.amountCents) return NextResponse.json({ error: 'Payment amount validation failed.' }, { status: 409 });
     let record = PaymentStore.get(sessionId) || PaymentStore.create({ sessionId, userId: user.userId, credits: purchase.credits, amountCents: purchase.amountCents });
-    if (checkout.payment_status === 'paid') record = PaymentStore.markPaid(sessionId) || record;
+    if (checkout.payment_status === 'paid') {
+      await CreditWalletService.addPaidCreditsForServer(purchase.credits, sessionId, user.email);
+      record = PaymentStore.markPaid(sessionId) || record;
+    }
     return NextResponse.json({ status: record.status, credited: record.credited, credits: record.credits });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Payment status could not be verified.' }, { status: 400 });

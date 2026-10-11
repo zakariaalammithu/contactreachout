@@ -755,7 +755,11 @@ async function httpFallbackFormDetection(url: string, browserError?: string): Pr
     status: 'ERROR',
     confidenceScore: 0,
     detectedAt: new Date().toISOString(),
-    errorCode: browserError ? 'BROWSER_LAUNCH_FAILED' : 'ERR_FORM_DETECTION_FAILED',
+    errorCode: browserError
+      ? /cannot find package ['"]playwright|browserType\.launch|executable doesn't exist|playwright.*(missing|unavailable)/i.test(browserError)
+        ? 'BROWSER_RUNTIME_UNAVAILABLE'
+        : 'BROWSER_LAUNCH_FAILED'
+      : 'ERR_FORM_DETECTION_FAILED',
     errorMessage: browserError || 'Contact form could not be verified from the target response.',
   };
 }

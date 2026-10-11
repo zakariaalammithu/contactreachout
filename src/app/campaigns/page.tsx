@@ -45,6 +45,7 @@ import { Button } from '@/components/ui/Button';
 import { generateNextUniqueCampaignName } from '@/lib/utils';
 import { generateCampaignPDFReport } from '@/lib/services/pdf-report-service';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { createUniqueCampaignId, persistCampaignDraft, readCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 
 
 interface CampaignItem {
@@ -116,7 +117,25 @@ export default function CampaignsPage() {
   const [nameError, setNameError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [navigatingRoute, setNavigatingRoute] = useState<string | null>(null);
+  const [createNavigationError, setCreateNavigationError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const createInFlightRef = useRef(false);
+  const createNavigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const releaseCreateNavigation = (message = '') => {
+    if (createNavigationTimerRef.current) {
+      clearTimeout(createNavigationTimerRef.current);
+      createNavigationTimerRef.current = null;
+    }
+    createInFlightRef.current = false;
+    setIsCreating(false);
+    setNavigatingRoute(null);
+    setCreateNavigationError(message);
+  };
+
+  useEffect(() => () => {
+    if (createNavigationTimerRef.current) clearTimeout(createNavigationTimerRef.current);
+  }, []);
 
   // Focus and select input text when modal opens
   useEffect(() => {
@@ -144,20 +163,24 @@ export default function CampaignsPage() {
 
   // Create Campaign submit handler (Direct creation with automatic unique default name)
   const handleCreateCampaignSubmit = (customName?: string) => {
-    if (isCreating || navigatingRoute === 'new') return;
+    // State updates are asynchronous, so use a ref for the first click. This
+    // prevents two immediate clicks from creating two browser-local drafts.
+    if (createInFlightRef.current || isCreating || navigatingRoute === 'new') return;
+    createInFlightRef.current = true;
     setIsCreating(true);
     setNavigatingRoute('new');
+    setCreateNavigationError('');
 
+    let targetUrl = '';
     try {
       const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
-      const stored = localStorage.getItem('user_campaigns');
-      const parsed = safeParseJSON<any[]>(stored, []);
+      const parsed = readCampaignDrafts(localStorage);
 
       const trimmedInput = typeof customName === 'string' ? customName.trim() : newCampaignName.trim();
       const trimmedName = (trimmedInput && trimmedInput !== 'New Campaign')
         ? trimmedInput
         : generateNextUniqueCampaignName(campaigns.length > 0 ? campaigns : parsed);
-      const newId = `camp-${Date.now()}`;
+      const newId = createUniqueCampaignId(parsed);
 
       const rawCampaign = {
         id: newId,
@@ -185,32 +208,51 @@ export default function CampaignsPage() {
         ownerEmail: activeAccount,
       };
 
-      const updated = [rawCampaign, ...parsed];
-      localStorage.setItem('user_campaigns', JSON.stringify(updated));
+      // Verify the exact ID can be read back before opening the editor.
+      persistCampaignDraft(localStorage, rawCampaign);
       try {
         window.dispatchEvent(new Event('campaigns_updated'));
       } catch (e) {}
 
       setIsCreateModalOpen(false);
-      const targetUrl = `/campaigns/new?id=${encodeURIComponent(newId)}`;
+      targetUrl = `/campaigns/new?id=${encodeURIComponent(newId)}`;
 
+    } catch (err: any) {
+      console.error('Error saving new campaign draft:', err);
+      const isQuotaError = err?.name === 'QuotaExceededError' || err?.code === 22;
+      const detail = isQuotaError
+        ? 'Browser storage is full. Free space in this browser and try again; no campaign draft was created.'
+        : (err?.message || 'Could not save the campaign draft in this browser.');
+      releaseCreateNavigation(detail);
+      return;
+    }
+
+    try {
       try {
         router.prefetch(targetUrl);
       } catch (e) {}
 
-      // Execute instant direct navigation without low-priority startTransition deferral
+      // App Router navigation has no completion promise. Keep the UI locked
+      // only while the transition starts, then use one direct-navigation
+      // fallback. If that cannot start, release the button with a retryable
+      // error instead of leaving "Opening Editor…" indefinitely.
       router.push(targetUrl);
-
-      // Fallback guard to guarantee instant navigation even under heavy dev server compilation
-      setTimeout(() => {
-        if (typeof window !== 'undefined' && !window.location.href.includes('/campaigns/new')) {
-          window.location.assign(targetUrl);
+      createNavigationTimerRef.current = setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname !== '/campaigns/new') {
+          try {
+            window.location.assign(targetUrl);
+          } catch {
+            releaseCreateNavigation('Could not open the campaign editor. Please try again.');
+          }
         }
-      }, 400);
+      }, 1500);
     } catch (err) {
-      console.error('Error creating new campaign:', err);
-      setIsCreating(false);
-      setNavigatingRoute(null);
+      console.error('Error opening campaign editor:', err);
+      try {
+        window.location.assign(targetUrl);
+      } catch {
+        releaseCreateNavigation('The draft was saved, but the editor could not be opened. Please try again.');
+      }
     }
   };
 
@@ -1560,6 +1602,11 @@ export default function CampaignsPage() {
               </>
             )}
           </button>
+          {createNavigationError && (
+            <p role="alert" className="max-w-56 text-xs font-medium text-rose-600" aria-live="polite">
+              {createNavigationError}
+            </p>
+          )}
         </div>
       </div>
 

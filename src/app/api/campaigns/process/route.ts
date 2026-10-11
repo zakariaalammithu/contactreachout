@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Server-Side Credit Pre-Check for Live Mode Submissions
     if (!isDryRun) {
-      const wallet = CreditWalletService.getWallet(userId);
+      const wallet = await CreditWalletService.getWalletForServer(userId);
       if (wallet.totalCreditsAvailable < 1) {
         return NextResponse.json(
           {
@@ -107,15 +107,17 @@ export async function POST(req: NextRequest) {
     const discoveryError = result.discovery?.errorMessage || '';
     const isNavigationFailure =
       result.currentStage === 'CONTACT_PAGE_DISCOVERY' &&
-      (result.discovery?.status === 'ERROR' ||
-        /ERR_(NETWORK_ACCESS_DENIED|NAME_NOT_RESOLVED|CONNECTION|INTERNET_DISCONNECTED|TIMED_OUT)|ENOTFOUND|ECONNREFUSED|EAI_AGAIN/i.test(discoveryError));
+      (result.discovery?.errorCode !== 'BROWSER_RUNTIME_UNAVAILABLE' &&
+        (result.discovery?.status === 'ERROR' ||
+          /ERR_(NETWORK_ACCESS_DENIED|NAME_NOT_RESOLVED|CONNECTION|INTERNET_DISCONNECTED|TIMED_OUT)|ENOTFOUND|ECONNREFUSED|EAI_AGAIN/i.test(discoveryError)));
 
     if (result.finalStatus === 'SUCCESS') {
       const isVerifiedFormSubmission =
         result.discovery?.status === 'FOUND' &&
         Boolean(result.detection?.hasContactForm) &&
         (result.mapping?.status === 'READY_FOR_SUBMISSION' || (result.mapping?.status as string) === 'MAPPED') &&
-        result.submission?.status === 'SUCCESS';
+        result.submission?.status === 'SUCCESS' &&
+        result.submission?.successVerified === true;
 
       if (isVerifiedFormSubmission) {
         campaignStatus = 'DELIVERED';
@@ -136,6 +138,7 @@ export async function POST(req: NextRequest) {
       const isBrowserError =
         result.discovery?.status === 'ERROR' ||
         result.discovery?.errorCode === 'BROWSER_LAUNCH_FAILED' ||
+        result.discovery?.errorCode === 'BROWSER_RUNTIME_UNAVAILABLE' ||
         (result.discovery?.errorMessage && (
           result.discovery.errorMessage.includes('Executable doesn\'t exist') ||
           result.discovery.errorMessage.includes('browserType.launch') ||
@@ -144,7 +147,9 @@ export async function POST(req: NextRequest) {
 
       if (isBrowserError) {
         campaignStatus = 'FAILED';
-        diagnosticMessage = result.discovery?.errorMessage || 'EXECUTION_ERROR - Playwright browser executable missing or runtime error';
+        diagnosticMessage = result.discovery?.errorCode === 'BROWSER_RUNTIME_UNAVAILABLE'
+          ? `BROWSER_RUNTIME_UNAVAILABLE: ${result.discovery?.errorMessage || 'A configured remote browser worker is required for this campaign.'}`
+          : result.discovery?.errorMessage || 'EXECUTION_ERROR - Playwright browser executable missing or runtime error';
       } else {
         campaignStatus = 'NO-FORM';
         diagnosticMessage = result.discovery?.errorMessage || result.detection?.errorMessage || 'No usable public contact page or form detected';
@@ -167,11 +172,14 @@ export async function POST(req: NextRequest) {
 
     // 4. Perform Server-Side Credit Deduction ONLY on Successful Live Submission
     let creditDeduction = { success: true, cost: 0, source: 'NONE' };
-    let updatedWallet = CreditWalletService.getWallet(userId);
+    let updatedWallet = await CreditWalletService.getWalletForServer(userId);
 
     if (campaignStatus === 'DELIVERED' && !isDryRun) {
-      const deduction = CreditWalletService.deductCredits(
-        'FORM_SUBMITTED',
+      const deduction = await CreditWalletService.deductCreditsForServer(
+        // PricingService only charges the canonical verified-success outcome.
+        // Other terminal states (dry run, CAPTCHA, missing form, failure) never
+        // enter this branch and therefore cannot consume a credit.
+        'SUCCESSFUL_SUBMISSION',
         campaignId,
         lead.id,
         lead.company_name,

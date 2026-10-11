@@ -17,6 +17,8 @@ export interface NormalizedLead {
   title?: string;
   companyName: string;
   companyKeywords?: string;
+  employeeCount?: number;
+  annualRevenue?: number;
   email?: string;
   industry?: string;
   personLinkedinUrl?: string;
@@ -42,6 +44,8 @@ export interface ColumnMapping {
   title?: string;
   company_name?: string;
   company_keywords?: string;
+  employees?: string;
+  annual_revenue?: string;
   email?: string;
   industry?: string;
   person_linkedin_url?: string;
@@ -77,6 +81,29 @@ export interface ImportExecutionResult {
   sanitizedFormulasCount: number;
   importedCount: number;
   validCount?: number;
+}
+
+/**
+ * Converts optional spreadsheet numeric fields without guessing.  Blank cells
+ * stay blank and malformed or negative values are deliberately not coerced.
+ */
+export function normalizeOptionalNumericField(value: unknown, integerOnly = false): number | undefined {
+  if (value === null || value === undefined || value === '') return undefined;
+
+  const source = typeof value === 'number' ? String(value) : String(value).trim();
+  if (!source) return undefined;
+
+  // Commas, currency symbols, and surrounding whitespace are common in Excel
+  // exports. Do not accept any other unexpected text as a number.
+  const normalized = source.replace(/[,$\s]/g, '');
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return undefined;
+
+  const numericValue = Number(normalized);
+  if (!Number.isFinite(numericValue) || numericValue < 0 || (integerOnly && !Number.isInteger(numericValue))) {
+    return undefined;
+  }
+
+  return numericValue;
 }
 
 /**
@@ -136,6 +163,8 @@ export function suggestColumnMappings(headers: string[]): Record<string, string>
     title: '',
     company_name: '',
     company_keywords: '',
+    employees: '',
+    annual_revenue: '',
     email: '',
     industry: '',
     person_linkedin_url: '',
@@ -180,6 +209,24 @@ export function suggestColumnMappings(headers: string[]): Record<string, string>
     // generic "company" matcher can consume both source columns.
     if (!suggestions.company_keywords && /(company.*keywords?|keywords?.*company)/i.test(raw)) {
       suggestions.company_keywords = header;
+      continue;
+    }
+
+    // Keep company size and revenue separate from generic custom fields so
+    // they survive normalization and are available as first-class mappings.
+    if (!suggestions.employees && (
+      /(^employees?$|employeecount|numberofemployees|staffcount|headcount|workforce)/i.test(h) ||
+      /employee.*count|number.*employees|staff.*count|head.*count/i.test(raw)
+    )) {
+      suggestions.employees = header;
+      continue;
+    }
+
+    if (!suggestions.annual_revenue && (
+      /(^annualrevenue$|annualsales|yearlyrevenue|revenueannual|annualturnover)/i.test(h) ||
+      /annual.*revenue|yearly.*revenue|annual.*sales|annual.*turnover/i.test(raw)
+    )) {
+      suggestions.annual_revenue = header;
       continue;
     }
 
@@ -431,6 +478,8 @@ export function processImportRows(
     const rawTitle = mapping.title ? rawRow[mapping.title] : undefined;
     const rawCompanyName = mapping.company_name ? rawRow[mapping.company_name] : undefined;
     const rawCompanyKeywords = mapping.company_keywords ? rawRow[mapping.company_keywords] : undefined;
+    const rawEmployees = mapping.employees ? rawRow[mapping.employees] : undefined;
+    const rawAnnualRevenue = mapping.annual_revenue ? rawRow[mapping.annual_revenue] : undefined;
     const rawEmail = mapping.email ? rawRow[mapping.email] : undefined;
     const rawIndustry = mapping.industry ? rawRow[mapping.industry] : undefined;
     const rawPersonLinkedinUrl = mapping.person_linkedin_url ? rawRow[mapping.person_linkedin_url] : undefined;
@@ -488,6 +537,18 @@ export function processImportRows(
       customFields[customKey] = sanitized == null ? '' : String(sanitized).trim();
     }
 
+    const employeeCount = normalizeOptionalNumericField(rawEmployees, true);
+    const annualRevenue = normalizeOptionalNumericField(rawAnnualRevenue);
+    // Optional numeric fields must never invalidate an otherwise usable lead.
+    // Preserve unparseable source values in metadata rather than silently
+    // converting them to an incorrect number.
+    if (rawEmployees !== undefined && rawEmployees !== null && String(rawEmployees).trim() && employeeCount === undefined) {
+      customFields.employeesInvalidValue = sanitizeCellInput(rawEmployees);
+    }
+    if (rawAnnualRevenue !== undefined && rawAnnualRevenue !== null && String(rawAnnualRevenue).trim() && annualRevenue === undefined) {
+      customFields.annualRevenueInvalidValue = sanitizeCellInput(rawAnnualRevenue);
+    }
+
     // Construct Normalized Lead
     const lead: NormalizedLead = {
       firstName: rawFirstName ? String(sanitizeCellInput(rawFirstName)).trim() : '',
@@ -495,6 +556,8 @@ export function processImportRows(
       title: rawTitle ? String(sanitizeCellInput(rawTitle)).trim() : '',
       companyName: sanitizeCellInput(companyName),
       companyKeywords: rawCompanyKeywords ? String(sanitizeCellInput(rawCompanyKeywords)).trim() : '',
+      employeeCount,
+      annualRevenue,
       email: rawEmail ? String(sanitizeCellInput(rawEmail)).trim() : '',
       industry: rawIndustry ? String(sanitizeCellInput(rawIndustry)).trim() : '',
       personLinkedinUrl: rawPersonLinkedinUrl ? String(sanitizeCellInput(rawPersonLinkedinUrl)).trim() : '',

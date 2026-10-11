@@ -583,9 +583,17 @@ async function httpFallbackDiscovery(
     confidenceScore: 0,
     status: browserError ? 'ERROR' : 'NOT_FOUND',
     httpStatus: null,
-    errorCode: browserError ? 'BROWSER_LAUNCH_FAILED' : 'CONTACT_PAGE_FAILED',
+    errorCode: browserError
+      ? isBrowserRuntimeUnavailable(browserError)
+        ? 'BROWSER_RUNTIME_UNAVAILABLE'
+        : 'BROWSER_LAUNCH_FAILED'
+      : 'CONTACT_PAGE_FAILED',
     errorMessage: browserError || 'No reachable public contact page was verified.',
     discoveredAt: new Date().toISOString(),
     durationMs: Date.now() - startTime,
   };
+}
+
+function isBrowserRuntimeUnavailable(error: string): boolean {
+  return /cannot find package ['"]playwright|browserType\.launch|executable doesn't exist|playwright.*(missing|unavailable)/i.test(error);
 }

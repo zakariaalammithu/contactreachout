@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
     replyEmailVerified: isVerified,
     unverifiedReplyEmail: user.unverifiedReplyEmail || '',
     accountEmail: user.email,
+    plan: user.plan || 'Free',
   });
 }
 
@@ -64,6 +65,19 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action, newReplyEmail, otpCode } = body;
+
+    const normalizedPlan = String(user.plan || 'Free').trim().toLowerCase();
+    const isFreePlan = !normalizedPlan || ['free', 'plan_free', 'none'].includes(normalizedPlan);
+    if (isFreePlan && (action === 'send_otp' || action === 'verify_otp')) {
+      return NextResponse.json(
+        {
+          error: 'Changing Reply Email is available on paid plans. Please upgrade to continue.',
+          code: 'PAID_PLAN_REQUIRED',
+          upgradeUrl: '/pricing',
+        },
+        { status: 403 }
+      );
+    }
 
     const targetEmail = (newReplyEmail || '').toLowerCase().trim();
 

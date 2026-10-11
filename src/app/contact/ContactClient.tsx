@@ -280,7 +280,7 @@ export function ContactClient() {
                 </button>
               </div>
             ) : (
-              <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
+              <form ref={formRef} action="/api/contact" method="post" onSubmit={handleSubmit} noValidate className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-black text-slate-900">Send us a message</h2>
                   <p className="mt-1 text-sm text-slate-600">

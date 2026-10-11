@@ -4,6 +4,15 @@ import { AuthStore } from '@/lib/auth/auth-store';
 import { PaymentStore } from '@/lib/services/payment-store';
 import { QueueManager } from '@/lib/queue/queue-manager';
 import { PricingService } from '@/lib/services/pricing-service';
+import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { z } from 'zod';
+
+const grantSchema = z.object({
+  targetUserEmail: z.string().email(),
+  amount: z.number().int().positive().max(1_000_000),
+  reason: z.string().trim().max(500).optional().default(''),
+  requestId: z.string().uuid(),
+});
 
 export async function GET(request: NextRequest) {
   const { session, errorResponse } = await AdminAuthGuard.requireAdmin(request);
@@ -93,4 +102,28 @@ export async function GET(request: NextRequest) {
     const msg = error instanceof Error ? error.message : 'Failed to fetch credit telemetry.';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  const { session, errorResponse } = await AdminAuthGuard.requireAdmin(request);
+  if (errorResponse) return errorResponse;
+
+  const parsed = grantSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid credit grant.' }, { status: 400 });
+  }
+
+  const targetEmail = parsed.data.targetUserEmail.toLowerCase().trim();
+  const targetUser = AuthStore.getUserByEmail(targetEmail);
+  if (!targetUser) return NextResponse.json({ error: 'Target user was not found.' }, { status: 404 });
+
+  const reason = `Admin grant by ${session.email}${parsed.data.reason ? `: ${parsed.data.reason}` : ''}`;
+  const { wallet, transaction } = await CreditWalletService.addBonusCreditsForServer(
+    parsed.data.amount,
+    reason,
+    targetUser.email,
+    `admin-grant-${parsed.data.requestId}`
+  );
+
+  return NextResponse.json({ success: true, wallet, transaction });
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Mail, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, KeyRound, Check, Save } from 'lucide-react';
 
 export function ContactReplySettings() {
@@ -23,6 +24,7 @@ export function ContactReplySettings() {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [isFreePlan, setIsFreePlan] = useState(false);
 
   const fetchSettings = async () => {
     setError(null);
@@ -48,6 +50,8 @@ export function ContactReplySettings() {
         setReplyEmail(data.replyEmail);
         setIsVerified(data.replyEmailVerified);
         setAccountEmail(data.accountEmail);
+        const plan = String(data.plan || 'Free').trim().toLowerCase();
+        setIsFreePlan(!plan || ['free', 'plan_free', 'none'].includes(plan));
       }
     } catch (err: any) {
       // Gracefully retain local state if network error occurs
@@ -111,6 +115,10 @@ export function ContactReplySettings() {
   };
 
   const handleRequestOtp = async () => {
+    if (isFreePlan) {
+      setError('Changing Reply Email is available on paid plans. Please upgrade to continue.');
+      return;
+    }
     const cleanEmail = newEmail.trim().toLowerCase();
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
@@ -284,10 +292,12 @@ export function ContactReplySettings() {
                     setOtpCode('');
                     setError(null);
                   }}
-                  className="shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0e6de4] px-3.5 py-3 text-xs font-bold transition-all cursor-pointer"
+                  disabled={isFreePlan}
+                  className="shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0e6de4] px-3.5 py-3 text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Change Email
                 </button>
+                {isFreePlan && <Link href="/pricing" className="shrink-0 rounded-xl bg-[#0e6de4] px-3 py-3 text-xs font-bold text-white">Upgrade</Link>}
               </div>
             </div>
 

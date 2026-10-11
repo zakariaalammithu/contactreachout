@@ -7,8 +7,8 @@ export async function GET(req: NextRequest) {
   try {
     const session = SessionManager.getSessionFromRequest(req);
     const userId = session?.email || 'usr_guest';
-    const wallet = CreditWalletService.getWallet(userId);
-    const transactions = CreditWalletService.getTransactions(userId);
+    const wallet = await CreditWalletService.getWalletForServer(userId);
+    const transactions = await CreditWalletService.getTransactionsForServer(userId);
 
     return NextResponse.json({
       success: true,
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
 const deductSchema = z.object({
   action: z.literal('deduct'),
-  resultType: z.string().optional(),
+  resultType: z.literal('SUCCESSFUL_SUBMISSION').optional(),
   campaignId: z.string().optional(),
   leadId: z.string().optional(),
   companyName: z.string().optional(),
@@ -44,10 +44,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const { resultType = 'FORM_SUBMITTED', campaignId, leadId, companyName } = parsed.data;
+    const { resultType = 'SUCCESSFUL_SUBMISSION', campaignId, leadId, companyName } = parsed.data;
     const userId = session.email;
 
-    const result = CreditWalletService.deductCredits(
+    const result = await CreditWalletService.deductCreditsForServer(
       resultType,
       campaignId,
       leadId,

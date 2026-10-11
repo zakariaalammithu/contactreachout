@@ -44,7 +44,18 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Credit Wallet Capacity & Unreserved Balance Validation
-    const validation = CreditWalletService.validateCampaignStart(userId, count);
+    const wallet = await CreditWalletService.getWalletForServer(userId);
+    const validation = {
+      allowed: wallet.totalCreditsAvailable >= count,
+      reason: wallet.totalCreditsAvailable <= 0 ? 'NO_CREDITS_REMAINING' as const : wallet.totalCreditsAvailable < count ? 'INSUFFICIENT_CREDITS' as const : undefined,
+      availableCredits: wallet.totalCreditsAvailable,
+      unreservedCredits: wallet.totalCreditsAvailable,
+      requiredCredits: count,
+      shortfall: Math.max(0, count - wallet.totalCreditsAvailable),
+      message: wallet.totalCreditsAvailable >= count
+        ? `${count} prospects can be processed with your current ${wallet.totalCreditsAvailable} available credits.`
+        : 'Not enough credits to start this campaign. Please purchase additional credits or reduce prospects.',
+    };
 
     if (!validation.allowed) {
       return NextResponse.json(validation, { status: 402 });

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet, X, Check, Save } from 'lucide-react';
-import { suggestColumnMappings, processImportRows } from '@/lib/services/import-service';
+import { normalizeOptionalNumericField, suggestColumnMappings, processImportRows } from '@/lib/services/import-service';
 import { findActiveLeadListNameConflict, generateUniqueLeadListName, normalizeLeadListName, StoredLeadList } from '@/lib/services/lead-list-service';
 
 
@@ -23,6 +23,8 @@ const SYSTEM_FIELDS = [
   { label: 'TITLE', value: 'title' },
   { label: 'COMPANY', value: 'company_name' },
   { label: 'COMPANY KEYWORDS', value: 'company_keywords' },
+  { label: 'EMPLOYEES', value: 'employees' },
+  { label: 'ANNUAL REVENUE', value: 'annual_revenue' },
   { label: 'EMAIL', value: 'email' },
   { label: 'PHONE', value: 'phone' },
   { label: 'INDUSTRY', value: 'industry' },
@@ -94,6 +96,8 @@ export function MatchDataModal({
           if (hLower.includes('first')) initialMap[h] = 'first_name';
           else if (hLower.includes('last')) initialMap[h] = 'last_name';
           else if (hLower.includes('companykeywords') || hLower.includes('keywordscompany')) initialMap[h] = 'company_keywords';
+          else if (hLower === 'employees' || hLower === 'employee' || hLower.includes('employeecount') || hLower.includes('numberofemployees') || hLower.includes('headcount')) initialMap[h] = 'employees';
+          else if (hLower.includes('annualrevenue') || hLower.includes('annualsales') || hLower.includes('yearlyrevenue') || hLower.includes('annualturnover')) initialMap[h] = 'annual_revenue';
           else if (hLower.includes('company')) initialMap[h] = 'company_name';
           else if (hLower.includes('email') || hLower.includes('mail')) initialMap[h] = 'email';
           else if (hLower.includes('title') || hLower.includes('role')) initialMap[h] = 'title';
@@ -187,6 +191,8 @@ export function MatchDataModal({
         title: '',
         company_name: '',
         company_keywords: '',
+        employees: '',
+        annual_revenue: '',
         email: '',
         industry: '',
         person_linkedin_url: '',
@@ -269,6 +275,21 @@ export function MatchDataModal({
         const companyKeywords = (mappedCompanyKeywordsHeader && ld[mappedCompanyKeywordsHeader] !== undefined)
           ? String(ld[mappedCompanyKeywordsHeader]).trim()
           : (ld.companyKeywords || ld.company_keywords || '');
+        const employeeCount = normalizeOptionalNumericField(
+          ld.employeeCount ?? ld.employee_count ?? ld.employees ?? getCustomVal('employees'),
+          true,
+        );
+        const annualRevenue = normalizeOptionalNumericField(
+          ld.annualRevenue ?? ld.annual_revenue ?? getCustomVal('annual_revenue'),
+        );
+        const customFields = { ...(ld.customFields || ld.custom_fields || {}) };
+        if (employeeCount !== undefined) {
+          customFields.employeeCount = employeeCount;
+          // companySize is the existing template/detail field for a company's
+          // headcount; keep it synchronized with the canonical import value.
+          customFields.companySize = employeeCount;
+        }
+        if (annualRevenue !== undefined) customFields.annualRevenue = annualRevenue;
 
         const rawWeb = (mappedWebsiteHeader && ld[mappedWebsiteHeader])
           ? String(ld[mappedWebsiteHeader]).trim()
@@ -303,6 +324,14 @@ export function MatchDataModal({
           company_name: company,
           companyKeywords,
           company_keywords: companyKeywords,
+          employeeCount,
+          employee_count: employeeCount,
+          employees: employeeCount,
+          companySize: employeeCount,
+          annualRevenue,
+          annual_revenue: annualRevenue,
+          customFields,
+          custom_fields: customFields,
           website: rawWeb,
           domain: rawWeb.replace(/^https?:\/\//i, '').replace(/\/.*$/, ''),
           email: email,

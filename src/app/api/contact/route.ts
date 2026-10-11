@@ -76,7 +76,9 @@ export async function POST(request: NextRequest) {
   }
 
   const { name, email, company, website, subject, message, topic } = parsed.data;
-  const targetEmail = process.env.SUPPORT_EMAIL || 'hello@contactreachout.com';
+  // Public website contact requests have one dedicated support destination.
+  // Campaign reply identities and unrelated mail settings must never affect it.
+  const targetEmail = 'contactreachoutai@gmail.com';
 
   const provider = new ResendProvider();
   const result = await provider.sendEmail({

@@ -118,6 +118,9 @@ export default function AdminUsersPage() {
   // Modals & Panels State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedUserForDetails, setSelectedUserForDetails] = useState<UserData | null>(null);
+  const [creditGrantAmount, setCreditGrantAmount] = useState('');
+  const [creditGrantReason, setCreditGrantReason] = useState('');
+  const [isGrantingCredits, setIsGrantingCredits] = useState(false);
   
   // Role Change Modal State
   const [roleModalData, setRoleModalData] = useState<{ user: UserData; targetRole: 'SUPER_ADMIN' | 'ADMIN' | 'USER' } | null>(null);
@@ -220,6 +223,34 @@ export default function AdminUsersPage() {
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  const grantCredits = async () => {
+    if (!selectedUserForDetails || isGrantingCredits) return;
+    const amount = Number(creditGrantAmount);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      showError('Enter a valid positive whole-number credit amount.');
+      return;
+    }
+    setIsGrantingCredits(true);
+    try {
+      const response = await fetch('/api/admin/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserEmail: selectedUserForDetails.email, amount, reason: creditGrantReason, requestId: crypto.randomUUID() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Credit grant failed.');
+      setSelectedUserForDetails((user) => user ? { ...user, availableCredits: data.wallet.totalCreditsAvailable, bonusCredits: data.wallet.bonusCredits } : user);
+      setCreditGrantAmount('');
+      setCreditGrantReason('');
+      showSuccess(`${amount.toLocaleString()} credits granted to ${selectedUserForDetails.email}.`);
+      void fetchUsers();
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Credit grant failed.');
+    } finally {
+      setIsGrantingCredits(false);
+    }
+  };
 
   // Toggle Column Visibility
   const toggleColumn = (key: string) => {
@@ -1354,6 +1385,18 @@ export default function AdminUsersPage() {
                         : 'Never logged in'}
                     </p>
                   </div>
+                </div>
+                <div className="mt-4 border-t border-[#E5E7EB] pt-4 space-y-3">
+                  <p className="font-bold text-[#111827]">Add Credits</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[10, 20, 100, 500, 1000].map((amount) => <button key={amount} type="button" onClick={() => setCreditGrantAmount(String(amount))} className="rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-[11px] font-bold text-[#0e6de4] hover:bg-blue-50">+{amount}</button>)}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input type="number" min="1" step="1" value={creditGrantAmount} onChange={(event) => setCreditGrantAmount(event.target.value)} placeholder="Custom amount" className="rounded-lg border border-[#E5E7EB] bg-white px-3 py-2" />
+                    <input value={creditGrantReason} onChange={(event) => setCreditGrantReason(event.target.value)} maxLength={500} placeholder="Optional reason" className="rounded-lg border border-[#E5E7EB] bg-white px-3 py-2" />
+                  </div>
+                  <p className="text-[11px] text-[#6B7280]">Current balance: {selectedUserForDetails.availableCredits.toLocaleString()} credits</p>
+                  <Button type="button" disabled={isGrantingCredits || !creditGrantAmount} onClick={grantCredits} className="bg-[#0e6de4] text-white hover:bg-[#0b5ac0] disabled:opacity-50">{isGrantingCredits ? 'Granting…' : 'Confirm Add Credits'}</Button>
                 </div>
               </Card>
             </div>

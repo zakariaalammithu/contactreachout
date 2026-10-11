@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       client_reference_id: session.userId,
       customer_email: session.email,
       'metadata[user_id]': session.userId,
+      'metadata[user_email]': session.email,
       'metadata[credits]': String(purchase.credits),
       'metadata[amount_cents]': String(purchase.amountCents),
       'metadata[period]': purchase.period,

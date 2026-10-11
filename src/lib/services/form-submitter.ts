@@ -5,11 +5,13 @@
  */
 
 import { FieldMappingAssignment } from './field-mapper';
+import { submitWithBrowserWorker } from './browser-worker-client';
 
 export interface SubmissionRequest {
   contactPageUrl: string;
   formSelector: string;
   formAction?: string;
+  formMethod?: string;
   mappedFields: FieldMappingAssignment[];
   dryRun?: boolean;
   isTestMode?: boolean;
@@ -141,6 +143,7 @@ export class FormSubmitter {
       contactPageUrl,
       formSelector,
       formAction,
+      formMethod,
       mappedFields,
       dryRun = false,
       isTestMode = false,
@@ -172,6 +175,15 @@ export class FormSubmitter {
         successVerified: false,
         submitAttempted: false,
       };
+    }
+
+    // Production browser automation is delegated to a separately configured,
+    // Playwright-capable worker. Vercel serverless must not attempt to launch
+    // or dynamically import Playwright itself.
+    if (process.env.VERCEL === '1' || process.env.BROWSER_WORKER_URL) {
+      return submitWithBrowserWorker({
+        contactPageUrl, formSelector, formAction, formMethod, mappedFields, timeoutMs,
+      });
     }
 
     // Local Fixture mode for automated unit tests
@@ -317,7 +329,10 @@ export class FormSubmitter {
               }).length,
             })).catch(() => ({ url: contactPageUrl, bodyText: '', forms: 0, visibleInputs: 0 }));
             const outcome = analyzeSubmissionResponse(verification.bodyText);
-            const verified = !outcome.isCaptcha && (outcome.isSuccess || verification.url !== contactPageUrl || verification.forms === 0 || verification.visibleInputs === 0);
+            // A click, redirect, disappearing form, or empty inputs are not
+            // delivery proof. Only a positive success message is eligible for
+            // a verified outcome; CAPTCHA is still routed without bypassing it.
+            const verified = !outcome.isCaptcha && outcome.isSuccess;
             if (outcome.isCaptcha) {
               await page.close().catch(() => {});
               await context.close().catch(() => {});
@@ -452,7 +467,32 @@ export class FormSubmitter {
 
       const isJsonEndpoint = /(supabase\.co|functions\/v1\/|api\/|\/submit)/i.test(targetPostUrl) || /(supabase\.co|functions\/v1\/)/i.test(formAction || '');
 
-      // Execute Quad-Fallback Dispatch Loop across multiple transport strategies
+      const declaredMethod = (formMethod || 'post').toLowerCase();
+      // A detector may see a client-side form with no usable submission action.
+      // Never invent POST attempts against the page URL in that case.
+      if (declaredMethod !== 'post') {
+        return {
+          status: 'REVIEW_REQUIRED', isDryRun: false, isTestMode: false, httpStatus: null,
+          fieldsFilledCount: fieldsToFill.length, honeypotsNeutralizedCount: honeypotFields.length,
+          errorMessage: `Form declares unsupported submission method: ${declaredMethod}.`,
+          executionDurationMs: Date.now() - startTime, submittedAt: new Date().toISOString(),
+          diagnosticCode: 'FORM_METHOD_REVIEW_REQUIRED', successVerified: false, submitAttempted: false,
+        };
+      }
+
+      // Execute transport only against the detected form action. A missing
+      // action is a mapping limitation, not permission to POST the page URL.
+      if (!formAction) {
+        return {
+          status: 'REVIEW_REQUIRED', isDryRun: false, isTestMode: false, httpStatus: null,
+          fieldsFilledCount: fieldsToFill.length, honeypotsNeutralizedCount: honeypotFields.length,
+          errorMessage: 'Form has no detectable HTTP action; browser-worker execution is required for this client-side form.',
+          executionDurationMs: Date.now() - startTime, submittedAt: new Date().toISOString(),
+          diagnosticCode: 'FORM_ACTION_REVIEW_REQUIRED', successVerified: false, submitAttempted: false,
+        };
+      }
+
+      // Execute dispatch only against the detected action endpoint.
       let response: Response | null = null;
       const strategies = [
         async () => {
@@ -474,18 +514,6 @@ export class FormSubmitter {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify(jsonBody),
-            signal: controller.signal,
-          });
-        },
-        async () => {
-          if (targetPostUrl === contactPageUrl) return null;
-          return await fetch(contactPageUrl, {
-            method: 'POST',
-            headers: {
-              ...browserHeaders,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: formData.toString(),
             signal: controller.signal,
           });
         },

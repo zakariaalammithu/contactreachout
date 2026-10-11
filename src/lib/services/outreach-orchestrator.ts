@@ -140,7 +140,11 @@ export class OutreachPipelineOrchestrator {
       };
     }
 
-    if (discovery.status === 'ERROR' || discovery.errorCode === 'BROWSER_LAUNCH_FAILED') {
+    if (
+      discovery.status === 'ERROR' ||
+      discovery.errorCode === 'BROWSER_LAUNCH_FAILED' ||
+      discovery.errorCode === 'BROWSER_RUNTIME_UNAVAILABLE'
+    ) {
       addLog('CONTACT_PAGE_DISCOVERY', `Infrastructure / browser runtime error on ${lead.website}: ${discovery.errorMessage}`);
       return {
         leadId: lead.id,
@@ -329,6 +333,7 @@ export class OutreachPipelineOrchestrator {
       contactPageUrl: discovery.contactPageUrl,
       formSelector: detection.selectedForm.formSelector,
       formAction: detection.selectedForm.action,
+      formMethod: detection.selectedForm.method,
       mappedFields: mapping.mappedFields,
       dryRun,
       runtimeMode: options.runtimeMode || 'live',
