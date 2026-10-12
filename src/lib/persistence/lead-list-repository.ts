@@ -1,0 +1,19 @@
+import 'server-only';
+import { getSupabaseAdminClient } from '@/lib/supabase/admin-client';
+import { nextAvailableName, normalizeOrganizationName } from './naming';
+import type { PersistenceContext } from './identity';
+
+export async function createLeadList(context: PersistenceContext, requestedName: string, legacyImportId?: string) {
+  const client = getSupabaseAdminClient(); if (!client) throw new Error('Durable storage is not configured.');
+  const base = requestedName.trim(); if (!base || base.length > 255) throw new Error('Lead-list name must be between 1 and 255 characters.');
+  if (legacyImportId) { const prior = await client.from('app_lead_lists').select('*').eq('organization_id', context.organizationId).eq('legacy_source', 'browser-localstorage-v1').eq('legacy_import_id', legacyImportId).maybeSingle(); if (prior.error) throw new Error(`Could not reconcile lead-list import: ${prior.error.message}`); if (prior.data) return prior.data; }
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const existing = await client.from('app_lead_lists').select('name_normalized').eq('organization_id', context.organizationId); if (existing.error) throw new Error(`Could not validate lead-list name: ${existing.error.message}`);
+    const name = nextAvailableName(base, (existing.data || []).map((row: { name_normalized: string }) => row.name_normalized));
+    const result = await client.from('app_lead_lists').insert({ organization_id: context.organizationId, created_by_app_user_id: context.appUserId, name, name_normalized: normalizeOrganizationName(name), legacy_source: legacyImportId ? 'browser-localstorage-v1' : null, legacy_import_id: legacyImportId || null }).select('*').single();
+    if (!result.error) return result.data; if (!/unique|duplicate/i.test(result.error.message)) throw new Error(`Could not create lead list: ${result.error.message}`);
+  } throw new Error('Could not allocate a unique lead-list name. Please retry.');
+}
+export async function listLeadLists(context: PersistenceContext) { const client = getSupabaseAdminClient(); if (!client) throw new Error('Durable storage is not configured.'); const r = await client.from('app_lead_lists').select('*').eq('organization_id', context.organizationId).is('archived_at', null).order('created_at', { ascending: false }); if (r.error) throw new Error(`Could not list lead lists: ${r.error.message}`); return r.data; }
+export async function archiveLeadList(context: PersistenceContext, id: string) { const client = getSupabaseAdminClient(); if (!client) throw new Error('Durable storage is not configured.'); const r = await client.from('app_lead_lists').update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id).eq('organization_id', context.organizationId).is('archived_at', null).select('id').maybeSingle(); if (r.error || !r.data) throw new Error('Lead list was not found in the active organization.'); }
+export async function updateLeadList(context: PersistenceContext, id: string, name: string) { const client = getSupabaseAdminClient(); if (!client) throw new Error('Durable storage is not configured.'); const normalized = normalizeOrganizationName(name); const conflict = await client.from('app_lead_lists').select('id').eq('organization_id', context.organizationId).eq('name_normalized', normalized).neq('id', id).maybeSingle(); if (conflict.error || conflict.data) throw new Error(conflict.error?.message || 'A lead list with this name already exists in the active organization.'); const r = await client.from('app_lead_lists').update({ name: name.trim(), name_normalized: normalized, updated_at: new Date().toISOString() }).eq('id', id).eq('organization_id', context.organizationId).is('archived_at', null).select('*').maybeSingle(); if (r.error || !r.data) throw new Error(r.error?.message || 'Lead list was not found in the active organization.'); return r.data; }
