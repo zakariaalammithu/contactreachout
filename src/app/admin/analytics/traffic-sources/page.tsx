@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Compass, RefreshCw, ArrowLeft, Globe, Search, Share2, Calendar, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { SourceAnalytics } from '@/lib/services/website-analytics-service';
+import type { SourceAnalytics } from '@/lib/services/website-analytics-service';
 
 type RangeKey = 'today' | 'yesterday' | 'last-7-days' | 'last-30-days' | 'this-month' | 'custom';
 

@@ -1,3 +1,5 @@
+import 'server-only';
+
 import crypto from 'crypto';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin-client';
 

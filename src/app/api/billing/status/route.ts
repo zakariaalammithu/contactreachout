@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from '@/lib/auth/session';
 import { StripeService } from '@/lib/services/stripe-service';
 import { PaymentStore } from '@/lib/services/payment-store';
-import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 
 export async function GET(request: NextRequest) {
   const user = SessionManager.getSessionFromRequest(request);

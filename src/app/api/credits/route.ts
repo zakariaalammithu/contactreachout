@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { SessionManager } from '@/lib/auth/session';
-import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 
 export async function GET(req: NextRequest) {
   try {

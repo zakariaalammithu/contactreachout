@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { StripeService } from '@/lib/services/stripe-service';
 import { PaymentStore } from '@/lib/services/payment-store';
-import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();

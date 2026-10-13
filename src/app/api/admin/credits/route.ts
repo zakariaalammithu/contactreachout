@@ -4,7 +4,7 @@ import { AuthStore } from '@/lib/auth/auth-store';
 import { PaymentStore } from '@/lib/services/payment-store';
 import { QueueManager } from '@/lib/queue/queue-manager';
 import { PricingService } from '@/lib/services/pricing-service';
-import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 import { z } from 'zod';
 
 const grantSchema = z.object({

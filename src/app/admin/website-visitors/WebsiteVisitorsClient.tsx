@@ -33,7 +33,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
-import { VisitorSessionDetail } from '@/lib/services/website-analytics-service';
+import type { VisitorSessionDetail } from '@/lib/services/website-analytics-service';
 
 type RangeKey = 'today' | 'yesterday' | 'last-7-days' | 'last-30-days' | 'this-month' | 'custom';
 

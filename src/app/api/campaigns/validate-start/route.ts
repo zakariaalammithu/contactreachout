@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from '@/lib/auth/session';
 import { AuthStore } from '@/lib/auth/auth-store';
-import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 
 export const dynamic = 'force-dynamic';
 

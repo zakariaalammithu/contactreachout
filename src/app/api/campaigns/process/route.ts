@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from '@/lib/auth/session';
-import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 import { OutreachPipelineOrchestrator } from '@/lib/services/outreach-orchestrator';
 import { validateSendingSchedule } from '@/lib/services/processing-controls-service';
 
