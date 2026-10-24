@@ -14,6 +14,7 @@ import { CANONICAL_DEFAULT_SAFETY_CONFIG, SendingScheduleConfig } from '@/lib/se
 import { MatchDataModal } from '@/components/leads/MatchDataModal';
 import { CampaignMessageEditor } from './CampaignMessageEditor';
 import { ContactReplySettings } from '@/components/profile/ContactReplySettings';
+import { readCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 
 type EditorTab = 'setup' | 'prospects' | 'message' | 'settings';
 type MessageSequence = { id: string; name: string; condition: string; subject: string; body: string; date: string; delayAmount: number; delayUnit: 'days' | 'weeks'; replyInThread?: boolean };
@@ -207,11 +208,10 @@ export default function CampaignEditorClient() {
       setCampaignName(trimmed);
       if (editId) {
         try {
-          const stored = localStorage.getItem('user_campaigns');
-          if (stored) {
-            const parsed = safeParseJSON<any[]>(stored, []);
+          const parsed = readCampaignDrafts(localStorage);
+          if (parsed.length) {
             const updated = parsed.map((c: any) => c && c.id === editId ? { ...c, name: trimmed, updatedAt: new Date().toISOString() } : c);
-            localStorage.setItem('user_campaigns', JSON.stringify(updated));
+            writeCampaignDrafts(localStorage, updated);
           }
         } catch (e) {}
       }
@@ -308,7 +308,7 @@ export default function CampaignEditorClient() {
     // Automatically attach list & prospects to current active campaign and persist to localStorage
     if (editId) {
       try {
-        const storedCamps = safeParseJSON<any[]>(localStorage.getItem('user_campaigns'), []);
+        const storedCamps = readCampaignDrafts(localStorage);
         const campIndex = storedCamps.findIndex((c: any) => c && c.id === editId);
         if (campIndex !== -1) {
           const currentProspects = Array.isArray(storedCamps[campIndex].prospectsList) ? storedCamps[campIndex].prospectsList : [];
@@ -324,7 +324,7 @@ export default function CampaignEditorClient() {
             totalLeads: combinedProspects.length,
             updatedAt: new Date().toISOString(),
           };
-          localStorage.setItem('user_campaigns', JSON.stringify(storedCamps));
+          writeCampaignDrafts(localStorage, storedCamps);
         }
       } catch (e) {
         console.error('Error auto-attaching manual leads to campaign:', e);
@@ -408,7 +408,7 @@ export default function CampaignEditorClient() {
         }
       });
       if (editId) {
-        const campaigns: StoredCampaign[] = safeParseJSON<StoredCampaign[]>(localStorage.getItem('user_campaigns'), []);
+        const campaigns = readCampaignDrafts(localStorage) as StoredCampaign[];
         const campaign = campaigns.find((item) => item && item.id === editId);
         if (campaign) {
           const campaignOwner = (campaign as any).ownerEmail ? (campaign as any).ownerEmail.toLowerCase().trim() : '';
@@ -464,7 +464,7 @@ export default function CampaignEditorClient() {
       } else {
         setSelectedListId(''); setSelectedListIds([]);
         if (!campaignName) {
-          const campaigns: StoredCampaign[] = safeParseJSON<StoredCampaign[]>(localStorage.getItem('user_campaigns'), []);
+          const campaigns = readCampaignDrafts(localStorage) as StoredCampaign[];
           const userCamps = campaigns.filter((c: any) => {
             const owner = typeof c?.ownerEmail === 'string' ? c.ownerEmail.toLowerCase().trim() : '';
             return !owner || owner === activeAccount;
@@ -743,8 +743,14 @@ export default function CampaignEditorClient() {
       }
 
       const executeSave = () => {
-        const campaigns: StoredCampaign[] = safeParseJSON<StoredCampaign[]>(localStorage.getItem('user_campaigns'), []);
+        const campaigns = readCampaignDrafts(localStorage) as StoredCampaign[];
         const existing = editId ? campaigns.find((item) => item && item.id === editId) : undefined;
+        if (editId && !existing) {
+          setError('This campaign no longer exists or was deleted. Return to Campaigns and create a new campaign instead.');
+          setIsSaving(false);
+          setIsStarting(false);
+          return;
+        }
         const now = new Date().toISOString();
         const activeAccount = accountEmail || (localStorage.getItem('active_account_email') || '').toLowerCase();
         const effectiveIsDryRun = isDryRun;
@@ -806,7 +812,7 @@ export default function CampaignEditorClient() {
           aiPreview,
         };
         const updated = existing ? campaigns.map((item) => item && item.id === existing.id ? campaign : item) : [campaign, ...campaigns];
-        localStorage.setItem('user_campaigns', JSON.stringify(updated));
+        writeCampaignDrafts(localStorage, updated);
         window.dispatchEvent(new CustomEvent('campaigns_updated'));
         if (launch) {
           window.dispatchEvent(new CustomEvent('trigger_campaign_process'));
@@ -1357,7 +1363,7 @@ export default function CampaignEditorClient() {
                         }
                         if (editId) {
                           try {
-                            const storedCamps = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+                            const storedCamps = readCampaignDrafts(localStorage);
                             const cIdx = storedCamps.findIndex((c: any) => c.id === editId);
                             if (cIdx !== -1) {
                               const remainingLeads = leads.filter((l) => l.listId !== id && l.listName !== list.name);
@@ -1369,7 +1375,7 @@ export default function CampaignEditorClient() {
                                 totalLeads: remainingLeads.length,
                                 updatedAt: new Date().toISOString(),
                               };
-                              localStorage.setItem('user_campaigns', JSON.stringify(storedCamps));
+                              writeCampaignDrafts(localStorage, storedCamps);
                             }
                           } catch (e) {}
                         }

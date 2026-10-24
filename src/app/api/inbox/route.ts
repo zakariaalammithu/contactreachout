@@ -3,10 +3,25 @@ import { SessionManager } from '@/lib/auth/session';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { InboxStore } from '@/lib/services/inbox-store';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { isDurableInboxEnabled } from '@/lib/services/durable-inbox-feature';
+import { resolvePersistenceContext, PersistenceAuthorizationError } from '@/lib/persistence/identity';
+import { listInboxConversations } from '@/lib/persistence/inbox-conversation-repository';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  if (isDurableInboxEnabled()) {
+    try {
+      const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get('limit') || 50), 1), 100);
+      const offset = Math.max(Number(request.nextUrl.searchParams.get('offset') || 0), 0);
+      const archived = request.nextUrl.searchParams.get('archived');
+      const unread = request.nextUrl.searchParams.get('unread') === 'true';
+      const data = await listInboxConversations(await resolvePersistenceContext(request), { limit, offset, unread, archived: archived === null ? undefined : archived === 'true', search: request.nextUrl.searchParams.get('search') || undefined, mailboxId: request.nextUrl.searchParams.get('mailboxId') || undefined });
+      return NextResponse.json({ success: true, durable: true, ...data });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof PersistenceAuthorizationError ? 'Authentication is required.' : 'Inbox is unavailable.' }, { status: error instanceof PersistenceAuthorizationError ? 401 : 503 });
+    }
+  }
   const session = SessionManager.getSessionFromRequest(request);
   if (!session) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });

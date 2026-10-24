@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
       fromName: sender.fromName,
       replyToEmail: sender.replyToEmail,
       provider: 'Resend',
-      lastTestStatus: info.configured ? 'CHECKING' : 'NOT_CONFIGURED',
+      connected: false,
+      lastTestStatus: info.configured ? 'CONFIGURED_UNVERIFIED' : 'NOT_CONFIGURED',
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to retrieve email integration config.';
@@ -82,6 +83,14 @@ export async function POST(req: NextRequest) {
         metadata: { provider: 'Resend', latencyMs: result.latencyMs, message: result.message },
       });
 
+      const status = result.connected
+        ? 200
+        : result.error === 'MISSING_API_KEY' || result.error === 'INVALID_KEY_FORMAT'
+          ? 400
+          : result.error === 'INVALID_CREDENTIALS'
+            ? 424
+            : 503;
+
       return NextResponse.json({
         success: result.connected,
         connected: result.connected,
@@ -89,7 +98,7 @@ export async function POST(req: NextRequest) {
         latencyMs: result.latencyMs,
         provider: result.provider,
         error: result.error,
-      });
+      }, { status });
     }
 
     // 2. Action: Send Test Email

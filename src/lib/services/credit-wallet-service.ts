@@ -5,6 +5,7 @@
  */
 
 import { PricingService } from './pricing-service';
+import { readCampaignDrafts } from './campaign-draft-storage';
 
 export interface CreditWallet {
   userId: string;
@@ -186,7 +187,7 @@ export class CreditWalletService {
 
     if (typeof window !== 'undefined') {
       try {
-        const campaigns: any[] = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+        const campaigns: any[] = readCampaignDrafts(localStorage);
         const userCampaigns = campaigns.filter(
           (c) =>
             c.status === 'running' &&

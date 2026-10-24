@@ -20,7 +20,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     '/website-contact-form-automation',
     '/ai-outreach',
     '/b2b-lead-generation',
-    '/ai-personalization',
     '/benefits',
     '/about',
     '/contact',
@@ -45,26 +44,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (isPublicRoute || isAdminRoute) return;
 
     let isMounted = true;
-
-    // Immediately hydrate session user from localStorage on client mount
-    if (typeof window !== 'undefined') {
-      const localEmail = (localStorage.getItem('active_account_email') || localStorage.getItem('user_auth_email') || '').toLowerCase().trim();
-      if (localEmail) {
-        let savedName = '';
-        const savedSender = localStorage.getItem('user_sender_profile');
-        if (savedSender) {
-          try {
-            const p = JSON.parse(savedSender);
-            if (p.name && p.name.trim()) savedName = p.name.trim();
-          } catch (e) {}
-        }
-        if (!savedName) {
-          savedName = localEmail === 'mithusquare@gmail.com' ? 'Zakaria Alam Mithu' : localEmail.split('@')[0];
-        }
-        setSessionUser({ name: savedName, email: localEmail });
-        setSessionVerified(true);
-      }
-    }
 
     async function checkServerSession() {
       try {
@@ -97,15 +76,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         // Non-blocking network catch
       }
 
-      // If server session returns unauthenticated AND no local storage account exists
-      if (typeof window !== 'undefined') {
-        const localEmail = (localStorage.getItem('active_account_email') || localStorage.getItem('user_auth_email') || '').trim();
-        if (!localEmail && isMounted) {
-          setSessionVerified(false);
-          router.replace(`/login?tab=signin&next=${encodeURIComponent(pathname)}`);
-        } else if (localEmail && isMounted) {
-          setSessionVerified(true);
-        }
+      // Browser storage is presentation state, never authentication authority.
+      if (isMounted) {
+        setSessionVerified(false);
+        router.replace(`/login?tab=signin&next=${encodeURIComponent(pathname)}`);
       }
     }
 
@@ -132,21 +106,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   if (!sessionVerified) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-3 font-sans">
-        <div className="h-8 w-8 animate-spin rounded-full border-3 border-blue-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#1DBF73] border-t-transparent" />
         <p className="text-xs font-bold text-slate-600">Verifying your session…</p>
       </div>
     );
   }
 
   return (
-    <div className="app-dashboard-shell flex h-screen w-screen overflow-hidden bg-[#f4f8fd] text-slate-950">
+    <div className="app-dashboard-shell flex h-screen w-screen overflow-hidden bg-[#F7F7F8] text-[#404145]">
       {/* Sidebar */}
       <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} currentUserProfile={sessionUser || undefined} />
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col h-screen min-w-0 overflow-hidden transition-all duration-300 ease-in-out">
         <Header onOpenMobileMenu={() => setMobileMenuOpen(true)} initialUserProfile={sessionUser || undefined} />
-        <main className="flex-1 overflow-y-auto bg-[#f4f8fd] p-4 sm:p-5 lg:p-6">
+        <main className="flex-1 overflow-y-auto bg-[#F7F7F8] p-4 sm:p-5 lg:p-6">
           <div className="w-full max-w-[1750px]">{children}</div>
         </main>
       </div>

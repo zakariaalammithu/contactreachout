@@ -6,7 +6,7 @@
 
 import { ContactPageFinder, ContactDiscoveryResult } from './contact-page-finder';
 import { ContactFormDetector, FormDetectionResult } from './form-detector';
-import { interpolateTemplate, extractVariables, convertHtmlToPlainText } from './template-engine';
+import { interpolateTemplate, extractVariables, convertHtmlToPlainText, prepareContactFormPlainText } from './template-engine';
 import { mapLeadToFormFields, FieldMappingResult, LeadMappingContext } from './field-mapper';
 import { FormSubmitter, SubmissionExecutionResult } from './form-submitter';
 
@@ -289,7 +289,10 @@ export class OutreachPipelineOrchestrator {
     };
 
     const renderedSubject = convertHtmlToPlainText(interpolateTemplate(template.subjectTemplate, leadContext));
-    let renderedBody = convertHtmlToPlainText(interpolateTemplate(template.bodyTemplate, leadContext));
+    // Keep this path identical to the user-authored template's plain-text
+    // representation. In particular, never use a whitespace-wide replacement
+    // here: textarea values must retain paragraph and signature line breaks.
+    let renderedBody = prepareContactFormPlainText(template.bodyTemplate, leadContext);
 
     if (template.complianceFooter) {
       renderedBody = `${renderedBody}\n\n---\n${convertHtmlToPlainText(template.complianceFooter)}`;

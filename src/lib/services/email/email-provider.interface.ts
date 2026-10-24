@@ -11,6 +11,7 @@ export interface SendEmailParams {
   subject: string;
   html: string;
   text?: string;
+  headers?: Record<string, string>;
   tags?: Array<{ name: string; value: string }>;
 }
 
@@ -18,6 +19,7 @@ export interface EmailSendResult {
   success: boolean;
   messageId?: string;
   statusCode?: number;
+  errorCode?: 'MISSING_API_KEY' | 'INVALID_CREDENTIALS' | 'PROVIDER_REJECTED' | 'NETWORK_OR_PROVIDER_ERROR';
   errorMessage?: string;
   timestamp: string;
 }

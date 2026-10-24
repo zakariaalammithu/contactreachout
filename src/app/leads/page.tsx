@@ -29,6 +29,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { mockLeads } from '@/lib/store/mock-data';
+import { readCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 import {
   parseSpreadsheetPreview,
   suggestColumnMappings,
@@ -198,11 +199,11 @@ export default function LeadsPage() {
       try {
         const stored = localStorage.getItem('user_imported_leads');
         const storedLists = localStorage.getItem('user_lead_lists');
-        const storedCampaigns = localStorage.getItem('user_campaigns');
+        const storedCampaigns = readCampaignDrafts(localStorage);
         const deletedLeadIds = new Set<string>(JSON.parse(localStorage.getItem('user_deleted_lead_ids') || '[]'));
 
-        if (storedCampaigns) {
-          const parsedCampaigns = JSON.parse(storedCampaigns);
+        if (storedCampaigns.length) {
+          const parsedCampaigns = storedCampaigns;
           if (Array.isArray(parsedCampaigns)) {
             const filteredCamps = isAdmin
               ? parsedCampaigns
@@ -446,7 +447,7 @@ export default function LeadsPage() {
       const campaignId = `campaign-${Date.now()}`;
       const selectedListIds = Array.from(new Set(selectedLeads.map((lead: any) => lead.listId).filter(Boolean)));
       const now = new Date().toISOString();
-      const storedCampaigns = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+      const storedCampaigns = readCampaignDrafts(localStorage);
       const campaign = {
         id: campaignId,
         name: `Campaign with ${selectedLeads.length} Leads`,
@@ -467,7 +468,7 @@ export default function LeadsPage() {
         noFormCount: 0,
         captchaCount: 0,
       };
-      localStorage.setItem('user_campaigns', JSON.stringify([campaign, ...storedCampaigns]));
+      writeCampaignDrafts(localStorage, [campaign, ...storedCampaigns]);
       localStorage.setItem('user_imported_leads', JSON.stringify(selectedLeads));
       router.push(`/campaigns/new?edit=${encodeURIComponent(campaignId)}`);
       return;

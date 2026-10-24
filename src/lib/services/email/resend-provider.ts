@@ -86,19 +86,22 @@ export class ResendProvider implements EmailProvider {
         };
       }
 
+      const invalidCredentials = response.status === 401 || response.status === 403;
       return {
         connected: false,
         provider: 'Resend',
         latencyMs,
-        message: `Resend API returned status ${response.status}: ${response.statusText}`,
-        error: `HTTP_${response.status}`,
+        message: invalidCredentials
+          ? 'Resend rejected the configured credential. Replace the API key and test again.'
+          : `Resend connection validation was rejected (HTTP ${response.status}). Try again or check provider status.`,
+        error: invalidCredentials ? 'INVALID_CREDENTIALS' : 'PROVIDER_REJECTED',
       };
     } catch (err: any) {
       return {
         connected: false,
         provider: 'Resend',
         latencyMs: Date.now() - startTime,
-        message: 'Resend API validation could not be completed.',
+        message: 'Resend could not be reached. Check server network access and provider availability, then retry.',
         error: 'NETWORK_OR_PROVIDER_ERROR',
       };
     }
@@ -114,6 +117,7 @@ export class ResendProvider implements EmailProvider {
     if (!apiKey) {
       return {
         success: false,
+        errorCode: 'MISSING_API_KEY',
         errorMessage: 'Cannot send email: RESEND_API_KEY is not configured.',
         timestamp,
       };
@@ -148,6 +152,7 @@ export class ResendProvider implements EmailProvider {
           subject: params.subject,
           html: params.html,
           text: params.text,
+          headers: params.headers,
           tags: params.tags,
         }),
       });
@@ -166,13 +171,19 @@ export class ResendProvider implements EmailProvider {
       return {
         success: false,
         statusCode: response.status,
-        errorMessage: data.message || `Resend Error: ${response.statusText}`,
+        errorCode: response.status === 401 || response.status === 403
+          ? 'INVALID_CREDENTIALS'
+          : 'PROVIDER_REJECTED',
+        errorMessage: response.status === 401 || response.status === 403
+          ? 'Resend rejected the configured credential.'
+          : data.message || `Resend rejected the email request (HTTP ${response.status}).`,
         timestamp,
       };
     } catch (err: any) {
       return {
         success: false,
-        errorMessage: err.message || 'Network error communicating with Resend.',
+        errorCode: 'NETWORK_OR_PROVIDER_ERROR',
+        errorMessage: 'Unable to reach the email delivery provider.',
         timestamp,
       };
     }

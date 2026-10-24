@@ -12,7 +12,13 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const session = SessionManager.getSessionFromRequest(req);
-    const userId = (session?.email || req.headers.get('x-user-email') || 'usr_guest').toLowerCase().trim();
+    if (!session) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    const authenticatedUser = AuthStore.getUserByEmail(session.email);
+    if (!authenticatedUser || authenticatedUser.id !== session.userId) {
+      return NextResponse.json({ error: 'Authenticated account could not be verified.' }, { status: 401 });
+    }
+    if (authenticatedUser.isSuspended) return NextResponse.json({ error: 'Account is suspended.' }, { status: 403 });
+    const userId = session.email.toLowerCase().trim();
     const body = await req.json();
     const { prospectsCount = 0, aiPersonalizationEnabled = false } = body;
 

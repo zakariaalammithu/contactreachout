@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { readCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 import {
   ScrollText,
   Search,
@@ -153,7 +154,7 @@ export default function UsageAndHistoryPage() {
 
       // Generate realistic user submission records from user's campaigns/leads if any
       const storedLeads = localStorage.getItem('user_imported_leads');
-      const storedCampaigns = localStorage.getItem('user_campaigns');
+      const storedCampaigns = readCampaignDrafts(localStorage);
 
       let userLeads: any[] = [];
       if (storedLeads) {
@@ -164,8 +165,8 @@ export default function UsageAndHistoryPage() {
       }
 
       let userCampaignsList: any[] = [];
-      if (storedCampaigns) {
-        const parsedCamps = JSON.parse(storedCampaigns);
+      if (storedCampaigns.length) {
+        const parsedCamps = storedCampaigns;
         if (Array.isArray(parsedCamps)) {
           userCampaignsList = parsedCamps.filter((c: any) => !c.ownerEmail || c.ownerEmail.toLowerCase() === emailLower);
         }

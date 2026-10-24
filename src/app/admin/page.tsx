@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { readCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 import {
   Users,
   Send,
@@ -75,7 +76,7 @@ export default function AdminOverviewPage() {
     // Read real client-side localStorage fallback stats for campaigns and leads
     if (typeof window !== 'undefined') {
       try {
-        const storedCamps = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
+        const storedCamps = readCampaignDrafts(localStorage);
         const storedLeads = JSON.parse(localStorage.getItem('user_imported_leads') || '[]');
         const activeCount = Array.isArray(storedCamps) ? storedCamps.filter((c: any) => c.status === 'running' || c.status === 'active').length : 0;
         setLocalStats({

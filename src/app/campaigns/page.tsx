@@ -45,7 +45,8 @@ import { Button } from '@/components/ui/Button';
 import { generateNextUniqueCampaignName } from '@/lib/utils';
 import { generateCampaignPDFReport } from '@/lib/services/pdf-report-service';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
-import { createUniqueCampaignId, persistCampaignDraft, readCampaignDrafts } from '@/lib/services/campaign-draft-storage';
+import { createUniqueCampaignId, formatStoragePressureMessage, persistCampaignDraft, readCampaignDrafts, removeCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 
 interface CampaignItem {
@@ -101,15 +102,6 @@ export default function CampaignsPage() {
   const [selectedProspectDetail, setSelectedProspectDetail] = useState<any | null>(null);
   const [openMenuCampId, setOpenMenuCampId] = useState<string | null>(null);
   const [isStatusGuideOpen, setIsStatusGuideOpen] = useState(false);
-  const [reportDateRange, setReportDateRange] = useState<'7d' | '14d' | '30d' | 'all'>('all');
-  const [activeChartSeries, setActiveChartSeries] = useState<{ [key: string]: boolean }>({
-    delivered: true,
-    processed: true,
-    failed: true,
-    noForm: true,
-    review: true,
-    executionError: true,
-  });
 
   // Create Campaign Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -141,9 +133,8 @@ export default function CampaignsPage() {
   useEffect(() => {
     if (isCreateModalOpen) {
       const activeAccount = (localStorage.getItem('active_account_email') || '').toLowerCase();
-      const stored = localStorage.getItem('user_campaigns');
       const deletedIds: string[] = safeParseJSON(localStorage.getItem('user_deleted_campaign_ids'), []);
-      const parsed = safeParseJSON<any[]>(stored, []);
+      const parsed = readCampaignDrafts(localStorage);
       const userCamps = parsed.filter((c: any) => {
         if (!c || typeof c !== 'object') return false;
         if (c.id && deletedIds.includes(c.id)) return false;
@@ -221,7 +212,7 @@ export default function CampaignsPage() {
       console.error('Error saving new campaign draft:', err);
       const isQuotaError = err?.name === 'QuotaExceededError' || err?.code === 22;
       const detail = isQuotaError
-        ? 'Browser storage is full. Free space in this browser and try again; no campaign draft was created.'
+        ? formatStoragePressureMessage(localStorage)
         : (err?.message || 'Could not save the campaign draft in this browser.');
       releaseCreateNavigation(detail);
       return;
@@ -447,11 +438,10 @@ export default function CampaignsPage() {
 
     try {
       const deletedIds: string[] = safeParseJSON(localStorage.getItem('user_deleted_campaign_ids'), []);
-      const stored = localStorage.getItem('user_campaigns');
       let mappedUserCamps: CampaignItem[] = [];
 
-      if (stored) {
-        const parsed = safeParseJSON<any[]>(stored, []);
+      const parsed = readCampaignDrafts(localStorage);
+      if (parsed.length) {
         if (Array.isArray(parsed)) {
           mappedUserCamps = parsed
             .filter((c: any) => {
@@ -566,13 +556,7 @@ export default function CampaignsPage() {
       isBusy = true;
 
       try {
-        const stored = localStorage.getItem('user_campaigns');
-        if (!stored) {
-          isBusy = false;
-          return;
-        }
-
-        const userCamps = safeParseJSON<any[]>(stored, []);
+        const userCamps = readCampaignDrafts(localStorage);
         if (!Array.isArray(userCamps) || userCamps.length === 0) {
           isBusy = false;
           return;
@@ -710,9 +694,8 @@ export default function CampaignsPage() {
                 });
 
                 // Immediately stream individual lead result into client state & UI
-                const currentStored = localStorage.getItem('user_campaigns');
-                if (currentStored) {
-                  const currentCamps = safeParseJSON<any[]>(currentStored, []);
+                const currentCamps = readCampaignDrafts(localStorage);
+                if (currentCamps.length) {
                   const campToUpdate = currentCamps.find((c: any) => c && c.id === rawCamp.id);
                   if (campToUpdate) {
                     if (res.status === 402) {
@@ -770,7 +753,7 @@ export default function CampaignsPage() {
                       updateCampaignCanonicalMetrics(campToUpdate);
                     }
 
-                    localStorage.setItem('user_campaigns', JSON.stringify(currentCamps));
+                    writeCampaignDrafts(localStorage, currentCamps);
                     window.dispatchEvent(new CustomEvent('campaigns_updated'));
                     syncCampaignsFromStorage();
                   }
@@ -787,7 +770,7 @@ export default function CampaignsPage() {
             const allDone = leads.every((l: any) => isLeadProcessed(l));
             if (allDone && (rawCamp.status === 'running' || rawCamp.status === 'active')) {
               rawCamp.status = 'paused';
-              localStorage.setItem('user_campaigns', JSON.stringify(userCamps));
+              writeCampaignDrafts(localStorage, userCamps);
               window.dispatchEvent(new CustomEvent('campaigns_updated'));
               syncCampaignsFromStorage();
             }
@@ -826,9 +809,8 @@ export default function CampaignsPage() {
   const getCampaignAuditLogs = (camp: CampaignItem) => {
     if (!camp || typeof window === 'undefined') return [];
     try {
-      const stored = localStorage.getItem('user_campaigns');
-      if (stored) {
-        const parsed = safeParseJSON<any[]>(stored, []);
+      const parsed = readCampaignDrafts(localStorage);
+      if (parsed.length) {
         if (Array.isArray(parsed)) {
           const rawCamp = parsed.find((c: any) => c && c.id === camp.id);
 
@@ -1179,9 +1161,8 @@ export default function CampaignsPage() {
     if (isAdmin) return true;
 
     try {
-      const stored = localStorage.getItem('user_campaigns');
-      if (stored) {
-        const parsed = safeParseJSON<any[]>(stored, []);
+      const parsed = readCampaignDrafts(localStorage);
+      if (parsed.length) {
         const camp = parsed.find((c: any) => c && c.id === campId);
         if (camp && camp.ownerEmail && camp.ownerEmail.toLowerCase() !== currentUser.email.toLowerCase()) {
           return false;
@@ -1222,13 +1203,12 @@ export default function CampaignsPage() {
         if (c.id === id) {
           const newStatus = c.status === 'active' ? 'paused' : 'active';
           try {
-            const stored = localStorage.getItem('user_campaigns');
-            if (stored) {
-              const parsed = safeParseJSON<any[]>(stored, []);
+            const parsed = readCampaignDrafts(localStorage);
+            if (parsed.length) {
               const updated = parsed.map((item: any) =>
                 item && item.id === id ? { ...item, status: newStatus === 'active' ? 'running' : 'paused' } : item
               );
-              localStorage.setItem('user_campaigns', JSON.stringify(updated));
+              writeCampaignDrafts(localStorage, updated);
               window.dispatchEvent(new CustomEvent('campaigns_updated'));
               if (newStatus === 'active') {
                 window.dispatchEvent(new CustomEvent('trigger_campaign_process'));
@@ -1246,24 +1226,15 @@ export default function CampaignsPage() {
   const handleDeleteSelected = () => {
     if (selectedIds.length === 0) return;
     if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected campaign(s)?`)) {
-      const remaining = campaigns.filter((c) => !selectedIds.includes(c.id));
-      setCampaigns(remaining);
-      setSelectedIds([]);
-
       try {
-        const deletedIdsStr = localStorage.getItem('user_deleted_campaign_ids');
-        const deletedIds: string[] = safeParseJSON(deletedIdsStr, []);
-        const updatedDeleted = Array.from(new Set([...deletedIds, ...selectedIds]));
-        localStorage.setItem('user_deleted_campaign_ids', JSON.stringify(updatedDeleted));
-
-        const stored = localStorage.getItem('user_campaigns');
-        if (stored) {
-          const parsed = safeParseJSON<any[]>(stored, []);
-          const updatedStored = parsed.filter((c: any) => c && !selectedIds.includes(c.id));
-          localStorage.setItem('user_campaigns', JSON.stringify(updatedStored));
-        }
+        const idsToDelete = [...selectedIds];
+        removeCampaignDrafts(localStorage, idsToDelete);
+        setCampaigns((current) => current.filter((campaign) => !idsToDelete.includes(campaign.id)));
+        setSelectedIds([]);
+        window.dispatchEvent(new CustomEvent('campaigns_updated'));
       } catch (e) {
         console.error('Error updating localStorage after bulk delete:', e);
+        alert('The campaigns could not be deleted from browser storage. Nothing was removed from the campaign list.');
       }
     }
   };
@@ -1277,26 +1248,14 @@ export default function CampaignsPage() {
     }
     const campToDelete = campaigns.find((c) => c.id === id);
     if (window.confirm(`Are you sure you want to delete campaign "${campToDelete?.name || id}"?`)) {
-      const remaining = campaigns.filter((c) => c.id !== id);
-      setCampaigns(remaining);
-      setSelectedIds((prev) => prev.filter((item) => item !== id));
-
       try {
-        const deletedIdsStr = localStorage.getItem('user_deleted_campaign_ids');
-        const deletedIds: string[] = safeParseJSON(deletedIdsStr, []);
-        if (!deletedIds.includes(id)) {
-          deletedIds.push(id);
-          localStorage.setItem('user_deleted_campaign_ids', JSON.stringify(deletedIds));
-        }
-
-        const stored = localStorage.getItem('user_campaigns');
-        if (stored) {
-          const parsed = safeParseJSON<any[]>(stored, []);
-          const updatedStored = parsed.filter((c: any) => c && c.id !== id);
-          localStorage.setItem('user_campaigns', JSON.stringify(updatedStored));
-        }
+        removeCampaignDrafts(localStorage, [id]);
+        setCampaigns((current) => current.filter((campaign) => campaign.id !== id));
+        setSelectedIds((prev) => prev.filter((item) => item !== id));
+        window.dispatchEvent(new CustomEvent('campaigns_updated'));
       } catch (e) {
         console.error('Error updating localStorage after single delete:', e);
+        alert('The campaign could not be deleted from browser storage. It remains in the campaign list.');
       }
     }
   };
@@ -1344,8 +1303,7 @@ export default function CampaignsPage() {
     };
 
     try {
-      const stored = localStorage.getItem('user_campaigns');
-      const parsed = safeParseJSON<any[]>(stored, []);
+      const parsed = readCampaignDrafts(localStorage);
       const existingRaw = parsed.find((c: any) => c && c.id === campId);
 
       const rawCopy = existingRaw
@@ -1377,7 +1335,7 @@ export default function CampaignsPage() {
           };
 
       parsed.unshift(rawCopy);
-      localStorage.setItem('user_campaigns', JSON.stringify(parsed));
+      writeCampaignDrafts(localStorage, parsed);
     } catch (err) {
       console.error('Error duplicating campaign in storage:', err);
     }
@@ -1399,13 +1357,12 @@ export default function CampaignsPage() {
     );
 
     try {
-      const stored = localStorage.getItem('user_campaigns');
-      if (stored) {
-        const parsed = safeParseJSON<any[]>(stored, []);
+      const parsed = readCampaignDrafts(localStorage);
+      if (parsed.length) {
         const updated = parsed.map((c: any) =>
           c && c.id === campId ? { ...c, status: 'archived' } : c
         );
-        localStorage.setItem('user_campaigns', JSON.stringify(updated));
+        writeCampaignDrafts(localStorage, updated);
       }
     } catch (err) {
       console.error('Error archiving campaign in storage:', err);
@@ -1416,17 +1373,14 @@ export default function CampaignsPage() {
   const handleClearAllCampaigns = () => {
     if (window.confirm('Are you sure you want to delete ALL campaigns and start completely fresh?')) {
       const allIds = campaigns.map((c) => c.id);
-      setCampaigns([]);
-      setSelectedIds([]);
-
       try {
-        const deletedIdsStr = localStorage.getItem('user_deleted_campaign_ids');
-        const deletedIds: string[] = safeParseJSON(deletedIdsStr, []);
-        const updatedDeleted = Array.from(new Set([...deletedIds, ...allIds, 'camp-new', 'camp-01', 'camp-02', 'camp-03', 'camp-04']));
-        localStorage.setItem('user_deleted_campaign_ids', JSON.stringify(updatedDeleted));
-        localStorage.setItem('user_campaigns', JSON.stringify([]));
+        removeCampaignDrafts(localStorage, [...allIds, 'camp-new', 'camp-01', 'camp-02', 'camp-03', 'camp-04']);
+        setCampaigns([]);
+        setSelectedIds([]);
+        window.dispatchEvent(new CustomEvent('campaigns_updated'));
       } catch (e) {
         console.error('Error clearing all campaigns:', e);
+        alert('Campaigns could not be deleted from browser storage. No successful deletion was reported.');
       }
     }
   };
@@ -2210,66 +2164,16 @@ export default function CampaignsPage() {
                 const processed = delivered + dryRunCompleted + failed + noForm + reviewRequired + executionError;
                 const pending = Math.max(0, prospects - processed);
                 const creditsUsed = delivered; // Exactly 1 credit per verified DELIVERED submission
-
-                // Filter logs by date range selector
-                const now = new Date();
-                let cutoffDate: Date | null = null;
-                if (reportDateRange === '7d') cutoffDate = new Date(now.getTime() - 7 * 86400000);
-                else if (reportDateRange === '14d') cutoffDate = new Date(now.getTime() - 14 * 86400000);
-                else if (reportDateRange === '30d') cutoffDate = new Date(now.getTime() - 30 * 86400000);
-
-                const dailyMetricsMap: Record<string, {
-                  dateLabel: string;
-                  rawDate: string;
-                  processed: number;
-                  delivered: number;
-                  failed: number;
-                  noForm: number;
-                  review: number;
-                  executionError: number;
-                  dryRun: number;
-                }> = {};
-
-                logs.forEach((l: any) => {
-                  const rawTime = l.startedAt || l.timestamp || l.completedAt;
-                  let d = new Date();
-                  if (rawTime) {
-                    const parsed = new Date(rawTime);
-                    if (!isNaN(parsed.getTime())) d = parsed;
-                  }
-                  if (cutoffDate && d < cutoffDate) return;
-
-                  const isoDate = d.toISOString().slice(0, 10);
-                  const dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-                  if (!dailyMetricsMap[isoDate]) {
-                    dailyMetricsMap[isoDate] = {
-                      dateLabel,
-                      rawDate: isoDate,
-                      processed: 0,
-                      delivered: 0,
-                      failed: 0,
-                      noForm: 0,
-                      review: 0,
-                      executionError: 0,
-                      dryRun: 0,
-                    };
-                  }
-
-                  const st = String(l.finalStatus || l.status || '').toUpperCase();
-                  const code = String(l.code || l.details || '');
-                  const isExecErr = code.includes('EXECUTION_ERROR') || code.includes('BROWSER_LAUNCH_FAILED');
-
-                  dailyMetricsMap[isoDate].processed += 1;
-                  if (st === 'DELIVERED') dailyMetricsMap[isoDate].delivered += 1;
-                  else if (st === 'DRY_RUN_COMPLETED') dailyMetricsMap[isoDate].dryRun += 1;
-                  else if (isExecErr) dailyMetricsMap[isoDate].executionError += 1;
-                  else if (st === 'FAILED' || st === 'SUBMIT_FAILED') dailyMetricsMap[isoDate].failed += 1;
-                  else if (st === 'NO_CONTACT_PAGE' || st === 'NO-FORM') dailyMetricsMap[isoDate].noForm += 1;
-                  else if (st === 'CAPTCHA_REVIEW' || st === 'REVIEW' || st === 'CAPTCHA_DETECTED') dailyMetricsMap[isoDate].review += 1;
-                });
-
-                const chartSeriesData = Object.values(dailyMetricsMap).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+                const replied = Number(selectedReportCamp.replied) || 0;
+                const overallChartData = [
+                  { metric: 'PROSPECTS', value: prospects, color: '#334155' },
+                  { metric: 'DELIVERED', value: delivered, color: '#2563eb' },
+                  { metric: 'PENDING', value: pending, color: '#94a3b8' },
+                  { metric: 'FAILED', value: failed, color: '#f43f5e' },
+                  { metric: 'NO-FORM', value: noForm, color: '#f59e0b' },
+                  { metric: 'REVIEW', value: reviewRequired, color: '#8b5cf6' },
+                  { metric: 'REPLIED', value: replied, color: '#10b981' },
+                ];
 
                 return (
                   <>
@@ -2321,166 +2225,56 @@ export default function CampaignsPage() {
                       </div>
                     </div>
 
-                    {/* 2. MAIN GRAPH: CAMPAIGN ACTIVITY & RESULTS BY DATE */}
+                    {/* 2. MAIN GRAPH: OVERALL CAMPAIGN RESULTS */}
                     <div className="p-5 rounded-3xl border border-slate-200 bg-white space-y-4 shadow-2xs">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-slate-100 pb-3">
                         <div>
                           <h4 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
                             <TrendingUp className="h-4 w-4 text-[#0e6de4]" />
-                            <span>Campaign Activity & Results by Date</span>
+                            <span>Overall Campaign Results</span>
                           </h4>
                           <p className="text-xs text-slate-500 font-sans mt-0.5">
-                            Daily timeline of website contact-form processing and verification outcomes.
+                            Current totals calculated from this campaign&apos;s prospects and recorded outcomes.
                           </p>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-600 font-mono">Date Range:</span>
-                          <select
-                            value={reportDateRange}
-                            onChange={(e) => setReportDateRange(e.target.value as any)}
-                            className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 focus:border-[#0e6de4] outline-none cursor-pointer font-mono"
-                          >
-                            <option value="7d">Last 7 Days</option>
-                            <option value="14d">Last 14 Days</option>
-                            <option value="30d">Last 30 Days</option>
-                            <option value="all">All Available Days</option>
-                          </select>
-                        </div>
+                        <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#0e6de4]">Live campaign totals</span>
                       </div>
 
-                      {/* Interactive Legend */}
-                      <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-                        {[
-                          { key: 'delivered', label: 'Delivered', color: 'bg-[#0e6de4]' },
-                          { key: 'processed', label: 'Processed', color: 'bg-slate-700' },
-                          { key: 'failed', label: 'Failed', color: 'bg-rose-500' },
-                          { key: 'noForm', label: 'No Form', color: 'bg-amber-500' },
-                          { key: 'review', label: 'Review Req', color: 'bg-purple-500' },
-                          { key: 'executionError', label: 'Exec Error', color: 'bg-red-600' },
-                        ].map((s) => {
-                          const isActive = activeChartSeries[s.key] !== false;
-                          return (
-                            <button
-                              key={s.key}
-                              type="button"
-                              onClick={() =>
-                                setActiveChartSeries((prev) => ({
-                                  ...prev,
-                                  [s.key]: !isActive,
-                                }))
-                              }
-                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all cursor-pointer select-none ${
-                                isActive
-                                  ? 'bg-slate-50 border-slate-300 font-bold text-slate-800'
-                                  : 'bg-slate-50/50 border-slate-200 text-slate-400 opacity-60'
-                              }`}
-                            >
-                              <span className={`h-2.5 w-2.5 rounded-full ${s.color}`} />
-                              <span>{s.label}</span>
-                            </button>
-                          );
-                        })}
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7" aria-label="Campaign result legend">
+                        {overallChartData.map((item) => (
+                          <div key={item.metric} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2">
+                            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                            <div className="min-w-0"><p className="truncate text-[9px] font-black tracking-wide text-slate-500">{item.metric}</p><p className="text-sm font-black text-slate-900">{item.value}</p></div>
+                          </div>
+                        ))}
                       </div>
 
-                      {/* SVG Line Chart / Empty State */}
-                      {chartSeriesData.length === 0 || processed === 0 ? (
+                      {prospects === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 px-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 text-center space-y-2">
                           <BarChart2 className="h-10 w-10 text-slate-300" />
-                          <p className="text-sm font-bold text-slate-700">No campaign activity yet</p>
-                          <p className="text-xs text-slate-500 max-w-sm">
-                            {prospects > 0
-                              ? `Campaign contains ${prospects} prospects available. Results will appear here automatically after processing begins.`
-                              : 'Add prospects to this campaign to start website outreach and track daily performance.'}
-                          </p>
+                          <p className="text-sm font-bold text-slate-700">No campaign prospects yet</p>
+                          <p className="text-xs text-slate-500 max-w-sm">Add prospects to this campaign to generate an overall results breakdown.</p>
                         </div>
                       ) : (
-                        <div className="relative w-full h-64 bg-slate-50/40 rounded-2xl p-4 border border-slate-200/80">
-                          {(() => {
-                            const padding = { top: 20, right: 30, bottom: 35, left: 40 };
-                            const width = 800;
-                            const height = 200;
-                            const chartW = width - padding.left - padding.right;
-                            const chartH = height - padding.top - padding.bottom;
-
-                            const maxY = Math.max(
-                              10,
-                              ...chartSeriesData.flatMap((d) => [
-                                d.processed,
-                                d.delivered,
-                                d.failed,
-                                d.noForm,
-                                d.review,
-                                d.executionError,
-                              ])
-                            );
-
-                            const pointsCount = chartSeriesData.length;
-                            const getX = (idx: number) =>
-                              padding.left + (pointsCount > 1 ? (idx / (pointsCount - 1)) * chartW : chartW / 2);
-                            const getY = (val: number) =>
-                              padding.top + chartH - (val / maxY) * chartH;
-
-                            const seriesKeys: Array<{ key: keyof typeof chartSeriesData[0]; color: string }> = [
-                              { key: 'processed', color: '#334155' },
-                              { key: 'delivered', color: '#0e6de4' },
-                              { key: 'failed', color: '#f43f5e' },
-                              { key: 'noForm', color: '#f59e0b' },
-                              { key: 'review', color: '#a855f7' },
-                              { key: 'executionError', color: '#dc2626' },
-                            ];
-
-                            return (
-                              <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${width} ${height}`}>
-                                {/* Grid Horizontal Lines */}
-                                {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
-                                  const y = padding.top + chartH * (1 - ratio);
-                                  const labelVal = Math.round(maxY * ratio);
-                                  return (
-                                    <g key={i}>
-                                      <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#e2e8f0" strokeDasharray="3 3" />
-                                      <text x={padding.left - 8} y={y + 3} textAnchor="end" className="text-[9px] fill-slate-400 font-mono">
-                                        {labelVal}
-                                      </text>
-                                    </g>
-                                  );
-                                })}
-
-                                {/* Lines & Dots for each series */}
-                                {seriesKeys.map(({ key, color }) => {
-                                  if (activeChartSeries[key] === false) return null;
-                                  const points = chartSeriesData.map((d, idx) => ({
-                                    x: getX(idx),
-                                    y: getY(Number(d[key]) || 0),
-                                    val: Number(d[key]) || 0,
-                                  }));
-
-                                  const pathD = points.reduce(
-                                    (acc, p, idx) => (idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`),
-                                    ''
-                                  );
-
-                                  return (
-                                    <g key={key}>
-                                      <path d={pathD} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                      {points.map((p, idx) => (
-                                        <circle key={idx} cx={p.x} cy={p.y} r="3.5" fill="#ffffff" stroke={color} strokeWidth="2">
-                                          <title>{`${chartSeriesData[idx].dateLabel} - ${key}: ${p.val}`}</title>
-                                        </circle>
-                                      ))}
-                                    </g>
-                                  );
-                                })}
-
-                                {/* X-Axis Labels */}
-                                {chartSeriesData.map((d, idx) => (
-                                  <text key={idx} x={getX(idx)} y={height - 8} textAnchor="middle" className="text-[9px] fill-slate-500 font-mono font-bold">
-                                    {d.dateLabel}
-                                  </text>
-                                ))}
-                              </svg>
-                            );
-                          })()}
+                        <div className="relative h-72 w-full overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-b from-white to-blue-50/40 px-2 py-4 sm:h-80 sm:px-4">
+                          <div className="pointer-events-none absolute inset-x-6 top-3 h-20 rounded-full bg-blue-200/20 blur-3xl" />
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={overallChartData} margin={{ top: 28, right: 10, bottom: 12, left: -18 }}>
+                              <CartesianGrid vertical={false} stroke="#dbe5f2" strokeDasharray="3 5" />
+                              <XAxis dataKey="metric" axisLine={false} tickLine={false} interval={0} tick={{ fill: '#475569', fontSize: 10, fontWeight: 800 }} />
+                              <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={34} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                              <Tooltip
+                                cursor={{ fill: '#dbeafe', opacity: 0.28 }}
+                                contentStyle={{ borderRadius: 16, border: '1px solid #dbeafe', boxShadow: '0 14px 34px rgba(15, 23, 42, .12)', fontSize: 12 }}
+                                labelStyle={{ color: '#0f172a', fontWeight: 800, marginBottom: 6 }}
+                                formatter={(value: number) => [value.toLocaleString(), 'Count']}
+                              />
+                              <Bar dataKey="value" name="Count" radius={[10, 10, 3, 3]} maxBarSize={58}>
+                                {overallChartData.map((item) => <Cell key={item.metric} fill={item.color} />)}
+                                <LabelList dataKey="value" position="top" fill="#0f172a" fontSize={12} fontWeight={800} />
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
                         </div>
                       )}
                     </div>

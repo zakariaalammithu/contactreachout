@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Bot, CheckCircle2, Loader2, RefreshCw, Save, Spa
 import { Button } from '@/components/ui/Button';
 import { AIUpgradeModal } from '@/components/ui/AIUpgradeModal';
 import type { Lead, LeadList } from '@/types';
+import { readCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 
 type ReviewStatus = 'Not Reviewed' | 'Reviewed' | 'Edited' | 'Approved';
 interface StoredCampaign { id: string; name: string; selectedListId?: string; prospectsList?: Lead[]; aiInstructions?: string; aiPersonalizationEnabled?: boolean; aiPersonalizedMessages?: Record<string, string>; aiMessageStatuses?: Record<string, ReviewStatus>; [key: string]: unknown }
@@ -47,7 +48,7 @@ export default function AiPersonalizationClient() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => { try { const stored = JSON.parse(localStorage.getItem('user_campaigns') || '[]'); setCampaigns(stored); setLeadLists(JSON.parse(localStorage.getItem('user_lead_lists') || '[]')); setAllLeads(JSON.parse(localStorage.getItem('user_imported_leads') || '[]')); const requested = new URLSearchParams(location.search).get('campaign'); if (requested && stored.some((item: StoredCampaign) => item.id === requested)) setSourceId(requested); } catch { setNotice('Saved campaign data could not be loaded from this browser.'); } }, []);
+  useEffect(() => { try { const stored = readCampaignDrafts(localStorage) as StoredCampaign[]; setCampaigns(stored); setLeadLists(JSON.parse(localStorage.getItem('user_lead_lists') || '[]')); setAllLeads(JSON.parse(localStorage.getItem('user_imported_leads') || '[]')); const requested = new URLSearchParams(location.search).get('campaign'); if (requested && stored.some((item: StoredCampaign) => item.id === requested)) setSourceId(requested); } catch { setNotice('Saved campaign data could not be loaded from this browser.'); } }, []);
   const selectedCampaign = useMemo(() => campaigns.find(item => item.id === sourceId), [campaigns, sourceId]);
   const selectedLeads = useMemo(() => !sourceId ? [] : sourceType === 'campaign' ? selectedCampaign?.prospectsList || [] : allLeads.filter(lead => lead.listId === sourceId), [allLeads, selectedCampaign, sourceId, sourceType]);
   useEffect(() => { setDrafts([]); setCurrentIndex(0); setNotice(''); if (selectedCampaign?.aiInstructions) setInstructions(selectedCampaign.aiInstructions); }, [selectedCampaign, sourceId]);
@@ -99,7 +100,7 @@ export default function AiPersonalizationClient() {
     }
   };
 
-  const save = () => { const approved = drafts.filter(item => item.status === 'Approved'); if (approved.length !== drafts.length || !drafts.length) { setNotice('Approve every personalized message before continuing to the campaign.'); return; } const map = Object.fromEntries(approved.map(item => [item.leadId, item.body])); const statuses = Object.fromEntries(approved.map(item => [item.leadId, item.status])); if (sourceType === 'campaign' && selectedCampaign) { const updated = campaigns.map(campaign => campaign.id === selectedCampaign.id ? {...campaign, aiPersonalizationEnabled:true, aiInstructions:instructions, aiPersonalizedMessages:map, aiMessageStatuses:statuses, prospectsList:(campaign.prospectsList || []).map(lead => map[lead.id] ? {...lead, personalizedOpeningLine:map[lead.id]} : lead)} : campaign); localStorage.setItem('user_campaigns', JSON.stringify(updated)); setCampaigns(updated); } else { const updated = allLeads.map(lead => map[lead.id] ? {...lead, personalizedOpeningLine:map[lead.id]} : lead); localStorage.setItem('user_imported_leads', JSON.stringify(updated)); setAllLeads(updated); } setNotice('All approved messages were saved. The campaign will use these final edited versions.'); };
+  const save = () => { const approved = drafts.filter(item => item.status === 'Approved'); if (approved.length !== drafts.length || !drafts.length) { setNotice('Approve every personalized message before continuing to the campaign.'); return; } const map = Object.fromEntries(approved.map(item => [item.leadId, item.body])); const statuses = Object.fromEntries(approved.map(item => [item.leadId, item.status])); if (sourceType === 'campaign' && selectedCampaign) { const updated = campaigns.map(campaign => campaign.id === selectedCampaign.id ? {...campaign, aiPersonalizationEnabled:true, aiInstructions:instructions, aiPersonalizedMessages:map, aiMessageStatuses:statuses, prospectsList:(campaign.prospectsList || []).map(lead => map[lead.id] ? {...lead, personalizedOpeningLine:map[lead.id]} : lead)} : campaign); const persisted = writeCampaignDrafts(localStorage, updated) as StoredCampaign[]; setCampaigns(persisted); } else { const updated = allLeads.map(lead => map[lead.id] ? {...lead, personalizedOpeningLine:map[lead.id]} : lead); localStorage.setItem('user_imported_leads', JSON.stringify(updated)); setAllLeads(updated); } setNotice('All approved messages were saved. The campaign will use these final edited versions.'); };
   const current = drafts[currentIndex]; const lead = selectedLeads.find(item => item.id === current?.leadId); const reviewed = drafts.filter(item => item.status !== 'Not Reviewed').length;
 
   return (

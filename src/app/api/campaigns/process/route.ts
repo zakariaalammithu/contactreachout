@@ -9,7 +9,13 @@ import { AuthStore } from '@/lib/auth/auth-store';
 export async function POST(req: NextRequest) {
   try {
     const session = SessionManager.getSessionFromRequest(req);
-    const userId = session?.email || 'usr_guest';
+    if (!session) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    const userAccount = AuthStore.getUserByEmail(session.email);
+    if (!userAccount || userAccount.id !== session.userId) {
+      return NextResponse.json({ error: 'Authenticated account could not be verified.' }, { status: 401 });
+    }
+    if (userAccount.isSuspended) return NextResponse.json({ error: 'Account is suspended.' }, { status: 403 });
+    const userId = session.email;
 
     const body = await req.json();
     const { campaignId, lead, template, options = {} } = body;
@@ -75,7 +81,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const userAccount = AuthStore.getUserByEmail(userId);
     const userContactIdentity = userAccount
       ? {
           fullName: userAccount.name,

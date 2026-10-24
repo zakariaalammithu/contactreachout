@@ -44,22 +44,34 @@ import { Badge } from '@/components/ui/Badge';
 import { mockMetrics, mockCampaigns } from '@/lib/store/mock-data';
 import { HeyreachWorkflowBuilder } from '@/components/dashboard/HeyreachWorkflowBuilder';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { CampaignAnalyticsOverview } from '@/components/dashboard/CampaignAnalyticsOverview';
+import { readCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 
 export default function AppDashboard() {
   const [campaigns, setCampaigns] = useState(mockCampaigns);
   const [selectedProof, setSelectedProof] = useState<any | null>(null);
   const [storedCampaigns, setStoredCampaigns] = useState<any[]>([]);
+  const [campaignsLoaded, setCampaignsLoaded] = useState(false);
+  const [campaignsError, setCampaignsError] = useState('');
   const [sessionUser, setSessionUser] = useState<{ name: string; email: string } | null>(null);
   const [availableCredits, setAvailableCredits] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
-    try {
-      const saved = JSON.parse(localStorage.getItem('user_campaigns') || '[]');
-      setStoredCampaigns(Array.isArray(saved) ? saved : []);
-    } catch {
-      setStoredCampaigns([]);
-    }
+    const loadCampaigns = () => {
+      try {
+        setStoredCampaigns(readCampaignDrafts(localStorage));
+        setCampaignsError('');
+      } catch {
+        setStoredCampaigns([]);
+        setCampaignsError('Saved campaign data could not be read from this browser.');
+      } finally {
+        setCampaignsLoaded(true);
+      }
+    };
+    loadCampaigns();
+    window.addEventListener('campaigns_updated', loadCampaigns);
+    window.addEventListener('storage', loadCampaigns);
 
     fetch('/api/auth/session', { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : null))
@@ -76,7 +88,7 @@ export default function AppDashboard() {
         if (isMounted) setAvailableCredits(CreditWalletService.getWallet().totalCreditsAvailable);
       });
 
-    return () => { isMounted = false; };
+    return () => { isMounted = false; window.removeEventListener('campaigns_updated', loadCampaigns); window.removeEventListener('storage', loadCampaigns); };
   }, []);
 
   const dashboardSummary = useMemo(() => ({
@@ -150,26 +162,27 @@ export default function AppDashboard() {
   return (
     <div className="space-y-10 max-w-7xl mx-auto pb-16">
       <section className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-black text-[#0e6de4]">Dashboard</p><h1 className="mt-1 text-3xl font-black text-slate-950">Welcome back{sessionUser?.name ? `, ${sessionUser.name}` : ''}</h1><p className="mt-2 text-sm text-slate-600">Manage bulk contact-form campaigns and AI personalization from one workspace.</p></div><Link href="/campaigns/new" prefetch={true} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-5 py-3 text-sm font-black text-white shadow-md hover:bg-[#0758bd]"><PlusCircle className="h-4 w-4" />New Campaign</Link></div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-black text-[#1DBF73]">Dashboard</p><h1 className="mt-1 text-3xl font-black text-[#404145]">Welcome back{sessionUser?.name ? `, ${sessionUser.name}` : ''}</h1><p className="mt-2 text-sm text-[#6B6D72]">Manage bulk contact-form campaigns and AI personalization from one workspace.</p></div><Link href="/campaigns/new" prefetch={true} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1DBF73] px-5 py-3 text-sm font-black text-white shadow-md transition-colors hover:bg-[#169B5D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1DBF73] focus-visible:ring-offset-2"><PlusCircle className="h-4 w-4" />New Campaign</Link></div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
           { label: 'Available Credits', value: availableCredits.toLocaleString(), icon: CreditCard },
           { label: 'Active Campaigns', value: dashboardSummary.active.toLocaleString(), icon: Activity },
           { label: 'Draft Campaigns', value: dashboardSummary.drafts.toLocaleString(), icon: FileEdit },
           { label: 'Total Submissions', value: dashboardSummary.submissions.toLocaleString(), icon: Send },
-        ].map(({ label, value, icon: Icon }) => <Card key={label} className="rounded-3xl border border-blue-100 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-xs font-black uppercase tracking-wide text-slate-500">{label}</p><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#0e6de4]"><Icon className="h-5 w-5" /></span></div><p className="mt-5 text-3xl font-black text-slate-950">{value}</p></Card>)}</div>
+        ].map(({ label, value, icon: Icon }) => <Card key={label} className="rounded-3xl border border-[#EFEFF0] bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-xs font-black uppercase tracking-wide text-[#6B6D72]">{label}</p><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#1DBF73]/10 text-[#159B5D]"><Icon className="h-5 w-5" /></span></div><p className="mt-5 text-3xl font-black text-[#404145]">{value}</p></Card>)}</div>
+        <CampaignAnalyticsOverview campaigns={storedCampaigns} loading={!campaignsLoaded} error={campaignsError} />
         <div className="grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
-          <Card className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><div><h2 className="font-black text-slate-950">Recent Campaigns</h2><p className="mt-1 text-xs text-slate-500">Your most recently updated campaigns.</p></div><Link href="/campaigns" className="text-xs font-black text-[#0e6de4]">View all</Link></div><div className="mt-5 space-y-2">{storedCampaigns.length ? storedCampaigns.slice().sort((a,b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))).slice(0,4).map((campaign) => <Link key={campaign.id} href={`/campaigns/new?edit=${campaign.id}`} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4 hover:border-blue-200"><div><p className="text-sm font-black text-slate-900">{campaign.name || 'Untitled campaign'}</p><p className="mt-1 text-xs text-slate-500">{campaign.prospectsList?.length || 0} prospects</p></div><span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${campaign.status === 'draft' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-[#0e6de4]'}`}>{campaign.status || 'draft'}</span></Link>) : <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">No saved campaigns yet.</div>}</div></Card>
+          <Card className="rounded-3xl border border-[#EFEFF0] bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><div><h2 className="font-black text-[#404145]">Recent Campaigns</h2><p className="mt-1 text-xs text-[#6B6D72]">Your most recently updated campaigns.</p></div><Link href="/campaigns" className="text-xs font-black text-[#159B5D] hover:text-[#117A49]">View all</Link></div><div className="mt-5 space-y-2">{storedCampaigns.length ? storedCampaigns.slice().sort((a,b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))).slice(0,4).map((campaign) => <Link key={campaign.id} href={`/campaigns/new?edit=${campaign.id}`} className="flex items-center justify-between rounded-2xl border border-[#EFEFF0] p-4 transition-colors hover:border-[#1DBF73]/50 hover:bg-[#1DBF73]/5"><div><p className="text-sm font-black text-[#404145]">{campaign.name || 'Untitled campaign'}</p><p className="mt-1 text-xs text-[#6B6D72]">{campaign.prospectsList?.length || 0} prospects</p></div><span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${campaign.status === 'draft' ? 'bg-amber-50 text-amber-700' : 'bg-[#1DBF73]/10 text-[#117A49]'}`}>{campaign.status || 'draft'}</span></Link>) : <div className="rounded-2xl border border-dashed border-[#D7D7D9] bg-[#EFEFF0]/35 p-8 text-center text-sm text-[#6B6D72]">No saved campaigns yet.</div>}</div></Card>
           <div className="space-y-5">
-            <Card className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
-              <h2 className="font-black text-slate-950">Quick Actions</h2>
+            <Card className="rounded-3xl border border-[#EFEFF0] bg-white p-6 shadow-sm">
+              <h2 className="font-black text-[#404145]">Quick Actions</h2>
               <div className="mt-4 grid gap-2">
                 {[
                   { href: '/campaigns/new', label: 'Create New Campaign', icon: PlusCircle },
                   { href: '/import', label: 'Import Leads', icon: UploadCloud },
                   { href: '/pricing', label: 'Buy Credits', icon: CreditCard },
                 ].map(({ href, label, icon: Icon }) => (
-                  <Link key={label} href={href} className="flex items-center gap-3 rounded-xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-black text-slate-700 hover:text-[#0e6de4]">
-                    <Icon className="h-4 w-4 text-[#0e6de4]" />
+                  <Link key={label} href={href} className="flex items-center gap-3 rounded-xl border border-[#EFEFF0] bg-[#FAFAFA] px-4 py-3 text-sm font-black text-[#404145] transition-colors hover:border-[#1DBF73]/50 hover:bg-[#1DBF73]/5 hover:text-[#117A49]">
+                    <Icon className="h-4 w-4 text-[#1DBF73]" />
                     {label}
                   </Link>
                 ))}
@@ -177,29 +190,29 @@ export default function AppDashboard() {
             </Card>
 
             {/* Compact Refer & Earn Widget */}
-            <Card className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50/80 to-white p-6 shadow-sm space-y-3">
+            <Card className="rounded-3xl border border-[#1DBF73]/20 bg-gradient-to-br from-[#1DBF73]/10 to-white p-6 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#0e6de4] text-white">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#1DBF73] text-white">
                     <Gift className="h-4 w-4" />
                   </span>
-                  <h2 className="font-black text-slate-950 text-sm">Refer & Earn</h2>
+                  <h2 className="font-black text-[#404145] text-sm">Refer & Earn</h2>
                 </div>
-                <span className="text-[10px] font-black uppercase text-[#0e6de4] bg-blue-100 px-2 py-0.5 rounded-full">Bonus Credits</span>
+                <span className="text-[10px] font-black uppercase text-[#117A49] bg-[#1DBF73]/15 px-2 py-0.5 rounded-full">Bonus Credits</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-sans">
+              <p className="text-xs text-[#6B6D72] leading-relaxed font-sans">
                 Give a new user 50 bonus credits and earn 100 bonus credits when they verify their account.
               </p>
-              <Link href="/referral" className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors">
+              <Link href="/referral" className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#1DBF73] hover:bg-[#169B5D] px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors">
                 Refer a Friend
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Card>
 
-            <Card className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+            <Card className="rounded-3xl border border-[#EFEFF0] bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
-                <h2 className="font-black text-slate-950">Recent Activity</h2>
-                <Link href="/results" className="text-xs font-black text-[#0e6de4]">Results</Link>
+                <h2 className="font-black text-[#404145]">Recent Activity</h2>
+                <Link href="/results" className="text-xs font-black text-[#159B5D] hover:text-[#117A49]">Results</Link>
               </div>
               <p className="mt-4 text-sm leading-6 text-slate-500">Review submission outcomes, blocked forms and completed campaign activity.</p>
             </Card>

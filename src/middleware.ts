@@ -21,7 +21,7 @@ function timingSafeEqual(first: string, second: string): boolean {
   return mismatch === 0;
 }
 
-async function getVerifiedAdminRole(sessionToken: string): Promise<'ADMIN' | 'SUPER_ADMIN' | null> {
+async function getVerifiedSessionRole(sessionToken: string): Promise<string | null> {
   const parts = sessionToken.split('.');
   if (parts.length !== 3 || parts[0] !== 'v2') return null;
 
@@ -42,7 +42,7 @@ async function getVerifiedAdminRole(sessionToken: string): Promise<'ADMIN' | 'SU
   try {
     const parsed = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
     if (!parsed?.role || !Number.isFinite(parsed?.expiresAt) || Date.now() > parsed.expiresAt) return null;
-    return parsed.role === 'ADMIN' || parsed.role === 'SUPER_ADMIN' ? parsed.role : null;
+    return typeof parsed.role === 'string' ? parsed.role : null;
   } catch {
     return null;
   }
@@ -61,9 +61,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  const verifiedRole = await getVerifiedSessionRole(sessionToken);
+  if (!verifiedRole) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('tab', 'signin');
+    loginUrl.searchParams.set('next', `${pathname}${search}`);
+    return NextResponse.redirect(loginUrl);
+  }
+
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-    const adminRole = await getVerifiedAdminRole(sessionToken);
-    if (!adminRole) {
+    if (verifiedRole !== 'ADMIN' && verifiedRole !== 'SUPER_ADMIN') {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('tab', 'signin');
       loginUrl.searchParams.set('next', `${pathname}${search}`);

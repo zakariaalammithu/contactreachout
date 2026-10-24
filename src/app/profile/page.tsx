@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { Camera, Save, UserCircle, Bot, User } from 'lucide-react';
 import { AIPersonalizationSettings } from '@/components/profile/AIPersonalizationSettings';
 import { ContactReplySettings } from '@/components/profile/ContactReplySettings';
+import { GmailMailboxSettings } from '@/components/settings/GmailMailboxSettings';
 
 
 type Profile = { name: string; email: string; phone: string; avatarUrl: string; replyEmail?: string; createdAt?: string };
@@ -96,6 +97,7 @@ export default function ProfilePage() {
       {activeTab === 'profile' ? (
         <div className="space-y-6">
           <ContactReplySettings />
+          <GmailMailboxSettings />
         </div>
       ) : (
         <AIPersonalizationSettings />

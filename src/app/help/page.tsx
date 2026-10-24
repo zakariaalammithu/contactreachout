@@ -133,6 +133,24 @@ const FAQS = [
     answer: 'Open Profile from the account user menu in your dashboard sidebar to update your contact details or password.',
   },
   {
+    id: 'faq-gmail-connect',
+    category: 'account-profile',
+    question: 'How do I connect a Gmail mailbox?',
+    answer: 'Sign in, open Profile, stay on Profile & Contact Settings, then use Email Accounts and choose Connect Gmail. Google will show the requested Gmail read-only and send permissions before you approve the connection. ContactReachout only completes the connection after Google returns to the application callback.',
+  },
+  {
+    id: 'faq-gmail-permissions',
+    category: 'account-profile',
+    question: 'Why does Gmail ask for read and send permissions?',
+    answer: 'The Gmail connection requests read-only access so ContactReachout can synchronize inbox replies, and send access so you can send a reply from the selected connected mailbox. The connection is optional and is separate from website contact-form campaign submissions.',
+  },
+  {
+    id: 'faq-gmail-disconnect',
+    category: 'account-profile',
+    question: 'How do I disconnect Gmail?',
+    answer: 'Open Profile, then Email Accounts, and choose Disconnect beside the connected mailbox. This disables the mailbox connection in ContactReachout. To also revoke the app’s Google-account permission, use the Google Account third-party access controls.',
+  },
+  {
     id: 'faq-12',
     category: 'getting-started',
     question: 'How do I contact support?',
@@ -212,6 +230,14 @@ const TROUBLESHOOTING_ISSUES = [
     problem: 'Unable to log into your account.',
     explanation: 'Incorrect credentials, expired sessions, or administrative restriction.',
     nextStep: 'Use the standard login page or email hello@contactreachout.com for account access recovery.',
+  },
+  {
+    id: 'tr-gmail-oauth',
+    category: 'account-profile',
+    title: 'Gmail Connection or Sync Issues',
+    problem: 'The Gmail connection cannot start, Google rejects the request, or a connected mailbox does not synchronize.',
+    explanation: 'You must be signed in, authorize the requested Gmail permissions in Google, and return to ContactReachout. A connection setup error can also mean the application administrator has not configured the Google OAuth client or the exact callback URL for the current environment.',
+    nextStep: 'Retry from Profile > Profile & Contact Settings > Email Accounts. If the error persists, contact hello@contactreachout.com with the error message and the time it occurred. Do not send passwords, OAuth codes, refresh tokens, or API keys to support.',
   },
 ];
 

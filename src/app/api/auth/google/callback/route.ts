@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { SessionManager } from '@/lib/auth/session';
+import { validateGoogleIdentityClaims } from '@/lib/auth/google-identity';
 
 
 export async function GET(req: NextRequest) {
@@ -10,6 +11,7 @@ export async function GET(req: NextRequest) {
   const error = url.searchParams.get('error');
 
   const cookieState = req.cookies.get('oauth_state')?.value;
+  const cookieNonce = req.cookies.get('oauth_nonce')?.value;
 
   // Handle OAuth error or cancellation
   if (error || !code) {
@@ -17,8 +19,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(errorMsg)}`, req.url));
   }
 
-  // Validate state parameter for CSRF protection (skip if dev mock state)
-  if (cookieState && state && cookieState !== state && state !== 'mock_state') {
+  // Both values are mandatory: accepting a missing state would disable CSRF protection.
+  if (!cookieState || !state || cookieState !== state) {
     return NextResponse.redirect(new URL('/login?error=Invalid+OAuth+state+parameter', req.url));
   }
 
@@ -36,6 +38,7 @@ export async function GET(req: NextRequest) {
     const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
     if (googleClientId && googleClientSecret && !code.startsWith('mock_')) {
+      if (!cookieNonce) throw new Error('Google OAuth nonce cookie is missing.');
       const host = req.headers.get('host') || 'localhost:3000';
       const protocol = req.headers.get('x-forwarded-proto') || 'http';
       const redirectUri = process.env.GOOGLE_AUTH_REDIRECT_URI || `${protocol}://${host}/api/auth/google/callback`;
@@ -66,9 +69,12 @@ export async function GET(req: NextRequest) {
       }
 
       const googleUser = await userRes.json();
-      googleEmail = googleUser.email;
-      googleName = googleUser.name || googleEmail?.split('@')[0];
-      googleSub = googleUser.sub;
+      const identity = validateGoogleIdentityClaims(googleUser, googleClientId, cookieNonce);
+      googleEmail = identity.email;
+      googleName = identity.name;
+      googleSub = identity.sub;
+    } else if (!code.startsWith('mock_')) {
+      throw new Error('Google sign-in is not configured.');
     }
 
     if (!googleEmail || !googleEmail.includes('@')) {
@@ -111,6 +117,7 @@ export async function GET(req: NextRequest) {
 
     // Clear OAuth state cookie & set HTTP-only session cookie
     res.cookies.set('oauth_state', '', { expires: new Date(0), path: '/' });
+    res.cookies.set('oauth_nonce', '', { expires: new Date(0), path: '/' });
     SessionManager.setSessionCookie(res, session);
 
     return res;

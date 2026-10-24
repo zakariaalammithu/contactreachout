@@ -3,6 +3,7 @@ import { SessionManager } from '@/lib/auth/session';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { InboxStore } from '@/lib/services/inbox-store';
 import { getEmailSenderConfig } from '@/lib/services/email/email-config';
+import { ResendProvider } from '@/lib/services/email/resend-provider';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,53 +50,32 @@ export async function POST(req: NextRequest) {
     const emailSubject = subject || existingMessage?.originalSubject || 'Re: Outreach Inquiry';
     const emailSender = getEmailSenderConfig();
 
-    let isLiveSent = false;
-    let deliveryMessage = `Reply email sent to ${recipientEmail}`;
-
-    try {
-      if (process.env.RESEND_API_KEY) {
-        const payload: any = {
-          from: `${emailSender.fromName} <${emailSender.fromEmail}>`,
-          reply_to: activeReplyEmail || emailSender.replyToEmail || userEmail,
-          to: [recipientEmail],
-          subject: emailSubject,
-          text: replyText,
-        };
-
-        // Attach threading headers if externalMessageId is present
-        if (existingMessage?.externalMessageId) {
-          payload.headers = {
+    const provider = new ResendProvider();
+    const sendResult = await provider.sendEmail({
+      to: recipientEmail,
+      from: emailSender.fromEmail,
+      fromName: emailSender.fromName,
+      replyTo: activeReplyEmail || emailSender.replyToEmail || userEmail,
+      subject: emailSubject,
+      html: `<p>${escapeHtml(replyText).replace(/\n/g, '<br />')}</p>`,
+      text: replyText,
+      headers: existingMessage?.externalMessageId
+        ? {
             'In-Reply-To': existingMessage.externalMessageId,
-            'References': existingMessage.externalMessageId,
-          };
-        }
+            References: existingMessage.externalMessageId,
+          }
+        : undefined,
+    });
 
-        const resendRes = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (resendRes.ok) {
-          isLiveSent = true;
-          deliveryMessage = `Live email transmitted successfully via Resend API to ${recipientEmail}!`;
-        } else {
-          const errData = await resendRes.json().catch(() => ({}));
-          console.error('Resend send-reply API error:', resendRes.status, errData);
-          return NextResponse.json(
-            { error: errData.message || `Email delivery provider rejected request (HTTP ${resendRes.status})` },
-            { status: 502 }
-          );
-        }
-      }
-    } catch (e: any) {
-      console.warn('Resend live dispatch error:', e);
+    if (!sendResult.success || !sendResult.messageId) {
+      const status = sendResult.errorCode === 'MISSING_API_KEY'
+        ? 503
+        : sendResult.errorCode === 'NETWORK_OR_PROVIDER_ERROR'
+          ? 503
+          : 502;
       return NextResponse.json(
-        { error: e.message || 'Error connecting to email delivery provider' },
-        { status: 500 }
+        { error: sendResult.errorMessage || 'The email provider did not accept this reply.' },
+        { status }
       );
     }
 
@@ -106,15 +86,26 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      isLiveSent,
+      isLiveSent: true,
+      providerAccepted: true,
+      messageId: sendResult.messageId,
       senderReplyEmail: activeReplyEmail,
-      message: deliveryMessage,
+      message: `Reply accepted by Resend for ${recipientEmail}.`,
       timestamp: new Date().toISOString(),
     });
-  } catch (err: any) {
+  } catch {
     return NextResponse.json(
-      { error: err.message || 'Error dispatching reply email' },
+      { error: 'Unable to dispatch the reply email.' },
       { status: 500 }
     );
   }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

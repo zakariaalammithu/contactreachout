@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { readCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 
 interface UserOption {
   id: string;
@@ -99,10 +100,10 @@ export default function AdminCampaignsPage() {
     try {
       // Sync local user campaigns to server store first if present
       if (typeof window !== 'undefined') {
-        const storedLocal = localStorage.getItem('user_campaigns');
-        if (storedLocal) {
+        const storedLocal = readCampaignDrafts(localStorage);
+        if (storedLocal.length) {
           try {
-            const parsedLocal = JSON.parse(storedLocal);
+            const parsedLocal = storedLocal;
             if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
               const activeEmail = (localStorage.getItem('active_account_email') || 'mithusquare@gmail.com').toLowerCase();
               const payload = parsedLocal.map((c: any) => ({

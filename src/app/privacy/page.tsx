@@ -250,6 +250,9 @@ export default function PrivacyPage() {
                     <p>
                       We process email addresses and message records for account notifications, transactional dispatches, security alerts, and support communications.
                     </p>
+                    <p>
+                      If you choose to connect a Gmail mailbox, we also process the connected mailbox address, Gmail message and thread identifiers, selected message headers, message participants, subjects, text content, granted scopes, and synchronization metadata needed to display and manage Inbox conversations.
+                    </p>
                   </div>
                 </div>
               </section>
@@ -271,6 +274,7 @@ export default function PrivacyPage() {
                     <li>Tracking campaign outcomes and presenting performance reports</li>
                     <li>Managing user credit balances, usage tracking, and billing</li>
                     <li>Providing customer support and technical assistance</li>
+                    <li>When a user opts in to connect Gmail, synchronizing inbox conversations and sending replies from the selected connected mailbox at that user&apos;s request</li>
                     <li>Monitoring platform reliability, error rates, and infrastructure performance</li>
                     <li>Detecting and preventing abuse, rate-limit violations, and security threats</li>
                     <li>Maintaining immutable administrative operational audit logs</li>
@@ -358,8 +362,15 @@ export default function PrivacyPage() {
                     <li><strong>Payment Processors:</strong> Stripe for subscription checkout and payment verification.</li>
                     <li><strong>Email Delivery Infrastructure:</strong> Resend for system notifications and transactional emails.</li>
                     <li><strong>AI Model Providers:</strong> OpenAI or Anthropic for optional AI message personalization.</li>
+                    <li><strong>Google:</strong> the Gmail API, only when a user elects to connect a Gmail mailbox. The current connection requests <code className="font-mono text-xs bg-slate-100 px-1 rounded text-slate-800">gmail.readonly</code> to synchronize inbox replies and <code className="font-mono text-xs bg-slate-100 px-1 rounded text-slate-800">gmail.send</code> to send a reply from that connected mailbox.</li>
                     <li><strong>Cloud Infrastructure & Database:</strong> Supabase / PostgreSQL for secure server-side storage.</li>
                   </ul>
+                  <div className="p-4 rounded-2xl border border-blue-200 bg-blue-50/60 space-y-2 text-xs text-slate-700">
+                    <h3 className="font-extrabold text-[#111827] text-sm">Optional Gmail mailbox connections</h3>
+                    <p>Gmail access is optional. When the durable Inbox feature and its database schema are enabled, ContactReachout stores the information listed above to link conversations, prevent duplicate synchronization, retain member-specific read or archive state, and support replies. Gmail refresh tokens are encrypted before server-side storage and are not returned to the browser by the mailbox APIs.</p>
+                    <p>Disconnecting a mailbox marks it disconnected in ContactReachout and stops the application from using that connection. You may also revoke ContactReachout&apos;s access from your Google Account&apos;s third-party access controls. We do not represent disconnecting in the app as revoking a Google authorization by itself.</p>
+                    <p>Gmail Inbox persistence is not active until the corresponding feature flag and database migrations are deliberately enabled. Until then, a Gmail connection may be unavailable and legacy Inbox behavior remains in place.</p>
+                  </div>
                 </div>
               </section>
 
@@ -407,6 +418,9 @@ export default function PrivacyPage() {
                 <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
                   <p>
                     Users can manage or delete their uploaded lead lists and campaign records directly from their dashboard workspace. To request full account closure or data deletion, contact support at <a href="mailto:hello@contactreachout.com" className="text-[#0e6de4] font-bold underline">hello@contactreachout.com</a>.
+                  </p>
+                  <p>
+                    A connected Gmail mailbox can be disconnected from Profile &gt; Profile &amp; Contact Settings &gt; Email Accounts. For a request concerning retained Gmail-derived Inbox data, contact support at the address above. Account deletion and data-retention requests remain subject to applicable legal, security, and record-retention obligations.
                   </p>
                 </div>
               </section>

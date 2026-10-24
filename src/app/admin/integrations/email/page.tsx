@@ -46,6 +46,7 @@ export default function ResendEmailSettingsPage() {
 
   const [testStatusMessage, setTestStatusMessage] = useState<string | null>(null);
   const [testIsSuccess, setTestIsSuccess] = useState<boolean | null>(null);
+  const [isConfigured, setIsConfigured] = useState(false);
 
   const fetchConfig = async () => {
     try {
@@ -53,6 +54,7 @@ export default function ResendEmailSettingsPage() {
       const res = await fetch('/api/admin/integrations/email');
       if (res.ok) {
         const data = await res.json();
+        setIsConfigured(Boolean(data.enabled));
         if (data.maskedApiKey) setMaskedApiKey(data.maskedApiKey);
         if (data.source) setCredentialSource(data.source);
         if (data.sourceText) setSourceText(data.sourceText);
@@ -162,7 +164,7 @@ export default function ResendEmailSettingsPage() {
       });
 
       const data = await res.json();
-      setTestIsSuccess(data.connected || data.success || false);
+      setTestIsSuccess(res.ok && data.connected === true && data.success === true);
       setTestStatusMessage(
         data.message || (data.connected ? 'Resend API connection test successful!' : 'Connection test failed.')
       );
@@ -260,9 +262,23 @@ export default function ResendEmailSettingsPage() {
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Connection Status</span>
             <div className="flex items-center gap-2 mt-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                Connected
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                testIsSuccess === true
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  : testIsSuccess === false
+                    ? 'bg-red-50 text-red-800 border-red-200'
+                    : isConfigured
+                      ? 'bg-amber-50 text-amber-900 border-amber-200'
+                      : 'bg-slate-100 text-slate-700 border-slate-200'
+              }`}>
+                {testIsSuccess === true ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                {testIsSuccess === true
+                  ? 'Connected'
+                  : testIsSuccess === false
+                    ? 'Connection Failed'
+                    : isConfigured
+                      ? 'Configured — Not Verified'
+                      : 'Not Configured'}
               </span>
             </div>
           </div>

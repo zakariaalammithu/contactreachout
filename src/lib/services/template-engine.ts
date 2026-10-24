@@ -170,8 +170,11 @@ export function convertHtmlToPlainText(html: string): string {
     return `${cleanText} (${href})`;
   });
 
-  // 4. Closing block tags -> single newline \n
-  str = str.replace(/<\/(p|div|h[1-6]|li|tr|blockquote|section|article)>/gi, '\n');
+  // 4. Preserve the distinction between a paragraph and a visual line break.
+  // ContentEditable uses <div> for lines, while <p> represents a paragraph;
+  // flattening both to one newline loses author-selected blank paragraphs.
+  str = str.replace(/<\/(p|h[1-6]|blockquote|section|article)>/gi, '\n\n');
+  str = str.replace(/<\/(div|li|tr)>/gi, '\n');
 
   // List items start with bullet point
   str = str.replace(/<li[^>]*>/gi, '• ');
@@ -211,6 +214,21 @@ export function convertHtmlToPlainText(html: string): string {
   }
 
   return resultLines.join('\n').trim();
+}
+
+/**
+ * Produces the exact plain-text representation that is sent to a website
+ * contact-form field. This deliberately normalizes line endings only; it does
+ * not collapse whitespace across lines, which would merge paragraphs or a
+ * signature into a single line after personalization.
+ */
+export function prepareContactFormPlainText(template: string, context: InterpolationContext): string {
+  const rendered = interpolateTemplate(template, context);
+  return convertHtmlToPlainText(rendered)
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[\t ]+$/g, ''))
+    .join('\n');
 }
 
 

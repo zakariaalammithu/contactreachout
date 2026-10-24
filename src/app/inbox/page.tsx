@@ -28,6 +28,7 @@ import {
   User,
   X,
 } from 'lucide-react';
+import { getInboxReplyError, isAcceptedInboxReply } from '@/lib/services/inbox-reply-response';
 import { Button } from '@/components/ui/Button';
 
 export interface LeadReply {
@@ -55,6 +56,7 @@ export interface LeadReply {
   replySent?: string;
   replySentAt?: string;
   forwardedToEmail: string;
+  mailboxId?: string;
 }
 
 export default function InboxPage() {
@@ -75,6 +77,7 @@ export default function InboxPage() {
   // Authenticated user details from API
   const [forwardEmail, setForwardEmail] = useState('');
   const [availableCredits, setAvailableCredits] = useState<number>(0);
+  const [durableInbox, setDurableInbox] = useState(false);
 
   // Mobile layout panel view toggle ('list' or 'detail')
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
@@ -94,9 +97,13 @@ export default function InboxPage() {
 
     try {
       const res = await fetch('/api/inbox');
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
-        const msgList: LeadReply[] = data.messages || [];
+        const msgList: LeadReply[] = data.durable ? (data.conversations || []).map((conversation: any) => {
+          const state = Array.isArray(conversation.app_inbox_conversation_members) ? conversation.app_inbox_conversation_members[0] : conversation.app_inbox_conversation_members;
+          return { id: conversation.id, conversationId: conversation.provider_thread_id, mailboxId: conversation.connected_mailbox_id, prospectName: 'Gmail conversation', email: '', companyName: '', website: '', campaignName: 'Gmail', date: new Date(conversation.latest_message_at).toLocaleTimeString(), createdAt: conversation.latest_message_at, isUnread: !state?.is_read, isArchived: Boolean(state?.is_archived), status: conversation.status === 'UNMATCHED' ? 'UNMATCHED' : conversation.status === 'REPLIED' ? 'REPLIED' : 'NEW', originalSubject: conversation.subject_preview || '(No subject)', originalMessage: '', replyMessage: '', forwardedToEmail: '' } as LeadReply;
+        }) : data.messages || [];
+        setDurableInbox(Boolean(data.durable));
         setReplies(msgList);
         if (data.forwardingEmail) setForwardEmail(data.forwardingEmail);
         if (typeof data.availableCredits === 'number') setAvailableCredits(data.availableCredits);
@@ -191,16 +198,27 @@ export default function InboxPage() {
     setSelectedReplyId(rep.id);
     setMobileView('detail');
 
+    if (durableInbox) {
+      try {
+        const response = await fetch(`/api/inbox/${encodeURIComponent(rep.id)}`, { cache: 'no-store' });
+        const detail = await response.json();
+        if (!response.ok) throw new Error(detail.error || 'Unable to load conversation.');
+        const latest = (detail.messages || []).at(-1);
+        if (latest) setReplies((current) => current.map((item) => item.id === rep.id ? { ...item, email: latest.prospect_email || latest.sender_email || item.email, prospectName: latest.prospect_name || item.prospectName, originalSubject: latest.subject || item.originalSubject, replyMessage: latest.reply_message || item.replyMessage, originalMessage: latest.reply_message || item.originalMessage } : item));
+      } catch (error) { setToastMessage(error instanceof Error ? error.message : 'Unable to load conversation.'); }
+    }
+
     if (rep.isUnread) {
       setReplies((prev) =>
         prev.map((r) => (r.id === rep.id ? { ...r, isUnread: false } : r))
       );
 
       try {
-        await fetch('/api/inbox', {
+        const endpoint = durableInbox ? `/api/inbox/${encodeURIComponent(rep.id)}` : '/api/inbox';
+        await fetch(endpoint, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId: rep.id, action: 'mark_read' }),
+          body: JSON.stringify(durableInbox ? { action: 'mark_read' } : { messageId: rep.id, action: 'mark_read' }),
         });
       } catch (err) {
         console.error('Error marking message as read:', err);
@@ -216,13 +234,10 @@ export default function InboxPage() {
     );
 
     try {
-      await fetch('/api/inbox', {
+      await fetch(durableInbox ? `/api/inbox/${encodeURIComponent(messageId)}` : '/api/inbox', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messageId,
-          action: nextUnread ? 'mark_unread' : 'mark_read',
-        }),
+        body: JSON.stringify(durableInbox ? { action: nextUnread ? 'mark_unread' : 'mark_read' } : { messageId, action: nextUnread ? 'mark_unread' : 'mark_read' }),
       });
     } catch (err) {
       console.error('Error toggling read status:', err);
@@ -245,13 +260,10 @@ export default function InboxPage() {
     setTimeout(() => setToastMessage(null), 3500);
 
     try {
-      await fetch('/api/inbox', {
+      await fetch(durableInbox ? `/api/inbox/${encodeURIComponent(messageId)}` : '/api/inbox', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messageId,
-          action: nextArchived ? 'archive' : 'unarchive',
-        }),
+        body: JSON.stringify(durableInbox ? { action: nextArchived ? 'archive' : 'unarchive' } : { messageId, action: nextArchived ? 'archive' : 'unarchive' }),
       });
     } catch (err) {
       console.error('Error toggling archive status:', err);
@@ -271,11 +283,11 @@ export default function InboxPage() {
     const targetId = activeReply.id;
 
     try {
-      const res = await fetch('/api/inbox/send-reply', {
+      const res = await fetch(durableInbox ? `/api/inbox/${encodeURIComponent(targetId)}/reply` : '/api/inbox/send-reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messageId: targetId,
+          ...(durableInbox ? { mailboxId: activeReply.mailboxId } : { messageId: targetId }),
           recipientEmail: activeReply.email,
           subject: activeReply.originalSubject || 'Re: Outreach Inquiry',
           replyText: sentMessageText,
@@ -298,7 +310,7 @@ export default function InboxPage() {
         );
         setTimeout(() => setToastMessage(null), 4000);
       } else {
-        alert(`Error sending email reply: ${data.error || 'Server error'}`);
+        alert(`Error sending email reply: ${getInboxReplyError(data)}`);
       }
     } catch (err: any) {
       console.error('Error sending reply email:', err);
