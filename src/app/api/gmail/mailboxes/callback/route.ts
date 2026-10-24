@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PersistenceAuthorizationError, resolvePersistenceContext } from '@/lib/persistence/identity';
 import { exchangeAndStoreGmailMailbox, safeStateMatches } from '@/lib/services/gmail-mailbox-service';
+import { registerGmailWatch, synchronizeGmailMailbox } from '@/lib/services/gmail-sync-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,16 @@ export async function GET(request: NextRequest) {
     const context = await resolvePersistenceContext(request);
     const stateOwner = expectedState?.split('.', 1)[0];
     if (!stateOwner || stateOwner !== context.appUserId) return redirectWithStatus(request, 'failed');
-    await exchangeAndStoreGmailMailbox(request, context, code);
+    const mailbox = await exchangeAndStoreGmailMailbox(request, context, code);
+    // Bootstrap delivery immediately. Previously a freshly connected mailbox
+    // was stored with only a history cursor: nothing imported existing mail
+    // and no Gmail watch was ever registered, so Pub/Sub notifications —
+    // the only sync trigger — could never arrive. Both steps are
+    // best-effort: a missing Pub/Sub topic or a transient Gmail error must
+    // not fail the connection itself, and sync errors are already recorded
+    // on the mailbox row by the sync service.
+    try { await synchronizeGmailMailbox(mailbox.id); } catch { /* recorded on mailbox state */ }
+    try { await registerGmailWatch(mailbox.id); } catch { /* Pub/Sub may not be configured yet */ }
     return redirectWithStatus(request, 'connected');
   } catch (error) {
     if (error instanceof PersistenceAuthorizationError) return NextResponse.redirect(new URL('/login', request.url));

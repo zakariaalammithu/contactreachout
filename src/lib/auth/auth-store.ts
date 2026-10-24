@@ -1,6 +1,20 @@
 import crypto from 'crypto';
 import type { AppRole } from './admin-auth-guard';
 
+/**
+ * Session signing secret. The development fallback exists only so local
+ * development and tests work out of the box; in production there is no
+ * fallback, because a known fallback would let anyone who can read the
+ * (public) source forge a session for any user, including admins.
+ * Returns null in production when SESSION_SECRET is not configured, and
+ * callers must fail closed in that case.
+ */
+export function resolveSessionSecret(): string | null {
+  const configured = process.env.SESSION_SECRET;
+  if (configured) return configured;
+  return process.env.NODE_ENV === 'production' ? null : 'contactreachout-session-secret';
+}
+
 export interface UserAccount {
   id: string;
   name: string;
@@ -453,7 +467,9 @@ export class AuthStore {
       const parts = sessionId.split('.');
       if (parts.length === 3 && parts[0] === 'v2') {
         const payload = parts[1];
-        const expected = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'contactreachout-session-secret').update(payload).digest('base64url');
+        const sessionSecret = resolveSessionSecret();
+        if (!sessionSecret) return null;
+        const expected = crypto.createHmac('sha256', sessionSecret).update(payload).digest('base64url');
         if (parts[2].length === expected.length && crypto.timingSafeEqual(Buffer.from(parts[2]), Buffer.from(expected))) {
           try {
             const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as UserSession;
@@ -464,7 +480,9 @@ export class AuthStore {
       }
       if (parts.length === 7 && parts[0] === 'v1') {
         const payload = parts.slice(0, 6).join('.');
-        const expected = crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.RESEND_API_KEY || 'contactreachout-session-secret').update(payload).digest('base64url');
+        const legacySecret = process.env.SESSION_SECRET || process.env.RESEND_API_KEY || resolveSessionSecret();
+        if (!legacySecret) return null;
+        const expected = crypto.createHmac('sha256', legacySecret).update(payload).digest('base64url');
         if (parts[6].length === expected.length && crypto.timingSafeEqual(Buffer.from(parts[6]), Buffer.from(expected))) {
           const parsed: UserSession = { sessionId: parts[1], userId: parts[2], email: decodeURIComponent(parts[3]), role: parts[4] as AppRole, expiresAt: Number(parts[5]) };
           if (Number.isFinite(parsed.expiresAt) && Date.now() <= parsed.expiresAt) return parsed;
@@ -480,8 +498,10 @@ export class AuthStore {
   }
 
   public static createSignedSessionToken(session: UserSession): string {
+    const sessionSecret = resolveSessionSecret();
+    if (!sessionSecret) throw new Error('SESSION_SECRET must be configured in production.');
     const payload = Buffer.from(JSON.stringify(session)).toString('base64url');
-    const signature = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'contactreachout-session-secret').update(payload).digest('base64url');
+    const signature = crypto.createHmac('sha256', sessionSecret).update(payload).digest('base64url');
     return `v2.${payload}.${signature}`;
   }
 

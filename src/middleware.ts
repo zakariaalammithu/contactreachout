@@ -26,7 +26,11 @@ async function getVerifiedSessionRole(sessionToken: string): Promise<string | nu
   if (parts.length !== 3 || parts[0] !== 'v2') return null;
 
   const [, payload, signature] = parts;
-  const secret = process.env.SESSION_SECRET || 'contactreachout-session-secret';
+  // Fail closed in production: with no configured SESSION_SECRET there is no
+  // safe way to verify a session, and the former hard-coded fallback was
+  // public knowledge (it ships in the source), which made sessions forgeable.
+  const secret = process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' ? null : 'contactreachout-session-secret');
+  if (!secret) return null;
   const key = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(secret),
