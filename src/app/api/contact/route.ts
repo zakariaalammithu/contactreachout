@@ -100,7 +100,17 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result.success) {
-    return NextResponse.json({ error: 'Your message could not be sent right now. Please try again shortly or email us directly at hello@contactreachout.com.' }, { status: 503 });
+    // Do not hide a configuration failure behind a generic retry message:
+    // a missing/invalid Resend setup will fail every submission until an
+    // admin fixes it, and the message is otherwise lost (it is not stored).
+    // Only the provider error code is exposed, never any credential value.
+    if (result.errorCode === 'MISSING_API_KEY') {
+      return NextResponse.json({ error: 'Email service is not configured yet. Please try again later or email us directly at hello@contactreachout.com.', code: 'EMAIL_NOT_CONFIGURED' }, { status: 503 });
+    }
+    if (result.errorCode === 'INVALID_CREDENTIALS') {
+      return NextResponse.json({ error: 'Email service rejected the configured credential. Please try again later or email us directly at hello@contactreachout.com.', code: 'EMAIL_CREDENTIALS_INVALID' }, { status: 503 });
+    }
+    return NextResponse.json({ error: 'Your message could not be sent right now. Please try again shortly or email us directly at hello@contactreachout.com.', code: 'EMAIL_SEND_FAILED' }, { status: 503 });
   }
 
   return NextResponse.json({

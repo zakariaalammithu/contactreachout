@@ -43,6 +43,13 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
+    durable: false,
+    // Honest labelling: this branch reads the in-memory store, which does
+    // not survive a server restart or a different serverless instance, so
+    // replies synced from Gmail are not durably visible here. The durable
+    // inbox (Supabase) is the path that makes replies reliably appear.
+    storage: 'ephemeral-memory',
+    notice: 'Inbox is running on temporary server memory because the durable inbox is off, so replies may not appear after a restart or on another server instance.',
     userEmail,
     forwardingEmail: activeReplyEmail,
     unreadCount,

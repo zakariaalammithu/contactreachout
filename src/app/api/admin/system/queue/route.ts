@@ -13,8 +13,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      redisStatus: 'CONNECTED',
-      brokerStatus: isPaused ? 'PAUSED' : 'ONLINE',
+      // Honest labelling: QueueManager stores jobs in an in-memory Map;
+      // no BullMQ Queue or Redis connection is ever opened, so reporting
+      // redisStatus CONNECTED (and a "Redis BullMQ" broker) was false.
+      redisStatus: 'IN_MEMORY',
+      backend: 'in-memory',
+      brokerStatus: isPaused ? 'PAUSED' : 'IN_MEMORY',
       queueStatus: isPaused ? 'PAUSED' : 'ONLINE',
       isPaused,
       workerConcurrency: stats.concurrency || 5,
