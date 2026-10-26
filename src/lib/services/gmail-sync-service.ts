@@ -3,6 +3,14 @@ import 'server-only';
 import { SecretManager } from '@/lib/security/secret-manager';
 import { getConnectedMailboxForSync, updateMailboxSyncState } from '@/lib/persistence/gmail-mailbox-repository';
 import { ingestGmailMessage } from '@/lib/persistence/gmail-sync-repository';
+import {
+  extractSenderEmail,
+  findCampaignLinkForThread,
+  listCampaignLeadContacts,
+  matchCampaignLead,
+  type CampaignLeadContact,
+  type CampaignLink,
+} from './campaign-reply-matcher';
 import { parseGmailMessage } from './gmail-message-parser';
 
 type GmailList = { messages?: Array<{ id?: string }>; historyId?: string; history?: Array<{ messagesAdded?: Array<{ message?: { id?: string } }> }> };
@@ -30,7 +38,7 @@ async function gmailJson<T>(token: string, path: string): Promise<{ status: numb
  * means the cursor expired: reconciliation fetches the newest inbox messages
  * and records a fresh cursor; unique provider IDs prevent duplicate unread rows.
  */
-export async function synchronizeGmailMailbox(mailboxId: string): Promise<{ imported: number; duplicates: number; cursorRecovered: boolean }> {
+export async function synchronizeGmailMailbox(mailboxId: string): Promise<{ imported: number; duplicates: number; filtered: number; cursorRecovered: boolean }> {
   const mailbox = await getConnectedMailboxForSync(mailboxId);
   if (!mailbox) throw new Error('MAILBOX_NOT_AVAILABLE');
   let token: string;
@@ -62,16 +70,38 @@ export async function synchronizeGmailMailbox(mailboxId: string): Promise<{ impo
   }
   let imported = 0;
   let duplicates = 0;
+  let filtered = 0;
+  // Campaign-reply-only inbox: lead contacts are loaded once per run, and
+  // thread links are cached per thread. If the lead lookup fails, matching
+  // falls back to thread links only — fail-closed, so unverified senders are
+  // filtered rather than imported.
+  let leadContacts: CampaignLeadContact[] = [];
+  try {
+    leadContacts = await listCampaignLeadContacts(mailbox.organization_id);
+  } catch {
+    leadContacts = [];
+  }
+  const threadLinkCache = new Map<string, CampaignLink | null>();
   for (const id of [...new Set(ids)]) {
     const message = await gmailJson<any>(token, `messages/${encodeURIComponent(id)}?format=full`);
     if (!message.data) continue;
     const parsed = parseGmailMessage(message.data);
     if (!parsed || !parsed.text || parsed.from.toLowerCase().includes(mailbox.email_normalized)) continue;
-    const outcome = await ingestGmailMessage({ organizationId: mailbox.organization_id, ownerAppUserId: mailbox.owner_app_user_id, mailboxId, message: parsed });
+    let link = threadLinkCache.get(parsed.providerThreadId);
+    if (link === undefined) {
+      link = await findCampaignLinkForThread({ organizationId: mailbox.organization_id, mailboxId, threadId: parsed.providerThreadId });
+      threadLinkCache.set(parsed.providerThreadId, link);
+    }
+    const campaign = link ?? matchCampaignLead(leadContacts, extractSenderEmail(parsed.from));
+    if (!campaign) {
+      filtered += 1;
+      continue;
+    }
+    const outcome = await ingestGmailMessage({ organizationId: mailbox.organization_id, ownerAppUserId: mailbox.owner_app_user_id, mailboxId, message: parsed, campaign });
     if (outcome === 'IMPORTED') imported += 1; else duplicates += 1;
   }
   await updateMailboxSyncState(mailboxId, { historyId: nextCursor || cursor || undefined, errorCode: null });
-  return { imported, duplicates, cursorRecovered };
+  return { imported, duplicates, filtered, cursorRecovered };
 }
 
 export async function registerGmailWatch(mailboxId: string): Promise<{ expirationAt: string }> {

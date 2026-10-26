@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     try {
       watchExpirationAt = (await registerGmailWatch(params.id)).expirationAt;
     } catch { /* Pub/Sub may not be configured; the sync above still counts. */ }
-    return NextResponse.json({ success: true, imported: result.imported, duplicates: result.duplicates, cursorRecovered: result.cursorRecovered, watchExpirationAt });
+    return NextResponse.json({ success: true, imported: result.imported, duplicates: result.duplicates, filtered: result.filtered, cursorRecovered: result.cursorRecovered, watchExpirationAt });
   } catch (error) {
     if (error instanceof PersistenceAuthorizationError) return NextResponse.json({ error: 'Authentication is required.' }, { status: 401 });
     const code = error instanceof Error ? error.message : '';

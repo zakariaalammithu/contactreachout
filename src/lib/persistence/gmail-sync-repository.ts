@@ -43,13 +43,15 @@ export async function finishMailboxSyncEvent(mailboxId: string, providerEventId:
   if (result.error) throw new Error('Could not update mailbox sync event.');
 }
 
-export async function ingestGmailMessage(input: { organizationId: string; ownerAppUserId: string; mailboxId: string; message: ParsedGmailMessage }): Promise<'IMPORTED' | 'DUPLICATE'> {
+export async function ingestGmailMessage(input: { organizationId: string; ownerAppUserId: string; mailboxId: string; message: ParsedGmailMessage; campaign?: { campaignId: string; leadId: string } | null }): Promise<'IMPORTED' | 'DUPLICATE'> {
   const message = input.message;
   if (!message.providerThreadId || !message.providerMessageId) throw new Error('Malformed Gmail message identity.');
   const conversationId = await findOrCreateGmailConversation({ organizationId: input.organizationId, mailboxId: input.mailboxId, ownerAppUserId: input.ownerAppUserId, threadId: message.providerThreadId, subject: message.subject || null, receivedAt: message.receivedAt });
   const result = await clientOrThrow().from('app_inbox_messages').insert({
     organization_id: input.organizationId,
     assigned_app_user_id: input.ownerAppUserId,
+    app_campaign_id: input.campaign?.campaignId || null,
+    app_lead_id: input.campaign?.leadId || null,
     provider: 'gmail',
     connected_mailbox_id: input.mailboxId,
     provider_thread_id: message.providerThreadId,
