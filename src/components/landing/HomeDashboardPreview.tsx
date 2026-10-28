@@ -660,7 +660,7 @@ export function HomeDashboardPreview() {
   const [tab, setTab] = useState<PreviewTab>('dashboard');
 
   return (
-    <section id="live-dashboard-preview" className="px-4 py-24 sm:px-6">
+    <section id="live-dashboard-preview" className="preview-spotlight px-4 py-24 sm:px-6">
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-black text-blue-400">Live dashboard preview</p>
@@ -673,7 +673,7 @@ export function HomeDashboardPreview() {
           </p>
         </div>
 
-        <div className="mt-12 overflow-hidden rounded-[2rem] border border-zinc-800 bg-black shadow-2xl shadow-black/50">
+        <div className="preview-browser-frame mt-12 overflow-hidden rounded-[2rem] border border-zinc-800 bg-black shadow-2xl shadow-black/50">
           <div className="flex items-center gap-3 border-b border-zinc-800 bg-zinc-950 px-4 py-3">
             <div className="flex gap-1.5">
               <span className="h-3 w-3 rounded-full bg-rose-500" />

@@ -294,6 +294,28 @@ body > div.min-h-screen.bg-black {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
+/* Live dashboard preview spotlight: the section must catch the eye, so it
+   gets a blue-tinted glow + stronger blue border + a glowing browser frame,
+   in both dark and light mode. */
+.home-saas-main > section.preview-spotlight {
+  border-color: rgba(14, 109, 228, 0.65);
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(14, 109, 228, 0.22), transparent 70%),
+    #0a0f1e;
+  box-shadow: 0 0 0 1px rgba(14, 109, 228, 0.25), 0 24px 80px rgba(14, 109, 228, 0.28), 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.home-saas-main > section.preview-spotlight .preview-browser-frame {
+  border-color: rgba(14, 109, 228, 0.5);
+  box-shadow: 0 0 60px rgba(14, 109, 228, 0.25), 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+html.light .home-saas-main > section.preview-spotlight {
+  border-color: #93c5fd;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(14, 109, 228, 0.14), transparent 70%),
+    #eff6ff;
+  box-shadow: 0 0 0 1px rgba(14, 109, 228, 0.2), 0 24px 80px rgba(14, 109, 228, 0.22), 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
 .home-saas-main > section:first-child {
   width: min(1280px, calc(100% - 2rem));
   margin-top: 0;

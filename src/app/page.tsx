@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Award, BadgeCheck, Bot, CheckCircle2, FileSpreadsheet, FileText, Gauge, Globe2, MessageSquareText, Search, Send, ShieldCheck, Sparkles, Star, UploadCloud } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Bot, CheckCircle2, FileSpreadsheet, FileText, Gauge, Globe2, MessageSquareText, Search, Send, ShieldCheck, Sparkles, Star, UploadCloud } from 'lucide-react';
 import { LandingHeader } from '@/components/layout/LandingHeader';
 import { LandingFooter } from '@/components/layout/LandingFooter';
 import { HomeProductSections } from '@/components/landing/HomeProductSections';
@@ -324,7 +324,7 @@ export default function HomePage() {
         <section className="overflow-hidden border-y border-blue-900 bg-zinc-950 px-4 py-16 text-white sm:px-6 sm:py-20">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
-              <h2 className="inline-flex items-center justify-center gap-2.5 text-xl font-black sm:text-2xl"><Award className="h-6 w-6 text-blue-400" />Trusted for High-Deliverability Contact Form Outreach</h2>
+              <h2 className="text-xl font-black sm:text-2xl">Trusted for High-Deliverability Contact Form Outreach</h2>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs font-bold text-zinc-400">
                 <span className="inline-flex items-center gap-2"><Star className="h-4 w-4 text-blue-400" />Bulk contact-form outreach</span>
                 <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4 text-blue-400" />AI-personalized campaigns</span>
