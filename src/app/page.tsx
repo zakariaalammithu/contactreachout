@@ -168,7 +168,7 @@ export default function HomePage() {
                     <div key={row.company} className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-2">
                       <div className="flex min-w-0 items-center gap-2">
                         <span className="h-3 w-3 rounded border border-zinc-700 shrink-0" />
-                        <img src={row.image} alt={`${row.name} profile`} className="h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-zinc-800" />
+                        <img src={row.image} alt={`${row.name} profile`} decoding="async" className="h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-zinc-800" />
                         <div className="min-w-0">
                           <p className="truncate text-[10px] font-extrabold text-white">{row.company}</p>
                           <p className="truncate text-[8px] font-semibold text-zinc-400">{row.domain}</p>
@@ -184,11 +184,11 @@ export default function HomePage() {
               <div className="hero-glow-card relative min-w-0 rounded-2xl border border-zinc-800/90 bg-zinc-950 p-3.5 shadow-[0_14px_45px_rgba(14,109,228,0.08)]">
                 {/* Top Avatars Stack representing contact list */}
                 <div className="flex items-center justify-end -space-x-2 pb-2">
-                  <img src="/client-reviews/austin-smith.png" alt="Austin Smith profile" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
-                  <img src="/client-reviews/emily-davidson.png" alt="Emily Davidson profile" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
-                  <img src="/client-reviews/michael-kokernak.jpg" alt="Michael Kokernak profile" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
-                  <img src="/client-reviews/bill-bradford.jpg" alt="Dr. Bill Bradford profile" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
-                  <img src="/client-reviews/felix-dragoi.jpg" alt="Felix Dragoi profile" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
+                  <img src="/client-reviews/austin-smith.jpg" alt="Austin Smith profile" decoding="async" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
+                  <img src="/client-reviews/emily-davidson.jpg" alt="Emily Davidson profile" decoding="async" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
+                  <img src="/client-reviews/michael-kokernak.jpg" alt="Michael Kokernak profile" decoding="async" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
+                  <img src="/client-reviews/bill-bradford.jpg" alt="Dr. Bill Bradford profile" decoding="async" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
+                  <img src="/client-reviews/felix-dragoi.jpg" alt="Felix Dragoi profile" decoding="async" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-[9px] font-black text-zinc-400 ring-2 ring-white">+32</span>
                 </div>
 
@@ -335,7 +335,7 @@ export default function HomePage() {
               <div className="trusted-logo-track">
                 {[...trustedCompanyMarks, ...trustedCompanyMarks].map(({ name, image }, index) => (
                   <div key={`${name}-${index}`} className="trusted-logo-item" aria-hidden={index >= trustedCompanyMarks.length}>
-                    <span className="trusted-logo-mark"><img src={image} alt="" /></span>
+                    <span className="trusted-logo-mark"><img src={image} alt="" loading="lazy" decoding="async" /></span>
                     <span className="whitespace-nowrap text-sm font-black tracking-tight text-zinc-300 sm:text-base">{name}</span>
                   </div>
                 ))}

@@ -10,8 +10,8 @@ const connections = [
 ];
 
 const outreachProfiles = [
-  { name: 'Austin Smith', image: '/client-reviews/austin-smith.png' },
-  { name: 'Emily Davidson', image: '/client-reviews/emily-davidson.png' },
+  { name: 'Austin Smith', image: '/client-reviews/austin-smith.jpg' },
+  { name: 'Emily Davidson', image: '/client-reviews/emily-davidson.jpg' },
   { name: 'Michael Kokernak', image: '/client-reviews/michael-kokernak.jpg' },
   { name: 'Dr. Bill Bradford', image: '/client-reviews/bill-bradford.jpg' },
   { name: 'Felix Dragoi', image: '/client-reviews/felix-dragoi.jpg' },
@@ -52,7 +52,7 @@ export function HomeProductSections() {
             <div className="relative mx-auto mt-7 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {outreachProfiles.slice(0, 6).map((profile, index) => (
                 <div key={profile.name} className="flex items-center justify-between rounded-full border border-blue-900 bg-zinc-950 px-3 py-2.5 shadow-[0_8px_24px_rgba(37,99,235,.08)]">
-                  <div className="flex min-w-0 items-center gap-2.5"><img src={profile.image} alt={`${profile.name} profile`} className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-blue-50" /><div className="min-w-0"><p className="truncate text-[11px] font-black text-white">{profile.name}</p><p className="truncate text-[9px] font-semibold text-zinc-400">Campaign profile</p></div></div>
+                  <div className="flex min-w-0 items-center gap-2.5"><img src={profile.image} alt={`${profile.name} profile`} loading="lazy" decoding="async" className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-blue-50" /><div className="min-w-0"><p className="truncate text-[11px] font-black text-white">{profile.name}</p><p className="truncate text-[9px] font-semibold text-zinc-400">Campaign profile</p></div></div>
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blue-950 text-[10px] font-black text-blue-400">{index % 2 === 0 ? '↗' : '✓'}</span>
                 </div>
               ))}
@@ -61,7 +61,7 @@ export function HomeProductSections() {
             <div className="relative mx-auto mt-4 flex max-w-3xl flex-wrap justify-center gap-3">
               {outreachProfiles.slice(6).map((profile) => (
                 <div key={profile.name} className="flex min-w-[220px] items-center justify-between rounded-full border border-blue-900 bg-zinc-950 px-3 py-2.5 shadow-[0_8px_24px_rgba(37,99,235,.08)]">
-                  <div className="flex min-w-0 items-center gap-2.5"><img src={profile.image} alt={`${profile.name} profile`} className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-blue-50" /><div className="min-w-0"><p className="truncate text-[11px] font-black text-white">{profile.name}</p><p className="truncate text-[9px] font-semibold text-zinc-400">Campaign profile</p></div></div>
+                  <div className="flex min-w-0 items-center gap-2.5"><img src={profile.image} alt={`${profile.name} profile`} loading="lazy" decoding="async" className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-blue-50" /><div className="min-w-0"><p className="truncate text-[11px] font-black text-white">{profile.name}</p><p className="truncate text-[9px] font-semibold text-zinc-400">Campaign profile</p></div></div>
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blue-950 text-[10px] font-black text-blue-400">✓</span>
                 </div>
               ))}
@@ -74,7 +74,7 @@ export function HomeProductSections() {
               <div className="grid grid-cols-6 gap-2 pt-8 sm:grid-cols-10 sm:gap-3">
                 {Array.from({ length: 40 }).map((_, index) => {
                   const profile = outreachProfiles.find((__, profileIndex) => [1, 4, 7, 10, 14, 19, 23, 28, 33, 37][profileIndex] === index);
-                  return profile ? <div key={index} className="aspect-square rounded-xl border border-blue-50 bg-zinc-950 p-1 shadow-xs"><img src={profile.image} alt="Sample campaign profile" className="h-full w-full rounded-lg object-cover" /></div> : <div key={index} aria-hidden="true" className="aspect-square rounded-xl border border-dashed border-white/10 bg-transparent p-1" />;
+                  return profile ? <div key={index} className="aspect-square rounded-xl border border-blue-50 bg-zinc-950 p-1 shadow-xs"><img src={profile.image} alt="Sample campaign profile" loading="lazy" decoding="async" className="h-full w-full rounded-lg object-cover" /></div> : <div key={index} aria-hidden="true" className="aspect-square rounded-xl border border-dashed border-white/10 bg-transparent p-1" />;
                 })}
               </div>
             </div>
@@ -103,7 +103,7 @@ export function HomeProductSections() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(14,109,228,.12)_1px,transparent_1px)] [background-size:22px_22px]" />
             <div className="relative grid items-center gap-5 lg:grid-cols-[1fr_auto_1fr]">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">{connections.slice(0, 3).map(({ name, detail, icon: Icon }) => <div key={name} className="flex items-center gap-3 rounded-2xl border border-blue-900 bg-zinc-950 p-4"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-950 text-blue-400"><Icon className="h-5 w-5" /></span><div><p className="font-extrabold">{name}</p><p className="text-xs text-zinc-400">{detail}</p></div></div>)}</div>
-              <div className="relative mx-auto grid h-44 w-44 place-items-center rounded-full border border-blue-900 bg-blue-950 shadow-[0_0_80px_rgba(14,109,228,.18)]"><div className="grid h-28 w-28 place-items-center rounded-[2rem] bg-[#0e6de4] shadow-xl"><img src="/brand/logo-icon-square.png" alt="ContactReachout" width="64" height="64" className="h-16 w-16 rounded-2xl object-contain shadow-md" /></div></div>
+              <div className="relative mx-auto grid h-44 w-44 place-items-center rounded-full border border-blue-900 bg-blue-950 shadow-[0_0_80px_rgba(14,109,228,.18)]"><div className="grid h-28 w-28 place-items-center rounded-[2rem] bg-[#0e6de4] shadow-xl"><img src="/brand/logo-icon-square.png" alt="ContactReachout" width="64" height="64" loading="lazy" decoding="async" className="h-16 w-16 rounded-2xl object-contain shadow-md" /></div></div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">{connections.slice(3).map(({ name, detail, icon: Icon }) => <div key={name} className="flex items-center gap-3 rounded-2xl border border-blue-900 bg-zinc-950 p-4"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-950 text-blue-400"><Icon className="h-5 w-5" /></span><div><p className="font-extrabold">{name}</p><p className="text-xs text-zinc-400">{detail}</p></div></div>)}</div>
             </div>
           </div>
