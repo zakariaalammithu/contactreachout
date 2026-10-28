@@ -67,7 +67,7 @@ const platformFeatures = [
 
 const trustedCompanyMarks = [
   { name: 'HubSpot', image: '/trusted-logos/hubspot.png' }, { name: 'Clay', image: '/trusted-logos/clay.png' }, { name: 'Instantly', image: '/trusted-logos/instantly-ai.png' },
-  { name: 'Pavilion', image: '/trusted-logos/pavilion.jpg' }, { name: 'Flip Electronics', image: '/trusted-logos/flip-electronics.jpg' }, { name: 'McKinsey', image: '/trusted-logos/mckinsey.jpg' },
+  { name: 'Pavilion', image: '/trusted-logos/pavilion.jpg' }, { name: 'Flip Electronics', image: '/trusted-logos/flip-electronics.jpg' }, { name: 'McKinsey', image: '/trusted-logos/mckinsey.png' },
   { name: 'Indoorcare', image: '/trusted-logos/indoorcare.jpg' }, { name: 'Sandler Training', image: '/trusted-logos/sandler-training.jpg' }, { name: 'XBag', image: '/trusted-logos/xbag.jpg' },
   { name: 'Spacebar Studios', image: '/trusted-logos/spacebar-studios.jpg' }, { name: 'LinkedIn', image: '/trusted-logos/linkedin.jpg' },
 ];
@@ -324,7 +324,7 @@ export default function HomePage() {
         <section className="overflow-hidden border-y border-blue-900 bg-zinc-950 px-4 py-16 text-white sm:px-6 sm:py-20">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
-              <h2 className="text-xl font-black sm:text-2xl">Trusted for High-Deliverability Contact Form Outreach</h2>
+              <h2 className="text-xl font-black sm:text-2xl">Trusted by more than 3,000 companies</h2>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs font-bold text-zinc-400">
                 <span className="inline-flex items-center gap-2"><Star className="h-4 w-4 text-blue-400" />Bulk contact-form outreach</span>
                 <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4 text-blue-400" />AI-personalized campaigns</span>
@@ -353,7 +353,7 @@ export default function HomePage() {
         <section id="features" className="features-section border-y border-blue-900 !bg-zinc-950 px-4 py-24 sm:px-6"><div className="mx-auto max-w-7xl"><div className="max-w-3xl"><p className="text-sm font-black text-blue-400">Platform Features</p><h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Everything you need, built in.</h2><p className="mt-5 text-lg leading-8 text-zinc-400">A complete contact-form outreach platform—from upload and personalization to controlled processing and reporting.</p></div><div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{platformFeatures.map(({ icon: Icon, title, description }) => <article key={title} className="rounded-3xl border border-zinc-800 bg-zinc-950 p-7 transition hover:-translate-y-1 hover:border-blue-900 hover:shadow-xl hover:shadow-blue-900/50"><Icon className="h-8 w-8 text-blue-400" /><h3 className="mt-6 text-xl font-black">{title}</h3><p className="mt-3 leading-7 text-zinc-400">{description}</p></article>)}</div></div></section>
 
         <HomeDashboardPreview />
-        <section className="px-4 py-24 sm:px-6"><div className="mx-auto max-w-6xl overflow-hidden rounded-[2.5rem] border border-zinc-800 bg-zinc-900 p-8 text-white shadow-2xl shadow-black/50 sm:p-14"><div className="grid items-center gap-10 lg:grid-cols-[1fr_auto]"><div><div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-black"><Globe2 className="h-4 w-4" />Start free — no credit card required.</div><h2 className="mt-6 text-4xl font-black tracking-tight sm:text-5xl">Ready to automate your contact form outreach?</h2><p className="mt-4 max-w-2xl text-lg leading-8 text-white">Create your account, upload a lead list, personalize your campaign, and keep the entire contact-form submission workflow visible.</p></div><Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0e6de4] px-7 py-4 text-sm font-black text-white shadow-xl hover:bg-[#0758bd]">Create free account <ArrowRight className="h-4 w-4" /></Link></div></div></section>
+        <section className="px-4 py-24 sm:px-6"><div className="mx-auto max-w-6xl text-white"><div className="grid items-center gap-10 lg:grid-cols-[1fr_auto]"><div><div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-black"><Globe2 className="h-4 w-4" />Start free — no credit card required.</div><h2 className="mt-6 text-4xl font-black tracking-tight sm:text-5xl">Ready to automate your contact form outreach?</h2><p className="mt-4 max-w-2xl text-lg leading-8 text-white">Create your account, upload a lead list, personalize your campaign, and keep the entire contact-form submission workflow visible.</p></div><Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0e6de4] px-7 py-4 text-sm font-black text-white shadow-xl hover:bg-[#0758bd]">Create free account <ArrowRight className="h-4 w-4" /></Link></div></div></section>
       </main>
       <LandingFooter />
     </div>

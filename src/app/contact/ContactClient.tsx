@@ -207,26 +207,26 @@ export function ContactClient() {
         </div>
       </section>
 
-      {/* Main Grid: Blue Contact Info Card + Contact Form */}
+      {/* Main Grid: Contact Info Card + Contact Form */}
       <section className="px-4 pb-12 sm:px-6">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr]">
-          {/* Blue Branded Information Panel */}
-          <aside className="flex flex-col justify-between rounded-3xl bg-[#0e6de4] p-8 text-white shadow-xl shadow-blue-500/10 sm:p-10">
+          {/* Contact Information Panel */}
+          <aside className="flex flex-col justify-between rounded-3xl border border-zinc-800 bg-zinc-900 p-8 text-white shadow-xl sm:p-10">
             <div>
-              <p className="text-xs font-black uppercase tracking-widest text-blue-100">
+              <p className="text-xs font-black uppercase tracking-widest text-zinc-400">
                 Contact Information
               </p>
               <h2 className="mt-3 text-3xl font-black text-white">
                 Start the conversation
               </h2>
-              <p className="mt-4 text-sm leading-relaxed text-blue-100/90">
+              <p className="mt-4 text-sm leading-relaxed text-zinc-400">
                 For product questions, account assistance, campaign issues, or general support, reach out to our team through this form or directly via email.
               </p>
 
               <div className="mt-8 space-y-4">
                 <a
                   href="mailto:hello@contactreachout.com"
-                  className="flex items-center gap-4 rounded-2xl bg-white/10 p-4.5 ring-1 ring-white/15 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="contact-soft-box flex items-center gap-4 rounded-2xl bg-white/10 p-4.5 ring-1 ring-white/15 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
                 >
                   <div className="rounded-xl bg-white/15 p-2.5 text-white">
                     <Mail className="h-5 w-5 shrink-0" />
@@ -236,7 +236,7 @@ export function ContactClient() {
                   </span>
                 </a>
 
-                <div className="flex items-center gap-4 rounded-2xl bg-white/10 p-4.5 ring-1 ring-white/15">
+                <div className="contact-soft-box flex items-center gap-4 rounded-2xl bg-white/10 p-4.5 ring-1 ring-white/15">
                   <div className="rounded-xl bg-white/15 p-2.5 text-white">
                     <MapPin className="h-5 w-5 shrink-0" />
                   </div>
@@ -247,11 +247,11 @@ export function ContactClient() {
               </div>
             </div>
 
-            <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-4 text-xs text-white">
+            <div className="contact-soft-box mt-8 rounded-2xl border border-white/20 bg-white/10 p-4 text-xs text-white">
               <p className="font-bold text-white">Need immediate documentation?</p>
               <p className="mt-1">
                 Check out our{' '}
-                <Link href="/help" className="font-bold text-white underline hover:text-blue-200">
+                <Link href="/help" className="font-bold text-white underline hover:text-zinc-300">
                   Help & Support Center
                 </Link>{' '}
                 for instant step-by-step guides and FAQs.
@@ -325,8 +325,8 @@ export function ContactClient() {
                       value={formData.name}
                       onChange={handleInputChange}
                       placeholder="Jane Doe"
-                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
-                        errors.name ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-[#0e6de4]'
+                      className={`mt-2 contact-field w-full rounded-xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-zinc-400/30 ${
+                        errors.name ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-zinc-400'
                       }`}
                     />
                     {errors.name && <p className="mt-1 text-xs font-semibold text-rose-400">{errors.name}</p>}
@@ -345,8 +345,8 @@ export function ContactClient() {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="jane@company.com"
-                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
-                        errors.email ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-[#0e6de4]'
+                      className={`mt-2 contact-field w-full rounded-xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-zinc-400/30 ${
+                        errors.email ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-zinc-400'
                       }`}
                     />
                     {errors.email && <p className="mt-1 text-xs font-semibold text-rose-400">{errors.email}</p>}
@@ -364,7 +364,7 @@ export function ContactClient() {
                       value={formData.company}
                       onChange={handleInputChange}
                       placeholder="Acme Corp"
-                      className="mt-2 w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20"
+                      className="mt-2 contact-field w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/30"
                     />
                   </div>
 
@@ -380,8 +380,8 @@ export function ContactClient() {
                       value={formData.website}
                       onChange={handleInputChange}
                       placeholder="https://company.com"
-                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
-                        errors.website ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-[#0e6de4]'
+                      className={`mt-2 contact-field w-full rounded-xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-zinc-400/30 ${
+                        errors.website ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-zinc-400'
                       }`}
                     />
                     {errors.website && <p className="mt-1 text-xs font-semibold text-rose-400">{errors.website}</p>}
@@ -401,8 +401,8 @@ export function ContactClient() {
                     value={formData.message}
                     onChange={handleInputChange}
                     placeholder="Provide details about your question, account, or outreach campaign..."
-                    className={`mt-2 w-full rounded-2xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
-                      errors.message ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-[#0e6de4]'
+                    className={`mt-2 contact-field w-full rounded-2xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-zinc-400/30 ${
+                      errors.message ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-zinc-400'
                     }`}
                   />
                   {errors.message && <p className="mt-1 text-xs font-semibold text-rose-400">{errors.message}</p>}
@@ -480,17 +480,17 @@ export function ContactClient() {
 
       {/* Bottom CTA Banner */}
       <section className="px-4 pb-16 pt-4 sm:px-6">
-        <div className="mx-auto max-w-7xl rounded-3xl bg-[#0e6de4] p-9 text-center text-white shadow-xl shadow-blue-500/10 sm:p-12">
+        <div className="mx-auto max-w-7xl rounded-3xl border border-zinc-800 bg-zinc-900 p-9 text-center text-white shadow-xl sm:p-12">
           <h2 className="text-3xl font-black text-white sm:text-4xl">
             Ready to Reach More Prospects?
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-base text-blue-100">
+          <p className="mx-auto mt-3 max-w-xl text-base text-zinc-400">
             Start building smarter website contact-form outreach campaigns with ContactReachout today.
           </p>
           <div className="mt-8">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-7 py-3.5 text-base font-bold text-blue-400 shadow-md transition hover:bg-blue-950 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0e6de4]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#0e6de4] px-7 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-[#0758bd] focus:outline-none focus:ring-2 focus:ring-white"
             >
               Start Free
               <ArrowRight className="h-5 w-5" />

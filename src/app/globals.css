@@ -219,8 +219,8 @@ body > div.min-h-screen.bg-black {
   position: relative;
   overflow: hidden;
   width: 100%;
-  mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
 }
 
 .trusted-logo-track {
@@ -246,11 +246,12 @@ body > div.min-h-screen.bg-black {
 
 .trusted-logo-mark {
   display: inline-flex;
-  width: 3.25rem;
-  height: 3.25rem;
+  width: 3.5rem;
+  height: 3.5rem;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  padding: 0.375rem;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 0.9rem;
   color: white;
@@ -258,7 +259,7 @@ body > div.min-h-screen.bg-black {
   font-weight: 900;
   box-shadow: 0 8px 24px rgba(76, 29, 149, 0.2);
 }
-.trusted-logo-mark img { width: 3.25rem; height: 3.25rem; object-fit: contain; border-radius: .85rem; background: #fff; }
+.trusted-logo-mark img { width: 100%; height: 100%; object-fit: contain; border-radius: .6rem; background: #fff; }
 .trusted-logo-item > span:last-child { font-size: 1rem; }
 
 @keyframes trusted-logo-scroll {
@@ -868,3 +869,29 @@ html.light .pricing-public-page .pricing-calculator input[type="number"] { borde
    any screen size. `clip` (unlike `hidden`) creates no scroll container, so
    sticky headers keep working. */
 html, body { overflow-x: clip; }
+
+/* Contact page form fields: a clean translucent fill instead of the flat
+   muddy gray, with a neutral zinc focus (less blue). Error fields keep
+   their rose tint: the :not() guard leaves rose-bordered fields alone. */
+.contact-field:not(.border-rose-400) { background-color: rgba(255, 255, 255, 0.05); }
+html.light .contact-field:not(.border-rose-400) { background-color: #ffffff; }
+html.light .contact-soft-box { background-color: #ffffff; border-color: #e4e4e7; }
+
+/* Shared footer: Aimfox-style light rising from the very bottom of the page.
+   A soft violet/blue wash anchored at the bottom edge, fading upward into
+   the sections above the footer. pointer-events none so it never blocks
+   clicks; the footer panel sits above it via its own relative position. */
+.footer-glow { position: relative; }
+.footer-glow::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48rem;
+  background:
+    radial-gradient(ellipse 80% 65% at 50% 100%, rgba(124, 58, 246, 0.55), transparent 80%),
+    radial-gradient(ellipse 60% 55% at 82% 100%, rgba(37, 99, 235, 0.45), transparent 80%),
+    radial-gradient(ellipse 55% 50% at 15% 100%, rgba(168, 85, 247, 0.40), transparent 80%);
+  pointer-events: none;
+}
