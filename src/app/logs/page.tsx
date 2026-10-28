@@ -352,7 +352,7 @@ export default function UsageAndHistoryPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center text-sm font-semibold text-slate-500">
+      <div className="flex min-h-[400px] items-center justify-center text-sm font-semibold text-zinc-400">
         Loading Usage & History...
       </div>
     );
@@ -361,21 +361,21 @@ export default function UsageAndHistoryPage() {
   return (
     <div className="space-y-6 w-full max-w-[1750px] pb-12">
       {/* Role Badge & Page Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="text-2xl font-extrabold tracking-tight text-zinc-100">
               {isAdmin ? 'System & Worker Audit Logs' : 'Usage & Submission History'}
             </h1>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                isAdmin ? 'bg-blue-100 text-[#0e6de4]' : 'bg-emerald-100 text-emerald-800'
+                isAdmin ? 'bg-blue-900 text-blue-400' : 'bg-emerald-900 text-emerald-300'
               }`}
             >
               {isAdmin ? (currentUser?.role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'ADMIN') : 'USER'}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
             {isAdmin
               ? 'Distributed execution telemetry, browser worker events, and system audit traces.'
               : 'Track your credit consumption, outreach submissions, campaign activity, and form delivery results.'}
@@ -392,7 +392,7 @@ export default function UsageAndHistoryPage() {
                 .then((d) => d.logs && setAdminLogs(d.logs))
                 .catch(() => undefined);
             }}
-            className="border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+            className="border-zinc-700 text-zinc-300 hover:bg-zinc-900 cursor-pointer"
           >
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Refresh Telemetry
           </Button>
@@ -400,9 +400,9 @@ export default function UsageAndHistoryPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-950 hover:bg-zinc-900 text-zinc-300 px-3.5 py-2 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
             >
-              <Download className="h-3.5 w-3.5 text-[#0e6de4]" />
+              <Download className="h-3.5 w-3.5 text-blue-400" />
               <span>Export CSV</span>
             </button>
             <button
@@ -424,13 +424,13 @@ export default function UsageAndHistoryPage() {
           {/* Admin Filters */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
               <input
                 type="text"
                 placeholder="Search by Trace ID, domain, or event message..."
                 value={adminSearchTerm}
                 onChange={(e) => setAdminSearchTerm(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:outline-none shadow-2xs font-medium"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-2.5 pl-10 pr-4 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:outline-none shadow-2xs font-medium"
               />
             </div>
 
@@ -441,8 +441,8 @@ export default function UsageAndHistoryPage() {
                   onClick={() => setLevelFilter(lvl)}
                   className={`rounded-xl px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
                     levelFilter === lvl
-                      ? 'bg-slate-900 text-white shadow-xs font-bold'
-                      : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50'
+                      ? 'bg-zinc-950 text-white shadow-xs font-bold'
+                      : 'text-zinc-400 bg-zinc-950 border border-zinc-800 hover:bg-zinc-900'
                   }`}
                 >
                   {lvl}
@@ -452,10 +452,10 @@ export default function UsageAndHistoryPage() {
           </div>
 
           {/* Admin Logs Table */}
-          <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm rounded-2xl">
+          <Card className="overflow-hidden border border-zinc-800 bg-zinc-950 shadow-sm rounded-2xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-100 text-slate-800 border-b border-slate-200 uppercase font-mono text-[10px]">
+                <thead className="bg-zinc-900 text-zinc-200 border-b border-zinc-800 uppercase font-mono text-[10px]">
                   <tr>
                     <th className="p-3.5 font-bold">Timestamp</th>
                     <th className="p-3.5 font-bold">Level</th>
@@ -465,35 +465,35 @@ export default function UsageAndHistoryPage() {
                     <th className="p-3.5 font-bold">Event Message</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700 font-mono">
+                <tbody className="divide-y divide-zinc-800 text-zinc-300 font-mono">
                   {filteredAdminLogs.length > 0 ? (
                     filteredAdminLogs.map((log, idx) => (
-                      <tr key={log.id || idx} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-3.5 text-slate-500 whitespace-nowrap text-[11px]">
+                      <tr key={log.id || idx} className="hover:bg-zinc-900 transition-colors">
+                        <td className="p-3.5 text-zinc-400 whitespace-nowrap text-[11px]">
                           {new Date(log.timestamp).toLocaleString()}
                         </td>
                         <td className="p-3.5">
                           <span
                             className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase border ${
                               log.level === 'error'
-                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                ? 'bg-rose-950 text-rose-300 border-rose-900'
                                 : log.level === 'warn'
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                                ? 'bg-amber-950 text-amber-300 border-amber-900'
+                                : 'bg-blue-950 text-blue-300 border-blue-900'
                             }`}
                           >
                             {log.level}
                           </span>
                         </td>
-                        <td className="p-3.5 text-[#0e6de4] font-bold">{log.traceId}</td>
-                        <td className="p-3.5 font-semibold text-slate-900">{log.domain || '—'}</td>
-                        <td className="p-3.5 text-slate-600 font-bold">{log.step || 'WORKER_TELEMETRY'}</td>
-                        <td className="p-3.5 max-w-lg truncate text-slate-800">{log.message}</td>
+                        <td className="p-3.5 text-blue-400 font-bold">{log.traceId}</td>
+                        <td className="p-3.5 font-semibold text-zinc-100">{log.domain || '—'}</td>
+                        <td className="p-3.5 text-zinc-400 font-bold">{log.step || 'WORKER_TELEMETRY'}</td>
+                        <td className="p-3.5 max-w-lg truncate text-zinc-200">{log.message}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-500 font-sans">
+                      <td colSpan={6} className="p-8 text-center text-zinc-400 font-sans">
                         No technical logs found matching your filters.
                       </td>
                     </tr>
@@ -513,67 +513,67 @@ export default function UsageAndHistoryPage() {
           {/* Summary Cards Grid (7 Key Metrics) */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
             {/* Card 1: Available Credits */}
-            <Card className="p-4 border-slate-200 bg-white shadow-xs rounded-2xl">
-              <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider">Available Credits</span>
-              <p className="mt-1 text-xl font-extrabold text-[#0e6de4] font-mono">{walletStats.availableCredits.toLocaleString()}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Ready for outreach</p>
+            <Card className="p-4 border-zinc-800 bg-zinc-950 shadow-xs rounded-2xl">
+              <span className="text-[10px] font-bold font-mono text-zinc-400 uppercase tracking-wider">Available Credits</span>
+              <p className="mt-1 text-xl font-extrabold text-blue-400 font-mono">{walletStats.availableCredits.toLocaleString()}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">Ready for outreach</p>
             </Card>
 
             {/* Card 2: Used Credits */}
-            <Card className="p-4 border-slate-200 bg-white shadow-xs rounded-2xl">
-              <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider">Used Credits</span>
-              <p className="mt-1 text-xl font-extrabold text-slate-900 font-mono">{walletStats.usedCredits.toLocaleString()}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Consumed to date</p>
+            <Card className="p-4 border-zinc-800 bg-zinc-950 shadow-xs rounded-2xl">
+              <span className="text-[10px] font-bold font-mono text-zinc-400 uppercase tracking-wider">Used Credits</span>
+              <p className="mt-1 text-xl font-extrabold text-zinc-100 font-mono">{walletStats.usedCredits.toLocaleString()}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">Consumed to date</p>
             </Card>
 
             {/* Card 3: Purchased Credits */}
-            <Card className="p-4 border-slate-200 bg-white shadow-xs rounded-2xl">
-              <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider">Purchased Credits</span>
-              <p className="mt-1 text-xl font-extrabold text-slate-900 font-mono">{walletStats.purchasedCredits.toLocaleString()}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Add-on balance</p>
+            <Card className="p-4 border-zinc-800 bg-zinc-950 shadow-xs rounded-2xl">
+              <span className="text-[10px] font-bold font-mono text-zinc-400 uppercase tracking-wider">Purchased Credits</span>
+              <p className="mt-1 text-xl font-extrabold text-zinc-100 font-mono">{walletStats.purchasedCredits.toLocaleString()}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">Add-on balance</p>
             </Card>
 
             {/* Card 4: Free/Monthly Credits */}
-            <Card className="p-4 border-slate-200 bg-white shadow-xs rounded-2xl">
-              <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider">Free Monthly</span>
-              <p className="mt-1 text-xl font-extrabold text-slate-900 font-mono">{walletStats.freeMonthlyCredits.toLocaleString()}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Monthly allocation</p>
+            <Card className="p-4 border-zinc-800 bg-zinc-950 shadow-xs rounded-2xl">
+              <span className="text-[10px] font-bold font-mono text-zinc-400 uppercase tracking-wider">Free Monthly</span>
+              <p className="mt-1 text-xl font-extrabold text-zinc-100 font-mono">{walletStats.freeMonthlyCredits.toLocaleString()}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">Monthly allocation</p>
             </Card>
 
             {/* Card 5: Total Submissions */}
-            <Card className="p-4 border-slate-200 bg-white shadow-xs rounded-2xl">
-              <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider">Total Submissions</span>
-              <p className="mt-1 text-xl font-extrabold text-slate-900 font-mono">{totalSubmissions}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Total attempts</p>
+            <Card className="p-4 border-zinc-800 bg-zinc-950 shadow-xs rounded-2xl">
+              <span className="text-[10px] font-bold font-mono text-zinc-400 uppercase tracking-wider">Total Submissions</span>
+              <p className="mt-1 text-xl font-extrabold text-zinc-100 font-mono">{totalSubmissions}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">Total attempts</p>
             </Card>
 
             {/* Card 6: Successful Submissions */}
-            <Card className="p-4 border-slate-200 bg-white shadow-xs rounded-2xl">
-              <span className="text-[10px] font-bold font-mono text-emerald-600 uppercase tracking-wider">Successful</span>
-              <p className="mt-1 text-xl font-extrabold text-emerald-700 font-mono">{successfulSubmissions}</p>
-              <p className="text-[10px] text-emerald-600 mt-0.5">Delivered & Replied</p>
+            <Card className="p-4 border-zinc-800 bg-zinc-950 shadow-xs rounded-2xl">
+              <span className="text-[10px] font-bold font-mono text-emerald-400 uppercase tracking-wider">Successful</span>
+              <p className="mt-1 text-xl font-extrabold text-emerald-300 font-mono">{successfulSubmissions}</p>
+              <p className="text-[10px] text-emerald-400 mt-0.5">Delivered & Replied</p>
             </Card>
 
             {/* Card 7: Failed Submissions */}
-            <Card className="p-4 border-slate-200 bg-white shadow-xs rounded-2xl">
-              <span className="text-[10px] font-bold font-mono text-rose-600 uppercase tracking-wider">Failed / Review</span>
-              <p className="mt-1 text-xl font-extrabold text-rose-700 font-mono">{failedSubmissions}</p>
-              <p className="text-[10px] text-rose-600 mt-0.5">No-Form / Blocked</p>
+            <Card className="p-4 border-zinc-800 bg-zinc-950 shadow-xs rounded-2xl">
+              <span className="text-[10px] font-bold font-mono text-rose-400 uppercase tracking-wider">Failed / Review</span>
+              <p className="mt-1 text-xl font-extrabold text-rose-300 font-mono">{failedSubmissions}</p>
+              <p className="text-[10px] text-rose-400 mt-0.5">No-Form / Blocked</p>
             </Card>
           </div>
 
           {/* Filter Toolbar (Search, Campaign, Status, Date, Credit Usage) */}
-          <Card className="p-4 border-slate-200 bg-white shadow-xs rounded-2xl space-y-3">
+          <Card className="p-4 border-zinc-800 bg-zinc-950 shadow-xs rounded-2xl space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {/* Search */}
               <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                 <input
                   type="text"
                   placeholder="Search campaign, website..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-2 pl-9 pr-3 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:outline-none"
                 />
               </div>
 
@@ -582,7 +582,7 @@ export default function UsageAndHistoryPage() {
                 <select
                   value={campaignFilter}
                   onChange={(e) => setCampaignFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-[#0e6de4] focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 focus:border-[#0e6de4] focus:outline-none"
                 >
                   <option value="ALL">All Campaigns</option>
                   {userCampaignNames.map((cName) => (
@@ -598,7 +598,7 @@ export default function UsageAndHistoryPage() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-[#0e6de4] focus:outline-none font-bold"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 focus:border-[#0e6de4] focus:outline-none font-bold"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="DELIVERED">Delivered</option>
@@ -615,7 +615,7 @@ export default function UsageAndHistoryPage() {
                 <select
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-[#0e6de4] focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 focus:border-[#0e6de4] focus:outline-none"
                 >
                   <option value="ALL">All Time</option>
                   <option value="TODAY">Today</option>
@@ -629,7 +629,7 @@ export default function UsageAndHistoryPage() {
                 <select
                   value={creditFilter}
                   onChange={(e) => setCreditFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-[#0e6de4] focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 focus:border-[#0e6de4] focus:outline-none"
                 >
                   <option value="ALL">All Credit Usage</option>
                   <option value="USED">Credits Used (&gt; 0)</option>
@@ -641,8 +641,8 @@ export default function UsageAndHistoryPage() {
 
             {/* Active Filters Clear Action */}
             {(searchTerm || campaignFilter !== 'ALL' || statusFilter !== 'ALL' || dateFilter !== 'ALL' || creditFilter !== 'ALL') && (
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                <span className="text-slate-500">
+              <div className="flex items-center justify-between pt-2 border-t border-zinc-800 text-xs">
+                <span className="text-zinc-400">
                   Showing <strong>{filteredSubmissions.length}</strong> matching records
                 </span>
                 <button
@@ -653,7 +653,7 @@ export default function UsageAndHistoryPage() {
                     setDateFilter('ALL');
                     setCreditFilter('ALL');
                   }}
-                  className="text-[#0e6de4] hover:underline font-bold text-[11px] cursor-pointer"
+                  className="text-blue-400 hover:underline font-bold text-[11px] cursor-pointer"
                 >
                   Clear All Filters
                 </button>
@@ -662,10 +662,10 @@ export default function UsageAndHistoryPage() {
           </Card>
 
           {/* Submission History Table */}
-          <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm rounded-2xl flex flex-col">
+          <Card className="overflow-hidden border border-zinc-800 bg-zinc-950 shadow-sm rounded-2xl flex flex-col">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-100 text-slate-800 border-b border-slate-200 uppercase font-mono text-[10px]">
+                <thead className="bg-zinc-900 text-zinc-200 border-b border-zinc-800 uppercase font-mono text-[10px]">
                   <tr>
                     <th className="p-3.5 font-bold">Date & Time</th>
                     <th className="p-3.5 font-bold">Campaign</th>
@@ -676,17 +676,17 @@ export default function UsageAndHistoryPage() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-zinc-800 text-zinc-300">
                   {currentPaginatedSubmissions.length > 0 ? (
                     currentPaginatedSubmissions.map((sub, idx) => (
-                      <tr key={sub.id || idx} className="hover:bg-slate-50 transition-colors">
+                      <tr key={sub.id || idx} className="hover:bg-zinc-900 transition-colors">
                         {/* Date & Time */}
-                        <td className="p-3.5 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                        <td className="p-3.5 font-mono text-[11px] text-zinc-400 whitespace-nowrap">
                           {new Date(sub.timestamp).toLocaleString()}
                         </td>
 
                         {/* Campaign */}
-                        <td className="p-3.5 font-bold text-slate-900">{sub.campaignName}</td>
+                        <td className="p-3.5 font-bold text-zinc-100">{sub.campaignName}</td>
 
                         {/* Website */}
                         <td className="p-3.5 font-medium">
@@ -694,7 +694,7 @@ export default function UsageAndHistoryPage() {
                             href={sub.website}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-slate-700 hover:text-[#0e6de4] hover:underline font-mono flex items-center gap-1 text-[11px]"
+                            className="text-zinc-300 hover:text-blue-400 hover:underline font-mono flex items-center gap-1 text-[11px]"
                           >
                             {sub.domain || sub.website}
                             <ExternalLink className="h-2.5 w-2.5" />
@@ -704,19 +704,19 @@ export default function UsageAndHistoryPage() {
                         {/* Status */}
                         <td className="p-3.5">
                           {(() => {
-                            let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
+                            let badgeStyle = 'bg-zinc-900 text-zinc-300 border-zinc-800';
                             if (sub.status === 'DELIVERED') {
-                              badgeStyle = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                              badgeStyle = 'bg-emerald-950 text-emerald-300 border-emerald-900';
                             } else if (sub.status === 'FAILED') {
-                              badgeStyle = 'bg-rose-50 text-rose-800 border-rose-200';
+                              badgeStyle = 'bg-rose-950 text-rose-300 border-rose-900';
                             } else if (sub.status === 'NO_FORM') {
-                              badgeStyle = 'bg-amber-50 text-amber-800 border-amber-200';
+                              badgeStyle = 'bg-amber-950 text-amber-300 border-amber-900';
                             } else if (sub.status === 'REVIEW') {
-                              badgeStyle = 'bg-purple-50 text-purple-800 border-purple-200';
+                              badgeStyle = 'bg-purple-950 text-purple-300 border-purple-900';
                             } else if (sub.status === 'REPLIED') {
-                              badgeStyle = 'bg-indigo-50 text-indigo-800 border-indigo-200';
+                              badgeStyle = 'bg-indigo-950 text-indigo-300 border-indigo-900';
                             } else if (sub.status === 'PENDING') {
-                              badgeStyle = 'bg-blue-50 text-blue-800 border-blue-200';
+                              badgeStyle = 'bg-blue-950 text-blue-300 border-blue-900';
                             }
                             return (
                               <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-mono font-bold uppercase ${badgeStyle}`}>
@@ -727,27 +727,27 @@ export default function UsageAndHistoryPage() {
                         </td>
 
                         {/* Credit Used */}
-                        <td className="p-3.5 text-center font-mono font-bold text-slate-800">
+                        <td className="p-3.5 text-center font-mono font-bold text-zinc-200">
                           {sub.creditUsed > 0 ? (
-                            <span className="text-[#0e6de4] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="text-blue-400 bg-blue-950 border border-blue-900 px-2 py-0.5 rounded-full text-[11px]">
                               -{sub.creditUsed} Credit
                             </span>
                           ) : (
-                            <span className="text-slate-400">0</span>
+                            <span className="text-zinc-400">0</span>
                           )}
                         </td>
 
                         {/* Result Description */}
-                        <td className="p-3.5 text-slate-600 text-xs">{sub.resultDescription}</td>
+                        <td className="p-3.5 text-zinc-400 text-xs">{sub.resultDescription}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="p-12 text-center text-slate-500">
+                      <td colSpan={6} className="p-12 text-center text-zinc-400">
                         <div className="mx-auto max-w-sm space-y-2">
-                          <ScrollText className="h-8 w-8 text-slate-300 mx-auto" />
-                          <p className="text-sm font-extrabold text-slate-800">No Submission History Found</p>
-                          <p className="text-xs text-slate-500">
+                          <ScrollText className="h-8 w-8 text-zinc-400 mx-auto" />
+                          <p className="text-sm font-extrabold text-zinc-200">No Submission History Found</p>
+                          <p className="text-xs text-zinc-400">
                             {userSubmissions.length === 0
                               ? 'No outreach attempts recorded yet. Start a campaign to track form submissions.'
                               : 'No submission records match your active search or filter criteria.'}
@@ -761,20 +761,20 @@ export default function UsageAndHistoryPage() {
             </div>
 
             {/* Pagination Footer Bar */}
-            <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-4 text-slate-600 font-mono">
+            <div className="p-3.5 bg-zinc-900 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-4 text-zinc-400 font-mono">
                 <span>
-                  Showing <strong className="text-slate-900">{totalRecords > 0 ? startIndex + 1 : 0}</strong> to{' '}
-                  <strong className="text-slate-900">{endIndex}</strong> of{' '}
-                  <strong className="text-slate-900">{totalRecords}</strong> Total Records
+                  Showing <strong className="text-zinc-100">{totalRecords > 0 ? startIndex + 1 : 0}</strong> to{' '}
+                  <strong className="text-zinc-100">{endIndex}</strong> of{' '}
+                  <strong className="text-zinc-100">{totalRecords}</strong> Total Records
                 </span>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-slate-500">Rows per page:</span>
+                  <span className="text-[11px] text-zinc-400">Rows per page:</span>
                   <select
                     value={pageSize}
                     onChange={(e) => setPageSize(Number(e.target.value))}
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-bold text-slate-800 focus:outline-none"
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs font-bold text-zinc-200 focus:outline-none"
                   >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
@@ -787,7 +787,7 @@ export default function UsageAndHistoryPage() {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                  className="px-3 py-1.5 rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-300 hover:bg-zinc-900 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                   <span>Previous</span>
@@ -800,7 +800,7 @@ export default function UsageAndHistoryPage() {
                     className={`h-8 w-8 rounded-xl font-mono text-xs font-bold transition-colors cursor-pointer ${
                       currentPage === pageNum
                         ? 'bg-[#0e6de4] text-white shadow-xs'
-                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
+                        : 'bg-zinc-950 border border-zinc-700 text-zinc-300 hover:bg-zinc-900'
                     }`}
                   >
                     {pageNum}
@@ -810,7 +810,7 @@ export default function UsageAndHistoryPage() {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages || totalRecords === 0}
-                  className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                  className="px-3 py-1.5 rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-300 hover:bg-zinc-900 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                 >
                   <span>Next</span>
                   <ChevronRight className="h-3.5 w-3.5" />

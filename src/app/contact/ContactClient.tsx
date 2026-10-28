@@ -195,13 +195,13 @@ export function ContactClient() {
       {/* Hero Section */}
       <section className="px-4 py-12 text-center sm:px-6 lg:py-16">
         <div className="mx-auto max-w-3xl">
-          <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#0e6de4]">
+          <span className="inline-flex items-center rounded-full border border-blue-900 bg-blue-950 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-blue-400">
             ContactReachout Support
           </span>
-          <h1 className="mt-6 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+          <h1 className="mt-6 text-4xl font-black tracking-tight text-zinc-100 sm:text-5xl lg:text-6xl">
             Let’s Talk About Your Outreach
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg">
             Have a question, need help getting started, or want to learn how ContactReachout can fit into your workflow? Our team is here to help.
           </p>
         </div>
@@ -247,7 +247,7 @@ export function ContactClient() {
               </div>
             </div>
 
-            <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-4 text-xs text-blue-100">
+            <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-4 text-xs text-white">
               <p className="font-bold text-white">Need immediate documentation?</p>
               <p className="mt-1">
                 Check out our{' '}
@@ -260,14 +260,14 @@ export function ContactClient() {
           </aside>
 
           {/* Contact Form Card */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-10">
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-7 shadow-sm sm:p-10">
             {successMessage ? (
               <div className="my-auto flex flex-col items-center py-12 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-900 text-emerald-400">
                   <CheckCircle2 className="h-10 w-10" />
                 </div>
-                <h3 className="mt-6 text-2xl font-black text-slate-900">Message Received!</h3>
-                <p className="mt-3 max-w-md text-base leading-relaxed text-slate-600">
+                <h3 className="mt-6 text-2xl font-black text-zinc-100">Message Received!</h3>
+                <p className="mt-3 max-w-md text-base leading-relaxed text-zinc-400">
                   {successMessage}
                 </p>
                 <button
@@ -282,29 +282,29 @@ export function ContactClient() {
             ) : (
               <form ref={formRef} action="/api/contact" method="post" onSubmit={handleSubmit} noValidate className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900">Send us a message</h2>
-                  <p className="mt-1 text-sm text-slate-600">
+                  <h2 className="text-2xl font-black text-zinc-100">Send us a message</h2>
+                  <p className="mt-1 text-sm text-zinc-400">
                     Fill out the required fields below and our support team will respond promptly.
                   </p>
                 </div>
 
                 {serverError && (
-                  <div className="flex items-start gap-3 rounded-2xl bg-rose-50 p-4 text-sm font-medium text-rose-800 border border-rose-200" role="alert">
-                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+                  <div className="flex items-start gap-3 rounded-2xl bg-rose-950 p-4 text-sm font-medium text-rose-300 border border-rose-900" role="alert">
+                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-400" />
                     <div>
-                      <p className="font-bold text-rose-900">Submission Error</p>
-                      <p className="mt-0.5 text-rose-700">{serverError}</p>
+                      <p className="font-bold text-rose-200">Submission Error</p>
+                      <p className="mt-0.5 text-rose-300">{serverError}</p>
                     </div>
                   </div>
                 )}
 
                 {selectedTopicTitle && (
-                  <div className="flex items-center justify-between rounded-xl bg-blue-50 px-4 py-2.5 text-xs font-semibold text-[#0e6de4] border border-blue-100">
+                  <div className="flex items-center justify-between rounded-xl bg-blue-950 px-4 py-2.5 text-xs font-semibold text-blue-400 border border-blue-900">
                     <span>Topic selected: <strong>{selectedTopicTitle}</strong></span>
                     <button
                       type="button"
                       onClick={() => setSelectedTopicTitle('')}
-                      className="text-slate-500 hover:text-slate-700 text-xs font-normal underline ml-2"
+                      className="text-zinc-400 hover:text-zinc-300 text-xs font-normal underline ml-2"
                     >
                       Clear
                     </button>
@@ -314,8 +314,8 @@ export function ContactClient() {
                 <div className="grid gap-5 sm:grid-cols-2">
                   {/* Full Name */}
                   <div>
-                    <label htmlFor="name" className="block text-sm font-bold text-slate-800">
-                      Full Name <span className="text-rose-500">*</span>
+                    <label htmlFor="name" className="block text-sm font-bold text-zinc-200">
+                      Full Name <span className="text-rose-400">*</span>
                     </label>
                     <input
                       id="name"
@@ -325,17 +325,17 @@ export function ContactClient() {
                       value={formData.name}
                       onChange={handleInputChange}
                       placeholder="Jane Doe"
-                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
-                        errors.name ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500' : 'border-slate-200 focus:border-[#0e6de4]'
+                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
+                        errors.name ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-[#0e6de4]'
                       }`}
                     />
-                    {errors.name && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.name}</p>}
+                    {errors.name && <p className="mt-1 text-xs font-semibold text-rose-400">{errors.name}</p>}
                   </div>
 
                   {/* Work Email */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-bold text-slate-800">
-                      Work Email <span className="text-rose-500">*</span>
+                    <label htmlFor="email" className="block text-sm font-bold text-zinc-200">
+                      Work Email <span className="text-rose-400">*</span>
                     </label>
                     <input
                       id="email"
@@ -345,17 +345,17 @@ export function ContactClient() {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="jane@company.com"
-                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
-                        errors.email ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500' : 'border-slate-200 focus:border-[#0e6de4]'
+                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
+                        errors.email ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-[#0e6de4]'
                       }`}
                     />
-                    {errors.email && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.email}</p>}
+                    {errors.email && <p className="mt-1 text-xs font-semibold text-rose-400">{errors.email}</p>}
                   </div>
 
                   {/* Company */}
                   <div>
-                    <label htmlFor="company" className="block text-sm font-bold text-slate-800">
-                      Company <span className="text-xs font-normal text-slate-500">(Optional)</span>
+                    <label htmlFor="company" className="block text-sm font-bold text-zinc-200">
+                      Company <span className="text-xs font-normal text-zinc-400">(Optional)</span>
                     </label>
                     <input
                       id="company"
@@ -364,14 +364,14 @@ export function ContactClient() {
                       value={formData.company}
                       onChange={handleInputChange}
                       placeholder="Acme Corp"
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20"
+                      className="mt-2 w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20"
                     />
                   </div>
 
                   {/* Website */}
                   <div>
-                    <label htmlFor="website" className="block text-sm font-bold text-slate-800">
-                      Website <span className="text-xs font-normal text-slate-500">(Optional)</span>
+                    <label htmlFor="website" className="block text-sm font-bold text-zinc-200">
+                      Website <span className="text-xs font-normal text-zinc-400">(Optional)</span>
                     </label>
                     <input
                       id="website"
@@ -380,18 +380,18 @@ export function ContactClient() {
                       value={formData.website}
                       onChange={handleInputChange}
                       placeholder="https://company.com"
-                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
-                        errors.website ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500' : 'border-slate-200 focus:border-[#0e6de4]'
+                      className={`mt-2 w-full rounded-xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
+                        errors.website ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-[#0e6de4]'
                       }`}
                     />
-                    {errors.website && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.website}</p>}
+                    {errors.website && <p className="mt-1 text-xs font-semibold text-rose-400">{errors.website}</p>}
                   </div>
                 </div>
 
                 {/* Message Body */}
                 <div>
-                  <label htmlFor="message" className="block text-sm font-bold text-slate-800">
-                    Message <span className="text-rose-500">*</span>
+                  <label htmlFor="message" className="block text-sm font-bold text-zinc-200">
+                    Message <span className="text-rose-400">*</span>
                   </label>
                   <textarea
                     id="message"
@@ -401,11 +401,11 @@ export function ContactClient() {
                     value={formData.message}
                     onChange={handleInputChange}
                     placeholder="Provide details about your question, account, or outreach campaign..."
-                    className={`mt-2 w-full rounded-2xl border px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
-                      errors.message ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500' : 'border-slate-200 focus:border-[#0e6de4]'
+                    className={`mt-2 w-full rounded-2xl border px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-[#0e6de4]/20 ${
+                      errors.message ? 'border-rose-400 bg-rose-950/30 focus:border-rose-500' : 'border-zinc-800 focus:border-[#0e6de4]'
                     }`}
                   />
-                  {errors.message && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.message}</p>}
+                  {errors.message && <p className="mt-1 text-xs font-semibold text-rose-400">{errors.message}</p>}
                 </div>
 
                 {/* Submit Button */}
@@ -434,15 +434,15 @@ export function ContactClient() {
 
       {/* Support Topics Section */}
       <section className="px-4 py-12 sm:px-6">
-        <div className="mx-auto max-w-7xl rounded-3xl border border-blue-100 bg-white p-7 shadow-sm sm:p-10">
+        <div className="mx-auto max-w-7xl rounded-3xl border border-blue-900 bg-zinc-950 p-7 shadow-sm sm:p-10">
           <div className="text-center">
-            <p className="text-xs font-black uppercase tracking-widest text-[#0e6de4]">
+            <p className="text-xs font-black uppercase tracking-widest text-blue-400">
               Support Topics
             </p>
-            <h2 className="mt-2 text-3xl font-black text-slate-900">
+            <h2 className="mt-2 text-3xl font-black text-zinc-100">
               How Can We Help?
             </h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-slate-600">
+            <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-400">
               Click any topic card below to quickly populate your message subject and reach our specialized support team.
             </p>
           </div>
@@ -455,20 +455,20 @@ export function ContactClient() {
                   key={option.title}
                   type="button"
                   onClick={() => handleSelectTopicCard(option)}
-                  className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/50 p-6 text-left transition hover:border-blue-300 hover:bg-blue-50/30 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#0e6de4]"
+                  className="group flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 text-left transition hover:border-blue-800 hover:bg-blue-950/30 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#0e6de4]"
                 >
                   <div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-[#0e6de4] transition group-hover:bg-[#0e6de4] group-hover:text-white">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-900 text-blue-400 transition group-hover:bg-[#0e6de4] group-hover:text-white">
                       <Icon className="h-6 w-6" />
                     </div>
-                    <h3 className="mt-4 text-lg font-bold text-slate-900 group-hover:text-[#0e6de4]">
+                    <h3 className="mt-4 text-lg font-bold text-zinc-100 group-hover:text-blue-400">
                       {option.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-400">
                       {option.description}
                     </p>
                   </div>
-                  <span className="mt-4 inline-flex items-center text-xs font-bold text-[#0e6de4] group-hover:underline">
+                  <span className="mt-4 inline-flex items-center text-xs font-bold text-blue-400 group-hover:underline">
                     Select Topic &rarr;
                   </span>
                 </button>
@@ -490,7 +490,7 @@ export function ContactClient() {
           <div className="mt-8">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-base font-bold text-[#0e6de4] shadow-md transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0e6de4]"
+              className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-7 py-3.5 text-base font-bold text-blue-400 shadow-md transition hover:bg-blue-950 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0e6de4]"
             >
               Start Free
               <ArrowRight className="h-5 w-5" />

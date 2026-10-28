@@ -20,18 +20,18 @@ export const metadata: Metadata = {
 
 export default function B2bLeadGenerationPage() {
   return (
-    <div className="min-h-screen bg-[#f4f7ff] text-slate-950 flex flex-col justify-between">
+    <div className="min-h-screen bg-black text-white flex flex-col justify-between">
       <LandingHeader />
       <main className="py-16 px-4 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold text-[#0e6de4]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-900 bg-blue-950 px-4 py-1.5 text-xs font-bold text-blue-400">
               <Globe2 className="h-3.5 w-3.5" /> Growth Channel
             </span>
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
               B2B Lead Generation Through Website Contact Forms
             </h1>
-            <p className="mt-4 text-lg leading-8 text-slate-600">
+            <p className="mt-4 text-lg leading-8 text-zinc-400">
               Find clients through website contact forms to build a predictable, high-deliverability outbound lead generation engine.
             </p>
           </div>

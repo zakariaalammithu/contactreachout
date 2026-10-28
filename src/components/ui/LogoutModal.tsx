@@ -52,7 +52,7 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150 font-sans"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4 animate-in fade-in duration-150 font-sans"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isLoggingOut) {
           onClose();
@@ -64,19 +64,19 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
       aria-describedby="logout-modal-desc"
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-slate-200/90 text-left animate-in zoom-in-95 duration-150 space-y-4"
+        className="w-full max-w-sm rounded-2xl bg-zinc-950 p-5 shadow-2xl border border-zinc-800/90 text-left animate-in zoom-in-95 duration-150 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0e6de4] border border-blue-100">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-950 text-blue-400 border border-blue-900">
               <LogOut className="h-5 w-5" />
             </div>
             <div>
-              <h3 id="logout-modal-title" className="text-base font-extrabold text-slate-900">
+              <h3 id="logout-modal-title" className="text-base font-extrabold text-zinc-100">
                 Log out?
               </h3>
-              <p id="logout-modal-desc" className="text-xs text-slate-500 font-medium leading-relaxed mt-0.5">
+              <p id="logout-modal-desc" className="text-xs text-zinc-400 font-medium leading-relaxed mt-0.5">
                 Are you sure you want to log out of your ContactReachout account?
               </p>
             </div>
@@ -85,19 +85,19 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
             type="button"
             onClick={onClose}
             disabled={isLoggingOut}
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50"
+            className="text-zinc-400 hover:text-zinc-400 p-1 rounded-lg hover:bg-zinc-900 transition-colors cursor-pointer disabled:opacity-50"
             aria-label="Close modal"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-zinc-800">
           <button
             type="button"
             onClick={onClose}
             disabled={isLoggingOut}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer disabled:opacity-50"
+            className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 transition-colors cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>

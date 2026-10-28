@@ -13,7 +13,7 @@ export default function SignupPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#070913] text-slate-100 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[#070913] text-zinc-200 flex items-center justify-center p-4">
           <div className="h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
         </div>
       }

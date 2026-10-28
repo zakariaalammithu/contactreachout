@@ -162,27 +162,27 @@ export default function AppDashboard() {
   return (
     <div className="space-y-10 max-w-7xl mx-auto pb-16">
       <section className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-black text-[#1DBF73]">Dashboard</p><h1 className="mt-1 text-3xl font-black text-[#404145]">Welcome back{sessionUser?.name ? `, ${sessionUser.name}` : ''}</h1><p className="mt-2 text-sm text-[#6B6D72]">Manage bulk contact-form campaigns and AI personalization from one workspace.</p></div><Link href="/campaigns/new" prefetch={true} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1DBF73] px-5 py-3 text-sm font-black text-white shadow-md transition-colors hover:bg-[#169B5D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1DBF73] focus-visible:ring-offset-2"><PlusCircle className="h-4 w-4" />New Campaign</Link></div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-black text-blue-400">Dashboard</p><h1 className="mt-1 text-3xl font-black text-zinc-300">Welcome back{sessionUser?.name ? `, ${sessionUser.name}` : ''}</h1><p className="mt-2 text-sm text-zinc-400">Manage bulk contact-form campaigns and AI personalization from one workspace.</p></div><Link href="/campaigns/new" prefetch={true} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-5 py-3 text-sm font-black text-white shadow-md transition-colors hover:bg-[#0758bd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0e6de4] focus-visible:ring-offset-2"><PlusCircle className="h-4 w-4" />New Campaign</Link></div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
           { label: 'Available Credits', value: availableCredits.toLocaleString(), icon: CreditCard },
           { label: 'Active Campaigns', value: dashboardSummary.active.toLocaleString(), icon: Activity },
           { label: 'Draft Campaigns', value: dashboardSummary.drafts.toLocaleString(), icon: FileEdit },
           { label: 'Total Submissions', value: dashboardSummary.submissions.toLocaleString(), icon: Send },
-        ].map(({ label, value, icon: Icon }) => <Card key={label} className="rounded-3xl border border-[#EFEFF0] bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-xs font-black uppercase tracking-wide text-[#6B6D72]">{label}</p><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#1DBF73]/10 text-[#159B5D]"><Icon className="h-5 w-5" /></span></div><p className="mt-5 text-3xl font-black text-[#404145]">{value}</p></Card>)}</div>
+        ].map(({ label, value, icon: Icon }) => <Card key={label} className="rounded-3xl border border-zinc-800 bg-zinc-950 p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-xs font-black uppercase tracking-wide text-zinc-400">{label}</p><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0e6de4]/10 text-blue-400"><Icon className="h-5 w-5" /></span></div><p className="mt-5 text-3xl font-black text-zinc-300">{value}</p></Card>)}</div>
         <CampaignAnalyticsOverview campaigns={storedCampaigns} loading={!campaignsLoaded} error={campaignsError} />
         <div className="grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
-          <Card className="rounded-3xl border border-[#EFEFF0] bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><div><h2 className="font-black text-[#404145]">Recent Campaigns</h2><p className="mt-1 text-xs text-[#6B6D72]">Your most recently updated campaigns.</p></div><Link href="/campaigns" className="text-xs font-black text-[#159B5D] hover:text-[#117A49]">View all</Link></div><div className="mt-5 space-y-2">{storedCampaigns.length ? storedCampaigns.slice().sort((a,b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))).slice(0,4).map((campaign) => <Link key={campaign.id} href={`/campaigns/new?edit=${campaign.id}`} className="flex items-center justify-between rounded-2xl border border-[#EFEFF0] p-4 transition-colors hover:border-[#1DBF73]/50 hover:bg-[#1DBF73]/5"><div><p className="text-sm font-black text-[#404145]">{campaign.name || 'Untitled campaign'}</p><p className="mt-1 text-xs text-[#6B6D72]">{campaign.prospectsList?.length || 0} prospects</p></div><span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${campaign.status === 'draft' ? 'bg-amber-50 text-amber-700' : 'bg-[#1DBF73]/10 text-[#117A49]'}`}>{campaign.status || 'draft'}</span></Link>) : <div className="rounded-2xl border border-dashed border-[#D7D7D9] bg-[#EFEFF0]/35 p-8 text-center text-sm text-[#6B6D72]">No saved campaigns yet.</div>}</div></Card>
+          <Card className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm"><div className="flex items-center justify-between"><div><h2 className="font-black text-zinc-300">Recent Campaigns</h2><p className="mt-1 text-xs text-zinc-400">Your most recently updated campaigns.</p></div><Link href="/campaigns" className="text-xs font-black text-blue-400 hover:text-blue-400">View all</Link></div><div className="mt-5 space-y-2">{storedCampaigns.length ? storedCampaigns.slice().sort((a,b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))).slice(0,4).map((campaign) => <Link key={campaign.id} href={`/campaigns/new?edit=${campaign.id}`} className="flex items-center justify-between rounded-2xl border border-zinc-800 p-4 transition-colors hover:border-[#0e6de4]/50 hover:bg-[#0e6de4]/5"><div><p className="text-sm font-black text-zinc-300">{campaign.name || 'Untitled campaign'}</p><p className="mt-1 text-xs text-zinc-400">{campaign.prospectsList?.length || 0} prospects</p></div><span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${campaign.status === 'draft' ? 'bg-amber-950 text-amber-300' : 'bg-[#0e6de4]/10 text-blue-400'}`}>{campaign.status || 'draft'}</span></Link>) : <div className="rounded-2xl border border-dashed border-zinc-700 bg-zinc-800/35 p-8 text-center text-sm text-zinc-400">No saved campaigns yet.</div>}</div></Card>
           <div className="space-y-5">
-            <Card className="rounded-3xl border border-[#EFEFF0] bg-white p-6 shadow-sm">
-              <h2 className="font-black text-[#404145]">Quick Actions</h2>
+            <Card className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm">
+              <h2 className="font-black text-zinc-300">Quick Actions</h2>
               <div className="mt-4 grid gap-2">
                 {[
                   { href: '/campaigns/new', label: 'Create New Campaign', icon: PlusCircle },
                   { href: '/import', label: 'Import Leads', icon: UploadCloud },
                   { href: '/pricing', label: 'Buy Credits', icon: CreditCard },
                 ].map(({ href, label, icon: Icon }) => (
-                  <Link key={label} href={href} className="flex items-center gap-3 rounded-xl border border-[#EFEFF0] bg-[#FAFAFA] px-4 py-3 text-sm font-black text-[#404145] transition-colors hover:border-[#1DBF73]/50 hover:bg-[#1DBF73]/5 hover:text-[#117A49]">
-                    <Icon className="h-4 w-4 text-[#1DBF73]" />
+                  <Link key={label} href={href} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-black text-zinc-300 transition-colors hover:border-[#0e6de4]/50 hover:bg-[#0e6de4]/5 hover:text-blue-400">
+                    <Icon className="h-4 w-4 text-blue-400" />
                     {label}
                   </Link>
                 ))}
@@ -190,335 +190,35 @@ export default function AppDashboard() {
             </Card>
 
             {/* Compact Refer & Earn Widget */}
-            <Card className="rounded-3xl border border-[#1DBF73]/20 bg-gradient-to-br from-[#1DBF73]/10 to-white p-6 shadow-sm space-y-3">
+            <Card className="rounded-3xl border border-[#0e6de4]/20 bg-gradient-to-br from-[#0e6de4]/10 to-zinc-950 p-6 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#1DBF73] text-white">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#0e6de4] text-white">
                     <Gift className="h-4 w-4" />
                   </span>
-                  <h2 className="font-black text-[#404145] text-sm">Refer & Earn</h2>
+                  <h2 className="font-black text-zinc-300 text-sm">Refer & Earn</h2>
                 </div>
-                <span className="text-[10px] font-black uppercase text-[#117A49] bg-[#1DBF73]/15 px-2 py-0.5 rounded-full">Bonus Credits</span>
+                <span className="text-[10px] font-black uppercase text-blue-400 bg-[#0e6de4]/15 px-2 py-0.5 rounded-full">Bonus Credits</span>
               </div>
-              <p className="text-xs text-[#6B6D72] leading-relaxed font-sans">
+              <p className="text-xs text-zinc-400 leading-relaxed font-sans">
                 Give a new user 50 bonus credits and earn 100 bonus credits when they verify their account.
               </p>
-              <Link href="/referral" className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#1DBF73] hover:bg-[#169B5D] px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors">
+              <Link href="/referral" className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors">
                 Refer a Friend
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Card>
 
-            <Card className="rounded-3xl border border-[#EFEFF0] bg-white p-6 shadow-sm">
+            <Card className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm">
               <div className="flex items-center justify-between">
-                <h2 className="font-black text-[#404145]">Recent Activity</h2>
-                <Link href="/results" className="text-xs font-black text-[#159B5D] hover:text-[#117A49]">Results</Link>
+                <h2 className="font-black text-zinc-300">Recent Activity</h2>
+                <Link href="/results" className="text-xs font-black text-blue-400 hover:text-blue-400">Results</Link>
               </div>
-              <p className="mt-4 text-sm leading-6 text-slate-500">Review submission outcomes, blocked forms and completed campaign activity.</p>
+              <p className="mt-4 text-sm leading-6 text-zinc-400">Review submission outcomes, blocked forms and completed campaign activity.</p>
             </Card>
           </div>
         </div>
       </section>
-
-      {false && <>
-      {/* Removed demo/marketing dashboard content; campaign functionality is unchanged. */}
-      <div className="rounded-3xl border border-slate-200/90 bg-white/95 p-8 sm:p-12 text-center relative overflow-hidden shadow-sm">
-        {/* Ambient Iridescent Glow */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[750px] h-[360px] bg-gradient-to-r from-[#FF5722]/10 via-[#8B5CF6]/15 to-[#06B6D4]/10 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-3xl mx-auto space-y-5">
-          {/* Top Pill Badge */}
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50/90 px-4 py-1 text-xs font-bold text-purple-700 shadow-xs">
-            <span>Lead-gen agencies, sales teams & GTM experts</span>
-          </div>
-
-          {/* Aimfox Dual Gradient Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
-            <span className="text-aimfox-coral">Super</span>
-            <span className="text-aimfox-purple">charge</span> your B2B outreach pipeline. At scale.
-          </h1>
-
-          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Reach thousands of target companies per day with an end-to-end autonomous engine that discovers contact forms, maps fields deterministically, and captures visual proof.
-          </p>
-
-          {/* Black Pill CTA & Actions */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <Link href="/campaigns/new">
-              <Button variant="primary" size="lg" className="text-sm font-bold px-8 shadow-lg">
-                <Sparkles className="h-4 w-4 mr-2" />
-                Start your outreach
-              </Button>
-            </Link>
-            <Link href="/import">
-              <Button variant="secondary" size="lg" className="text-sm font-bold px-6">
-                <UploadCloud className="h-4 w-4 mr-2 text-indigo-600" />
-                Import Leads (Sample Data)
-              </Button>
-            </Link>
-          </div>
-
-          {/* Trust Checkmarks */}
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4 text-xs font-semibold text-slate-600 font-sans">
-            <span className="badge-aimfox-pill flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-indigo-600 stroke-[3]" />
-              100% Zero-Bypass Policy
-            </span>
-            <span className="badge-aimfox-pill flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-indigo-600 stroke-[3]" />
-              Visual Proof Capture
-            </span>
-            <span className="badge-aimfox-pill flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-indigo-600 stroke-[3]" />
-              2 Minute Setup
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Interactive Heyreach Box Workflow Builder */}
-      <HeyreachWorkflowBuilder />
-
-      {/* 3. Pipeline Conversion Funnel Bar */}
-      <Card className="glass-panel p-6 space-y-4 border-indigo-100 bg-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-indigo-600" />
-            <h3 className="font-extrabold text-slate-900 text-sm uppercase tracking-wider">
-              Outreach Pipeline Funnel & Conversion Rates
-            </h3>
-          </div>
-          <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-            97.8% Deliverability Yield
-          </span>
-        </div>
-
-        {/* Funnel Steps */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 pt-1">
-          {[
-            { step: '1. Ingested Leads', count: '18,450', percent: '100%', color: 'border-slate-200 bg-slate-50' },
-            { step: '2. Contact Pages', count: '16,974', percent: '92.0%', color: 'border-indigo-100 bg-indigo-50/50' },
-            { step: '3. Forms Detected', count: '15,682', percent: '85.0%', color: 'border-purple-100 bg-purple-50/50' },
-            { step: '4. Mapped & Ready', count: '14,890', percent: '80.7%', color: 'border-cyan-100 bg-cyan-50/50' },
-            { step: '5. Verified Proofs', count: '14,210', percent: '95.4%', color: 'border-emerald-200 bg-emerald-50' },
-          ].map((f) => (
-            <div key={f.step} className={`p-3.5 rounded-2xl border ${f.color} flex flex-col justify-between space-y-1 shadow-xs`}>
-              <span className="text-[10px] font-mono font-bold text-slate-500">{f.step}</span>
-              <div className="text-xl font-extrabold text-slate-900">{f.count}</div>
-              <div className="flex items-center justify-between text-[10px] font-mono pt-1 border-t border-slate-200/60">
-                <span className="text-slate-400 font-semibold">Yield</span>
-                <span className="font-bold text-emerald-700">{f.percent}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* 4. 4 Performance Metric Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Card className="glass-panel-interactive p-5 space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Total Websites</span>
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-              <Globe className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900">{mockMetrics.totalWebsites.toLocaleString()}</div>
-          <p className="text-[10px] text-indigo-600 font-mono font-semibold">100% verified domains</p>
-        </Card>
-
-        <Card className="glass-panel-interactive p-5 space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Successful Outreach</span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-              <CheckCircle className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-extrabold text-emerald-700">{mockMetrics.successful.toLocaleString()}</div>
-          <p className="text-[10px] text-emerald-700 font-mono font-semibold">+14% vs last week</p>
-        </Card>
-
-        <Card className="glass-panel-interactive p-5 space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Review Required</span>
-            <div className="p-2 rounded-xl bg-orange-50 text-orange-600">
-              <AlertTriangle className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-extrabold text-orange-700">{mockMetrics.reviewRequired}</div>
-          <p className="text-[10px] text-orange-600 font-mono font-semibold">CAPTCHA / Ambiguous forms</p>
-        </Card>
-
-        <Card className="glass-panel-interactive p-5 space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Active Workers</span>
-            <div className="p-2 rounded-xl bg-cyan-50 text-cyan-600">
-              <Cpu className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-extrabold text-cyan-700">{mockMetrics.processing} threads</div>
-          <p className="text-[10px] text-slate-500 font-mono font-semibold">{mockMetrics.pending} in queue</p>
-        </Card>
-      </div>
-
-      {/* 5. Grid: Active Campaigns & Live Verified Targets */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Active Company Campaigns (2 Columns) */}
-        <Card className="glass-panel p-6 space-y-5 lg:col-span-2 border-slate-200/90">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                <Megaphone className="h-4 w-4 text-purple-600" />
-                Active Company Campaigns
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">Live queue dispatchers with 1-click execution controls</p>
-            </div>
-            <Link href="/campaigns" className="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1">
-              <span>View All</span>
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-
-          <div className="space-y-3.5">
-            {campaigns.map((camp) => {
-              const percent = Math.round((camp.processedLeads / camp.totalLeads) * 100);
-              const isRunning = camp.status === 'running';
-
-              return (
-                <div
-                  key={camp.id}
-                  className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all space-y-3 shadow-xs"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 text-sm">{camp?.name || 'Campaign'}</span>
-                        {isRunning && (
-                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-500 font-mono">Template: {camp?.messageTemplateName || 'Default'}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Badge variant={(camp.status === 'running' ? 'running' : 'paused') as any} size="sm">
-                        {camp.status.toUpperCase()}
-                      </Badge>
-                      <Button
-                        variant={isRunning ? 'destructive' : 'primary'}
-                        size="sm"
-                        onClick={() => handleToggleCampaign(camp.id)}
-                        className="text-[11px] h-7 px-3 font-bold"
-                      >
-                        {isRunning ? <Pause className="h-3 w-3 mr-1" /> : <Play className="h-3 w-3 mr-1 fill-current" />}
-                        {isRunning ? 'Pause' : 'Resume'}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[11px] font-mono text-slate-500">
-                      <span>{camp.processedLeads} / {camp.totalLeads} processed</span>
-                      <span className="font-bold text-slate-900">{percent}%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden border border-slate-200">
-                      <div
-                        style={{ width: `${percent}%` }}
-                        className="h-full bg-gradient-to-r from-[#FF5722] via-[#8B5CF6] to-emerald-500"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Micro stats */}
-                  <div className="flex items-center justify-between text-[11px] font-mono pt-1 text-slate-600 border-t border-slate-100">
-                    <span className="text-emerald-700 font-bold">{camp.successfulCount} Successful</span>
-                    <span className="text-orange-700 font-bold">{camp.reviewRequiredCount} In Review</span>
-                    <span className="text-rose-700 font-bold">{camp.failedCount} Failed</span>
-                    <span>Rate: {camp.rateLimitPerMinute}/min</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-
-        {/* Live Target Verification Stream */}
-        <Card className="glass-panel p-6 space-y-4 border-slate-200/90">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                <Activity className="h-4 w-4 text-cyan-600" />
-                Live Verification Stream
-              </h3>
-              <p className="text-[11px] text-slate-500">Pre/post submission visual checks</p>
-            </div>
-            <Link href="/results" className="text-xs text-indigo-600 hover:text-indigo-800 font-bold">
-              Review All
-            </Link>
-          </div>
-
-          <div className="space-y-3">
-            {targetCompanies.map((tc) => (
-              <div
-                key={tc.id}
-                className="p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors space-y-2 shadow-xs"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">{tc?.name || 'Company'}</p>
-                    <p className="text-[10px] text-slate-400 font-mono">{tc?.website || ''}</p>
-                  </div>
-                  <Badge variant={tc.status === 'SUBMITTED' ? 'submitted' : 'review_required'} size="sm">
-                    {tc.status}
-                  </Badge>
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
-                  <span className="font-mono text-emerald-700 font-bold">{Math.round(tc.confidence * 100)}% Match</span>
-                  <button
-                    onClick={() => setSelectedProof(tc)}
-                    className="text-[10px] font-mono text-purple-700 hover:text-purple-900 flex items-center gap-1 font-bold"
-                  >
-                    <Camera className="h-3 w-3" />
-                    <span>View Proof</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Visual Proof Lightbox Modal */}
-      {selectedProof && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <Card className="glass-panel w-full max-w-lg p-6 space-y-4 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Camera className="h-4 w-4 text-purple-600" />
-                Proof of Delivery: {selectedProof?.name || 'Target Company'}
-              </h3>
-              <button onClick={() => setSelectedProof(null)} className="text-slate-400 hover:text-slate-900 font-bold">
-                ✕
-              </button>
-            </div>
-
-            <div className="aspect-video w-full rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center text-slate-700 space-y-2 p-4 text-center">
-              <Camera className="h-8 w-8 text-indigo-600" />
-              <p className="text-xs font-mono text-slate-900 font-bold">{selectedProof.proof}</p>
-              <p className="text-[11px] text-slate-500 font-mono">{selectedProof.website}{selectedProof.contactUrl}</p>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button variant="secondary" size="sm" onClick={() => setSelectedProof(null)}>
-                Close Proof
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-      </>}
     </div>
   );
 }

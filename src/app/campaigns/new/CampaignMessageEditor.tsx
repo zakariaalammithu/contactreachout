@@ -291,39 +291,39 @@ export function CampaignMessageEditor({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Message and personalization</h2>
-          <p className="text-sm text-slate-500">Editing <span className="font-bold text-[#0e6de4]">{sequenceName}</span> · create the contact-form message, insert lead variables, and use supported variations.</p>
+          <h2 className="text-lg font-bold text-zinc-100">Message and personalization</h2>
+          <p className="text-sm text-zinc-400">Editing <span className="font-bold text-blue-400">{sequenceName}</span> · create the contact-form message, insert lead variables, and use supported variations.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)} className="px-4 py-2.5"><Eye className="mr-2 h-4 w-4" />Preview & Test</Button>
-          <Link href={editId ? `/ai-personalization?campaign=${editId}` : '/ai-personalization'} className="self-center text-sm font-black text-[#0e6de4]">AI Personalization →</Link>
+          <Link href={editId ? `/ai-personalization?campaign=${editId}` : '/ai-personalization'} className="self-center text-sm font-black text-blue-400">AI Personalization →</Link>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5 sm:p-6 shadow-2xs">
         {/* Sequence Control Banner */}
-        <div className="flex flex-wrap items-center justify-between gap-3.5 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3.5 rounded-xl border border-zinc-800 bg-zinc-900/80 p-3.5 mb-6">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-bold text-slate-900">{sequenceName}</span>
+            <span className="text-sm font-bold text-zinc-100">{sequenceName}</span>
             {sequenceIndex > 0 ? (
-              <div className="flex flex-wrap items-center gap-2.5 border-l border-slate-200/80 pl-3">
-                <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-800 select-none">
+              <div className="flex flex-wrap items-center gap-2.5 border-l border-zinc-800/80 pl-3">
+                <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-zinc-200 select-none">
                   <input
                     type="checkbox"
                     checked={sequence.replyInThread ?? true}
                     onChange={(e) => onReplyInThreadChange(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-[#0e6de4] focus:ring-blue-500 cursor-pointer"
+                    className="h-4 w-4 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer"
                   />
                   <span>Reply in Thread</span>
                 </label>
                 {sequence.replyInThread ?? true ? (
-                  <span className="inline-flex items-center rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-[#0e6de4]">
+                  <span className="inline-flex items-center rounded-lg border border-blue-900 bg-zinc-950 px-2.5 py-1 text-xs font-semibold text-blue-400">
                     Re: {cleanPreviousSub || 'previous message subject'}
                   </span>
                 ) : null}
               </div>
             ) : (
-              <span className="rounded-full bg-slate-200/80 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+              <span className="rounded-full bg-zinc-800/80 px-2.5 py-0.5 text-xs font-semibold text-zinc-300">
                 Initial Message Step
               </span>
             )}
@@ -331,7 +331,7 @@ export function CampaignMessageEditor({
 
           <div className="flex flex-wrap items-center gap-3">
             {sequenceIndex > 0 && (
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-300">
                 <span>Send this message</span>
                 <input
                   type="number"
@@ -339,12 +339,12 @@ export function CampaignMessageEditor({
                   max={365}
                   value={timingAmount}
                   onChange={(e) => onTimingChange(Math.max(1, Number(e.target.value) || 1), sequence.delayUnit || 'days')}
-                  className="w-14 rounded-lg border border-slate-300 bg-white px-2 py-1 text-center font-bold text-slate-900 outline-none focus:border-blue-500"
+                  className="w-14 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-center font-bold text-zinc-100 outline-none focus:border-blue-500"
                 />
                 <select
                   value={sequence.delayUnit || 'days'}
                   onChange={(e) => onTimingChange(timingAmount, e.target.value as 'days' | 'weeks')}
-                  className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 cursor-pointer"
+                  className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs font-semibold text-zinc-200 outline-none focus:border-blue-500 cursor-pointer"
                 >
                   <option value="days">days</option>
                   <option value="weeks">weeks</option>
@@ -353,13 +353,13 @@ export function CampaignMessageEditor({
               </div>
             )}
 
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-400">
               <span className="hidden sm:inline">Date:</span>
               <input
                 type="date"
                 value={sequenceDate}
                 onChange={(e) => onSequenceDateChange(e.target.value)}
-                className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 cursor-pointer"
+                className="rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs font-semibold text-zinc-200 outline-none focus:border-blue-500 cursor-pointer"
               />
             </div>
           </div>
@@ -370,23 +370,23 @@ export function CampaignMessageEditor({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <label className="text-sm font-bold text-slate-900">Optional Subject</label>
+                <label className="text-sm font-bold text-zinc-100">Optional Subject</label>
                 {sequenceIndex > 0 && sequence.replyInThread && cleanPreviousSub && (
-                  <span className="text-xs text-slate-400 font-medium">
+                  <span className="text-xs text-zinc-400 font-medium">
                     (Threaded to: &quot;{cleanPreviousSub}&quot;)
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+              <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
                 Used only when the target contact form provides a compatible Subject field.
               </p>
             </div>
             <div className="relative flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" onClick={() => { setVariableMenuTarget(variableMenuTarget === 'subject' ? null : 'subject'); setSpinMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900">Personalize</Button>
-              <Button type="button" variant="outline" onClick={() => { setSpinMenuTarget(spinMenuTarget === 'subject' ? null : 'subject'); setVariableMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900">Variations</Button>
+              <Button type="button" variant="outline" onClick={() => { setVariableMenuTarget(variableMenuTarget === 'subject' ? null : 'subject'); setSpinMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-zinc-700 text-zinc-300 hover:text-zinc-100">Personalize</Button>
+              <Button type="button" variant="outline" onClick={() => { setSpinMenuTarget(spinMenuTarget === 'subject' ? null : 'subject'); setVariableMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-zinc-700 text-zinc-300 hover:text-zinc-100">Variations</Button>
               {variableMenuTarget === 'subject' && (
-                <div className="absolute right-0 top-11 z-30 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl text-left font-sans text-xs">
-                  <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <div className="absolute right-0 top-11 z-30 w-64 rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-xl text-left font-sans text-xs">
+                  <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                     Lead Information
                   </p>
                   <div className="grid max-h-44 gap-0.5 overflow-y-auto pr-1">
@@ -398,15 +398,15 @@ export function CampaignMessageEditor({
                           insertTemplateToken('subject', `{{${leadInformationTokens[label]}}}`);
                           setVariableMenuTarget(null);
                         }}
-                        className="rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-[#0e6de4] transition-colors cursor-pointer"
+                        className="rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-zinc-300 hover:bg-blue-950 hover:text-blue-400 transition-colors cursor-pointer"
                       >
                         {label}
                       </button>
                     ))}
                   </div>
 
-                  <div className="mt-2 border-t border-slate-100 pt-2">
-                    <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="mt-2 border-t border-zinc-800 pt-2">
+                    <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                       Custom Fields
                     </p>
                     <div className="grid max-h-44 gap-0.5 overflow-y-auto pr-1">
@@ -418,7 +418,7 @@ export function CampaignMessageEditor({
                             insertTemplateToken('subject', `{{${customFieldTokens[label]}}}`);
                             setVariableMenuTarget(null);
                           }}
-                          className="rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-[#0e6de4] transition-colors cursor-pointer"
+                          className="rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-zinc-300 hover:bg-blue-950 hover:text-blue-400 transition-colors cursor-pointer"
                         >
                           {label}
                         </button>
@@ -428,10 +428,10 @@ export function CampaignMessageEditor({
                 </div>
               )}
               {spinMenuTarget === 'subject' && (
-                <div className="absolute right-0 top-11 z-30 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-                  <p className="text-xs font-bold text-slate-900">Message Variations syntax</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">Use the existing variation engine with two or more choices separated by a pipe.</p>
-                  <code className="mt-2 block rounded-lg bg-slate-100 p-2 text-xs text-slate-700">{`{quick call|short note}`}</code>
+                <div className="absolute right-0 top-11 z-30 w-72 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-xl">
+                  <p className="text-xs font-bold text-zinc-100">Message Variations syntax</p>
+                  <p className="mt-1 text-xs leading-5 text-zinc-400">Use the existing variation engine with two or more choices separated by a pipe.</p>
+                  <code className="mt-2 block rounded-lg bg-zinc-900 p-2 text-xs text-zinc-300">{`{quick call|short note}`}</code>
                   <Button type="button" onClick={() => { insertTemplateToken('subject', '{quick call|short note}'); setSpinMenuTarget(null); }} className="mt-3 w-full px-3 py-2 text-xs cursor-pointer">Insert syntax</Button>
                 </div>
               )}
@@ -442,7 +442,7 @@ export function CampaignMessageEditor({
             value={sequence.subject}
             onChange={(event) => onSequenceChange((current) => ({ ...current, subject: event.target.value }))}
             placeholder={sequenceIndex > 0 && (sequence.replyInThread ?? true) ? `Re: ${cleanPreviousSub || 'Previous subject'}` : 'Partnership opportunity with {{COMPANY}}'}
-            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 font-medium text-slate-900"
+            className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-blue-500 font-medium text-zinc-100"
           />
         </div>
 
@@ -450,8 +450,8 @@ export function CampaignMessageEditor({
         <div className="relative mt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <label className="text-sm font-bold text-slate-900">Message</label>
-              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+              <label className="text-sm font-bold text-zinc-100">Message</label>
+              <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
                 Missing lead fields use safe fallbacks (e.g. &quot;there&quot; for missing names) and are never invented.
               </p>
             </div>
@@ -475,17 +475,17 @@ export function CampaignMessageEditor({
                 type="button"
                 variant="outline"
                 onClick={() => setSaveAsModalOpen(true)}
-                className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900 flex items-center gap-1.5"
+                className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-zinc-700 text-zinc-300 hover:text-zinc-100 flex items-center gap-1.5"
               >
-                <Bookmark className="h-3.5 w-3.5 text-[#0e6de4]" />
+                <Bookmark className="h-3.5 w-3.5 text-blue-400" />
                 <span>Save as Template</span>
               </Button>
-              <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={() => { setVariableMenuTarget(variableMenuTarget === 'body' ? null : 'body'); setSpinMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900">Personalize</Button>
-              <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={() => { setSpinMenuTarget(spinMenuTarget === 'body' ? null : 'body'); setVariableMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-slate-300 text-slate-700 hover:text-slate-900">Variations</Button>
+              <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={() => { setVariableMenuTarget(variableMenuTarget === 'body' ? null : 'body'); setSpinMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-zinc-700 text-zinc-300 hover:text-zinc-100">Personalize</Button>
+              <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={() => { setSpinMenuTarget(spinMenuTarget === 'body' ? null : 'body'); setVariableMenuTarget(null); }} className="px-3 py-1.5 text-xs font-semibold cursor-pointer border-zinc-700 text-zinc-300 hover:text-zinc-100">Variations</Button>
 
               {variableMenuTarget === 'body' && (
-                <div className="absolute right-0 top-11 z-30 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl text-left font-sans text-xs">
-                  <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <div className="absolute right-0 top-11 z-30 w-64 rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-xl text-left font-sans text-xs">
+                  <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                     Lead Information
                   </p>
                   <div className="grid max-h-44 gap-0.5 overflow-y-auto pr-1">
@@ -498,15 +498,15 @@ export function CampaignMessageEditor({
                           insertTemplateToken('body', `{{${leadInformationTokens[label]}}}`);
                           setVariableMenuTarget(null);
                         }}
-                        className="rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-[#0e6de4] transition-colors cursor-pointer"
+                        className="rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-zinc-300 hover:bg-blue-950 hover:text-blue-400 transition-colors cursor-pointer"
                       >
                         {label}
                       </button>
                     ))}
                   </div>
 
-                  <div className="mt-2 border-t border-slate-100 pt-2">
-                    <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="mt-2 border-t border-zinc-800 pt-2">
+                    <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                       Custom Fields
                     </p>
                     <div className="grid max-h-44 gap-0.5 overflow-y-auto pr-1">
@@ -519,7 +519,7 @@ export function CampaignMessageEditor({
                             insertTemplateToken('body', `{{${customFieldTokens[label]}}}`);
                             setVariableMenuTarget(null);
                           }}
-                          className="rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-[#0e6de4] transition-colors cursor-pointer"
+                          className="rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-zinc-300 hover:bg-blue-950 hover:text-blue-400 transition-colors cursor-pointer"
                         >
                           {label}
                         </button>
@@ -529,10 +529,10 @@ export function CampaignMessageEditor({
                 </div>
               )}
               {spinMenuTarget === 'body' && (
-                <div className="absolute right-0 top-11 z-30 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-                  <p className="text-xs font-bold text-slate-900">Message Variations syntax</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">Use the existing variation engine with two or more choices separated by a pipe.</p>
-                  <code className="mt-2 block rounded-lg bg-slate-100 p-2 text-xs text-slate-700">{`{I reviewed|I was checking}`}</code>
+                <div className="absolute right-0 top-11 z-30 w-72 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-xl">
+                  <p className="text-xs font-bold text-zinc-100">Message Variations syntax</p>
+                  <p className="mt-1 text-xs leading-5 text-zinc-400">Use the existing variation engine with two or more choices separated by a pipe.</p>
+                  <code className="mt-2 block rounded-lg bg-zinc-900 p-2 text-xs text-zinc-300">{`{I reviewed|I was checking}`}</code>
                   <Button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { insertTemplateToken('body', '{I reviewed|I was checking}'); setSpinMenuTarget(null); }} className="mt-[#0e6de4] w-full px-3 py-2 text-xs cursor-pointer">Insert syntax</Button>
                 </div>
               )}
@@ -540,30 +540,30 @@ export function CampaignMessageEditor({
           </div>
 
           {bodySourceMode ? (
-            <textarea rows={10} value={sequence.body} onChange={(event) => onSequenceChange((current) => ({ ...current, body: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 font-mono text-sm outline-none focus:border-blue-500 text-slate-900" />
+            <textarea rows={10} value={sequence.body} onChange={(event) => onSequenceChange((current) => ({ ...current, body: event.target.value }))} className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 font-mono text-sm outline-none focus:border-blue-500 text-zinc-100" />
           ) : (
-            <div className="mt-2 overflow-hidden rounded-xl border border-slate-300 focus-within:border-blue-500 bg-white">
-              <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 p-2">
-                <button type="button" onClick={() => executeFormat('bold')} aria-label="Bold" className="rounded-lg p-2 hover:bg-white"><Bold className="h-4 w-4 text-slate-700" /></button>
-                <button type="button" onClick={() => executeFormat('italic')} aria-label="Italic" className="rounded-lg p-2 hover:bg-white"><Italic className="h-4 w-4 text-slate-700" /></button>
-                <button type="button" onClick={() => executeFormat('underline')} aria-label="Underline" className="rounded-lg p-2 hover:bg-white"><Underline className="h-4 w-4 text-slate-700" /></button>
-                <span className="mx-1 h-5 w-px bg-slate-300" />
-                <select onChange={(event) => executeFormat('formatBlock', event.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-800" defaultValue="p"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="pre">Preformatted</option></select>
-                <button type="button" onClick={() => executeFormat('insertUnorderedList')} aria-label="Bullet list" className="rounded-lg p-2 hover:bg-white"><List className="h-4 w-4 text-slate-700" /></button>
-                <button type="button" onClick={() => executeFormat('insertOrderedList')} aria-label="Numbered list" className="rounded-lg p-2 hover:bg-white"><ListOrdered className="h-4 w-4 text-slate-700" /></button>
-                <span className="mx-1 h-5 w-px bg-slate-300" />
-                <button type="button" onClick={() => executeFormat('justifyLeft')} aria-label="Align left" className="rounded-lg p-2 hover:bg-white"><AlignLeft className="h-4 w-4 text-slate-700" /></button>
-                <button type="button" onClick={() => executeFormat('justifyCenter')} aria-label="Align center" className="rounded-lg p-2 hover:bg-white"><AlignCenter className="h-4 w-4 text-slate-700" /></button>
-                <button type="button" onClick={() => executeFormat('justifyRight')} aria-label="Align right" className="rounded-lg p-2 hover:bg-white"><AlignRight className="h-4 w-4 text-slate-700" /></button>
-                <button type="button" onClick={() => executeFormat('justifyFull')} aria-label="Justify" className="rounded-lg p-2 hover:bg-white"><AlignJustify className="h-4 w-4 text-slate-700" /></button>
-                <span className="mx-1 h-5 w-px bg-slate-300" />
-                <button type="button" onClick={() => { const url = window.prompt('Link URL'); if (url) executeFormat('createLink', url); }} aria-label="Insert link" className="rounded-lg p-2 hover:bg-white"><LinkIcon className="h-4 w-4 text-slate-700" /></button>
-                <button type="button" onClick={() => executeFormat('undo')} aria-label="Undo" className="rounded-lg p-2 hover:bg-white"><Undo2 className="h-4 w-4 text-slate-700" /></button>
-                <button type="button" onClick={() => executeFormat('redo')} aria-label="Redo" className="rounded-lg p-2 hover:bg-white"><Redo2 className="h-4 w-4 text-slate-700" /></button>
-                <button type="button" onClick={() => executeFormat('removeFormat')} className="rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 hover:bg-white">Clear</button>
-                <button type="button" onClick={() => setBodySourceMode(true)} aria-label="Edit HTML source" className="ml-auto rounded-lg p-2 hover:bg-white"><Code className="h-4 w-4 text-slate-700" /></button>
+            <div className="mt-2 overflow-hidden rounded-xl border border-zinc-700 focus-within:border-blue-500 bg-zinc-950">
+              <div className="flex flex-wrap items-center gap-1 border-b border-zinc-800 bg-zinc-900 p-2">
+                <button type="button" onClick={() => executeFormat('bold')} aria-label="Bold" className="rounded-lg p-2 hover:bg-zinc-950"><Bold className="h-4 w-4 text-zinc-300" /></button>
+                <button type="button" onClick={() => executeFormat('italic')} aria-label="Italic" className="rounded-lg p-2 hover:bg-zinc-950"><Italic className="h-4 w-4 text-zinc-300" /></button>
+                <button type="button" onClick={() => executeFormat('underline')} aria-label="Underline" className="rounded-lg p-2 hover:bg-zinc-950"><Underline className="h-4 w-4 text-zinc-300" /></button>
+                <span className="mx-1 h-5 w-px bg-zinc-700" />
+                <select onChange={(event) => executeFormat('formatBlock', event.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs font-semibold text-zinc-200" defaultValue="p"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="pre">Preformatted</option></select>
+                <button type="button" onClick={() => executeFormat('insertUnorderedList')} aria-label="Bullet list" className="rounded-lg p-2 hover:bg-zinc-950"><List className="h-4 w-4 text-zinc-300" /></button>
+                <button type="button" onClick={() => executeFormat('insertOrderedList')} aria-label="Numbered list" className="rounded-lg p-2 hover:bg-zinc-950"><ListOrdered className="h-4 w-4 text-zinc-300" /></button>
+                <span className="mx-1 h-5 w-px bg-zinc-700" />
+                <button type="button" onClick={() => executeFormat('justifyLeft')} aria-label="Align left" className="rounded-lg p-2 hover:bg-zinc-950"><AlignLeft className="h-4 w-4 text-zinc-300" /></button>
+                <button type="button" onClick={() => executeFormat('justifyCenter')} aria-label="Align center" className="rounded-lg p-2 hover:bg-zinc-950"><AlignCenter className="h-4 w-4 text-zinc-300" /></button>
+                <button type="button" onClick={() => executeFormat('justifyRight')} aria-label="Align right" className="rounded-lg p-2 hover:bg-zinc-950"><AlignRight className="h-4 w-4 text-zinc-300" /></button>
+                <button type="button" onClick={() => executeFormat('justifyFull')} aria-label="Justify" className="rounded-lg p-2 hover:bg-zinc-950"><AlignJustify className="h-4 w-4 text-zinc-300" /></button>
+                <span className="mx-1 h-5 w-px bg-zinc-700" />
+                <button type="button" onClick={() => { const url = window.prompt('Link URL'); if (url) executeFormat('createLink', url); }} aria-label="Insert link" className="rounded-lg p-2 hover:bg-zinc-950"><LinkIcon className="h-4 w-4 text-zinc-300" /></button>
+                <button type="button" onClick={() => executeFormat('undo')} aria-label="Undo" className="rounded-lg p-2 hover:bg-zinc-950"><Undo2 className="h-4 w-4 text-zinc-300" /></button>
+                <button type="button" onClick={() => executeFormat('redo')} aria-label="Redo" className="rounded-lg p-2 hover:bg-zinc-950"><Redo2 className="h-4 w-4 text-zinc-300" /></button>
+                <button type="button" onClick={() => executeFormat('removeFormat')} className="rounded-lg px-2 py-1.5 text-xs font-bold text-zinc-400 hover:bg-zinc-950">Clear</button>
+                <button type="button" onClick={() => setBodySourceMode(true)} aria-label="Edit HTML source" className="ml-auto rounded-lg p-2 hover:bg-zinc-950"><Code className="h-4 w-4 text-zinc-300" /></button>
               </div>
-              <div ref={bodyEditorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Message body" onInput={() => onSequenceChange((current) => ({ ...current, body: bodyEditorRef.current?.innerHTML || '' }))} onBlur={() => onSequenceChange((current) => ({ ...current, body: bodyEditorRef.current?.innerHTML || '' }))} className="min-h-[260px] max-w-none px-4 py-3 text-sm leading-6 text-slate-800 outline-none" />
+              <div ref={bodyEditorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Message body" onInput={() => onSequenceChange((current) => ({ ...current, body: bodyEditorRef.current?.innerHTML || '' }))} onBlur={() => onSequenceChange((current) => ({ ...current, body: bodyEditorRef.current?.innerHTML || '' }))} className="min-h-[260px] max-w-none px-4 py-3 text-sm leading-6 text-zinc-200 outline-none" />
             </div>
           )}
           {bodySourceMode && <Button type="button" variant="outline" onClick={() => setBodySourceMode(false)} className="mt-2 px-3 py-2 text-xs"><Code className="mr-2 h-4 w-4" />Return to visual editor</Button>}
@@ -572,18 +572,18 @@ export function CampaignMessageEditor({
 
       {/* AI Personalization Container */}
       {!isPaidPlan ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-700">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-zinc-300">
                 <Lock className="h-5 w-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-950">AI Personalization 🔒</h3>
-                  <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-700">Available on paid plans</span>
+                  <h3 className="font-bold text-white">AI Personalization 🔒</h3>
+                  <span className="rounded-full bg-zinc-800 px-2.5 py-0.5 text-[10px] font-bold text-zinc-300">Available on paid plans</span>
                 </div>
-                <p className="mt-1 text-sm text-slate-600">Upgrade your plan to personalize website contact-form messages with AI.</p>
+                <p className="mt-1 text-sm text-zinc-400">Upgrade your plan to personalize website contact-form messages with AI.</p>
               </div>
             </div>
             <Button type="button" onClick={() => setAiUpgradeModalOpen(true)} className="bg-[#0e6de4] hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 cursor-pointer shrink-0">
@@ -592,36 +592,36 @@ export function CampaignMessageEditor({
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+        <div className="rounded-2xl border border-blue-900 bg-blue-950/60 p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <Bot className="mt-0.5 h-6 w-6 text-[#0e6de4]" />
+              <Bot className="mt-0.5 h-6 w-6 text-blue-400" />
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-950">AI Personalization</h3>
-                  <span className="rounded-full bg-blue-100 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-[#0e6de4]">
+                  <h3 className="font-bold text-white">AI Personalization</h3>
+                  <span className="rounded-full bg-blue-900 border border-blue-900 px-2.5 py-0.5 text-[10px] font-bold text-blue-400">
                     Provider: {providerChoice === 'user_openai' ? 'Your OpenAI API Key' : 'ContactReachout AI'}
                   </span>
                 </div>
-                <p className="text-sm text-slate-600 mt-0.5">Personalize the contact-form message using available prospect and company information.</p>
+                <p className="text-sm text-zinc-400 mt-0.5">Personalize the contact-form message using available prospect and company information.</p>
               </div>
             </div>
             <input type="checkbox" aria-label="Enable AI Personalization" checked={aiPersonalizationEnabled} onChange={(event) => onAiPersonalizationEnabledChange(event.target.checked)} className="mt-1 h-5 w-5 cursor-pointer" />
           </div>
           {aiPersonalizationEnabled && (
             <div className="mt-5 space-y-4">
-              <label className="block text-sm font-semibold text-slate-950">AI instructions<textarea rows={5} value={aiInstructions} onChange={(event) => onAiInstructionsChange(event.target.value)} className="mt-2 w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none focus:border-blue-500 font-medium" /></label>
+              <label className="block text-sm font-semibold text-white">AI instructions<textarea rows={5} value={aiInstructions} onChange={(event) => onAiInstructionsChange(event.target.value)} className="mt-2 w-full rounded-xl border border-blue-900 bg-zinc-950 px-4 py-3 outline-none focus:border-blue-500 font-medium" /></label>
               <Button type="button" variant="outline" onClick={onGeneratePreview} disabled={isGeneratingPreview}>{isGeneratingPreview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate preview for first prospect</Button>
-              {aiPreview && <div className="rounded-xl border border-blue-200 bg-white p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-bold text-slate-900">Preview for {aiPreview.companyName}</p><span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold uppercase text-[#0e6de4]">{aiPreview.isAiGenerated ? aiPreview.provider : 'Offline fallback'}</span></div><p className="text-sm font-semibold text-slate-800">{aiPreview.subject}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{aiPreview.body}</p></div>}
-              <p className="text-xs text-slate-600">Approved per-prospect messages are stored on each lead and remain available to the existing template workflow through personalized fields.</p>
+              {aiPreview && <div className="rounded-xl border border-blue-900 bg-zinc-950 p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-bold text-zinc-100">Preview for {aiPreview.companyName}</p><span className="rounded-full bg-blue-900 px-2.5 py-1 text-[10px] font-bold uppercase text-blue-400">{aiPreview.isAiGenerated ? aiPreview.provider : 'Offline fallback'}</span></div><p className="text-sm font-semibold text-zinc-200">{aiPreview.subject}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-zinc-400">{aiPreview.body}</p></div>}
+              <p className="text-xs text-zinc-400">Approved per-prospect messages are stored on each lead and remain available to the existing template workflow through personalized fields.</p>
             </div>
           )}
         </div>
       )}
 
       {previewOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-zinc-950 p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -629,21 +629,21 @@ export function CampaignMessageEditor({
                     <ArrowLeft className="h-4 w-4" />
                     Back
                   </Button>
-                  <h2 className="text-lg font-bold text-slate-900">Preview & Test</h2>
-                  <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-[#0e6de4]">Website Contact-Form Submission</span>
+                  <h2 className="text-lg font-bold text-zinc-100">Preview & Test</h2>
+                  <span className="rounded-full bg-blue-950 border border-blue-900 px-2.5 py-0.5 text-[10px] font-bold text-blue-400">Website Contact-Form Submission</span>
                 </div>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-zinc-400">
                   {sampleLead
                     ? `Sample prospect: ${[sampleLead.firstName, sampleLead.lastName].filter(Boolean).join(' ') || sampleLead.companyName || sampleLead.website} · The message below will be submitted through the prospect's website contact form.`
                     : 'Select prospects to preview actual lead values.'}
                 </p>
                 {selectedLeads.length > 1 && (
                   <div className="mt-3 flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-600">Switch Lead:</span>
+                    <span className="text-xs font-bold text-zinc-400">Switch Lead:</span>
                     <select
                       value={previewLeadIndex}
                       onChange={(e) => setPreviewLeadIndex(Number(e.target.value))}
-                      className="rounded-xl border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 cursor-pointer"
+                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-1 text-xs font-bold text-zinc-200 outline-none focus:border-blue-500 cursor-pointer"
                     >
                       {selectedLeads.map((lead, idx) => (
                         <option key={lead.id || idx} value={idx}>
@@ -656,8 +656,8 @@ export function CampaignMessageEditor({
               </div>
               <Button type="button" variant="outline" onClick={() => setPreviewOpen(false)} className="px-4 py-2 cursor-pointer">Close</Button>
             </div>
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5"><p className="text-xs font-bold uppercase text-slate-500">Optional Subject (if supported by target website form)</p><p className="mt-1 text-base font-bold text-slate-900">{previewSubject || 'No subject set'}</p></div>
-            <div className="mt-4 rounded-2xl border border-slate-200 p-5"><p className="text-xs font-bold uppercase text-slate-500">Message (submitted to detected contact form message field)</p><div className="prose prose-slate mt-2 max-w-none text-sm text-slate-800" dangerouslySetInnerHTML={{ __html: previewBodyHtml || '<p>No message</p>' }} /></div>
+            <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-900 p-5"><p className="text-xs font-bold uppercase text-zinc-400">Optional Subject (if supported by target website form)</p><p className="mt-1 text-base font-bold text-zinc-100">{previewSubject || 'No subject set'}</p></div>
+            <div className="mt-4 rounded-2xl border border-zinc-800 p-5"><p className="text-xs font-bold uppercase text-zinc-400">Message (submitted to detected contact form message field)</p><div className="prose prose-slate mt-2 max-w-none text-sm text-zinc-200" dangerouslySetInnerHTML={{ __html: previewBodyHtml || '<p>No message</p>' }} /></div>
           </div>
         </div>
       )}

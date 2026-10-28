@@ -364,26 +364,26 @@ export default function InboxPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-50 text-slate-900 overflow-hidden font-sans">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-zinc-900 text-zinc-100 overflow-hidden font-sans">
       {/* Toast Feedback Notification */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-xl transition-all animate-in fade-in slide-in-from-top-2">
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white shadow-xl transition-all animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Top Bar Header */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4 lg:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#0e6de4]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-950 text-blue-400">
             <InboxIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-base font-bold tracking-tight text-slate-900 leading-tight">
+            <h1 className="text-base font-bold tracking-tight text-zinc-100 leading-tight">
               Inbox
             </h1>
-            <p className="text-xs text-slate-500 hidden sm:block">
+            <p className="text-xs text-zinc-400 hidden sm:block">
               Manage campaign replies and conversations in one place.
             </p>
           </div>
@@ -393,10 +393,10 @@ export default function InboxPage() {
         <div className="flex items-center gap-3">
           {/* Reply Forwarding Indicator */}
           {forwardEmail && (
-            <div className="hidden md:flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
-              <Mail className="h-3.5 w-3.5 text-[#0e6de4]" />
+            <div className="hidden md:flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1 text-xs font-medium text-zinc-400">
+              <Mail className="h-3.5 w-3.5 text-blue-400" />
               <span>Forwarding replies to:</span>
-              <span className="font-semibold text-slate-900">{forwardEmail}</span>
+              <span className="font-semibold text-zinc-100">{forwardEmail}</span>
             </div>
           )}
 
@@ -405,10 +405,10 @@ export default function InboxPage() {
             type="button"
             onClick={() => fetchInboxData(true)}
             disabled={isRefreshing}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-400 hover:bg-zinc-900 transition-colors disabled:opacity-50"
             title="Refresh Inbox"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-[#0e6de4]' : ''}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-blue-400' : ''}`} />
           </button>
         </div>
       </header>
@@ -419,26 +419,26 @@ export default function InboxPage() {
         {/* LEFT PANEL: Search, Filter Tabs, Conversation List */}
         {/* ============================================================================== */}
         <div
-          className={`w-full md:w-80 lg:w-88 flex-col border-r border-slate-200 bg-white shrink-0 ${
+          className={`w-full md:w-80 lg:w-88 flex-col border-r border-zinc-800 bg-zinc-950 shrink-0 ${
             mobileView === 'detail' ? 'hidden md:flex' : 'flex'
           }`}
         >
           {/* Search Box & Filter Header */}
-          <div className="p-3 border-b border-slate-100 space-y-2">
+          <div className="p-3 border-b border-zinc-800 space-y-2">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by name, company, email..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:bg-white focus:outline-none transition-colors"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-900/70 pl-9 pr-3 py-2 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:bg-zinc-950 focus:outline-none transition-colors"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                    className="absolute right-2.5 top-2.5 text-zinc-400 hover:text-zinc-400"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -452,8 +452,8 @@ export default function InboxPage() {
                   onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
                   className={`flex h-8 w-8 items-center justify-center rounded-xl border transition-colors ${
                     statusFilter !== 'ALL'
-                      ? 'border-[#0e6de4] bg-blue-50 text-[#0e6de4]'
-                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                      ? 'border-[#0e6de4] bg-blue-950 text-blue-400'
+                      : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-900'
                   }`}
                   title="Filter conversations"
                 >
@@ -462,8 +462,8 @@ export default function InboxPage() {
 
                 {/* Filter Popover Dropdown */}
                 {isFilterMenuOpen && (
-                  <div className="absolute right-0 top-10 z-30 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-xl animate-in fade-in zoom-in-95">
-                    <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
+                  <div className="absolute right-0 top-10 z-30 w-48 rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-xl animate-in fade-in zoom-in-95">
+                    <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
                       Filter by Status
                     </p>
                     {['ALL', 'INTERESTED', 'QUESTION', 'REPLIED', 'NEW', 'UNMATCHED'].map((st) => (
@@ -475,12 +475,12 @@ export default function InboxPage() {
                         }}
                         className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
                           statusFilter === st
-                            ? 'bg-blue-50 text-[#0e6de4] font-bold'
-                            : 'text-slate-700 hover:bg-slate-50'
+                            ? 'bg-blue-950 text-blue-400 font-bold'
+                            : 'text-zinc-300 hover:bg-zinc-900'
                         }`}
                       >
                         <span>{st === 'ALL' ? 'All Statuses' : st}</span>
-                        {statusFilter === st && <Check className="h-3.5 w-3.5 text-[#0e6de4]" />}
+                        {statusFilter === st && <Check className="h-3.5 w-3.5 text-blue-400" />}
                       </button>
                     ))}
                   </div>
@@ -490,18 +490,18 @@ export default function InboxPage() {
           </div>
 
           {/* Primary Navigation Tabs: All chats | Unread | Archived */}
-          <div className="grid grid-cols-3 border-b border-slate-200 bg-slate-50/50 p-1 gap-1 text-xs font-semibold">
+          <div className="grid grid-cols-3 border-b border-zinc-800 bg-zinc-900/50 p-1 gap-1 text-xs font-semibold">
             <button
               onClick={() => setActiveTab('all')}
               className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all ${
                 activeTab === 'all'
-                  ? 'bg-white text-[#0e6de4] shadow-2xs font-bold border border-slate-200/80'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-zinc-950 text-blue-400 shadow-2xs font-bold border border-zinc-800/80'
+                  : 'text-zinc-400 hover:text-zinc-100'
               }`}
             >
               <span>All chats</span>
               {allCount > 0 && (
-                <span className="rounded-full bg-slate-100 px-1.5 py-0.2 text-[10px] font-mono text-slate-600">
+                <span className="rounded-full bg-zinc-900 px-1.5 py-0.2 text-[10px] font-mono text-zinc-400">
                   {allCount}
                 </span>
               )}
@@ -511,8 +511,8 @@ export default function InboxPage() {
               onClick={() => setActiveTab('unread')}
               className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all ${
                 activeTab === 'unread'
-                  ? 'bg-white text-[#0e6de4] shadow-2xs font-bold border border-slate-200/80'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-zinc-950 text-blue-400 shadow-2xs font-bold border border-zinc-800/80'
+                  : 'text-zinc-400 hover:text-zinc-100'
               }`}
             >
               <span>Unread</span>
@@ -527,13 +527,13 @@ export default function InboxPage() {
               onClick={() => setActiveTab('archived')}
               className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all ${
                 activeTab === 'archived'
-                  ? 'bg-white text-[#0e6de4] shadow-2xs font-bold border border-slate-200/80'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-zinc-950 text-blue-400 shadow-2xs font-bold border border-zinc-800/80'
+                  : 'text-zinc-400 hover:text-zinc-100'
               }`}
             >
               <span>Archived</span>
               {archivedCount > 0 && (
-                <span className="rounded-full bg-slate-100 px-1.5 py-0.2 text-[10px] font-mono text-slate-600">
+                <span className="rounded-full bg-zinc-900 px-1.5 py-0.2 text-[10px] font-mono text-zinc-400">
                   {archivedCount}
                 </span>
               )}
@@ -541,18 +541,18 @@ export default function InboxPage() {
           </div>
 
           {/* Conversation List Container */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+          <div className="flex-1 overflow-y-auto divide-y divide-zinc-800">
             {isLoading ? (
-              <div className="p-8 text-center text-xs text-slate-400">
+              <div className="p-8 text-center text-xs text-zinc-400">
                 <div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-[#0e6de4] border-t-transparent mb-2"></div>
                 Loading conversations...
               </div>
             ) : filteredReplies.length === 0 ? (
               <div className="p-10 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-400 mb-3">
                   <InboxIcon className="h-6 w-6" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-700">
+                <h3 className="text-sm font-bold text-zinc-300">
                   {activeTab === 'unread'
                     ? 'No unread conversations'
                     : activeTab === 'archived'
@@ -561,7 +561,7 @@ export default function InboxPage() {
                     ? 'No matching results'
                     : 'No conversations yet'}
                 </h3>
-                <p className="mt-1 text-xs text-slate-400 max-w-[200px] mx-auto">
+                <p className="mt-1 text-xs text-zinc-400 max-w-[200px] mx-auto">
                   {activeTab === 'unread'
                     ? 'All incoming prospect replies have been read.'
                     : searchQuery
@@ -585,8 +585,8 @@ export default function InboxPage() {
                     onClick={() => handleSelectReply(item)}
                     className={`w-full text-left p-3.5 transition-all relative ${
                       isSelected
-                        ? 'bg-blue-50/70 border-l-4 border-l-[#0e6de4]'
-                        : 'hover:bg-slate-50'
+                        ? 'bg-blue-950/70 border-l-4 border-l-[#0e6de4]'
+                        : 'hover:bg-zinc-900'
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -596,8 +596,8 @@ export default function InboxPage() {
                           isSelected
                             ? 'bg-[#0e6de4] text-white shadow-xs'
                             : item.isUnread
-                            ? 'bg-blue-100 text-[#0e6de4]'
-                            : 'bg-slate-200 text-slate-700'
+                            ? 'bg-blue-900 text-blue-400'
+                            : 'bg-zinc-800 text-zinc-300'
                         }`}
                       >
                         {initials}
@@ -608,25 +608,25 @@ export default function InboxPage() {
                         <div className="flex items-center justify-between gap-1 mb-0.5">
                           <span
                             className={`text-xs truncate ${
-                              item.isUnread ? 'font-black text-slate-900' : 'font-semibold text-slate-800'
+                              item.isUnread ? 'font-black text-zinc-100' : 'font-semibold text-zinc-200'
                             }`}
                           >
                             {item.prospectName}
                           </span>
-                          <span className="text-[10px] text-slate-400 shrink-0 font-mono">
+                          <span className="text-[10px] text-zinc-400 shrink-0 font-mono">
                             {item.date}
                           </span>
                         </div>
 
                         {/* Company & Subject */}
-                        <p className="text-[11px] text-slate-500 truncate font-medium">
+                        <p className="text-[11px] text-zinc-400 truncate font-medium">
                           {item.companyName} {item.campaignName ? `• ${item.campaignName}` : ''}
                         </p>
 
                         {/* Message Preview Snippet */}
                         <p
                           className={`text-xs truncate mt-1 ${
-                            item.isUnread ? 'text-slate-900 font-medium' : 'text-slate-500'
+                            item.isUnread ? 'text-zinc-100 font-medium' : 'text-zinc-400'
                           }`}
                         >
                           {item.replySent ? `You: ${item.replySent}` : item.replyMessage}
@@ -649,37 +649,37 @@ export default function InboxPage() {
         {/* MIDDLE PANEL: Thread History, Selected Conversation Header, Reply Composer */}
         {/* ============================================================================== */}
         <div
-          className={`flex-1 flex flex-col bg-white overflow-hidden ${
+          className={`flex-1 flex flex-col bg-zinc-950 overflow-hidden ${
             mobileView === 'list' ? 'hidden md:flex' : 'flex'
           }`}
         >
           {activeReply ? (
             <>
               {/* Selected Conversation Header */}
-              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 bg-white shrink-0">
+              <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3 bg-zinc-950 shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Mobile Back Button */}
                   <button
                     onClick={() => setMobileView('list')}
-                    className="md:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100"
+                    className="md:hidden p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
 
-                  <div className="h-9 w-9 shrink-0 rounded-full bg-blue-100 text-[#0e6de4] flex items-center justify-center text-xs font-bold">
+                  <div className="h-9 w-9 shrink-0 rounded-full bg-blue-900 text-blue-400 flex items-center justify-center text-xs font-bold">
                     {(activeReply.prospectName || 'CR').substring(0, 2).toUpperCase()}
                   </div>
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-sm font-bold text-slate-900 truncate">
+                      <h2 className="text-sm font-bold text-zinc-100 truncate">
                         {activeReply.prospectName}
                       </h2>
-                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0e6de4] border border-blue-100 font-mono">
+                      <span className="rounded-full bg-blue-950 px-2 py-0.5 text-[10px] font-bold text-blue-400 border border-blue-900 font-mono">
                         {activeReply.status}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 truncate">
+                    <p className="text-xs text-zinc-400 truncate">
                       {activeReply.email} • {activeReply.companyName}
                     </p>
                   </div>
@@ -692,7 +692,7 @@ export default function InboxPage() {
                     onClick={() =>
                       handleToggleReadStatus(activeReply.id, activeReply.isUnread)
                     }
-                    className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                    className="p-2 rounded-xl text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
                     title={activeReply.isUnread ? 'Mark as read' : 'Mark as unread'}
                   >
                     {activeReply.isUnread ? (
@@ -707,11 +707,11 @@ export default function InboxPage() {
                     onClick={() =>
                       handleToggleArchive(activeReply.id, Boolean(activeReply.isArchived))
                     }
-                    className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                    className="p-2 rounded-xl text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
                     title={activeReply.isArchived ? 'Unarchive' : 'Archive'}
                   >
                     {activeReply.isArchived ? (
-                      <ArchiveRestore className="h-4 w-4 text-[#0e6de4]" />
+                      <ArchiveRestore className="h-4 w-4 text-blue-400" />
                     ) : (
                       <Archive className="h-4 w-4" />
                     )}
@@ -720,21 +720,21 @@ export default function InboxPage() {
               </div>
 
               {/* Message Thread History Area */}
-              <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 bg-slate-50/60">
+              <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 bg-zinc-900/60">
                 {/* 1. Original Outbound Form Submission Record */}
                 {activeReply.originalMessage && (
-                  <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2 text-xs text-slate-500">
-                      <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                        <Send className="h-3.5 w-3.5 text-[#0e6de4]" />
+                  <div className="mx-auto max-w-2xl rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-2 text-xs text-zinc-400">
+                      <span className="flex items-center gap-1.5 font-semibold text-zinc-300">
+                        <Send className="h-3.5 w-3.5 text-blue-400" />
                         Initial Website Contact-Form Submission
                       </span>
-                      <span className="text-[10px] font-mono text-slate-400">OUTBOUND</span>
+                      <span className="text-[10px] font-mono text-zinc-400">OUTBOUND</span>
                     </div>
-                    <p className="text-xs font-bold text-slate-800 mb-1">
+                    <p className="text-xs font-bold text-zinc-200 mb-1">
                       Subject: {activeReply.originalSubject || 'Outreach Inquiry'}
                     </p>
-                    <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-xs text-zinc-400 leading-relaxed whitespace-pre-wrap">
                       {activeReply.originalMessage}
                     </p>
                   </div>
@@ -742,19 +742,19 @@ export default function InboxPage() {
 
                 {/* 2. Inbound Prospect Reply Bubble */}
                 <div className="flex items-start gap-3 max-w-2xl">
-                  <div className="h-8 w-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold shrink-0 mt-1">
+                  <div className="h-8 w-8 rounded-full bg-zinc-800 text-zinc-300 flex items-center justify-center text-xs font-bold shrink-0 mt-1">
                     {(activeReply.prospectName || 'P').substring(0, 2).toUpperCase()}
                   </div>
-                  <div className="flex-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+                  <div className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-xs">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-900">
+                      <span className="text-xs font-bold text-zinc-100">
                         {activeReply.prospectName}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
+                      <span className="text-[10px] text-zinc-400 font-mono">
                         INBOUND • {activeReply.date}
                       </span>
                     </div>
-                    <div className="text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">
+                    <div className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">
                       {activeReply.replyMessage}
                     </div>
                   </div>
@@ -779,19 +779,19 @@ export default function InboxPage() {
               </div>
 
               {/* Reply Composer Bottom Section */}
-              <div className="border-t border-slate-200 bg-white p-3 lg:p-4 shrink-0">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-2 focus-within:border-[#0e6de4] focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <div className="border-t border-zinc-800 bg-zinc-950 p-3 lg:p-4 shrink-0">
+                <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-2 focus-within:border-[#0e6de4] focus-within:bg-zinc-950 focus-within:ring-2 focus-within:ring-blue-900 transition-all">
                   <textarea
                     rows={3}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder={`Write a reply to ${activeReply.prospectName}...`}
-                    className="w-full resize-none bg-transparent p-1 text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
+                    className="w-full resize-none bg-transparent p-1 text-xs text-zinc-100 placeholder-slate-400 focus:outline-none"
                   />
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
-                    <div className="text-[11px] text-slate-400">
-                      Sending to <span className="font-semibold text-slate-700">{activeReply.email}</span>
+                  <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
+                    <div className="text-[11px] text-zinc-400">
+                      Sending to <span className="font-semibold text-zinc-300">{activeReply.email}</span>
                     </div>
 
                     <Button
@@ -818,9 +818,9 @@ export default function InboxPage() {
             </>
           ) : (
             /* Empty State when no conversation is selected */
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-zinc-900/50">
               <div className="relative mb-6">
-                <div className="h-24 w-24 rounded-3xl bg-blue-50 text-[#0e6de4] flex items-center justify-center shadow-lg shadow-blue-500/10">
+                <div className="h-24 w-24 rounded-3xl bg-blue-950 text-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/10">
                   <MessageSquare className="h-12 w-12" />
                 </div>
                 <div className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md">
@@ -828,10 +828,10 @@ export default function InboxPage() {
                 </div>
               </div>
 
-              <h2 className="text-base font-bold text-slate-800">
+              <h2 className="text-base font-bold text-zinc-200">
                 Your campaign replies will appear here
               </h2>
-              <p className="mt-1.5 text-xs text-slate-500 max-w-sm leading-relaxed">
+              <p className="mt-1.5 text-xs text-zinc-400 max-w-sm leading-relaxed">
                 Select a conversation from the left to view messages and respond directly.
               </p>
             </div>
@@ -842,19 +842,19 @@ export default function InboxPage() {
         {/* RIGHT PANEL: Prospect Details & Campaign Context */}
         {/* ============================================================================== */}
         {activeReply && (
-          <div className="hidden lg:flex w-72 flex-col border-l border-slate-200 bg-white p-4 overflow-y-auto shrink-0 space-y-5">
+          <div className="hidden lg:flex w-72 flex-col border-l border-zinc-800 bg-zinc-950 p-4 overflow-y-auto shrink-0 space-y-5">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono mb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 font-mono mb-3">
                 Contact Details
               </h3>
 
               <div className="space-y-3">
                 {/* Prospect Name */}
                 <div className="flex items-center gap-2.5">
-                  <User className="h-4 w-4 text-slate-400 shrink-0" />
+                  <User className="h-4 w-4 text-zinc-400 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-slate-400">Contact</p>
-                    <p className="text-xs font-bold text-slate-900 truncate">
+                    <p className="text-[10px] text-zinc-400">Contact</p>
+                    <p className="text-xs font-bold text-zinc-100 truncate">
                       {activeReply.prospectName}
                     </p>
                   </div>
@@ -863,21 +863,21 @@ export default function InboxPage() {
                 {/* Email */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Mail className="h-4 w-4 text-slate-400 shrink-0" />
+                    <Mail className="h-4 w-4 text-zinc-400 shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-[10px] text-slate-400">Email Address</p>
-                      <p className="text-xs font-medium text-slate-900 truncate">
+                      <p className="text-[10px] text-zinc-400">Email Address</p>
+                      <p className="text-xs font-medium text-zinc-100 truncate">
                         {activeReply.email}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => copyToClipboard(activeReply.email)}
-                    className="p-1 text-slate-400 hover:text-slate-700"
+                    className="p-1 text-zinc-400 hover:text-zinc-300"
                     title="Copy email address"
                   >
                     {copiedEmail ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <Check className="h-3.5 w-3.5 text-emerald-400" />
                     ) : (
                       <Copy className="h-3.5 w-3.5" />
                     )}
@@ -886,10 +886,10 @@ export default function InboxPage() {
 
                 {/* Company Name */}
                 <div className="flex items-center gap-2.5">
-                  <Building2 className="h-4 w-4 text-slate-400 shrink-0" />
+                  <Building2 className="h-4 w-4 text-zinc-400 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-slate-400">Company</p>
-                    <p className="text-xs font-semibold text-slate-900 truncate">
+                    <p className="text-[10px] text-zinc-400">Company</p>
+                    <p className="text-xs font-semibold text-zinc-100 truncate">
                       {activeReply.companyName}
                     </p>
                   </div>
@@ -899,10 +899,10 @@ export default function InboxPage() {
                 {activeReply.website && (
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <Globe className="h-4 w-4 text-slate-400 shrink-0" />
+                      <Globe className="h-4 w-4 text-zinc-400 shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-[10px] text-slate-400">Website</p>
-                        <p className="text-xs font-medium text-[#0e6de4] truncate">
+                        <p className="text-[10px] text-zinc-400">Website</p>
+                        <p className="text-xs font-medium text-blue-400 truncate">
                           {activeReply.website.replace(/^https?:\/\//, '')}
                         </p>
                       </div>
@@ -915,7 +915,7 @@ export default function InboxPage() {
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1 text-slate-400 hover:text-[#0e6de4]"
+                      className="p-1 text-zinc-400 hover:text-blue-400"
                       title="Open website"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -925,30 +925,30 @@ export default function InboxPage() {
               </div>
             </div>
 
-            <hr className="border-slate-100" />
+            <hr className="border-zinc-800" />
 
             {/* Campaign Information */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono mb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 font-mono mb-3">
                 Campaign Info
               </h3>
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2.5">
-                  <Tag className="h-4 w-4 text-slate-400 shrink-0" />
+                  <Tag className="h-4 w-4 text-zinc-400 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-slate-400">Campaign Name</p>
-                    <p className="text-xs font-semibold text-slate-900 truncate">
+                    <p className="text-[10px] text-zinc-400">Campaign Name</p>
+                    <p className="text-xs font-semibold text-zinc-100 truncate">
                       {activeReply.campaignName}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2.5">
-                  <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
+                  <Calendar className="h-4 w-4 text-zinc-400 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-slate-400">Received Date</p>
-                    <p className="text-xs font-medium text-slate-900 truncate">
+                    <p className="text-[10px] text-zinc-400">Received Date</p>
+                    <p className="text-xs font-medium text-zinc-100 truncate">
                       {activeReply.date}
                     </p>
                   </div>

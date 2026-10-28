@@ -396,23 +396,23 @@ export default function ImportLeadsPage() {
     <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans">
       {/* Top Breadcrumb & Title */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
-          <UploadCloud className="h-6 w-6 text-blue-600" />
+        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-100 flex items-center gap-2">
+          <UploadCloud className="h-6 w-6 text-blue-400" />
           Upload CSV/XLSX File
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500">
+        <p className="text-xs sm:text-sm text-zinc-400">
           Upload your prospect list to add leads to this campaign.
         </p>
       </div>
 
       {/* Sample dataset generation remains available through the existing service; the sample cards are intentionally hidden from this page. */}
-      {false && <Card className="glass-panel p-5 space-y-4 border-slate-200 bg-white shadow-xs">
+      {false && <Card className="glass-panel p-5 space-y-4 border-zinc-800 bg-zinc-950 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-700 font-mono flex items-center gap-1.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-purple-300 font-mono flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5" /> Download Example 16-Column Datasets (.CSV)
             </span>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Includes 12 standard account fields + 4 AI personalization columns: <code>Personalized Opening Line</code>, <code>Problem Paragraph</code>, <code>Pitch</code>, <code>CTA</code>.
             </p>
           </div>
@@ -421,7 +421,7 @@ export default function ImportLeadsPage() {
             variant="primary"
             size="sm"
             onClick={() => handleLoadSampleDataset('b2b-saas')}
-            className="text-xs font-bold bg-[#0B0F19] hover:bg-slate-800 text-white rounded-xl shadow-xs"
+            className="text-xs font-bold bg-[#0B0F19] hover:bg-zinc-900 text-white rounded-xl shadow-xs"
           >
             <Play className="h-3 w-3 mr-1 fill-current" />
             1-Click Load AI Sample Dataset
@@ -429,30 +429,30 @@ export default function ImportLeadsPage() {
         </div>
 
         {/* 3 Downloadable Cards */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 pt-2 border-t border-slate-100">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 pt-2 border-t border-zinc-800">
           {SAMPLE_DATASETS.map((ds) => (
             <div
               key={ds.id}
-              className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between space-y-3 hover:border-indigo-300 transition-colors shadow-xs"
+              className="p-3.5 rounded-2xl border border-zinc-800 bg-zinc-900/50 flex flex-col justify-between space-y-3 hover:border-indigo-800 transition-colors shadow-xs"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900">{ds.name}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-mono font-bold">
+                  <span className="text-xs font-bold text-zinc-100">{ds.name}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-900 text-purple-300 font-mono font-bold">
                     16 Fields
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1 leading-snug">{ds.description}</p>
+                <p className="text-[11px] text-zinc-400 mt-1 leading-snug">{ds.description}</p>
               </div>
 
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
+              <div className="flex items-center gap-2 pt-2 border-t border-zinc-800">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => downloadSampleCsv(ds.id)}
                   className="flex-1 text-[11px] h-7 px-2 font-semibold"
                 >
-                  <Download className="h-3 w-3 mr-1 text-purple-600" />
+                  <Download className="h-3 w-3 mr-1 text-purple-400" />
                   Download .CSV
                 </Button>
                 <Button
@@ -472,7 +472,7 @@ export default function ImportLeadsPage() {
       {/* Main Upload Dropzone */}
       {!file && (
         <Card
-          className="glass-panel-interactive border-2 border-dashed border-slate-300 hover:border-blue-500 p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-white"
+          className="glass-panel-interactive border-2 border-dashed border-zinc-700 hover:border-blue-500 p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-zinc-950"
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
@@ -485,17 +485,17 @@ export default function ImportLeadsPage() {
             className="hidden"
             onChange={handleFileChange}
           />
-          <div className="h-16 w-16 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center mb-4 shadow-sm">
+          <div className="h-16 w-16 rounded-2xl bg-blue-950 border border-blue-900 text-blue-400 flex items-center justify-center mb-4 shadow-sm">
             <UploadCloud className="h-8 w-8" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900">Upload Target Lead Spreadsheet</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm">
+          <h3 className="text-lg font-bold text-zinc-100">Upload Target Lead Spreadsheet</h3>
+          <p className="text-xs text-zinc-400 mt-1 max-w-sm">
             Drag and drop your <strong>.csv</strong> or <strong>.xlsx</strong> file here, or click to browse.
           </p>
-          <p className="mt-2 max-w-md text-xs text-slate-400">Website is required for campaigns. Add more fields for better AI personalization.</p>
-          <p className="mt-2 text-xs text-slate-500">Website is required. Other fields are optional.</p>
+          <p className="mt-2 max-w-md text-xs text-zinc-400">Website is required for campaigns. Add more fields for better AI personalization.</p>
+          <p className="mt-2 text-xs text-zinc-400">Website is required. Other fields are optional.</p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-6 text-xs text-slate-500 font-mono">
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-6 text-xs text-zinc-400 font-mono">
             <span>✓ Scrambled Header Auto-Detection</span>
             <span>•</span>
             <span>✓ Custom Opening Line / Pitch Columns</span>
@@ -506,7 +506,7 @@ export default function ImportLeadsPage() {
             variant="outline"
             size="sm"
             onClick={(event) => { event.stopPropagation(); downloadSampleCsv('b2b-saas'); }}
-            className="mt-5 border-blue-200 text-xs font-semibold text-[#0e6de4] hover:bg-blue-50"
+            className="mt-5 border-blue-900 text-xs font-semibold text-blue-400 hover:bg-blue-950"
           >
             <Download className="mr-1.5 h-3.5 w-3.5" /> Need a sample? Download Example CSV/XLSX
           </Button>
@@ -517,13 +517,13 @@ export default function ImportLeadsPage() {
       {file && (
         <div className="space-y-6">
           {/* File summary & Lead List Name input */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-slate-200 bg-white shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-zinc-800 bg-zinc-950 shadow-xs">
             <div className="flex items-center gap-3.5">
-              <div className="h-11 w-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="h-11 w-11 rounded-xl bg-blue-950 text-blue-400 flex items-center justify-center shrink-0">
                 <FileSpreadsheet className="h-6 w-6" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
                   Lead List / File Name (Used to select in Campaigns)
                 </label>
                 <input
@@ -531,7 +531,7 @@ export default function ImportLeadsPage() {
                   value={listName}
                   onChange={(e) => setListName(e.target.value)}
                   placeholder="e.g. Fintech CEOs USA"
-                  className="w-full sm:w-72 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 font-bold focus:border-blue-500 focus:outline-none"
+                  className="w-full sm:w-72 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-100 font-bold focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -541,9 +541,9 @@ export default function ImportLeadsPage() {
                 variant="outline"
                 size="sm"
                 onClick={handleAutoDetectMappings}
-                className="text-xs text-blue-700 hover:text-blue-900 font-bold"
+                className="text-xs text-blue-300 hover:text-blue-200 font-bold"
               >
-                <Shuffle className="h-3.5 w-3.5 mr-1 text-blue-600" />
+                <Shuffle className="h-3.5 w-3.5 mr-1 text-blue-400" />
                 Auto-Detect Headers
               </Button>
 
@@ -556,7 +556,7 @@ export default function ImportLeadsPage() {
                   setSampleRows([]);
                   setImportResult(null);
                 }}
-                className="text-xs text-slate-500 hover:text-slate-900"
+                className="text-xs text-zinc-400 hover:text-zinc-100"
               >
                 <RotateCcw className="h-3.5 w-3.5 mr-1" />
                 Change File
@@ -565,24 +565,24 @@ export default function ImportLeadsPage() {
           </div>
 
           {/* Import Filters Bar (Manyready Style Filter Rules) */}
-          <Card className="glass-panel p-5 space-y-3 border-slate-200 bg-slate-50/70">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Filter className="h-3.5 w-3.5 text-blue-600" />
+          <Card className="glass-panel p-5 space-y-3 border-zinc-800 bg-zinc-900/70">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+              <span className="text-xs font-bold text-zinc-100 flex items-center gap-1.5">
+                <Filter className="h-3.5 w-3.5 text-blue-400" />
                 Lead Ingestion Filters & Exclusions
               </span>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-[11px] font-mono text-zinc-400">
                 Total Rows Detected: <strong>{totalRows}</strong>
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div>
-                <label className="text-[11px] font-semibold text-slate-600">Filter by Industry:</label>
+                <label className="text-[11px] font-semibold text-zinc-400">Filter by Industry:</label>
                 <select
                   value={filterIndustry}
                   onChange={(e) => setFilterIndustry(e.target.value)}
-                  className="w-full mt-1 rounded-xl border border-slate-300 bg-white p-2 text-xs text-slate-800 focus:outline-none"
+                  className="w-full mt-1 rounded-xl border border-zinc-700 bg-zinc-950 p-2 text-xs text-zinc-200 focus:outline-none"
                 >
                   <option value="ALL">All Industries (No Filter)</option>
                   <option value="SaaS">SaaS & Software</option>
@@ -593,11 +593,11 @@ export default function ImportLeadsPage() {
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-600">Filter by Country:</label>
+                <label className="text-[11px] font-semibold text-zinc-400">Filter by Country:</label>
                 <select
                   value={filterCountry}
                   onChange={(e) => setFilterCountry(e.target.value)}
-                  className="w-full mt-1 rounded-xl border border-slate-300 bg-white p-2 text-xs text-slate-800 focus:outline-none"
+                  className="w-full mt-1 rounded-xl border border-zinc-700 bg-zinc-950 p-2 text-xs text-zinc-200 focus:outline-none"
                 >
                   <option value="ALL">All Countries (Worldwide)</option>
                   <option value="USA">United States</option>
@@ -613,28 +613,28 @@ export default function ImportLeadsPage() {
                     type="checkbox"
                     checked={filterRequireWebsite}
                     onChange={(e) => setFilterRequireWebsite(e.target.checked)}
-                    className="h-4 w-4 rounded text-blue-600"
+                    className="h-4 w-4 rounded text-blue-400"
                   />
-                  <span className="text-xs font-bold text-slate-700">Require Valid Website / Domain</span>
+                  <span className="text-xs font-bold text-zinc-300">Require Valid Website / Domain</span>
                 </label>
               </div>
             </div>
           </Card>
 
           {/* 1. Standard 12 Field Mappings */}
-          <Card className="glass-panel p-6 space-y-5 border-slate-200 bg-white">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <Card className="glass-panel p-6 space-y-5 border-zinc-800 bg-zinc-950">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Table className="h-4 w-4 text-blue-600" />
+                <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+                  <Table className="h-4 w-4 text-blue-400" />
                   12 Standard Outreach Lead Fields
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-zinc-400 mt-0.5">
                   Matches your spreadsheet columns to standard B2B account properties.
                 </p>
               </div>
 
-              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-900">
                 ✓ Scrambled Auto-Detect Active
               </span>
             </div>
@@ -644,24 +644,24 @@ export default function ImportLeadsPage() {
                 <div
                   key={f.key}
                   className={`space-y-1.5 p-3 rounded-2xl border ${
-                    f.required ? 'border-blue-200 bg-blue-50/30' : 'border-slate-200 bg-slate-50/50'
+                    f.required ? 'border-blue-900 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900/50'
                   }`}
                 >
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                  <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
                     <span>{f.label}</span>
                     {f.required ? (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 font-mono font-bold">
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-900 text-rose-300 font-mono font-bold">
                         REQUIRED
                       </span>
                     ) : (
-                      <span className="text-[9px] text-slate-400 font-mono">OPTIONAL</span>
+                      <span className="text-[9px] text-zinc-400 font-mono">OPTIONAL</span>
                     )}
                   </label>
 
                   <select
                     value={mapping[f.key] || ''}
                     onChange={(e) => handleMappingChange(f.key, e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-xs text-zinc-100 focus:border-blue-500 focus:outline-none"
                   >
                     <option value="">-- Not Mapped --</option>
                     {headers.map((h) => (
@@ -676,14 +676,14 @@ export default function ImportLeadsPage() {
           </Card>
 
           {/* 2. Custom AI Personalization Message Columns (Dynamic Adder) */}
-          <Card className="glass-panel p-6 space-y-5 border-purple-200 bg-purple-50/40">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100 pb-3">
+          <Card className="glass-panel p-6 space-y-5 border-purple-900 bg-purple-950/40">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-900 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-purple-950 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  <Sparkles className="h-4 w-4 text-purple-400" />
                   Custom Personalized Message Columns (Manyready System)
                 </h3>
-                <p className="text-xs text-purple-800 mt-0.5">
+                <p className="text-xs text-purple-300 mt-0.5">
                   Map custom columns from your spreadsheet or add new custom variables to use in message bodies.
                 </p>
               </div>
@@ -702,32 +702,32 @@ export default function ImportLeadsPage() {
               {customColumns.map((col) => (
                 <div
                   key={col.id}
-                  className="space-y-2 p-3.5 rounded-2xl border border-purple-200 bg-white shadow-xs"
+                  className="space-y-2 p-3.5 rounded-2xl border border-purple-900 bg-zinc-950 shadow-xs"
                 >
                   <div className="flex items-center justify-between">
                     <input
                       type="text"
                       value={col.label}
                       onChange={(e) => handleUpdateCustomColumn(col.id, 'label', e.target.value)}
-                      className="text-xs font-bold text-purple-950 border-b border-dashed border-purple-300 focus:border-purple-600 focus:outline-none bg-transparent w-36"
+                      className="text-xs font-bold text-purple-950 border-b border-dashed border-purple-800 focus:border-purple-600 focus:outline-none bg-transparent w-36"
                     />
                     <button
                       onClick={() => handleRemoveCustomColumn(col.id)}
-                      className="text-slate-300 hover:text-rose-600 p-0.5"
+                      className="text-zinc-400 hover:text-rose-400 p-0.5"
                       title="Remove column"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
 
-                  <span className="text-[10px] font-mono text-purple-600 font-bold block">
+                  <span className="text-[10px] font-mono text-purple-400 font-bold block">
                     Variable: {col.tag}
                   </span>
 
                   <select
                     value={col.sourceColumn}
                     onChange={(e) => handleUpdateCustomColumn(col.id, 'sourceColumn', e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-xs text-zinc-100 focus:border-purple-500 focus:outline-none"
                   >
                     <option value="">-- Select Sheet Column --</option>
                     {headers.map((h) => (
@@ -741,7 +741,7 @@ export default function ImportLeadsPage() {
             </div>
 
             {/* Execution & Save List Button */}
-            <div className="flex justify-end pt-3 border-t border-purple-100">
+            <div className="flex justify-end pt-3 border-t border-purple-900">
               <Button
                 variant="primary"
                 size="md"
@@ -757,16 +757,16 @@ export default function ImportLeadsPage() {
 
           {/* Success Banner */}
           {importSuccess && importResult && (
-            <Card className="glass-panel p-6 border-emerald-300 bg-emerald-50/60 space-y-4">
+            <Card className="glass-panel p-6 border-emerald-800 bg-emerald-950/60 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-2xl bg-emerald-900 text-emerald-300 flex items-center justify-center">
                   <Check className="h-5 w-5 stroke-[3]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-emerald-950">
                     Lead List &quot;{listName}&quot; Saved & Ingested Successfully!
                   </h3>
-                  <p className="text-xs text-emerald-800">
+                  <p className="text-xs text-emerald-300">
                     {importResult?.validCount || importResult?.validLeads?.length || 0} valid leads ready with 12 standard fields + {customColumns.length} custom AI message columns.
                   </p>
                 </div>

@@ -105,21 +105,21 @@ export function SavedTemplatesDropdown({
         type="button"
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-1.5 text-xs font-semibold cursor-pointer gap-1.5 text-slate-700 hover:text-slate-900 border-slate-300"
+        className="px-3 py-1.5 text-xs font-semibold cursor-pointer gap-1.5 text-zinc-300 hover:text-zinc-100 border-zinc-700"
       >
-        <FileText className="h-3.5 w-3.5 text-[#0e6de4]" />
+        <FileText className="h-3.5 w-3.5 text-blue-400" />
         <span>Saved Templates</span>
-        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
       </Button>
 
       {isOpen && (
-        <div className="absolute left-0 sm:right-0 sm:left-auto top-10 z-40 w-[340px] sm:w-[400px] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 sm:right-0 sm:left-auto top-10 z-40 w-[340px] sm:w-[400px] rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
             <div>
-              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h4 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
                 Saved Message Templates
-                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0e6de4]">
+                <span className="rounded-full bg-blue-950 px-2 py-0.5 text-[10px] font-bold text-blue-400">
                   {templates.length}
                 </span>
               </h4>
@@ -127,7 +127,7 @@ export function SavedTemplatesDropdown({
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+              className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-400 transition-colors cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -136,25 +136,25 @@ export function SavedTemplatesDropdown({
           {/* Search & Category Filter Pills */}
           <div className="mt-3 space-y-2.5">
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search templates..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-9 pr-3 py-1.5 text-xs outline-none focus:border-blue-500 focus:bg-white font-medium"
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 pl-9 pr-3 py-1.5 text-xs outline-none focus:border-blue-500 focus:bg-zinc-950 font-medium"
               />
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2">
+            <div className="flex items-center gap-1.5 border-b border-zinc-800 pb-2">
               <button
                 type="button"
                 onClick={() => setCategoryFilter('all')}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors cursor-pointer ${
                   categoryFilter === 'all'
                     ? 'bg-[#0e6de4] text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
                 }`}
               >
                 All
@@ -165,7 +165,7 @@ export function SavedTemplatesDropdown({
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors cursor-pointer ${
                   categoryFilter === 'initial'
                     ? 'bg-[#0e6de4] text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
                 }`}
               >
                 Initial Message
@@ -176,7 +176,7 @@ export function SavedTemplatesDropdown({
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors cursor-pointer ${
                   categoryFilter === 'followup'
                     ? 'bg-[#0e6de4] text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
                 }`}
               >
                 Follow-up
@@ -188,11 +188,11 @@ export function SavedTemplatesDropdown({
           <div className="mt-2 max-h-[300px] overflow-y-auto space-y-2 pr-1">
             {filteredTemplates.length === 0 ? (
               <div className="py-8 text-center">
-                <FileText className="mx-auto h-8 w-8 text-slate-300 mb-2" />
+                <FileText className="mx-auto h-8 w-8 text-zinc-400 mb-2" />
                 {templates.length === 0 ? (
                   <>
-                    <p className="text-xs font-bold text-slate-800">No saved message templates yet.</p>
-                    <p className="mt-1 text-[11px] text-slate-500 max-w-[240px] mx-auto">
+                    <p className="text-xs font-bold text-zinc-200">No saved message templates yet.</p>
+                    <p className="mt-1 text-[11px] text-zinc-400 max-w-[240px] mx-auto">
                       Save a message as a template to reuse it in future campaigns.
                     </p>
                     <Button
@@ -208,7 +208,7 @@ export function SavedTemplatesDropdown({
                     </Button>
                   </>
                 ) : (
-                  <p className="text-xs font-medium text-slate-500">No templates match &quot;{searchQuery}&quot;</p>
+                  <p className="text-xs font-medium text-zinc-400">No templates match &quot;{searchQuery}&quot;</p>
                 )}
               </div>
             ) : (
@@ -217,30 +217,30 @@ export function SavedTemplatesDropdown({
                 return (
                   <div
                     key={tpl.id}
-                    className="group rounded-xl border border-slate-200 bg-white p-3 hover:border-blue-300 hover:shadow-xs transition-all"
+                    className="group rounded-xl border border-zinc-800 bg-zinc-950 p-3 hover:border-blue-800 hover:shadow-xs transition-all"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <h5 className="text-xs font-bold text-slate-900 truncate">{tpl.name}</h5>
+                          <h5 className="text-xs font-bold text-zinc-100 truncate">{tpl.name}</h5>
                           {tpl.category !== 'general' && (
-                            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600 uppercase">
+                            <span className="rounded-md bg-zinc-900 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-400 uppercase">
                               {tpl.category === 'initial' ? 'Initial' : 'Follow-up'}
                             </span>
                           )}
                         </div>
 
                         {tpl.subject && (
-                          <p className="mt-0.5 text-[11px] font-semibold text-slate-700 truncate">
-                            <span className="text-slate-400 font-normal">Subject:</span> {tpl.subject}
+                          <p className="mt-0.5 text-[11px] font-semibold text-zinc-300 truncate">
+                            <span className="text-zinc-400 font-normal">Subject:</span> {tpl.subject}
                           </p>
                         )}
 
-                        <p className="mt-1 text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                        <p className="mt-1 text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
                           &quot;{previewSnippet}&quot;
                         </p>
 
-                        <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-400">
+                        <div className="mt-2 flex items-center gap-3 text-[10px] text-zinc-400">
                           {tpl.updatedAt && (
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -255,13 +255,13 @@ export function SavedTemplatesDropdown({
                     </div>
 
                     {/* Action Bar */}
-                    <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2">
+                    <div className="mt-3 flex items-center justify-between border-t border-zinc-800 pt-2">
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
                           title="Edit Template"
                           onClick={() => onEditTemplate(tpl)}
-                          className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+                          className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-300 transition-colors cursor-pointer"
                         >
                           <Edit3 className="h-3.5 w-3.5" />
                         </button>
@@ -269,7 +269,7 @@ export function SavedTemplatesDropdown({
                           type="button"
                           title="Duplicate Template"
                           onClick={() => onDuplicateTemplate(tpl.id)}
-                          className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+                          className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-300 transition-colors cursor-pointer"
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </button>
@@ -277,7 +277,7 @@ export function SavedTemplatesDropdown({
                           type="button"
                           title="Delete Template"
                           onClick={() => onDeleteTemplate(tpl)}
-                          className="rounded-lg p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+                          className="rounded-lg p-1 text-zinc-400 hover:bg-red-950 hover:text-red-400 transition-colors cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

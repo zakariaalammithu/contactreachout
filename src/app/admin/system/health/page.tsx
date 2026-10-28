@@ -111,32 +111,32 @@ export default function SystemHealthPage() {
     switch (status) {
       case 'GREEN':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-emerald-950 text-emerald-300 border border-emerald-900 shadow-2xs">
             <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" /> HEALTHY
           </span>
         );
       case 'YELLOW':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-amber-950 text-amber-300 border border-amber-900 shadow-2xs">
             <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" /> WARNING
           </span>
         );
       case 'RED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-rose-950 text-rose-300 border border-rose-900 shadow-2xs">
             <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" /> ERROR
           </span>
         );
       case 'CHECKING':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
-            <RefreshCw className="h-3 w-3 animate-spin shrink-0 text-[#0e6de4]" /> CHECKING
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-blue-950 text-blue-300 border border-blue-900 shadow-2xs">
+            <RefreshCw className="h-3 w-3 animate-spin shrink-0 text-blue-400" /> CHECKING
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-slate-100 text-slate-600 border border-slate-200 shadow-2xs">
-            <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" /> NOT CONFIGURED
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-zinc-900 text-zinc-400 border border-zinc-800 shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-zinc-700 shrink-0" /> NOT CONFIGURED
           </span>
         );
     }
@@ -149,13 +149,13 @@ export default function SystemHealthPage() {
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto pb-10">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-xs">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2.5">
-            <Activity className="h-6 w-6 text-[#0e6de4]" />
+          <h1 className="text-2xl font-black tracking-tight text-zinc-100 flex items-center gap-2.5">
+            <Activity className="h-6 w-6 text-blue-400" />
             System Health & Diagnostic Telemetry
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-medium">
             Real-time latency monitoring, API status probes, and multi-service health matrix.
           </p>
         </div>
@@ -172,44 +172,44 @@ export default function SystemHealthPage() {
       </div>
 
       {/* Overall Health Card */}
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+      <div className="rounded-2xl border border-emerald-900 bg-emerald-950/50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center gap-3.5">
-          <div className="h-11 w-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center border border-emerald-200 shrink-0">
+          <div className="h-11 w-11 rounded-xl bg-emerald-900 text-emerald-300 flex items-center justify-center border border-emerald-900 shrink-0">
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="font-extrabold text-[#111827] text-sm">
+            <h3 className="font-extrabold text-zinc-100 text-sm">
               {warningCount > 0 ? 'Subsystem Warnings Detected' : 'All Core Subsystems Operational'}
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5 font-medium">
-              Last diagnostic probe completed: <span className="font-mono text-slate-700 font-bold">{data?.timestamp ? new Date(data.timestamp).toLocaleTimeString() : 'Just now'}</span>
+            <p className="text-xs text-zinc-400 mt-0.5 font-medium">
+              Last diagnostic probe completed: <span className="font-mono text-zinc-300 font-bold">{data?.timestamp ? new Date(data.timestamp).toLocaleTimeString() : 'Just now'}</span>
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 text-xs font-mono font-bold shrink-0">
-          <span className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <span className="px-3 py-1.5 rounded-lg bg-emerald-900 text-emerald-300 border border-emerald-900">
             {healthyCount} Healthy
           </span>
           {warningCount > 0 && (
-            <span className="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">
+            <span className="px-3 py-1.5 rounded-lg bg-amber-900 text-amber-300 border border-amber-900">
               {warningCount} Warning
             </span>
           )}
-          <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="px-3 py-1.5 rounded-lg bg-zinc-900 text-zinc-300 border border-zinc-800">
             {notConfiguredCount} Optional Inactive
           </span>
         </div>
       </div>
 
       {/* 10 Canonical Components Matrix Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-800/80 bg-zinc-900/50 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-extrabold text-[#111827]">Infrastructure Health Matrix</h2>
-            <p className="text-xs text-slate-500 font-medium">Canonical subsystem diagnostic telemetry ({canonicalComponents.length} verified probes)</p>
+            <h2 className="text-sm font-extrabold text-zinc-100">Infrastructure Health Matrix</h2>
+            <p className="text-xs text-zinc-400 font-medium">Canonical subsystem diagnostic telemetry ({canonicalComponents.length} verified probes)</p>
           </div>
-          <span className="text-[11px] font-mono font-bold text-slate-600 bg-slate-200/60 px-2.5 py-1 rounded-md">
+          <span className="text-[11px] font-mono font-bold text-zinc-400 bg-zinc-800/60 px-2.5 py-1 rounded-md">
             Canonical Views: {canonicalComponents.length}
           </span>
         </div>
@@ -217,7 +217,7 @@ export default function SystemHealthPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase text-[11px]">
+              <tr className="bg-zinc-900 border-b border-zinc-800 text-zinc-300 font-bold uppercase text-[11px]">
                 <th className="px-6 py-4">Subsystem</th>
                 <th className="px-5 py-4">Category</th>
                 <th className="px-5 py-4">Status</th>
@@ -225,22 +225,22 @@ export default function SystemHealthPage() {
                 <th className="px-6 py-4">Diagnostic Message</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-zinc-800">
               {canonicalComponents.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-6 py-4 font-bold text-[#111827] whitespace-nowrap align-middle">
+                <tr key={c.id} className="hover:bg-zinc-900/80 transition-colors">
+                  <td className="px-6 py-4 font-bold text-zinc-100 whitespace-nowrap align-middle">
                     {c.name}
                   </td>
-                  <td className="px-5 py-4 font-mono text-slate-500 uppercase text-[10px] font-bold whitespace-nowrap align-middle">
+                  <td className="px-5 py-4 font-mono text-zinc-400 uppercase text-[10px] font-bold whitespace-nowrap align-middle">
                     {c.category}
                   </td>
                   <td className="px-5 py-4 whitespace-nowrap align-middle">
                     {isLoading ? getStatusBadge('CHECKING') : getStatusBadge(c.status)}
                   </td>
-                  <td className="px-5 py-4 font-mono font-semibold text-slate-700 whitespace-nowrap align-middle">
+                  <td className="px-5 py-4 font-mono font-semibold text-zinc-300 whitespace-nowrap align-middle">
                     {c.latencyMs > 0 ? `${c.latencyMs} ms` : '—'}
                   </td>
-                  <td className="px-6 py-4 text-slate-600 font-medium text-xs leading-relaxed max-w-md break-words align-middle">
+                  <td className="px-6 py-4 text-zinc-400 font-medium text-xs leading-relaxed max-w-md break-words align-middle">
                     {c.message}
                   </td>
                 </tr>

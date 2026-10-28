@@ -21,7 +21,7 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 export function Badge({ children, variant, status, className, ...props }: BadgeProps) {
-  let badgeStyle = 'bg-slate-800/80 text-slate-300 border-slate-700/60';
+  let badgeStyle = 'bg-zinc-900/80 text-zinc-400 border-zinc-700/60';
   let IconComponent: React.ElementType | null = null;
 
   if (status) {
@@ -85,7 +85,7 @@ export function Badge({ children, variant, status, className, ...props }: BadgeP
       case 'NO_CONTACT_PAGE':
       case 'NO_FORM':
       case 'TIMEOUT':
-        badgeStyle = 'bg-slate-800 text-slate-400 border-slate-700/80';
+        badgeStyle = 'bg-zinc-900 text-zinc-400 border-zinc-700/80';
         IconComponent = HelpCircle;
         break;
 
@@ -93,17 +93,17 @@ export function Badge({ children, variant, status, className, ...props }: BadgeP
       case 'WAITING':
       case 'QUEUED':
       case 'DRAFT':
-        badgeStyle = 'bg-slate-700/40 text-slate-300 border-slate-600/40';
+        badgeStyle = 'bg-zinc-800/40 text-zinc-400 border-zinc-600/40';
         IconComponent = Clock;
         break;
 
       case 'CANCELLED':
-        badgeStyle = 'bg-slate-800/80 text-slate-500 border-slate-700';
+        badgeStyle = 'bg-zinc-900/80 text-zinc-400 border-zinc-700';
         IconComponent = StopCircle;
         break;
 
       default:
-        badgeStyle = 'bg-slate-800/80 text-slate-300 border-slate-700/60';
+        badgeStyle = 'bg-zinc-900/80 text-zinc-400 border-zinc-700/60';
         break;
     }
   } else if (variant) {
@@ -127,7 +127,7 @@ export function Badge({ children, variant, status, className, ...props }: BadgeP
         badgeStyle = 'bg-purple-500/15 text-purple-400 border-purple-500/30';
         break;
       case 'outline':
-        badgeStyle = 'bg-transparent text-slate-300 border-slate-700';
+        badgeStyle = 'bg-transparent text-zinc-400 border-zinc-700';
         break;
     }
   }

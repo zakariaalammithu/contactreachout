@@ -211,7 +211,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full shrink-0 items-center justify-between border-b border-slate-200 bg-white/95 px-4 sm:px-6 backdrop-blur-md font-sans">
+    <header className="sticky top-0 z-30 flex h-16 w-full shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-950/95 px-4 sm:px-6 backdrop-blur-md font-sans">
       {/* Hidden File Input for Import Leads button */}
       <input
         type="file"
@@ -225,19 +225,19 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileMenu}
-          className="p-1.5 text-slate-500 hover:text-slate-900 md:hidden rounded-lg hover:bg-slate-100"
+          className="p-1.5 text-zinc-400 hover:text-zinc-100 md:hidden rounded-lg hover:bg-zinc-900"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
         </button>
 
         {/* Dynamic Navigation Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-          <Link href="/dashboard" className="hover:text-blue-600 flex items-center gap-1 transition-colors">
+        <nav className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium">
+          <Link href="/dashboard" className="hover:text-blue-400 flex items-center gap-1 transition-colors">
             <Home className="h-3.5 w-3.5" />
           </Link>
-          <ChevronRight className="h-3 w-3 text-slate-300" />
-          <span className="capitalize font-semibold text-slate-800">
+          <ChevronRight className="h-3 w-3 text-zinc-400" />
+          <span className="capitalize font-semibold text-zinc-200">
             {pathname === '/dashboard' ? 'Dashboard' : pathname.replace('/', '').replace(/-/g, ' ')}
           </span>
         </nav>
@@ -254,9 +254,9 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
         />
 
         {pathname.startsWith('/campaigns/new') && (
-          <div className="flex items-center gap-2 rounded-xl border border-dashed border-blue-300 bg-blue-50/60 px-3.5 py-1.5 text-xs font-bold text-blue-800 shadow-2xs">
-            <span className="text-[10px] uppercase font-mono text-blue-500 font-bold">Campaign Name:</span>
-            <span className="font-bold text-blue-950 text-xs font-sans max-w-[200px] truncate">
+          <div className="flex items-center gap-2 rounded-xl border border-dashed border-blue-800 bg-blue-950/60 px-3.5 py-1.5 text-xs font-bold text-blue-300 shadow-2xs">
+            <span className="text-[10px] uppercase font-mono text-blue-400 font-bold">Campaign Name:</span>
+            <span className="font-bold text-white text-xs font-sans max-w-[200px] truncate">
               {currentHeaderCampName || 'New campaign'}
             </span>
           </div>
@@ -268,12 +268,12 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
           <button
             type="button"
             onClick={() => setUserMenuOpen((open) => !open)}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs"
+            className="flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-1.5 text-xs font-bold text-zinc-200 hover:bg-zinc-900 hover:border-zinc-700 transition-all cursor-pointer shadow-2xs"
           >
             <span className="truncate max-w-[150px] sm:max-w-[220px]">
               {userProfile?.name || 'Zakaria Alam Mithu'}
             </span>
-            <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {/* Notifications Button */}
@@ -282,7 +282,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
               type="button"
               onClick={() => setNotificationOpen((open) => !open)}
               aria-label="Notifications"
-              className="relative grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-[#0e6de4] transition-colors cursor-pointer"
+              className="relative grid h-9 w-9 place-items-center rounded-full border border-zinc-800 bg-zinc-950 text-zinc-400 hover:bg-zinc-900 hover:text-blue-400 transition-colors cursor-pointer"
             >
               <Bell className="h-4 w-4" />
               {notifications.some((item) => !item.read) && (
@@ -290,9 +290,9 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
               )}
             </button>
             {notificationOpen && (
-              <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <p className="text-sm font-extrabold text-slate-900">Notifications</p>
+              <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="border-b border-zinc-800 px-4 py-3">
+                  <p className="text-sm font-extrabold text-zinc-100">Notifications</p>
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length ? (
@@ -314,16 +314,16 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
                             );
                           }
                         }}
-                        className={`block w-full border-b border-slate-100 px-4 py-3 text-left ${
-                          item.read ? 'bg-white' : 'bg-blue-50/70'
+                        className={`block w-full border-b border-zinc-800 px-4 py-3 text-left ${
+                          item.read ? 'bg-zinc-950' : 'bg-blue-950/70'
                         }`}
                       >
-                        <p className="text-xs font-black text-slate-900">{item.title}</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-600">{item.message}</p>
+                        <p className="text-xs font-black text-zinc-100">{item.title}</p>
+                        <p className="mt-1 text-xs leading-5 text-zinc-400">{item.message}</p>
                       </button>
                     ))
                   ) : (
-                    <p className="p-6 text-center text-sm text-slate-500">No new notifications.</p>
+                    <p className="p-6 text-center text-sm text-zinc-400">No new notifications.</p>
                   )}
                 </div>
               </div>
@@ -342,44 +342,44 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
 
           {/* Manyreach-Style Profile / Account Switcher Dropdown */}
           {userMenuOpen && (
-            <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl bg-white p-3 shadow-2xl border border-slate-200 animate-in fade-in slide-in-from-top-2 duration-150 font-sans text-slate-800">
+            <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl bg-zinc-950 p-3 shadow-2xl border border-zinc-800 animate-in fade-in slide-in-from-top-2 duration-150 font-sans text-zinc-200">
               {/* SECTION 1: SELECT YOUR ACCOUNT */}
               <div className="px-2 py-1 mb-1">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
                   SELECT YOUR ACCOUNT
                 </p>
               </div>
 
               {/* Active Account Item */}
-              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-blue-50/80 border border-blue-100 text-xs font-semibold text-slate-900">
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-blue-950/80 border border-blue-900 text-xs font-semibold text-zinc-100">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0e6de4] text-white font-bold text-xs shrink-0 shadow-2xs">
                   <User className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                  <p className="font-bold text-zinc-100 truncate flex items-center gap-1.5">
                     <span className="truncate">{userProfile?.name || 'Zakaria Alam Mithu'}</span>
-                    <span className="text-[10px] font-mono font-bold bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded-md shrink-0">
+                    <span className="text-[10px] font-mono font-bold bg-blue-900 text-blue-300 px-1.5 py-0.2 rounded-md shrink-0">
                       [main]
                     </span>
                   </p>
-                  <p className="text-[11px] text-slate-500 font-normal truncate">
+                  <p className="text-[11px] text-zinc-400 font-normal truncate">
                     {userProfile?.email || 'hello@contactreachout.com'}
                   </p>
                 </div>
-                <Check className="h-4 w-4 text-blue-600 shrink-0 stroke-[2.5]" />
+                <Check className="h-4 w-4 text-blue-400 shrink-0 stroke-[2.5]" />
               </div>
 
-              <div className="my-2.5 border-b border-slate-100" />
+              <div className="my-2.5 border-b border-zinc-800" />
 
               {/* SECTION 2: WORKSPACE ACCOUNTS */}
               <div className="px-2 py-1 flex items-center justify-between">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
                   WORKSPACE ACCOUNTS
                 </p>
                 <Link
                   href="/settings"
                   onClick={() => setUserMenuOpen(false)}
-                  className="text-slate-400 hover:text-slate-700 transition-colors"
+                  className="text-zinc-400 hover:text-zinc-300 transition-colors"
                   title="Workspace Settings"
                 >
                   <Settings className="h-3.5 w-3.5" />
@@ -390,27 +390,27 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
                 <Link
                   href="/profile"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 rounded-xl transition-colors"
                 >
-                  <UserCheck className="h-4 w-4 text-slate-400" />
+                  <UserCheck className="h-4 w-4 text-zinc-400" />
                   <span>Account & Profile Settings</span>
                 </Link>
 
                 <Link
                   href="/settings"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 rounded-xl transition-colors"
                 >
-                  <Building2 className="h-4 w-4 text-slate-400" />
+                  <Building2 className="h-4 w-4 text-zinc-400" />
                   <span>Manage Workspaces</span>
                 </Link>
               </div>
 
-              <div className="my-2.5 border-b border-slate-100" />
+              <div className="my-2.5 border-b border-zinc-800" />
 
               {/* SECTION 3: HELP & LEGAL */}
               <div className="px-2 py-1 flex items-center justify-between">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
                   HELP & LEGAL
                 </p>
               </div>
@@ -419,32 +419,32 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
                 <Link
                   href="/help"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 rounded-xl transition-colors"
                 >
-                  <LifeBuoy className="h-4 w-4 text-slate-400" />
+                  <LifeBuoy className="h-4 w-4 text-zinc-400" />
                   <span>Help & Support</span>
                 </Link>
 
                 <Link
                   href="/terms"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 rounded-xl transition-colors"
                 >
-                  <Scale className="h-4 w-4 text-slate-400" />
+                  <Scale className="h-4 w-4 text-zinc-400" />
                   <span>Terms & Conditions</span>
                 </Link>
 
                 <Link
                   href="/privacy"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 rounded-xl transition-colors"
                 >
-                  <LockKeyhole className="h-4 w-4 text-slate-400" />
+                  <LockKeyhole className="h-4 w-4 text-zinc-400" />
                   <span>Privacy Policy</span>
                 </Link>
               </div>
 
-              <div className="my-2.5 border-b border-slate-100" />
+              <div className="my-2.5 border-b border-zinc-800" />
 
               {/* SECTION 4: LOG OUT */}
               <button
@@ -453,9 +453,9 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
                   setUserMenuOpen(false);
                   setShowLogoutModal(true);
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-400 hover:bg-rose-950 rounded-xl transition-colors cursor-pointer"
               >
-                <LogOut className="h-4 w-4 text-rose-500" />
+                <LogOut className="h-4 w-4 text-rose-400" />
                 <span>Log Out</span>
               </button>
             </div>
@@ -466,21 +466,21 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
 
       {/* CREATE NEW CAMPAIGN NAME PROMPT MODAL */}
       {showNameModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-150 font-sans text-left">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-150 font-sans text-left">
+          <div className="w-full max-w-md rounded-3xl bg-zinc-950 p-6 shadow-2xl border border-zinc-800 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+                <div className="h-10 w-10 rounded-2xl bg-blue-950 border border-blue-900 flex items-center justify-center text-blue-400 shrink-0">
                   <Rocket className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Create New Campaign</h3>
-                  <p className="text-xs text-slate-500 font-medium">Please enter a campaign name to get started.</p>
+                  <h3 className="text-base font-bold text-zinc-100">Create New Campaign</h3>
+                  <p className="text-xs text-zinc-400 font-medium">Please enter a campaign name to get started.</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowNameModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+                className="text-zinc-400 hover:text-zinc-400 p-1 rounded-lg hover:bg-zinc-900 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -488,14 +488,14 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
 
             <form onSubmit={handleCreateCampaignSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Campaign Name</label>
+                <label className="text-xs font-bold text-zinc-300">Campaign Name</label>
                 <input
                   type="text"
                   autoFocus
                   value={inputCampaignName}
                   onChange={(e) => setInputCampaignName(e.target.value)}
                   placeholder="e.g. SaaS Outreach Q3"
-                  className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none transition-all"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900/50 px-3.5 py-2.5 text-xs font-bold text-zinc-100 focus:border-blue-600 focus:bg-zinc-950 focus:outline-none transition-all"
                 />
               </div>
 
@@ -503,7 +503,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
                 <button
                   type="button"
                   onClick={() => setShowNameModal(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-xs font-bold text-zinc-300 hover:bg-zinc-900 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -513,7 +513,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
                   className={`rounded-xl px-5 py-2 text-xs font-bold text-white transition-all cursor-pointer ${
                     inputCampaignName.trim()
                       ? 'bg-[#0e6de4] hover:bg-[#0758bd] shadow-md shadow-blue-500/20 active:scale-95'
-                      : 'bg-slate-300 cursor-not-allowed'
+                      : 'bg-zinc-700 cursor-not-allowed'
                   }`}
                 >
                   Continue to Builder →

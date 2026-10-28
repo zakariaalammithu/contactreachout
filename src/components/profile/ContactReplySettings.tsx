@@ -205,28 +205,28 @@ export function ContactReplySettings() {
   };
 
   return (
-    <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm sm:p-8 space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div className="rounded-3xl border border-blue-900 bg-zinc-950 p-6 shadow-sm sm:p-8 space-y-6">
+      <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-[#0e6de4]">
+          <p className="text-xs font-black uppercase tracking-wider text-blue-400">
             CONTACT & REPLY IDENTITY
           </p>
-          <h3 className="mt-1 text-lg font-black text-slate-900">
+          <h3 className="mt-1 text-lg font-black text-zinc-100">
             Account Contact Identity Settings
           </h3>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <p className="mt-0.5 text-xs text-zinc-400">
             Manage your account contact details. All four fields are optional and automatically fill website contact forms.
           </p>
         </div>
         <div className="flex items-center gap-2">
           {isVerified ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-950 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-900">
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
               Status: Verified
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200">
-              <ShieldAlert className="h-4 w-4 text-amber-600" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-950 px-3 py-1 text-xs font-bold text-amber-300 border border-amber-900">
+              <ShieldAlert className="h-4 w-4 text-amber-400" />
               Verification Pending
             </span>
           )}
@@ -234,20 +234,20 @@ export function ContactReplySettings() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-800">
+        <div className="p-4 rounded-2xl bg-rose-950 border border-rose-900 text-xs font-bold text-rose-300">
           {error}
         </div>
       )}
 
       {successMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div className="p-4 rounded-2xl bg-emerald-950 border border-emerald-900 text-xs font-bold text-emerald-300 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {loading ? (
-        <div className="p-6 text-center text-xs font-bold text-slate-400 animate-pulse">
+        <div className="p-6 text-center text-xs font-bold text-zinc-400 animate-pulse">
           Loading contact identity settings...
         </div>
       ) : (
@@ -255,32 +255,32 @@ export function ContactReplySettings() {
           <div className="grid gap-5 sm:grid-cols-2">
             {/* 1. Full Name */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Full Name <span className="text-[10px] font-normal text-slate-400">(Optional)</span>
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                Full Name <span className="text-[10px] font-normal text-zinc-400">(Optional)</span>
               </label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. Alex Morgan"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
             {/* 2. Reply Email */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center justify-between">
                 <span>Reply Email</span>
-                <span className="text-[10px] text-emerald-600 font-bold font-mono">Verified</span>
+                <span className="text-[10px] text-emerald-400 font-bold font-mono">Verified</span>
               </label>
               <div className="relative flex items-center gap-2">
                 <div className="relative flex-1">
-                  <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                  <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-zinc-400" />
                   <input
                     type="email"
                     readOnly
                     value={replyEmail || accountEmail}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm font-bold text-slate-800 outline-none"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-900 pl-10 pr-4 py-3 text-sm font-bold text-zinc-200 outline-none"
                   />
                 </div>
                 <button
@@ -293,7 +293,7 @@ export function ContactReplySettings() {
                     setError(null);
                   }}
                   disabled={isFreePlan}
-                  className="shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0e6de4] px-3.5 py-3 text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-blue-400 px-3.5 py-3 text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Change Email
                 </button>
@@ -303,35 +303,35 @@ export function ContactReplySettings() {
 
             {/* 3. Phone Number */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Phone Number <span className="text-[10px] font-normal text-slate-400">(Optional)</span>
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                Phone Number <span className="text-[10px] font-normal text-zinc-400">(Optional)</span>
               </label>
               <input
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="e.g. +1 (555) 234-5678"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
             {/* 4. WhatsApp Number */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                WhatsApp Number <span className="text-[10px] font-normal text-slate-400">(Optional)</span>
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                WhatsApp Number <span className="text-[10px] font-normal text-zinc-400">(Optional)</span>
               </label>
               <input
                 type="text"
                 value={whatsApp}
                 onChange={(e) => setWhatsApp(e.target.value)}
                 placeholder="e.g. +1 (555) 987-6543"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-4">
-            <p className="text-xs text-slate-500 leading-relaxed max-w-xl">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-zinc-800 pt-4">
+            <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
               All four fields are optional. When a target website form requests your contact identity, ContactReachout uses these values automatically.
             </p>
             <button
@@ -349,29 +349,29 @@ export function ContactReplySettings() {
 
       {/* CHANGE REPLY EMAIL MODAL */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs font-sans">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 shadow-2xl space-y-5 border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs font-sans">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-zinc-950 p-6 shadow-2xl space-y-5 border border-zinc-800 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-[#0e6de4]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-950 text-blue-400">
                   <Mail className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-extrabold text-slate-900">Change Reply Email</h4>
-                  <p className="text-[11px] text-slate-500">Requires OTP Verification</p>
+                  <h4 className="text-sm font-extrabold text-zinc-100">Change Reply Email</h4>
+                  <p className="text-[11px] text-zinc-400">Requires OTP Verification</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+                className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {error && (
-              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-800">
+              <div className="p-3.5 rounded-xl bg-rose-950 border border-rose-900 text-xs font-bold text-rose-300">
                 {error}
               </div>
             )}
@@ -379,7 +379,7 @@ export function ContactReplySettings() {
             {step === 'input' ? (
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">New Reply Email Address</label>
+                  <label className="text-xs font-bold text-zinc-300">New Reply Email Address</label>
                   <input
                     type="email"
                     placeholder="e.g. sales@company.com"
@@ -388,18 +388,18 @@ export function ContactReplySettings() {
                       setNewEmail(e.target.value);
                       if (error) setError(null);
                     }}
-                    className="w-full rounded-xl border border-slate-300 p-3 text-xs font-bold text-slate-900 focus:border-[#0e6de4] focus:outline-none"
+                    className="w-full rounded-xl border border-zinc-700 p-3 text-xs font-bold text-zinc-100 focus:border-[#0e6de4] focus:outline-none"
                   />
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-zinc-400">
                     A 6-digit verification code will be sent to this email.
                   </p>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                    className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-900 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -415,14 +415,14 @@ export function ContactReplySettings() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-900 space-y-1">
+                <div className="p-3 rounded-xl bg-blue-950 border border-blue-900 text-xs text-blue-200 space-y-1">
                   <p className="font-bold">Verification code sent to:</p>
-                  <p className="font-mono text-[#0e6de4]">{newEmail}</p>
+                  <p className="font-mono text-blue-400">{newEmail}</p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <KeyRound className="h-4 w-4 text-[#0e6de4]" />
+                  <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                    <KeyRound className="h-4 w-4 text-blue-400" />
                     <span>Enter 6-Digit Verification Code</span>
                   </label>
                   <input
@@ -431,16 +431,16 @@ export function ContactReplySettings() {
                     placeholder="123456"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                    className="w-full text-center tracking-[0.4em] font-mono text-lg font-black rounded-xl border border-slate-300 p-3 text-slate-900 focus:border-[#0e6de4] focus:outline-none"
+                    className="w-full text-center tracking-[0.4em] font-mono text-lg font-black rounded-xl border border-zinc-700 p-3 text-zinc-100 focus:border-[#0e6de4] focus:outline-none"
                   />
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
                   <button
                     type="button"
                     disabled={cooldown > 0 || sendingOtp}
                     onClick={handleRequestOtp}
-                    className="text-xs font-bold text-[#0e6de4] hover:underline disabled:text-slate-400 cursor-pointer flex items-center gap-1"
+                    className="text-xs font-bold text-blue-400 hover:underline disabled:text-zinc-400 cursor-pointer flex items-center gap-1"
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
                     <span>{cooldown > 0 ? `Resend Code in ${cooldown}s` : 'Resend Code'}</span>
@@ -450,7 +450,7 @@ export function ContactReplySettings() {
                     <button
                       type="button"
                       onClick={() => setStep('input')}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                      className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-400 hover:bg-zinc-900 cursor-pointer"
                     >
                       Back
                     </button>

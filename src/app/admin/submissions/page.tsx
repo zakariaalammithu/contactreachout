@@ -179,16 +179,16 @@ export default function AdminSubmissionsPage() {
       case 'DELIVERED':
       case 'DRY_RUN_COMPLETED':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-950 text-emerald-300 border border-emerald-900">
+            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
             SUCCESS
           </span>
         );
       case 'FAILED':
       case 'BLOCKED':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-red-50 text-red-700 border border-red-200">
-            <AlertTriangle className="w-3 h-3 text-red-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-red-950 text-red-300 border border-red-900">
+            <AlertTriangle className="w-3 h-3 text-red-400" />
             FAILED
           </span>
         );
@@ -197,21 +197,21 @@ export default function AdminSubmissionsPage() {
       case 'REVIEW_REQUIRED':
       case 'REVIEW':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200">
-            <AlertTriangle className="w-3 h-3 text-amber-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-950 text-amber-300 border border-amber-900">
+            <AlertTriangle className="w-3 h-3 text-amber-400" />
             REVIEW REQUIRED
           </span>
         );
       case 'NO_FORM':
       case 'NO-FORM':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-zinc-900 text-zinc-300 border border-zinc-800">
             NO-FORM
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-blue-950 text-blue-300 border border-blue-900">
             {s || 'PENDING'}
           </span>
         );
@@ -222,20 +222,20 @@ export default function AdminSubmissionsPage() {
     const m = (mode || '').toUpperCase();
     if (m === 'DRY_RUN') {
       return (
-        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-700 font-medium">
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-900 text-zinc-300 font-medium">
           DRY_RUN
         </span>
       );
     }
     if (m === 'LIVE_MODE') {
       return (
-        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-50 text-emerald-800 font-semibold border border-emerald-100">
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-300 font-semibold border border-emerald-900">
           LIVE_MODE
         </span>
       );
     }
     return (
-      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-700">
+      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-900 text-zinc-300">
         {m || 'AUTOMATIC'}
       </span>
     );
@@ -245,17 +245,17 @@ export default function AdminSubmissionsPage() {
   if (errorState && (errorState.status === 401 || errorState.status === 403)) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4">
-        <Card className="p-8 bg-white border border-red-100 shadow-sm text-center">
-          <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <Card className="p-8 bg-zinc-950 border border-red-900 shadow-sm text-center">
+          <div className="w-14 h-14 bg-red-950 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
             <ShieldAlert className="h-7 w-7" />
           </div>
-          <h2 className="text-xl font-bold text-[#111827]">403 — Unauthorized Access</h2>
-          <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">{errorState.message}</p>
+          <h2 className="text-xl font-bold text-zinc-100">403 — Unauthorized Access</h2>
+          <p className="text-sm text-zinc-400 max-w-md mx-auto mt-2">{errorState.message}</p>
           <div className="mt-6">
             <Button
               variant="outline"
               onClick={() => (window.location.href = '/dashboard')}
-              className="border-slate-200 text-slate-700 hover:bg-slate-50"
+              className="border-zinc-800 text-zinc-300 hover:bg-zinc-900"
             >
               Back to Dashboard
             </Button>
@@ -270,13 +270,13 @@ export default function AdminSubmissionsPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#111827] flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-[#0e6de4]/10 text-[#0e6de4]">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-[#0e6de4]/10 text-blue-400">
               <FileCheck className="h-5 w-5" />
             </div>
             Global Submissions & Visual Proof Vault
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
             Audit pre-submission form verifications, HTTP confirmations, and visual screenshot proofs.
           </p>
         </div>
@@ -287,7 +287,7 @@ export default function AdminSubmissionsPage() {
             size="sm"
             onClick={fetchSubmissions}
             disabled={isLoading}
-            className="h-9 border-slate-200 text-slate-700 hover:bg-slate-50 bg-white"
+            className="h-9 border-zinc-800 text-zinc-300 hover:bg-zinc-900 bg-zinc-950"
           >
             <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -296,11 +296,11 @@ export default function AdminSubmissionsPage() {
       </div>
 
       {/* Compact Search & Filter Controls Bar */}
-      <Card className="p-4 bg-white border border-slate-200/80 shadow-sm rounded-xl space-y-3">
+      <Card className="p-4 bg-zinc-950 border border-zinc-800/80 shadow-sm rounded-xl space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Omni Search Input */}
           <div className="relative md:col-span-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <input
               type="text"
               placeholder="Search Company, Target URL, Owner, Campaign, ID..."
@@ -309,12 +309,12 @@ export default function AdminSubmissionsPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-[#111827] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4]"
+              className="w-full pl-9 pr-8 py-2 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4]"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-400"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -324,14 +324,14 @@ export default function AdminSubmissionsPage() {
           {/* Campaign Filter Dropdown */}
           <div className="md:col-span-3">
             <div className="relative">
-              <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <select
                 value={selectedCampaignFilter}
                 onChange={(e) => {
                   setSelectedCampaignFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4] appearance-none"
+                className="w-full pl-9 pr-4 py-2 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4] appearance-none"
               >
                 <option value="all">All Campaigns ({campaignOptions.length})</option>
                 {campaignOptions.map((c) => (
@@ -346,14 +346,14 @@ export default function AdminSubmissionsPage() {
           {/* Super Admin Owner Filter Dropdown */}
           <div className="md:col-span-3">
             <div className="relative">
-              <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <select
                 value={selectedUserFilter}
                 onChange={(e) => {
                   setSelectedUserFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4] appearance-none"
+                className="w-full pl-9 pr-4 py-2 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4] appearance-none"
               >
                 <option value="all">All Owners ({usersList.length})</option>
                 {usersList.map((u) => (
@@ -373,7 +373,7 @@ export default function AdminSubmissionsPage() {
                 setSelectedStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-2.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4]"
+              className="w-full px-2.5 py-2 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4]"
             >
               <option value="ALL">Status: All</option>
               <option value="SUCCESS">SUCCESS</option>
@@ -385,7 +385,7 @@ export default function AdminSubmissionsPage() {
         </div>
 
         {/* Secondary Filters Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100 text-xs items-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-zinc-800 text-xs items-center">
           {/* Submission Mode Filter */}
           <div>
             <select
@@ -394,7 +394,7 @@ export default function AdminSubmissionsPage() {
                 setSelectedModeFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-[#111827] focus:outline-none"
+              className="w-full px-2.5 py-1.5 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-100 focus:outline-none"
             >
               <option value="ALL">Mode: All</option>
               <option value="LIVE_MODE">LIVE_MODE</option>
@@ -412,7 +412,7 @@ export default function AdminSubmissionsPage() {
                 setSelectedDateRangeFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-[#111827] focus:outline-none"
+              className="w-full px-2.5 py-1.5 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-100 focus:outline-none"
             >
               <option value="all">Date: All Time</option>
               <option value="today">Today</option>
@@ -430,7 +430,7 @@ export default function AdminSubmissionsPage() {
                 setSortBy(sb);
                 setSortOrder(so as 'asc' | 'desc');
               }}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-[#111827] focus:outline-none"
+              className="w-full px-2.5 py-1.5 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-100 focus:outline-none"
             >
               <option value="timestamp-desc">Newest First</option>
               <option value="timestamp-asc">Oldest First</option>
@@ -453,7 +453,7 @@ export default function AdminSubmissionsPage() {
                 setSelectedModeFilter('ALL');
                 setSelectedDateRangeFilter('all');
               }}
-              className="h-8 text-xs border-slate-200 text-slate-700 bg-white"
+              className="h-8 text-xs border-zinc-800 text-zinc-300 bg-zinc-950"
             >
               Clear Filters
             </Button>
@@ -462,20 +462,20 @@ export default function AdminSubmissionsPage() {
       </Card>
 
       {/* Main Submissions Table (Preserving Existing Table Structure) */}
-      <Card className="bg-white border border-slate-200/80 shadow-sm rounded-xl overflow-hidden">
+      <Card className="bg-zinc-950 border border-zinc-800/80 shadow-sm rounded-xl overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-3 border-[#0e6de4] border-t-transparent mb-3"></div>
-            <p className="text-xs text-slate-500 font-medium">Querying submission telemetry logs...</p>
+            <p className="text-xs text-zinc-400 font-medium">Querying submission telemetry logs...</p>
           </div>
         ) : submissions.length === 0 ? (
           /* Proper Real Empty State (Zero Hardcoded Mock Data) */
           <div className="p-16 text-center">
-            <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 bg-zinc-900 text-zinc-400 rounded-full flex items-center justify-center mx-auto mb-3">
               <Inbox className="h-6 w-6" />
             </div>
-            <h3 className="text-sm font-bold text-[#111827]">No submissions found</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            <h3 className="text-sm font-bold text-zinc-100">No submissions found</h3>
+            <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
               {search || selectedUserFilter !== 'all' || selectedStatusFilter !== 'ALL'
                 ? 'No submission records match your active search or filter parameters.'
                 : 'There are currently no submission records logged in the backend system.'}
@@ -491,7 +491,7 @@ export default function AdminSubmissionsPage() {
                   setSelectedStatusFilter('ALL');
                   setSelectedModeFilter('ALL');
                 }}
-                className="mt-4 text-xs border-slate-200 text-slate-700"
+                className="mt-4 text-xs border-zinc-800 text-zinc-300"
               >
                 Clear Filters
               </Button>
@@ -500,7 +500,7 @@ export default function AdminSubmissionsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
+              <thead className="bg-zinc-900/80 border-b border-zinc-800 text-zinc-400 font-semibold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">Target Destination</th>
                   <th className="px-5 py-3.5">Submission Mode</th>
@@ -510,21 +510,21 @@ export default function AdminSubmissionsPage() {
                   <th className="px-5 py-3.5 text-right">Proof</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-zinc-800">
                 {submissions.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
+                  <tr key={s.id} className="hover:bg-zinc-900/60 transition-colors">
                     {/* Target Destination: Company + Target URL + Owner & Campaign */}
                     <td className="px-5 py-3.5">
-                      <div className="font-bold text-[#111827] text-xs">{s.companyName}</div>
+                      <div className="font-bold text-zinc-100 text-xs">{s.companyName}</div>
                       <a
                         href={s.targetUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] text-[#0e6de4] hover:underline font-mono truncate max-w-[220px] inline-block"
+                        className="text-[11px] text-blue-400 hover:underline font-mono truncate max-w-[220px] inline-block"
                       >
                         {s.targetUrl}
                       </a>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                      <div className="flex items-center gap-2 text-[10px] text-zinc-400 mt-0.5">
                         <span>Owner: {s.ownerName}</span>
                         <span>•</span>
                         <span>Campaign: {s.campaignName}</span>
@@ -540,12 +540,12 @@ export default function AdminSubmissionsPage() {
                     <td className="px-5 py-3.5">{renderStatusBadge(s.status)}</td>
 
                     {/* Execution Latency */}
-                    <td className="px-5 py-3.5 font-mono text-slate-700 font-medium">
+                    <td className="px-5 py-3.5 font-mono text-zinc-300 font-medium">
                       {typeof s.executionLatencyMs === 'number' ? `${s.executionLatencyMs.toLocaleString()} ms` : 'N/A'}
                     </td>
 
                     {/* Timestamp */}
-                    <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">
+                    <td className="px-5 py-3.5 font-mono text-[11px] text-zinc-400">
                       {formatDate(s.timestamp)}
                     </td>
 
@@ -555,9 +555,9 @@ export default function AdminSubmissionsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedProof(s)}
-                        className="h-7 text-xs border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-[#0e6de4] font-medium"
+                        className="h-7 text-xs border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-blue-400 font-medium"
                       >
-                        <Camera className="h-3.5 w-3.5 mr-1 text-slate-400" />
+                        <Camera className="h-3.5 w-3.5 mr-1 text-zinc-400" />
                         View Proof
                       </Button>
                     </td>
@@ -570,11 +570,11 @@ export default function AdminSubmissionsPage() {
 
         {/* Pagination Bar */}
         {submissions.length > 0 && (
-          <div className="px-5 py-3.5 bg-slate-50/50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="px-5 py-3.5 bg-zinc-900/50 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-400">
             <div>
-              Showing <span className="font-semibold text-[#111827]">{(page - 1) * limit + 1}</span> to{' '}
-              <span className="font-semibold text-[#111827]">{Math.min(page * limit, totalCount)}</span> of{' '}
-              <span className="font-semibold text-[#111827]">{totalCount}</span> submission records
+              Showing <span className="font-semibold text-zinc-100">{(page - 1) * limit + 1}</span> to{' '}
+              <span className="font-semibold text-zinc-100">{Math.min(page * limit, totalCount)}</span> of{' '}
+              <span className="font-semibold text-zinc-100">{totalCount}</span> submission records
             </div>
 
             <div className="flex items-center gap-4">
@@ -586,7 +586,7 @@ export default function AdminSubmissionsPage() {
                     setLimit(Number(e.target.value));
                     setPage(1);
                   }}
-                  className="bg-white border border-slate-200 rounded px-2 py-1 text-xs text-[#111827] focus:outline-none"
+                  className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-100 focus:outline-none"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -600,7 +600,7 @@ export default function AdminSubmissionsPage() {
                   size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="h-7 px-2 border-slate-200 text-slate-700 bg-white"
+                  className="h-7 px-2 border-zinc-800 text-zinc-300 bg-zinc-950"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
@@ -612,7 +612,7 @@ export default function AdminSubmissionsPage() {
                   size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="h-7 px-2 border-slate-200 text-slate-700 bg-white"
+                  className="h-7 px-2 border-zinc-800 text-zinc-300 bg-zinc-950"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
@@ -624,38 +624,38 @@ export default function AdminSubmissionsPage() {
 
       {/* Visual Proof Inspection Modal */}
       {selectedProof && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-          <Card className="w-full max-w-lg p-6 space-y-4 border-slate-200 bg-white shadow-2xl rounded-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/50 p-4 backdrop-blur-xs">
+          <Card className="w-full max-w-lg p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-2xl rounded-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-[#111827] flex items-center gap-2">
-                <Camera className="h-4 w-4 text-[#0e6de4]" />
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+                <Camera className="h-4 w-4 text-blue-400" />
                 Proof of Execution: {selectedProof.companyName}
               </h3>
               <button
                 onClick={() => setSelectedProof(null)}
-                className="text-slate-400 hover:text-slate-600 rounded-lg p-1 hover:bg-slate-100"
+                className="text-zinc-400 hover:text-zinc-400 rounded-lg p-1 hover:bg-zinc-900"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Visual Proof Display Container */}
-            <div className="aspect-video w-full rounded-xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center text-slate-500 p-4 space-y-2 text-center">
+            <div className="aspect-video w-full rounded-xl bg-zinc-900 border border-zinc-800 flex flex-col items-center justify-center text-zinc-400 p-4 space-y-2 text-center">
               {selectedProof.screenshotBase64 || selectedProof.screenshotUrl ? (
                 <img
                   src={selectedProof.screenshotBase64 || selectedProof.screenshotUrl!}
                   alt="Submission Visual Proof"
-                  className="w-full h-full object-cover rounded-lg border border-slate-200"
+                  className="w-full h-full object-cover rounded-lg border border-zinc-800"
                 />
               ) : (
                 <>
-                  <Camera className="h-8 w-8 text-[#0e6de4]" />
-                  <p className="text-xs font-mono font-bold text-[#111827]">Visual Telemetry Proof Verified</p>
-                  <p className="text-[11px] text-slate-500 font-mono">
+                  <Camera className="h-8 w-8 text-blue-400" />
+                  <p className="text-xs font-mono font-bold text-zinc-100">Visual Telemetry Proof Verified</p>
+                  <p className="text-[11px] text-zinc-400 font-mono">
                     SHA-256 Checksum Logged • HTTP Mode: {selectedProof.submissionMode}
                   </p>
-                  <p className="text-[10px] text-slate-400 font-mono truncate max-w-full">
+                  <p className="text-[10px] text-zinc-400 font-mono truncate max-w-full">
                     {selectedProof.targetUrl}
                   </p>
                 </>
@@ -663,44 +663,44 @@ export default function AdminSubmissionsPage() {
             </div>
 
             {/* Submission Metadata Details Grid */}
-            <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div className="grid grid-cols-2 gap-3 text-xs bg-zinc-900 p-3.5 rounded-xl border border-zinc-800">
               <div>
-                <span className="text-[10px] text-slate-400 uppercase font-semibold">Owner</span>
-                <div className="font-semibold text-[#111827]">{selectedProof.ownerName}</div>
-                <div className="text-[10px] text-slate-500 truncate">{selectedProof.ownerEmail}</div>
+                <span className="text-[10px] text-zinc-400 uppercase font-semibold">Owner</span>
+                <div className="font-semibold text-zinc-100">{selectedProof.ownerName}</div>
+                <div className="text-[10px] text-zinc-400 truncate">{selectedProof.ownerEmail}</div>
               </div>
 
               <div>
-                <span className="text-[10px] text-slate-400 uppercase font-semibold">Campaign</span>
-                <div className="font-semibold text-[#111827]">{selectedProof.campaignName}</div>
-                <div className="text-[10px] text-slate-500 font-mono">ID: {selectedProof.campaignId}</div>
+                <span className="text-[10px] text-zinc-400 uppercase font-semibold">Campaign</span>
+                <div className="font-semibold text-zinc-100">{selectedProof.campaignName}</div>
+                <div className="text-[10px] text-zinc-400 font-mono">ID: {selectedProof.campaignId}</div>
               </div>
 
-              <div className="pt-2 border-t border-slate-200">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold">Execution Latency</span>
-                <div className="font-mono font-medium text-[#111827]">
+              <div className="pt-2 border-t border-zinc-800">
+                <span className="text-[10px] text-zinc-400 uppercase font-semibold">Execution Latency</span>
+                <div className="font-mono font-medium text-zinc-100">
                   {selectedProof.executionLatencyMs} ms
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-slate-200">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold">Timestamp</span>
-                <div className="font-mono text-slate-700">{formatDate(selectedProof.timestamp)}</div>
+              <div className="pt-2 border-t border-zinc-800">
+                <span className="text-[10px] text-zinc-400 uppercase font-semibold">Timestamp</span>
+                <div className="font-mono text-zinc-300">{formatDate(selectedProof.timestamp)}</div>
               </div>
 
               {selectedProof.confirmationMessage && (
-                <div className="col-span-2 pt-2 border-t border-slate-200">
-                  <span className="text-[10px] text-emerald-700 uppercase font-semibold">Confirmation Signal</span>
-                  <div className="font-mono text-[11px] text-emerald-800 bg-emerald-50 p-1.5 rounded border border-emerald-100 mt-0.5">
+                <div className="col-span-2 pt-2 border-t border-zinc-800">
+                  <span className="text-[10px] text-emerald-300 uppercase font-semibold">Confirmation Signal</span>
+                  <div className="font-mono text-[11px] text-emerald-300 bg-emerald-950 p-1.5 rounded border border-emerald-900 mt-0.5">
                     {selectedProof.confirmationMessage}
                   </div>
                 </div>
               )}
 
               {selectedProof.errorMessage && (
-                <div className="col-span-2 pt-2 border-t border-slate-200">
-                  <span className="text-[10px] text-red-700 uppercase font-semibold">Diagnostic Error</span>
-                  <div className="font-mono text-[11px] text-red-800 bg-red-50 p-1.5 rounded border border-red-100 mt-0.5">
+                <div className="col-span-2 pt-2 border-t border-zinc-800">
+                  <span className="text-[10px] text-red-300 uppercase font-semibold">Diagnostic Error</span>
+                  <div className="font-mono text-[11px] text-red-300 bg-red-950 p-1.5 rounded border border-red-900 mt-0.5">
                     {selectedProof.errorMessage}
                   </div>
                 </div>
@@ -713,7 +713,7 @@ export default function AdminSubmissionsPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedProof(null)}
-                className="border-slate-200 text-slate-700 hover:bg-slate-100 text-xs"
+                className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 text-xs"
               >
                 Close Proof
               </Button>

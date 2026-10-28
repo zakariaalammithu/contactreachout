@@ -109,13 +109,13 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
 
       <aside
         className={cn(
-          'group/sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200/90 bg-white shadow-md transition-all duration-300 ease-in-out overflow-x-hidden shrink-0',
+          'group/sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-zinc-800/90 bg-zinc-950 shadow-md transition-all duration-300 ease-in-out overflow-x-hidden shrink-0',
           'w-64 lg:static lg:h-screen lg:w-16 lg:hover:w-60 lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Brand Header */}
-        <div className="flex h-16 items-center border-b border-slate-100 px-3.5 overflow-hidden shrink-0">
+        <div className="flex h-16 items-center border-b border-zinc-800 px-3.5 overflow-hidden shrink-0">
           <Link href="/campaigns" prefetch={true} className="flex items-center gap-3">
             <img
               src="/brand/logo-icon.png"
@@ -125,38 +125,38 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
               className="h-9 w-9 shrink-0 object-contain"
             />
             <div className="whitespace-nowrap transition-all duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block lg:hidden">
-              <span className="text-base font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
-                <span className="inline-flex items-center"><span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span></span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-mono font-bold">
+              <span className="text-base font-extrabold tracking-tight text-zinc-100 flex items-center gap-1">
+                <span className="inline-flex items-center"><span className="text-blue-400">Contact</span><span className="text-zinc-100">Reachout</span></span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-900 text-blue-300 font-mono font-bold">
                   {roleBadge}
                 </span>
               </span>
-              <p className="text-[10px] text-slate-400 font-mono">contactreachout.com</p>
+              <p className="text-[10px] text-zinc-400 font-mono">contactreachout.com</p>
             </div>
             {/* Mobile Header Always Visible */}
             <div className="whitespace-nowrap lg:hidden">
-              <span className="text-base font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
-                <span className="inline-flex items-center"><span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span></span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-mono font-bold">
+              <span className="text-base font-extrabold tracking-tight text-zinc-100 flex items-center gap-1">
+                <span className="inline-flex items-center"><span className="text-blue-400">Contact</span><span className="text-zinc-100">Reachout</span></span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-900 text-blue-300 font-mono font-bold">
                   {roleBadge}
                 </span>
               </span>
-              <p className="text-[10px] text-slate-400 font-mono">contactreachout.com</p>
+              <p className="text-[10px] text-zinc-400 font-mono">contactreachout.com</p>
             </div>
           </Link>
         </div>
 
         {/* Safety Guard Indicator */}
-        <div className="mx-2 my-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-2 shadow-xs shrink-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-emerald-700">
-            <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600" />
+        <div className="mx-2 my-3 rounded-xl border border-emerald-900 bg-emerald-950/70 p-2 shadow-xs shrink-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-emerald-300">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-400" />
             <div className="whitespace-nowrap transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block">
-              <p className="text-xs font-bold text-emerald-900">Safety Guard Active</p>
-              <p className="text-[10px] text-emerald-700 font-mono">Zero-Bypass Compliance</p>
+              <p className="text-xs font-bold text-emerald-200">Safety Guard Active</p>
+              <p className="text-[10px] text-emerald-300 font-mono">Zero-Bypass Compliance</p>
             </div>
             <div className="whitespace-nowrap lg:hidden">
-              <p className="text-xs font-bold text-emerald-900">Safety Guard Active</p>
-              <p className="text-[10px] text-emerald-700 font-mono">Zero-Bypass Compliance</p>
+              <p className="text-xs font-bold text-emerald-200">Safety Guard Active</p>
+              <p className="text-[10px] text-emerald-300 font-mono">Zero-Bypass Compliance</p>
             </div>
           </div>
         </div>
@@ -165,10 +165,10 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
         <div className="flex-1 overflow-y-auto space-y-4 px-2.5 py-1">
           {navSections.map((section) => (
             <nav key={section.title} className="space-y-1">
-              <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono whitespace-nowrap transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block">
+              <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono whitespace-nowrap transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block">
                 {section.title}
               </p>
-              <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono lg:hidden">
+              <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono lg:hidden">
                 {section.title}
               </p>
 
@@ -200,10 +200,10 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
                       'flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-xs font-semibold transition-all duration-150 overflow-hidden whitespace-nowrap',
                       isActive
                         ? 'bg-[#0e6de4] text-white shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/80'
                     )}
                   >
-                    <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-white' : 'text-slate-400')} />
+                    <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-white' : 'text-zinc-400')} />
 
                     <span className="flex-1 transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:inline">
                       {item.name}
@@ -217,10 +217,10 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
                         className={cn(
                           'px-2 py-0.5 rounded-full text-[10px] font-mono font-bold transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:inline',
                           isActive && 'bg-white/20 text-white',
-                          !isActive && item.badgeVariant === 'emerald' && 'bg-emerald-100 text-emerald-800',
-                          !isActive && item.badgeVariant === 'amber' && 'bg-amber-100 text-amber-800',
-                          !isActive && item.badgeVariant === 'default' && 'bg-blue-100 text-blue-800',
-                          !isActive && !item.badgeVariant && 'bg-slate-100 text-slate-700'
+                          !isActive && item.badgeVariant === 'emerald' && 'bg-emerald-900 text-emerald-300',
+                          !isActive && item.badgeVariant === 'amber' && 'bg-amber-900 text-amber-300',
+                          !isActive && item.badgeVariant === 'default' && 'bg-blue-900 text-blue-300',
+                          !isActive && !item.badgeVariant && 'bg-zinc-900 text-zinc-300'
                         )}
                       >
                         {item.badge}
@@ -233,27 +233,27 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
           ))}
 
           {/* Credits Summary Card */}
-          <div className="mx-0.5 rounded-2xl border border-blue-100 bg-blue-50/70 p-2.5 overflow-hidden">
+          <div className="mx-0.5 rounded-2xl border border-blue-900 bg-blue-950/70 p-2.5 overflow-hidden">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-[#0e6de4] font-bold text-xs">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-900 text-blue-400 font-bold text-xs">
                 ⚡
               </div>
               <div className="whitespace-nowrap transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Credits</p>
-                <p className="text-xs font-black text-slate-950">{availableCredits.toLocaleString()} Available</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Credits</p>
+                <p className="text-xs font-black text-white">{availableCredits.toLocaleString()} Available</p>
               </div>
               <div className="whitespace-nowrap lg:hidden">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Credits</p>
-                <p className="text-xs font-black text-slate-950">{availableCredits.toLocaleString()} Available</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Credits</p>
+                <p className="text-xs font-black text-white">{availableCredits.toLocaleString()} Available</p>
               </div>
             </div>
             <div className="mt-2 transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block">
-              <Link href="/pricing" onClick={onClose} className="inline-flex items-center gap-1 text-xs font-black text-[#0e6de4]">
+              <Link href="/pricing" onClick={onClose} className="inline-flex items-center gap-1 text-xs font-black text-blue-400">
                 Buy Credits <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </div>
             <div className="mt-2 lg:hidden">
-              <Link href="/pricing" onClick={onClose} className="inline-flex items-center gap-1 text-xs font-black text-[#0e6de4]">
+              <Link href="/pricing" onClick={onClose} className="inline-flex items-center gap-1 text-xs font-black text-blue-400">
                 Buy Credits <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </div>
@@ -261,25 +261,25 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
         </div>
 
         {/* User Footer */}
-        <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 p-2.5 overflow-hidden shrink-0">
+        <div className="flex items-center justify-between border-t border-zinc-800 bg-zinc-900/50 p-2.5 overflow-hidden shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 shrink-0 rounded-full bg-[#0e6de4] flex items-center justify-center text-[11px] font-bold text-white shadow-xs">
               {userInitials}
             </div>
             <div className="whitespace-nowrap transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block">
-              <p className="max-w-[130px] truncate text-[11px] font-bold text-slate-900 leading-tight">{currentUser.name}</p>
-              <p className="max-w-[130px] truncate text-[9px] text-slate-500 font-mono">{currentUser.email}</p>
+              <p className="max-w-[130px] truncate text-[11px] font-bold text-zinc-100 leading-tight">{currentUser.name}</p>
+              <p className="max-w-[130px] truncate text-[9px] text-zinc-400 font-mono">{currentUser.email}</p>
             </div>
             <div className="whitespace-nowrap lg:hidden">
-              <p className="max-w-[130px] truncate text-[11px] font-bold text-slate-900 leading-tight">{currentUser.name}</p>
-              <p className="max-w-[130px] truncate text-[9px] text-slate-500 font-mono">{currentUser.email}</p>
+              <p className="max-w-[130px] truncate text-[11px] font-bold text-zinc-100 leading-tight">{currentUser.name}</p>
+              <p className="max-w-[130px] truncate text-[9px] text-zinc-400 font-mono">{currentUser.email}</p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={() => setShowLogoutModal(true)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 transition-colors transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-900 transition-colors transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block"
             title="Log Out"
           >
             <LogOut className="h-4 w-4" />

@@ -105,22 +105,22 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   if (!sessionVerified) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-3 font-sans">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-900 gap-3 font-sans">
         <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#1DBF73] border-t-transparent" />
-        <p className="text-xs font-bold text-slate-600">Verifying your session…</p>
+        <p className="text-xs font-bold text-zinc-400">Verifying your session…</p>
       </div>
     );
   }
 
   return (
-    <div className="app-dashboard-shell flex h-screen w-screen overflow-hidden bg-[#F7F7F8] text-[#404145]">
+    <div className="app-dashboard-shell flex h-screen w-screen overflow-hidden bg-black text-zinc-300">
       {/* Sidebar */}
       <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} currentUserProfile={sessionUser || undefined} />
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col h-screen min-w-0 overflow-hidden transition-all duration-300 ease-in-out">
         <Header onOpenMobileMenu={() => setMobileMenuOpen(true)} initialUserProfile={sessionUser || undefined} />
-        <main className="flex-1 overflow-y-auto bg-[#F7F7F8] p-4 sm:p-5 lg:p-6">
+        <main className="flex-1 overflow-y-auto bg-black p-4 sm:p-5 lg:p-6">
           <div className="w-full max-w-[1750px]">{children}</div>
         </main>
       </div>

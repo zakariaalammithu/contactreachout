@@ -59,7 +59,7 @@ export default function ProcessingQueuePage() {
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Dynamic Concurrency Control */}
-          <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300">
+          <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-400">
             <Sliders className="h-3.5 w-3.5 text-primary" />
             <span>Concurrency:</span>
             <select
@@ -98,7 +98,7 @@ export default function ProcessingQueuePage() {
         <Card className="glass-panel p-4">
           <p className="text-xs text-muted-foreground uppercase font-semibold">Queued</p>
           <p className="text-2xl font-bold text-white mt-1 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-slate-400" /> {stats.queued}
+            <Clock className="h-4 w-4 text-zinc-400" /> {stats.queued}
           </p>
           <span className="text-[10px] text-muted-foreground mt-1 block">Awaiting execution</span>
         </Card>
@@ -117,7 +117,7 @@ export default function ProcessingQueuePage() {
           <p className="text-2xl font-bold text-emerald-400 mt-1 flex items-center gap-1.5">
             <CheckCircle2 className="h-4 w-4" /> {stats.completed}
           </p>
-          <span className="text-[10px] text-slate-400 mt-1 block">100% Verified</span>
+          <span className="text-[10px] text-zinc-400 mt-1 block">100% Verified</span>
         </Card>
 
         <Card className="glass-panel p-4">
@@ -125,7 +125,7 @@ export default function ProcessingQueuePage() {
           <p className="text-2xl font-bold text-rose-400 mt-1 flex items-center gap-1.5">
             <XCircle className="h-4 w-4" /> {stats.failed}
           </p>
-          <span className="text-[10px] text-slate-400 mt-1 block">Max 3 retries</span>
+          <span className="text-[10px] text-zinc-400 mt-1 block">Max 3 retries</span>
         </Card>
 
         <Card className="glass-panel p-4">
@@ -133,7 +133,7 @@ export default function ProcessingQueuePage() {
           <p className="text-2xl font-bold text-amber-400 mt-1 flex items-center gap-1.5">
             <AlertTriangle className="h-4 w-4" /> {stats.reviewRequired}
           </p>
-          <span className="text-[10px] text-slate-400 mt-1 block">CAPTCHA / Low score</span>
+          <span className="text-[10px] text-zinc-400 mt-1 block">CAPTCHA / Low score</span>
         </Card>
       </div>
 
@@ -143,7 +143,7 @@ export default function ProcessingQueuePage() {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Active Headless Playwright Contexts
           </h3>
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-zinc-400 font-mono">
             Status: {isPaused ? <span className="text-amber-400 font-bold">PAUSED</span> : <span className="text-emerald-400 font-bold">ACTIVE</span>}
           </span>
         </div>
@@ -180,13 +180,13 @@ export default function ProcessingQueuePage() {
               {/* Progress Bar & Current Phase */}
               <div className="space-y-1.5 pt-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-300 font-medium">
+                  <span className="text-zinc-400 font-medium">
                     Current Phase:{' '}
                     <span className="text-primary font-mono">{job.currentStep}</span>
                   </span>
                   <span className="text-muted-foreground">{job.progressPercent}%</span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-900">
                   <div
                     className="h-full bg-gradient-to-r from-cyan-500 to-primary transition-all duration-300"
                     style={{ width: `${job.progressPercent}%` }}

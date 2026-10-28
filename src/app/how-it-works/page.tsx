@@ -47,52 +47,52 @@ const steps = [
 
 export default function HowItWorksPage() {
   return (
-    <div className="min-h-screen bg-[#f4f7ff] text-slate-950 flex flex-col justify-between">
+    <div className="min-h-screen bg-black text-white flex flex-col justify-between">
       <LandingHeader />
       <main className="py-16 px-4 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold text-[#0e6de4]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-900 bg-blue-950 px-4 py-1.5 text-xs font-bold text-blue-400">
               Step-by-step workflow
             </span>
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
               How ContactReachout Automates Contact Form Outreach
             </h1>
-            <p className="mt-4 text-lg leading-8 text-slate-600">
+            <p className="mt-4 text-lg leading-8 text-zinc-400">
               A transparent, 4-step process designed to find clients through website contact forms efficiently and reliably.
             </p>
           </div>
 
           <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             {steps.map(({ step, icon: Icon, title, description }) => (
-              <div key={title} className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm relative">
+              <div key={title} className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-sm relative">
                 <div className="flex items-center justify-between">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0e6de4] text-white">
                     <Icon className="h-6 w-6" />
                   </div>
                   <span className="text-sm font-black text-blue-400">{step}</span>
                 </div>
-                <h3 className="mt-6 text-xl font-black text-slate-900">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
+                <h3 className="mt-6 text-xl font-black text-zinc-100">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-400">{description}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-20 rounded-3xl border border-blue-100 bg-white p-8 sm:p-12 shadow-md">
-            <h2 className="text-2xl font-black text-slate-900 sm:text-3xl">Why Website Contact Form Outreach Works</h2>
+          <div className="mt-20 rounded-3xl border border-blue-900 bg-zinc-950 p-8 sm:p-12 shadow-md">
+            <h2 className="text-2xl font-black text-zinc-100 sm:text-3xl">Why Website Contact Form Outreach Works</h2>
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               <div className="flex gap-4">
-                <CheckCircle2 className="h-6 w-6 text-[#0e6de4] shrink-0" />
+                <CheckCircle2 className="h-6 w-6 text-blue-400 shrink-0" />
                 <div>
-                  <h3 className="font-bold text-slate-900">Direct Inbox Delivery</h3>
-                  <p className="mt-1 text-sm text-slate-600">Website contact form submissions land directly in the business owner or sales team inbox without getting flagged by spam filters.</p>
+                  <h3 className="font-bold text-zinc-100">Direct Inbox Delivery</h3>
+                  <p className="mt-1 text-sm text-zinc-400">Website contact form submissions land directly in the business owner or sales team inbox without getting flagged by spam filters.</p>
                 </div>
               </div>
               <div className="flex gap-4">
-                <CheckCircle2 className="h-6 w-6 text-[#0e6de4] shrink-0" />
+                <CheckCircle2 className="h-6 w-6 text-blue-400 shrink-0" />
                 <div>
-                  <h3 className="font-bold text-slate-900">High Open & Response Rates</h3>
-                  <p className="mt-1 text-sm text-slate-600">Companies prioritize website inquiries because contact form submissions represent active business opportunities.</p>
+                  <h3 className="font-bold text-zinc-100">High Open & Response Rates</h3>
+                  <p className="mt-1 text-sm text-zinc-400">Companies prioritize website inquiries because contact form submissions represent active business opportunities.</p>
                 </div>
               </div>
             </div>

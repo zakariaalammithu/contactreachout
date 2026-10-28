@@ -89,7 +89,7 @@ export default function AdminSecurityPage() {
           <Shield className="h-6 w-6 text-indigo-400" />
           Security Policies & Brute-Force Shield
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+        <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
           Configure authentication timeouts, failed attempt lockouts, IP rate limits, and origin whitelists.
         </p>
       </div>
@@ -108,8 +108,8 @@ export default function AdminSecurityPage() {
 
         <form onSubmit={handleSave} className="space-y-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 p-4 rounded-xl border border-slate-800 bg-slate-950/60">
-              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <div className="space-y-1.5 p-4 rounded-xl border border-zinc-700 bg-black/60">
+              <label className="text-xs font-semibold text-zinc-400 flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-indigo-400" />
                 Session Idle Timeout (Minutes)
               </label>
@@ -117,13 +117,13 @@ export default function AdminSecurityPage() {
                 type="number"
                 value={sessionTimeout}
                 onChange={(e) => setSessionTimeout(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white font-mono"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-white font-mono"
               />
-              <p className="text-[11px] text-slate-500">Auto-expires inactive admin sessions.</p>
+              <p className="text-[11px] text-zinc-400">Auto-expires inactive admin sessions.</p>
             </div>
 
-            <div className="space-y-1.5 p-4 rounded-xl border border-slate-800 bg-slate-950/60">
-              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <div className="space-y-1.5 p-4 rounded-xl border border-zinc-700 bg-black/60">
+              <label className="text-xs font-semibold text-zinc-400 flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-indigo-400" />
                 Login Rate Limit (Reqs / Minute / IP)
               </label>
@@ -131,13 +131,13 @@ export default function AdminSecurityPage() {
                 type="number"
                 value={rateLimit}
                 onChange={(e) => setRateLimit(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white font-mono"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-white font-mono"
               />
-              <p className="text-[11px] text-slate-500">Shields against credential stuffing.</p>
+              <p className="text-[11px] text-zinc-400">Shields against credential stuffing.</p>
             </div>
 
-            <div className="space-y-1.5 p-4 rounded-xl border border-slate-800 bg-slate-950/60">
-              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <div className="space-y-1.5 p-4 rounded-xl border border-zinc-700 bg-black/60">
+              <label className="text-xs font-semibold text-zinc-400 flex items-center gap-1.5">
                 <Ban className="h-3.5 w-3.5 text-rose-400" />
                 Failed Attempts Before Lockout
               </label>
@@ -145,13 +145,13 @@ export default function AdminSecurityPage() {
                 type="number"
                 value={lockoutThreshold}
                 onChange={(e) => setLockoutThreshold(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white font-mono"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-white font-mono"
               />
-              <p className="text-[11px] text-slate-500">Default: 5 consecutive failures.</p>
+              <p className="text-[11px] text-zinc-400">Default: 5 consecutive failures.</p>
             </div>
 
-            <div className="space-y-1.5 p-4 rounded-xl border border-slate-800 bg-slate-950/60">
-              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <div className="space-y-1.5 p-4 rounded-xl border border-zinc-700 bg-black/60">
+              <label className="text-xs font-semibold text-zinc-400 flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-rose-400" />
                 Lockout Duration (Minutes)
               </label>
@@ -159,16 +159,16 @@ export default function AdminSecurityPage() {
                 type="number"
                 value={lockoutDuration}
                 onChange={(e) => setLockoutDuration(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white font-mono"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-white font-mono"
               />
-              <p className="text-[11px] text-slate-500">Cool-down before next attempt allowed.</p>
+              <p className="text-[11px] text-zinc-400">Cool-down before next attempt allowed.</p>
             </div>
           </div>
 
           {/* Active Security Headers Banner */}
           <div className="p-4 rounded-xl border border-indigo-500/30 bg-indigo-950/20 text-xs text-indigo-300 space-y-2">
             <p className="font-bold text-indigo-200">Active HTTP Security Headers (OWASP Compliant)</p>
-            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-300">
+            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-zinc-400">
               <div>✓ Content-Security-Policy</div>
               <div>✓ X-Content-Type-Options: nosniff</div>
               <div>✓ X-Frame-Options: DENY</div>
@@ -186,11 +186,11 @@ export default function AdminSecurityPage() {
       </Card>
 
       <Card className="glass-panel p-6 space-y-5 border-white/[0.08]">
-        <div><h3 className="flex items-center gap-2 font-bold text-white"><KeyRound className="h-4 w-4 text-indigo-400" />Super Admin Password</h3><p className="mt-1 text-xs text-slate-400">Protected account: {`mithusquare@gmail.com`}. Enter the current password before setting a new one.</p></div>
+        <div><h3 className="flex items-center gap-2 font-bold text-white"><KeyRound className="h-4 w-4 text-indigo-400" />Super Admin Password</h3><p className="mt-1 text-xs text-zinc-400">Protected account: {`mithusquare@gmail.com`}. Enter the current password before setting a new one.</p></div>
         {passwordStatus && <div className={`rounded-xl border p-3 text-xs font-semibold ${passwordStatus.type === 'success' ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300' : 'border-rose-500/30 bg-rose-950/20 text-rose-300'}`}>{passwordStatus.message}</div>}
         <form onSubmit={handlePasswordChange} className="grid gap-4 sm:grid-cols-3">
-          {([['currentPassword', 'Current password'], ['newPassword', 'New password'], ['confirmPassword', 'Confirm new password']] as const).map(([key, label]) => <label key={key} className="space-y-1.5 text-xs font-semibold text-slate-300"><span>{label}</span><input type="password" autoComplete={key === 'currentPassword' ? 'current-password' : 'new-password'} required minLength={key === 'currentPassword' ? 1 : 12} value={passwords[key]} onChange={(e) => setPasswords((current) => ({ ...current, [key]: e.target.value }))} className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-white" /></label>)}
-          <div className="sm:col-span-3 flex items-center justify-between gap-4 border-t border-white/[0.08] pt-4"><p className="text-[11px] text-slate-500">Minimum 12 characters with upper/lowercase, number and symbol.</p><Button variant="primary" type="submit" isLoading={isChangingPassword}><Lock className="mr-1.5 h-4 w-4" />Change Password</Button></div>
+          {([['currentPassword', 'Current password'], ['newPassword', 'New password'], ['confirmPassword', 'Confirm new password']] as const).map(([key, label]) => <label key={key} className="space-y-1.5 text-xs font-semibold text-zinc-400"><span>{label}</span><input type="password" autoComplete={key === 'currentPassword' ? 'current-password' : 'new-password'} required minLength={key === 'currentPassword' ? 1 : 12} value={passwords[key]} onChange={(e) => setPasswords((current) => ({ ...current, [key]: e.target.value }))} className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-white" /></label>)}
+          <div className="sm:col-span-3 flex items-center justify-between gap-4 border-t border-white/[0.08] pt-4"><p className="text-[11px] text-zinc-400">Minimum 12 characters with upper/lowercase, number and symbol.</p><Button variant="primary" type="submit" isLoading={isChangingPassword}><Lock className="mr-1.5 h-4 w-4" />Change Password</Button></div>
         </form>
       </Card>
     </div>

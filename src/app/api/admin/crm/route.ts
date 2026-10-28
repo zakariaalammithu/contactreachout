@@ -107,6 +107,10 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const q = url.searchParams.get('q')?.toLowerCase().trim() || '';
+  const jobTitleFilter = url.searchParams.get('jobTitle')?.toLowerCase().trim() || '';
+  const companyFilter = url.searchParams.get('company')?.toLowerCase().trim() || '';
+  const websiteFilter = url.searchParams.get('website')?.toLowerCase().trim() || '';
+  const fileNameFilter = url.searchParams.get('fileName')?.toLowerCase().trim() || '';
   const userFilter = url.searchParams.get('userEmail') || 'all';
   const listFilter = url.searchParams.get('listName') || 'all';
   const campaignFilter = url.searchParams.get('campaignName') || 'all';
@@ -176,6 +180,7 @@ export async function GET(req: NextRequest) {
       const matchOwnerEmail = c.ownerEmail.toLowerCase().includes(q);
       const matchList = (c.listName || '').toLowerCase().includes(q);
       const matchCampaign = (c.campaignName || '').toLowerCase().includes(q);
+      const matchTitle = (c.title || '').toLowerCase().includes(q);
 
       let matchCustom = false;
       if (c.customFields) {
@@ -198,6 +203,7 @@ export async function GET(req: NextRequest) {
         matchOwnerEmail ||
         matchList ||
         matchCampaign ||
+        matchTitle ||
         matchCustom
       );
     });
@@ -224,6 +230,29 @@ export async function GET(req: NextRequest) {
 
   if (countryFilter !== 'all') {
     contacts = contacts.filter((c) => (c.country || '').toLowerCase().trim() === countryFilter.toLowerCase().trim());
+  }
+
+  // 5b. Advanced Field Filters (Apollo-style: job title, company, website, file name)
+  if (jobTitleFilter) {
+    contacts = contacts.filter((c) => (c.title || '').toLowerCase().includes(jobTitleFilter));
+  }
+
+  if (companyFilter) {
+    contacts = contacts.filter((c) => c.companyName.toLowerCase().includes(companyFilter));
+  }
+
+  if (websiteFilter) {
+    contacts = contacts.filter(
+      (c) => c.domain.toLowerCase().includes(websiteFilter) || c.website.toLowerCase().includes(websiteFilter)
+    );
+  }
+
+  if (fileNameFilter) {
+    contacts = contacts.filter(
+      (c) =>
+        (c.listName || '').toLowerCase().includes(fileNameFilter) ||
+        (c.sourceFileName || '').toLowerCase().includes(fileNameFilter)
+    );
   }
 
   // 6. Advanced Filter Engine with AND / OR Logic Support

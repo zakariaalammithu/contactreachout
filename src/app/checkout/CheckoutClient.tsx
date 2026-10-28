@@ -91,68 +91,68 @@ export default function CheckoutClient() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 pb-16 font-sans">
-      <div className="flex items-center justify-between border-b border-blue-100 pb-4">
+      <div className="flex items-center justify-between border-b border-blue-900 pb-4">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-black text-slate-950">
-            <CreditCard className="h-6 w-6 text-[#0e6de4]" />
+          <h1 className="flex items-center gap-2 text-2xl font-black text-white">
+            <CreditCard className="h-6 w-6 text-blue-400" />
             Secure Stripe Checkout
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-zinc-400">
             Payment details are entered only on Stripe&apos;s hosted checkout.
           </p>
         </div>
         <Link href="/pricing">
-          <Button variant="outline" size="sm" className="border-slate-300 font-bold">
+          <Button variant="outline" size="sm" className="border-zinc-700 font-bold">
             <ArrowLeft className="mr-1 h-4 w-4" />
             Back to Pricing
           </Button>
         </Link>
       </div>
 
-      <Card className="space-y-6 border-blue-100 bg-white p-7 shadow-lg rounded-3xl">
+      <Card className="space-y-6 border-blue-900 bg-zinc-950 p-7 shadow-lg rounded-3xl">
         {/* Selected Plan Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-5">
+        <div className="flex items-start justify-between gap-4 border-b border-zinc-800 pb-5">
           <div className="space-y-1">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0e6de4] bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-blue-400 bg-blue-950 px-3 py-1 rounded-full border border-blue-900">
               {purchaseInfo.planName} Plan — {isYearly ? 'Annual Billing' : 'Monthly Billing'}
             </span>
             <div className="pt-2">
-              <span className="text-3xl font-extrabold text-slate-950 font-mono">
+              <span className="text-3xl font-extrabold text-white font-mono">
                 ${isYearly ? purchaseInfo.actualAnnualCharge.toLocaleString() : purchaseInfo.displayMonthlyPrice.toLocaleString()} USD
               </span>
-              <span className="text-sm font-bold text-slate-600 font-mono">
+              <span className="text-sm font-bold text-zinc-400 font-mono">
                 {isYearly ? ' / year' : ' / month'}
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-medium pt-1">
+            <p className="text-xs text-zinc-400 font-medium pt-1">
               {isYearly
                 ? `(Equivalent to $${purchaseInfo.displayMonthlyPrice}/month • Billed $${purchaseInfo.actualAnnualCharge} annually • Save 20%)`
                 : 'Billed monthly • Cancel anytime'}
             </p>
           </div>
 
-          <ShieldCheck className="h-10 w-10 text-[#0e6de4] shrink-0" />
+          <ShieldCheck className="h-10 w-10 text-blue-400 shrink-0" />
         </div>
 
         {/* Plan Feature Summary */}
-        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2 text-xs font-mono">
-          <div className="flex justify-between text-slate-700">
+        <div className="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 space-y-2 text-xs font-mono">
+          <div className="flex justify-between text-zinc-300">
             <span>Outreach Credit Allocation:</span>
-            <strong className="text-slate-900">
+            <strong className="text-zinc-100">
               {isYearly
                 ? `${(purchaseInfo.credits * 12).toLocaleString()} Credits/year (${purchaseInfo.credits.toLocaleString()} Credits/mo)`
                 : `${purchaseInfo.credits.toLocaleString()} Credits/month`}
             </strong>
           </div>
-          <div className="flex justify-between text-slate-700">
+          <div className="flex justify-between text-zinc-300">
             <span>Billing Interval:</span>
-            <strong className="text-[#0e6de4] uppercase">
+            <strong className="text-blue-400 uppercase">
               {isYearly ? 'Billed Annually ($' + purchaseInfo.actualAnnualCharge + ' / yr)' : 'Billed Monthly ($' + purchaseInfo.displayMonthlyPrice + ' / mo)'}
             </strong>
           </div>
-          <div className="flex justify-between text-slate-700">
+          <div className="flex justify-between text-zinc-300">
             <span>Payment Processor:</span>
-            <strong className="text-slate-900">Stripe Encrypted (256-bit SSL)</strong>
+            <strong className="text-zinc-100">Stripe Encrypted (256-bit SSL)</strong>
           </div>
         </div>
 
@@ -161,18 +161,18 @@ export default function CheckoutClient() {
           <div
             className={`flex gap-3 rounded-2xl border p-4 text-sm font-semibold ${
               state === 'paid'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                ? 'border-emerald-900 bg-emerald-950 text-emerald-300'
                 : state === 'error'
-                ? 'border-rose-200 bg-rose-50 text-rose-800'
-                : 'border-blue-200 bg-blue-50 text-blue-800'
+                ? 'border-rose-900 bg-rose-950 text-rose-300'
+                : 'border-blue-900 bg-blue-950 text-blue-300'
             }`}
           >
             {state === 'paid' ? (
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
             ) : state === 'pending' ? (
-              <Loader2 className="h-5 w-5 shrink-0 animate-spin text-blue-600" />
+              <Loader2 className="h-5 w-5 shrink-0 animate-spin text-blue-400" />
             ) : (
-              <TriangleAlert className="h-5 w-5 shrink-0 text-rose-600" />
+              <TriangleAlert className="h-5 w-5 shrink-0 text-rose-400" />
             )}
             <span>{message}</span>
           </div>
@@ -204,7 +204,7 @@ export default function CheckoutClient() {
           </Button>
         )}
 
-        <p className="text-center text-xs leading-5 text-slate-500">
+        <p className="text-center text-xs leading-5 text-zinc-400">
           No card data is collected or stored by ContactReachout. Credits activate only after server-side Stripe verification.
         </p>
       </Card>

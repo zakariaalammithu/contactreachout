@@ -488,29 +488,29 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="space-y-6 text-[#111827]">
+    <div className="space-y-6 text-zinc-100">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#E5E7EB] pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className="bg-[#0e6de4]/10 text-[#0e6de4] border-[#0e6de4]/25 text-[10px] font-mono uppercase tracking-wider font-semibold">
+            <Badge variant="outline" className="bg-[#0e6de4]/10 text-blue-400 border-[#0e6de4]/25 text-[10px] font-mono uppercase tracking-wider font-semibold">
               SUPER ADMIN GOVERNANCE
             </Badge>
-            <span className="text-xs text-[#6B7280] font-mono">• Server-Authorized Session</span>
+            <span className="text-xs text-zinc-400 font-mono">• Server-Authorized Session</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#111827] flex items-center gap-2.5">
-            <Users className="h-6 w-6 text-[#0e6de4]" />
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2.5">
+            <Users className="h-6 w-6 text-blue-400" />
             User Management & Permissions
           </h1>
-          <p className="text-xs sm:text-sm text-[#6B7280] mt-1 font-normal">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-normal">
             Manage multi-tenant user accounts, assign role permissions, suspend access, and review real system analytics.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Link href="/dashboard">
-            <Button variant="outline" size="sm" className="text-xs h-9 border-[#E5E7EB] hover:border-[#0e6de4] text-[#111827] hover:text-[#0e6de4] bg-white shadow-xs font-semibold">
-              <ExternalLink className="h-3.5 w-3.5 mr-1.5 text-[#0e6de4]" />
+            <Button variant="outline" size="sm" className="text-xs h-9 border-zinc-800 hover:border-[#0e6de4] text-zinc-100 hover:text-blue-400 bg-zinc-950 shadow-xs font-semibold">
+              <ExternalLink className="h-3.5 w-3.5 mr-1.5 text-blue-400" />
               Preview User Dashboard
             </Button>
           </Link>
@@ -519,9 +519,9 @@ export default function AdminUsersPage() {
             variant="outline"
             size="sm"
             onClick={() => setIsCustomizeColumnsOpen(!isCustomizeColumnsOpen)}
-            className="text-xs h-9 border-[#E5E7EB] hover:border-[#0e6de4] text-[#111827] hover:text-[#0e6de4] bg-white shadow-xs font-semibold"
+            className="text-xs h-9 border-zinc-800 hover:border-[#0e6de4] text-zinc-100 hover:text-blue-400 bg-zinc-950 shadow-xs font-semibold"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5 text-[#0e6de4]" />
+            <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5 text-blue-400" />
             Customize Columns
           </Button>
 
@@ -539,24 +539,24 @@ export default function AdminUsersPage() {
 
       {/* Action Toast Banners */}
       {actionSuccess && (
-        <div className="p-3.5 rounded-xl border border-emerald-300 bg-emerald-50 text-xs font-medium text-emerald-900 flex items-center justify-between gap-2 shadow-sm">
+        <div className="p-3.5 rounded-xl border border-emerald-800 bg-emerald-950 text-xs font-medium text-emerald-200 flex items-center justify-between gap-2 shadow-sm">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
             <span>{actionSuccess}</span>
           </div>
-          <button onClick={() => setActionSuccess(null)} className="text-emerald-700 hover:text-emerald-900">
+          <button onClick={() => setActionSuccess(null)} className="text-emerald-300 hover:text-emerald-200">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
       {actionError && (
-        <div className="p-3.5 rounded-xl border border-rose-300 bg-rose-50 text-xs font-medium text-rose-900 flex items-center justify-between gap-2 shadow-sm">
+        <div className="p-3.5 rounded-xl border border-rose-800 bg-rose-950 text-xs font-medium text-rose-200 flex items-center justify-between gap-2 shadow-sm">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0" />
             <span>{actionError}</span>
           </div>
-          <button onClick={() => setActionError(null)} className="text-rose-700 hover:text-rose-900">
+          <button onClick={() => setActionError(null)} className="text-rose-300 hover:text-rose-200">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -564,13 +564,13 @@ export default function AdminUsersPage() {
 
       {/* Column Customizer Panel */}
       {isCustomizeColumnsOpen && (
-        <Card className="p-4 bg-white border border-[#E5E7EB] shadow-lg rounded-xl space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-[#E5E7EB]">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2 font-mono">
-              <SlidersHorizontal className="h-4 w-4 text-[#0e6de4]" />
+        <Card className="p-4 bg-zinc-950 border border-zinc-800 shadow-lg rounded-xl space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-100 flex items-center gap-2 font-mono">
+              <SlidersHorizontal className="h-4 w-4 text-blue-400" />
               Table Column Customization
             </h4>
-            <button onClick={() => setIsCustomizeColumnsOpen(false)} className="text-[#6B7280] hover:text-[#111827]">
+            <button onClick={() => setIsCustomizeColumnsOpen(false)} className="text-zinc-400 hover:text-zinc-100">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -578,15 +578,15 @@ export default function AdminUsersPage() {
             {columns.map((col) => (
               <label
                 key={col.key}
-                className="flex items-center gap-2 p-2 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#0e6de4] cursor-pointer select-none transition-colors"
+                className="flex items-center gap-2 p-2 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-[#0e6de4] cursor-pointer select-none transition-colors"
               >
                 <input
                   type="checkbox"
                   checked={col.visible}
                   onChange={() => toggleColumn(col.key)}
-                  className="rounded border-[#D1D5DB] bg-white text-[#0e6de4] focus:ring-[#0e6de4] h-3.5 w-3.5"
+                  className="rounded border-zinc-700 bg-zinc-950 text-blue-400 focus:ring-[#0e6de4] h-3.5 w-3.5"
                 />
-                <span className={col.visible ? 'text-[#111827] font-semibold' : 'text-[#9CA3AF]'}>
+                <span className={col.visible ? 'text-zinc-100 font-semibold' : 'text-zinc-400'}>
                   {col.label}
                 </span>
               </label>
@@ -596,11 +596,11 @@ export default function AdminUsersPage() {
       )}
 
       {/* Search & Multi-Filter Control Bar */}
-      <Card className="p-4 bg-white border border-[#E5E7EB] shadow-sm rounded-xl space-y-3">
+      <Card className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm rounded-xl space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
           {/* Search Box */}
           <div className="sm:col-span-4 relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#9CA3AF]" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <input
               type="text"
               placeholder="Search Name, Email, User ID, Company..."
@@ -609,7 +609,7 @@ export default function AdminUsersPage() {
                 setSearchQuery(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-xl border border-[#E5E7EB] bg-white py-2 pl-9 pr-4 text-xs text-[#111827] placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none transition-colors font-medium"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 py-2 pl-9 pr-4 text-xs text-zinc-100 placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none transition-colors font-medium"
             />
           </div>
 
@@ -621,7 +621,7 @@ export default function AdminUsersPage() {
                 setRoleFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-xs text-[#111827] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
             >
               <option value="all">All Roles</option>
               <option value="SUPER_ADMIN">Super Admin</option>
@@ -638,7 +638,7 @@ export default function AdminUsersPage() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-xs text-[#111827] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
             >
               <option value="all">All Statuses</option>
               <option value="ACTIVE">Active</option>
@@ -654,7 +654,7 @@ export default function AdminUsersPage() {
                 setVerificationFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-xs text-[#111827] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
             >
               <option value="all">All Verification</option>
               <option value="VERIFIED">Verified</option>
@@ -670,7 +670,7 @@ export default function AdminUsersPage() {
                 setPlanFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-xs text-[#111827] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
             >
               <option value="all">All Plans</option>
               <option value="Free">Free</option>
@@ -683,16 +683,16 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Filter Summary & Bulk Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#E5E7EB] text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-zinc-800 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-[#6B7280]">Total Users:</span>
-            <span className="font-bold text-[#0e6de4] font-mono">{totalUsers}</span>
+            <span className="text-zinc-400">Total Users:</span>
+            <span className="font-bold text-blue-400 font-mono">{totalUsers}</span>
             {activeFilterCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={resetFilters}
-                className="text-[11px] text-[#0e6de4] hover:text-[#0c5bc0] font-semibold h-6 px-2"
+                className="text-[11px] text-blue-400 hover:text-blue-300 font-semibold h-6 px-2"
               >
                 Reset Filters ({activeFilterCount})
               </Button>
@@ -702,7 +702,7 @@ export default function AdminUsersPage() {
           {/* Bulk Selection Actions */}
           {selectedEmails.length > 0 && (
             <div className="flex items-center gap-2 bg-[#0e6de4]/10 border border-[#0e6de4]/30 px-3 py-1 rounded-lg">
-              <span className="text-[#0e6de4] font-bold font-mono text-[11px]">
+              <span className="text-blue-400 font-bold font-mono text-[11px]">
                 {selectedEmails.length} selected
               </span>
               <Button
@@ -732,11 +732,11 @@ export default function AdminUsersPage() {
 
           {/* Sort Control */}
           <div className="flex items-center gap-2 ml-auto">
-            <span className="text-[#6B7280] text-[11px]">Sort By:</span>
+            <span className="text-zinc-400 text-[11px]">Sort By:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-lg border border-[#E5E7EB] bg-white px-2 py-1 text-[11px] text-[#111827] font-medium"
+              className="rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-100 font-medium"
             >
               <option value="createdAt">Created Date</option>
               <option value="lastLoginAt">Last Login</option>
@@ -746,7 +746,7 @@ export default function AdminUsersPage() {
 
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="px-2 py-1 rounded bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB] text-[11px] font-mono font-bold uppercase border border-[#E5E7EB]"
+              className="px-2 py-1 rounded bg-zinc-900 text-zinc-100 hover:bg-zinc-800 text-[11px] font-mono font-bold uppercase border border-zinc-800"
               title="Toggle sort direction"
             >
               {sortOrder.toUpperCase()}
@@ -756,7 +756,7 @@ export default function AdminUsersPage() {
       </Card>
 
       {/* Users Data Table */}
-      <Card className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+      <Card className="bg-zinc-950 border border-zinc-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-[#111827] border-b border-[#1F2937] text-white font-mono uppercase text-[10px]">
@@ -766,7 +766,7 @@ export default function AdminUsersPage() {
                     type="checkbox"
                     checked={users.length > 0 && selectedEmails.length === users.length}
                     onChange={toggleSelectAll}
-                    className="rounded border-slate-600 bg-[#1F2937] text-[#0e6de4] focus:ring-[#0e6de4] h-3.5 w-3.5 cursor-pointer"
+                    className="rounded border-zinc-600 bg-[#1F2937] text-blue-400 focus:ring-[#0e6de4] h-3.5 w-3.5 cursor-pointer"
                   />
                 </th>
                 {isColumnVisible('user') && <th className="px-5 py-3.5 text-white font-bold">User</th>}
@@ -782,21 +782,21 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-[#E5E7EB] bg-white">
+            <tbody className="divide-y divide-zinc-800 bg-zinc-950">
               {loading ? (
                 Array.from({ length: 5 }).map((_, idx) => (
                   <tr key={idx} className="animate-pulse">
                     <td colSpan={11} className="px-5 py-4">
-                      <div className="h-6 bg-[#F3F4F6] rounded-lg w-full"></div>
+                      <div className="h-6 bg-zinc-900 rounded-lg w-full"></div>
                     </td>
                   </tr>
                 ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-5 py-12 text-center text-[#6B7280]">
-                    <Users className="h-8 w-8 mx-auto mb-2 text-[#9CA3AF]" />
-                    <p className="font-bold text-[#111827]">No user accounts found.</p>
-                    <p className="text-xs text-[#6B7280] mt-0.5">Try refining your search query or filters.</p>
+                  <td colSpan={11} className="px-5 py-12 text-center text-zinc-400">
+                    <Users className="h-8 w-8 mx-auto mb-2 text-zinc-400" />
+                    <p className="font-bold text-zinc-100">No user accounts found.</p>
+                    <p className="text-xs text-zinc-400 mt-0.5">Try refining your search query or filters.</p>
                   </td>
                 </tr>
               ) : (
@@ -812,7 +812,7 @@ export default function AdminUsersPage() {
                     <tr
                       key={user.id}
                       className={`hover:bg-[#0e6de4]/[0.04] transition-colors ${
-                        user.isSuspended ? 'bg-rose-50/50' : ''
+                        user.isSuspended ? 'bg-rose-950/50' : ''
                       } ${isSelected ? 'bg-[#0e6de4]/[0.08]' : ''}`}
                     >
                       {/* Checkbox */}
@@ -822,7 +822,7 @@ export default function AdminUsersPage() {
                           disabled={isSelf || isPrimarySuperAdmin}
                           checked={isSelected}
                           onChange={() => toggleSelectUser(user.email)}
-                          className="rounded border-[#D1D5DB] bg-white text-[#0e6de4] focus:ring-[#0e6de4] h-3.5 w-3.5 cursor-pointer disabled:opacity-30"
+                          className="rounded border-zinc-700 bg-zinc-950 text-blue-400 focus:ring-[#0e6de4] h-3.5 w-3.5 cursor-pointer disabled:opacity-30"
                         />
                       </td>
 
@@ -835,7 +835,7 @@ export default function AdminUsersPage() {
                                 src={user.avatarUrl}
                                 alt={user.name}
                                 onError={() => handleAvatarError(user.id)}
-                                className="h-9 w-9 rounded-full object-cover border border-[#E5E7EB] shrink-0 shadow-xs"
+                                className="h-9 w-9 rounded-full object-cover border border-zinc-800 shrink-0 shadow-xs"
                               />
                             ) : (
                               <div className="h-9 w-9 rounded-full bg-[#0e6de4] flex items-center justify-center text-xs font-bold text-white shadow-xs shrink-0 select-none">
@@ -845,18 +845,18 @@ export default function AdminUsersPage() {
 
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <p className="font-bold text-[#111827] truncate text-xs">{user.name}</p>
+                                <p className="font-bold text-zinc-100 truncate text-xs">{user.name}</p>
                                 {isSelf && (
-                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#0e6de4]/10 text-[#0e6de4] border border-[#0e6de4]/30 font-bold">
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#0e6de4]/10 text-blue-400 border border-[#0e6de4]/30 font-bold">
                                     YOU
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11px] text-[#6B7280] truncate font-medium">{user.email}</p>
+                              <p className="text-[11px] text-zinc-400 truncate font-medium">{user.email}</p>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] text-[#6B7280] font-mono">ID: {user.id}</span>
+                                <span className="text-[10px] text-zinc-400 font-mono">ID: {user.id}</span>
                                 {user.company && (
-                                  <span className="text-[9px] text-[#374151] bg-[#F3F4F6] border border-[#E5E7EB] px-1.5 rounded font-medium">
+                                  <span className="text-[9px] text-zinc-300 bg-zinc-900 border border-zinc-800 px-1.5 rounded font-medium">
                                     {user.company}
                                   </span>
                                 )}
@@ -872,10 +872,10 @@ export default function AdminUsersPage() {
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono border ${
                               user.role === 'SUPER_ADMIN'
-                                ? 'bg-[#0e6de4]/10 text-[#0e6de4] border-[#0e6de4]/30'
+                                ? 'bg-[#0e6de4]/10 text-blue-400 border-[#0e6de4]/30'
                                 : user.role === 'ADMIN'
-                                ? 'bg-[#F3F4F6] text-[#111827] border-[#E5E7EB]'
-                                : 'bg-[#F3F4F6] text-[#374151] border-[#E5E7EB]'
+                                ? 'bg-zinc-900 text-zinc-100 border-zinc-800'
+                                : 'bg-zinc-900 text-zinc-300 border-zinc-800'
                             }`}
                           >
                             <Shield className="h-3 w-3" />
@@ -888,12 +888,12 @@ export default function AdminUsersPage() {
                       {isColumnVisible('status') && (
                         <td className="px-4 py-4">
                           {user.isSuspended ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-900">
                               <Ban className="h-3 w-3" />
                               SUSPENDED
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-900">
                               <CheckCircle2 className="h-3 w-3" />
                               ACTIVE
                             </span>
@@ -905,12 +905,12 @@ export default function AdminUsersPage() {
                       {isColumnVisible('verification') && (
                         <td className="px-4 py-4">
                           {user.isEmailVerified ? (
-                            <span className="text-emerald-700 font-semibold text-[11px] flex items-center gap-1">
+                            <span className="text-emerald-300 font-semibold text-[11px] flex items-center gap-1">
                               <UserCheck className="h-3.5 w-3.5" />
                               Verified
                             </span>
                           ) : (
-                            <span className="text-amber-700 font-semibold text-[11px] flex items-center gap-1">
+                            <span className="text-amber-300 font-semibold text-[11px] flex items-center gap-1">
                               <Mail className="h-3.5 w-3.5" />
                               Unverified
                             </span>
@@ -924,8 +924,8 @@ export default function AdminUsersPage() {
                           <span
                             className={`px-2 py-0.5 rounded text-[11px] font-mono border ${
                               user.plan.toLowerCase().includes('enterprise') || user.plan.toLowerCase().includes('admin')
-                                ? 'bg-[#0e6de4]/10 text-[#0e6de4] border-[#0e6de4]/30 font-semibold'
-                                : 'bg-[#F3F4F6] border-[#E5E7EB] text-[#374151] font-medium'
+                                ? 'bg-[#0e6de4]/10 text-blue-400 border-[#0e6de4]/30 font-semibold'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-300 font-medium'
                             }`}
                           >
                             {user.plan}
@@ -936,15 +936,15 @@ export default function AdminUsersPage() {
                       {/* Credits */}
                       {isColumnVisible('credits') && (
                         <td className="px-4 py-4 font-mono text-[11px]">
-                          <p className="text-[#0e6de4] font-bold">{user.availableCredits.toLocaleString()}</p>
-                          <p className="text-[10px] text-[#6B7280]">Avail. Credits</p>
+                          <p className="text-blue-400 font-bold">{user.availableCredits.toLocaleString()}</p>
+                          <p className="text-[10px] text-zinc-400">Avail. Credits</p>
                         </td>
                       )}
 
                       {/* Campaigns Count */}
                       {isColumnVisible('campaigns') && (
                         <td className="px-4 py-4 font-mono text-[11px] text-center">
-                          <span className="px-2 py-0.5 rounded bg-[#F3F4F6] text-[#111827] font-bold border border-[#E5E7EB]">
+                          <span className="px-2 py-0.5 rounded bg-zinc-900 text-zinc-100 font-bold border border-zinc-800">
                             {user.campaignsCount}
                           </span>
                         </td>
@@ -952,14 +952,14 @@ export default function AdminUsersPage() {
 
                       {/* Created At */}
                       {isColumnVisible('createdAt') && (
-                        <td className="px-4 py-4 text-[#6B7280] font-mono text-[11px]">
+                        <td className="px-4 py-4 text-zinc-400 font-mono text-[11px]">
                           {new Date(user.createdAt).toLocaleDateString()}
                         </td>
                       )}
 
                       {/* Last Login */}
                       {isColumnVisible('lastLogin') && (
-                        <td className="px-4 py-4 text-[#6B7280] font-mono text-[11px]">
+                        <td className="px-4 py-4 text-zinc-400 font-mono text-[11px]">
                           {user.lastLoginAt ? (
                             new Date(user.lastLoginAt).toLocaleString(undefined, {
                               month: 'short',
@@ -968,7 +968,7 @@ export default function AdminUsersPage() {
                               minute: '2-digit',
                             })
                           ) : (
-                            <span className="text-[#9CA3AF]">Never</span>
+                            <span className="text-zinc-400">Never</span>
                           )}
                         </td>
                       )}
@@ -982,10 +982,10 @@ export default function AdminUsersPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => setSelectedUserForDetails(user)}
-                              className="h-7 w-7 p-0 text-[#0e6de4] hover:bg-[#0e6de4]/10 border-[#E5E7EB] bg-white shadow-xs"
+                              className="h-7 w-7 p-0 text-blue-400 hover:bg-[#0e6de4]/10 border-zinc-800 bg-zinc-950 shadow-xs"
                               title="View Full Profile Details"
                             >
-                              <Eye className="h-3.5 w-3.5 text-[#0e6de4]" />
+                              <Eye className="h-3.5 w-3.5 text-blue-400" />
                             </Button>
 
                             {/* Role Selector Dropdown */}
@@ -998,14 +998,14 @@ export default function AdminUsersPage() {
                                     targetRole: e.target.value as 'SUPER_ADMIN' | 'ADMIN' | 'USER',
                                   })
                                 }
-                                className="rounded-lg border border-[#E5E7EB] bg-white px-2 py-1 text-[11px] text-[#111827] font-medium focus:border-[#0e6de4] focus:outline-none"
+                                className="rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-100 font-medium focus:border-[#0e6de4] focus:outline-none"
                               >
                                 <option value="USER">USER</option>
                                 <option value="ADMIN">ADMIN</option>
                                 {currentUserRole === 'SUPER_ADMIN' && <option value="SUPER_ADMIN">SUPER_ADMIN</option>}
                               </select>
                             ) : (
-                              <span className="text-[10px] text-[#6B7280] font-mono px-2 py-1 bg-[#F3F4F6] rounded border border-[#E5E7EB]">
+                              <span className="text-[10px] text-zinc-400 font-mono px-2 py-1 bg-zinc-900 rounded border border-zinc-800">
                                 Protected
                               </span>
                             )}
@@ -1015,10 +1015,10 @@ export default function AdminUsersPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => setResetPasswordModalUser(user)}
-                              className="h-7 px-2 text-[11px] border-[#E5E7EB] hover:border-[#0e6de4] text-[#0e6de4] bg-white font-medium"
+                              className="h-7 px-2 text-[11px] border-zinc-800 hover:border-[#0e6de4] text-blue-400 bg-zinc-950 font-medium"
                               title="Reset Password"
                             >
-                              <KeyRound className="h-3 w-3 mr-1 text-[#0e6de4]" />
+                              <KeyRound className="h-3 w-3 mr-1 text-blue-400" />
                               Reset
                             </Button>
 
@@ -1031,24 +1031,24 @@ export default function AdminUsersPage() {
                                   e.stopPropagation();
                                   setActiveMenuUserId(isMenuOpen ? null : user.id);
                                 }}
-                                className={`h-7 w-7 p-0 border-[#E5E7EB] bg-white hover:bg-[#F3F4F6] text-[#374151] transition-colors ${
+                                className={`h-7 w-7 p-0 border-zinc-800 bg-zinc-950 hover:bg-zinc-900 text-zinc-300 transition-colors ${
                                   isMenuOpen ? 'border-[#0e6de4] bg-[#0e6de4]/5' : ''
                                 }`}
                                 title="More User Actions"
                               >
-                                <MoreVertical className="h-3.5 w-3.5 text-[#374151]" />
+                                <MoreVertical className="h-3.5 w-3.5 text-zinc-300" />
                               </Button>
 
                               {isMenuOpen && (
-                                <div className="absolute right-0 top-8 z-50 w-48 rounded-xl border border-[#E5E7EB] bg-white p-1.5 shadow-xl text-left font-sans text-xs space-y-0.5">
+                                <div className="absolute right-0 top-8 z-50 w-48 rounded-xl border border-zinc-800 bg-zinc-950 p-1.5 shadow-xl text-left font-sans text-xs space-y-0.5">
                                   <button
                                     onClick={() => {
                                       setSelectedUserForDetails(user);
                                       setActiveMenuUserId(null);
                                     }}
-                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-[#F3F4F6] text-[#111827] font-medium rounded-lg transition-colors"
+                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
                                   >
-                                    <Eye className="h-3.5 w-3.5 text-[#0e6de4]" />
+                                    <Eye className="h-3.5 w-3.5 text-blue-400" />
                                     View Details
                                   </button>
 
@@ -1057,9 +1057,9 @@ export default function AdminUsersPage() {
                                       setResetPasswordModalUser(user);
                                       setActiveMenuUserId(null);
                                     }}
-                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-[#F3F4F6] text-[#111827] font-medium rounded-lg transition-colors"
+                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
                                   >
-                                    <KeyRound className="h-3.5 w-3.5 text-[#0e6de4]" />
+                                    <KeyRound className="h-3.5 w-3.5 text-blue-400" />
                                     Reset Password
                                   </button>
 
@@ -1072,23 +1072,23 @@ export default function AdminUsersPage() {
                                         });
                                         setActiveMenuUserId(null);
                                       }}
-                                      className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-[#F3F4F6] text-[#111827] font-medium rounded-lg transition-colors"
+                                      className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
                                     >
                                       {user.isSuspended ? (
                                         <>
-                                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                                           Activate Account
                                         </>
                                       ) : (
                                         <>
-                                          <Ban className="h-3.5 w-3.5 text-amber-600" />
+                                          <Ban className="h-3.5 w-3.5 text-amber-400" />
                                           Suspend Account
                                         </>
                                       )}
                                     </button>
                                   ) : null}
 
-                                  <div className="border-t border-[#E5E7EB] my-1" />
+                                  <div className="border-t border-zinc-800 my-1" />
 
                                   {!isPrimarySuperAdmin && !isSelf ? (
                                     <button
@@ -1097,13 +1097,13 @@ export default function AdminUsersPage() {
                                         setDeleteConfirmEmailInput('');
                                         setActiveMenuUserId(null);
                                       }}
-                                      className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-rose-50 text-rose-600 font-semibold rounded-lg transition-colors"
+                                      className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-rose-950 text-rose-400 font-semibold rounded-lg transition-colors"
                                     >
-                                      <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                      <Trash2 className="h-3.5 w-3.5 text-rose-400" />
                                       Delete User
                                     </button>
                                   ) : (
-                                    <div className="px-2.5 py-1 text-[10px] text-[#9CA3AF] font-mono">
+                                    <div className="px-2.5 py-1 text-[10px] text-zinc-400 font-mono">
                                       Account Protection Active
                                     </div>
                                   )}
@@ -1122,22 +1122,22 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Server-Side Pagination Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-white border-t border-[#E5E7EB] text-xs">
-          <div className="text-[#6B7280] font-mono text-[11px]">
-            Showing <span className="font-bold text-[#111827]">{users.length > 0 ? (page - 1) * limit + 1 : 0}</span> to{' '}
-            <span className="font-bold text-[#111827]">{Math.min(page * limit, totalUsers)}</span> of{' '}
-            <span className="font-bold text-[#0e6de4]">{totalUsers}</span> users
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-zinc-950 border-t border-zinc-800 text-xs">
+          <div className="text-zinc-400 font-mono text-[11px]">
+            Showing <span className="font-bold text-zinc-100">{users.length > 0 ? (page - 1) * limit + 1 : 0}</span> to{' '}
+            <span className="font-bold text-zinc-100">{Math.min(page * limit, totalUsers)}</span> of{' '}
+            <span className="font-bold text-blue-400">{totalUsers}</span> users
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[#6B7280] text-[11px]">Rows per page:</span>
+            <span className="text-zinc-400 text-[11px]">Rows per page:</span>
             <select
               value={limit}
               onChange={(e) => {
                 setLimit(Number(e.target.value));
                 setPage(1);
               }}
-              className="rounded-lg border border-[#E5E7EB] bg-white px-2 py-1 text-[11px] text-[#111827] font-medium focus:border-[#0e6de4]"
+              className="rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-100 font-medium focus:border-[#0e6de4]"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
@@ -1151,11 +1151,11 @@ export default function AdminUsersPage() {
                 size="sm"
                 disabled={page <= 1}
                 onClick={() => setPage(page - 1)}
-                className="h-7 w-7 p-0 border-[#E5E7EB] text-[#111827]"
+                className="h-7 w-7 p-0 border-zinc-800 text-zinc-100"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
-              <span className="px-2 font-mono text-[11px] text-[#111827] font-semibold">
+              <span className="px-2 font-mono text-[11px] text-zinc-100 font-semibold">
                 Page {page} of {totalPages}
               </span>
               <Button
@@ -1163,7 +1163,7 @@ export default function AdminUsersPage() {
                 size="sm"
                 disabled={page >= totalPages}
                 onClick={() => setPage(page + 1)}
-                className="h-7 w-7 p-0 border-[#E5E7EB] text-[#111827]"
+                className="h-7 w-7 p-0 border-zinc-800 text-zinc-100"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
@@ -1175,13 +1175,13 @@ export default function AdminUsersPage() {
       {/* CREATE USER ACCOUNT MODAL */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-lg p-6 space-y-4 border-[#E5E7EB] bg-white shadow-2xl rounded-2xl text-[#111827]">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
-              <h3 className="text-base font-bold text-[#111827] flex items-center gap-2">
-                <Plus className="h-5 w-5 text-[#0e6de4]" />
+          <Card className="w-full max-w-lg p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-2xl rounded-2xl text-zinc-100">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                <Plus className="h-5 w-5 text-blue-400" />
                 Provision New User Account
               </h3>
-              <button onClick={() => setIsCreateModalOpen(false)} className="text-[#6B7280] hover:text-[#111827]">
+              <button onClick={() => setIsCreateModalOpen(false)} className="text-zinc-400 hover:text-zinc-100">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -1189,47 +1189,47 @@ export default function AdminUsersPage() {
             <form onSubmit={handleCreateUser} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-[#374151]">Full Name</label>
+                  <label className="font-semibold text-zinc-300">Full Name</label>
                   <input
                     type="text"
                     value={createForm.name}
                     onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                     placeholder="Alex Morgan"
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[#111827] placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100 placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-[#374151]">Email Address *</label>
+                  <label className="font-semibold text-zinc-300">Email Address *</label>
                   <input
                     type="email"
                     required
                     value={createForm.email}
                     onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                     placeholder="user@enterprise.com"
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[#111827] placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100 placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-[#374151]">Company (Optional)</label>
+                  <label className="font-semibold text-zinc-300">Company (Optional)</label>
                   <input
                     type="text"
                     value={createForm.company}
                     onChange={(e) => setCreateForm({ ...createForm, company: e.target.value })}
                     placeholder="Acme Inc"
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[#111827] placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100 placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-[#374151]">Assigned Role</label>
+                  <label className="font-semibold text-zinc-300">Assigned Role</label>
                   <select
                     value={createForm.role}
                     onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as any })}
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[#111827] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
                   >
                     <option value="USER">USER (Standard Operator)</option>
                     <option value="ADMIN">ADMIN (Campaign & Team Manager)</option>
@@ -1238,18 +1238,18 @@ export default function AdminUsersPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-[#374151]">Avatar Image URL (Optional)</label>
+                <label className="font-semibold text-zinc-300">Avatar Image URL (Optional)</label>
                 <input
                   type="url"
                   value={createForm.avatarUrl}
                   onChange={(e) => setCreateForm({ ...createForm, avatarUrl: e.target.value })}
                   placeholder="https://example.com/avatar.jpg"
-                  className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[#111827] placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100 placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-[#374151]">Initial Password * (Min 12 characters)</label>
+                <label className="font-semibold text-zinc-300">Initial Password * (Min 12 characters)</label>
                 <input
                   type="password"
                   required
@@ -1257,17 +1257,17 @@ export default function AdminUsersPage() {
                   value={createForm.password}
                   onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
                   placeholder="At least 12 characters"
-                  className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[#111827] placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100 placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-[#374151]">Subscription Plan</label>
+                  <label className="font-semibold text-zinc-300">Subscription Plan</label>
                   <select
                     value={createForm.plan}
                     onChange={(e) => setCreateForm({ ...createForm, plan: e.target.value })}
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[#111827] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none font-medium"
                   >
                     <option value="Free">Free</option>
                     <option value="Starter">Starter</option>
@@ -1278,13 +1278,13 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-[#374151]">Initial Paid Credits</label>
+                  <label className="font-semibold text-zinc-300">Initial Paid Credits</label>
                   <input
                     type="number"
                     min={0}
                     value={createForm.initialCredits}
                     onChange={(e) => setCreateForm({ ...createForm, initialCredits: parseInt(e.target.value, 10) || 0 })}
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[#111827] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
                   />
                 </div>
               </div>
@@ -1295,15 +1295,15 @@ export default function AdminUsersPage() {
                   id="create-verify"
                   checked={createForm.isEmailVerified}
                   onChange={(e) => setCreateForm({ ...createForm, isEmailVerified: e.target.checked })}
-                  className="rounded border-[#D1D5DB] bg-white text-[#0e6de4] focus:ring-[#0e6de4] h-4 w-4"
+                  className="rounded border-zinc-700 bg-zinc-950 text-blue-400 focus:ring-[#0e6de4] h-4 w-4"
                 />
-                <label htmlFor="create-verify" className="text-[#374151] font-medium cursor-pointer select-none">
+                <label htmlFor="create-verify" className="text-zinc-300 font-medium cursor-pointer select-none">
                   Mark email as verified upon creation
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#E5E7EB]">
-                <Button variant="secondary" size="sm" type="button" onClick={() => setIsCreateModalOpen(false)} className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]">
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+                <Button variant="secondary" size="sm" type="button" onClick={() => setIsCreateModalOpen(false)} className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800">
                   Cancel
                 </Button>
                 <Button variant="primary" size="sm" type="submit" className="bg-[#0e6de4] hover:bg-[#0c5bc0] text-white font-semibold">
@@ -1318,15 +1318,15 @@ export default function AdminUsersPage() {
       {/* USER DETAILS SLIDE-OVER DRAWER */}
       {selectedUserForDetails && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-xl bg-white border-l border-[#E5E7EB] h-full overflow-y-auto p-6 space-y-6 shadow-2xl text-[#111827]">
-            <div className="flex items-center justify-between pb-4 border-b border-[#E5E7EB]">
+          <div className="w-full max-w-xl bg-zinc-950 border-l border-zinc-800 h-full overflow-y-auto p-6 space-y-6 shadow-2xl text-zinc-100">
+            <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
               <div className="flex items-center gap-3">
                 {selectedUserForDetails.avatarUrl && !failedAvatars[selectedUserForDetails.id] ? (
                   <img
                     src={selectedUserForDetails.avatarUrl}
                     alt={selectedUserForDetails.name}
                     onError={() => handleAvatarError(selectedUserForDetails.id)}
-                    className="h-10 w-10 rounded-full object-cover border border-[#E5E7EB] shadow-xs shrink-0"
+                    className="h-10 w-10 rounded-full object-cover border border-zinc-800 shadow-xs shrink-0"
                   />
                 ) : (
                   <div className="h-10 w-10 rounded-full bg-[#0e6de4] flex items-center justify-center text-sm font-bold text-white shadow-xs shrink-0 select-none">
@@ -1334,13 +1334,13 @@ export default function AdminUsersPage() {
                   </div>
                 )}
                 <div>
-                  <h3 className="text-base font-bold text-[#111827]">{selectedUserForDetails.name}</h3>
-                  <p className="text-xs text-[#6B7280]">{selectedUserForDetails.email}</p>
+                  <h3 className="text-base font-bold text-zinc-100">{selectedUserForDetails.name}</h3>
+                  <p className="text-xs text-zinc-400">{selectedUserForDetails.email}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedUserForDetails(null)}
-                className="text-[#6B7280] hover:text-[#111827] p-1 rounded-lg hover:bg-[#F3F4F6]"
+                className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-900"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1348,54 +1348,54 @@ export default function AdminUsersPage() {
 
             {/* Section 1: Account Info */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#0e6de4] font-mono flex items-center gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 font-mono flex items-center gap-2">
                 <Users className="h-4 w-4" /> Account Information
               </h4>
-              <Card className="p-4 bg-[#F9FAFB] border border-[#E5E7EB] text-xs space-y-2">
+              <Card className="p-4 bg-zinc-950 border border-zinc-800 text-xs space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-[#6B7280]">User ID:</span>
-                    <p className="font-mono text-[#111827] font-bold">{selectedUserForDetails.id}</p>
+                    <span className="text-zinc-400">User ID:</span>
+                    <p className="font-mono text-zinc-100 font-bold">{selectedUserForDetails.id}</p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Assigned Role:</span>
-                    <p className="font-mono text-[#0e6de4] font-bold">{selectedUserForDetails.role}</p>
+                    <span className="text-zinc-400">Assigned Role:</span>
+                    <p className="font-mono text-blue-400 font-bold">{selectedUserForDetails.role}</p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Account Status:</span>
-                    <p className={selectedUserForDetails.isSuspended ? 'text-rose-600 font-bold' : 'text-emerald-700 font-bold'}>
+                    <span className="text-zinc-400">Account Status:</span>
+                    <p className={selectedUserForDetails.isSuspended ? 'text-rose-400 font-bold' : 'text-emerald-300 font-bold'}>
                       {selectedUserForDetails.isSuspended ? 'SUSPENDED' : 'ACTIVE'}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Email Verification:</span>
-                    <p className={selectedUserForDetails.isEmailVerified ? 'text-emerald-700 font-bold' : 'text-amber-700 font-bold'}>
+                    <span className="text-zinc-400">Email Verification:</span>
+                    <p className={selectedUserForDetails.isEmailVerified ? 'text-emerald-300 font-bold' : 'text-amber-300 font-bold'}>
                       {selectedUserForDetails.isEmailVerified ? 'Verified' : 'Unverified'}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Created At:</span>
-                    <p className="text-[#374151] font-medium">{new Date(selectedUserForDetails.createdAt).toLocaleString()}</p>
+                    <span className="text-zinc-400">Created At:</span>
+                    <p className="text-zinc-300 font-medium">{new Date(selectedUserForDetails.createdAt).toLocaleString()}</p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Last Login:</span>
-                    <p className="text-[#374151] font-medium">
+                    <span className="text-zinc-400">Last Login:</span>
+                    <p className="text-zinc-300 font-medium">
                       {selectedUserForDetails.lastLoginAt
                         ? new Date(selectedUserForDetails.lastLoginAt).toLocaleString()
                         : 'Never logged in'}
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 border-t border-[#E5E7EB] pt-4 space-y-3">
-                  <p className="font-bold text-[#111827]">Add Credits</p>
+                <div className="mt-4 border-t border-zinc-800 pt-4 space-y-3">
+                  <p className="font-bold text-zinc-100">Add Credits</p>
                   <div className="flex flex-wrap gap-2">
-                    {[10, 20, 100, 500, 1000].map((amount) => <button key={amount} type="button" onClick={() => setCreditGrantAmount(String(amount))} className="rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-[11px] font-bold text-[#0e6de4] hover:bg-blue-50">+{amount}</button>)}
+                    {[10, 20, 100, 500, 1000].map((amount) => <button key={amount} type="button" onClick={() => setCreditGrantAmount(String(amount))} className="rounded-lg border border-blue-900 bg-zinc-950 px-2.5 py-1 text-[11px] font-bold text-blue-400 hover:bg-blue-950">+{amount}</button>)}
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <input type="number" min="1" step="1" value={creditGrantAmount} onChange={(event) => setCreditGrantAmount(event.target.value)} placeholder="Custom amount" className="rounded-lg border border-[#E5E7EB] bg-white px-3 py-2" />
-                    <input value={creditGrantReason} onChange={(event) => setCreditGrantReason(event.target.value)} maxLength={500} placeholder="Optional reason" className="rounded-lg border border-[#E5E7EB] bg-white px-3 py-2" />
+                    <input type="number" min="1" step="1" value={creditGrantAmount} onChange={(event) => setCreditGrantAmount(event.target.value)} placeholder="Custom amount" className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2" />
+                    <input value={creditGrantReason} onChange={(event) => setCreditGrantReason(event.target.value)} maxLength={500} placeholder="Optional reason" className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2" />
                   </div>
-                  <p className="text-[11px] text-[#6B7280]">Current balance: {selectedUserForDetails.availableCredits.toLocaleString()} credits</p>
+                  <p className="text-[11px] text-zinc-400">Current balance: {selectedUserForDetails.availableCredits.toLocaleString()} credits</p>
                   <Button type="button" disabled={isGrantingCredits || !creditGrantAmount} onClick={grantCredits} className="bg-[#0e6de4] text-white hover:bg-[#0b5ac0] disabled:opacity-50">{isGrantingCredits ? 'Granting…' : 'Confirm Add Credits'}</Button>
                 </div>
               </Card>
@@ -1403,36 +1403,36 @@ export default function AdminUsersPage() {
 
             {/* Section 2: Billing & Credits */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#0e6de4] font-mono flex items-center gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 font-mono flex items-center gap-2">
                 <CreditCard className="h-4 w-4" /> Billing & Credit Wallet
               </h4>
-              <Card className="p-4 bg-[#F9FAFB] border border-[#E5E7EB] text-xs space-y-2">
+              <Card className="p-4 bg-zinc-950 border border-zinc-800 text-xs space-y-2">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="text-[#6B7280]">Current Plan:</span>
-                    <p className="font-mono text-[#111827] font-bold text-sm">{selectedUserForDetails.plan}</p>
+                    <span className="text-zinc-400">Current Plan:</span>
+                    <p className="font-mono text-zinc-100 font-bold text-sm">{selectedUserForDetails.plan}</p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Total Available Credits:</span>
-                    <p className="font-mono text-[#0e6de4] font-bold text-sm">
+                    <span className="text-zinc-400">Total Available Credits:</span>
+                    <p className="font-mono text-blue-400 font-bold text-sm">
                       {selectedUserForDetails.availableCredits.toLocaleString()}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Free Monthly Grant:</span>
-                    <p className="font-mono text-[#374151] font-medium">{selectedUserForDetails.freeMonthlyCredits.toLocaleString()}</p>
+                    <span className="text-zinc-400">Free Monthly Grant:</span>
+                    <p className="font-mono text-zinc-300 font-medium">{selectedUserForDetails.freeMonthlyCredits.toLocaleString()}</p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Purchased Credits:</span>
-                    <p className="font-mono text-[#374151] font-medium">{selectedUserForDetails.purchasedCredits.toLocaleString()}</p>
+                    <span className="text-zinc-400">Purchased Credits:</span>
+                    <p className="font-mono text-zinc-300 font-medium">{selectedUserForDetails.purchasedCredits.toLocaleString()}</p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Bonus Credits:</span>
-                    <p className="font-mono text-[#374151] font-medium">{selectedUserForDetails.bonusCredits.toLocaleString()}</p>
+                    <span className="text-zinc-400">Bonus Credits:</span>
+                    <p className="font-mono text-zinc-300 font-medium">{selectedUserForDetails.bonusCredits.toLocaleString()}</p>
                   </div>
                   <div>
-                    <span className="text-[#6B7280]">Used Credits:</span>
-                    <p className="font-mono text-[#374151] font-medium">{selectedUserForDetails.usedCredits.toLocaleString()}</p>
+                    <span className="text-zinc-400">Used Credits:</span>
+                    <p className="font-mono text-zinc-300 font-medium">{selectedUserForDetails.usedCredits.toLocaleString()}</p>
                   </div>
                 </div>
               </Card>
@@ -1440,43 +1440,43 @@ export default function AdminUsersPage() {
 
             {/* Section 3: Campaign Activity */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#0e6de4] font-mono flex items-center gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 font-mono flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" /> Activity & Campaign Metrics
               </h4>
-              <Card className="p-4 bg-[#F9FAFB] border border-[#E5E7EB] text-xs space-y-2">
+              <Card className="p-4 bg-zinc-950 border border-zinc-800 text-xs space-y-2">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="p-2 bg-white rounded-lg border border-[#E5E7EB]">
-                    <span className="text-[10px] text-[#6B7280] uppercase">Total Campaigns</span>
-                    <p className="text-base font-bold text-[#111827] font-mono">{selectedUserForDetails.campaignsCount}</p>
+                  <div className="p-2 bg-zinc-950 rounded-lg border border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 uppercase">Total Campaigns</span>
+                    <p className="text-base font-bold text-zinc-100 font-mono">{selectedUserForDetails.campaignsCount}</p>
                   </div>
-                  <div className="p-2 bg-white rounded-lg border border-[#E5E7EB]">
-                    <span className="text-[10px] text-[#6B7280] uppercase">Total Prospects</span>
-                    <p className="text-base font-bold text-[#374151] font-mono">{selectedUserForDetails.prospectsCount}</p>
+                  <div className="p-2 bg-zinc-950 rounded-lg border border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 uppercase">Total Prospects</span>
+                    <p className="text-base font-bold text-zinc-300 font-mono">{selectedUserForDetails.prospectsCount}</p>
                   </div>
-                  <div className="p-2 bg-white rounded-lg border border-[#E5E7EB]">
-                    <span className="text-[10px] text-[#6B7280] uppercase">Successful Submissions</span>
-                    <p className="text-base font-bold text-emerald-700 font-mono">
+                  <div className="p-2 bg-zinc-950 rounded-lg border border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 uppercase">Successful Submissions</span>
+                    <p className="text-base font-bold text-emerald-300 font-mono">
                       {selectedUserForDetails.successfulSubmissions}
                     </p>
                   </div>
-                  <div className="p-2 bg-white rounded-lg border border-[#E5E7EB]">
-                    <span className="text-[10px] text-[#6B7280] uppercase">Failed Submissions</span>
-                    <p className="text-base font-bold text-rose-700 font-mono">{selectedUserForDetails.failedSubmissions}</p>
+                  <div className="p-2 bg-zinc-950 rounded-lg border border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 uppercase">Failed Submissions</span>
+                    <p className="text-base font-bold text-rose-300 font-mono">{selectedUserForDetails.failedSubmissions}</p>
                   </div>
-                  <div className="p-2 bg-white rounded-lg border border-[#E5E7EB]">
-                    <span className="text-[10px] text-[#6B7280] uppercase">No-Form Results</span>
-                    <p className="text-base font-bold text-amber-700 font-mono">{selectedUserForDetails.noFormResults}</p>
+                  <div className="p-2 bg-zinc-950 rounded-lg border border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 uppercase">No-Form Results</span>
+                    <p className="text-base font-bold text-amber-300 font-mono">{selectedUserForDetails.noFormResults}</p>
                   </div>
-                  <div className="p-2 bg-white rounded-lg border border-[#E5E7EB]">
-                    <span className="text-[10px] text-[#6B7280] uppercase">Replies</span>
-                    <p className="text-base font-bold text-[#0e6de4] font-mono">{selectedUserForDetails.repliesCount}</p>
+                  <div className="p-2 bg-zinc-950 rounded-lg border border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 uppercase">Replies</span>
+                    <p className="text-base font-bold text-blue-400 font-mono">{selectedUserForDetails.repliesCount}</p>
                   </div>
                 </div>
               </Card>
             </div>
 
-            <div className="pt-4 border-t border-[#E5E7EB] flex justify-end">
-              <Button variant="secondary" size="sm" onClick={() => setSelectedUserForDetails(null)} className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]">
+            <div className="pt-4 border-t border-zinc-800 flex justify-end">
+              <Button variant="secondary" size="sm" onClick={() => setSelectedUserForDetails(null)} className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800">
                 Close Panel
               </Button>
             </div>
@@ -1487,22 +1487,22 @@ export default function AdminUsersPage() {
       {/* CONFIRM ROLE CHANGE MODAL */}
       {roleModalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-md p-6 space-y-4 border-[#E5E7EB] bg-white shadow-2xl rounded-2xl text-[#111827]">
-            <h3 className="text-base font-bold text-[#111827] flex items-center gap-2">
-              <Shield className="h-5 w-5 text-[#0e6de4]" />
+          <Card className="w-full max-w-md p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-2xl rounded-2xl text-zinc-100">
+            <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-blue-400" />
               Confirm Role Modification
             </h3>
-            <p className="text-xs text-[#374151]">
+            <p className="text-xs text-zinc-300">
               Are you sure you want to change the role of user{' '}
-              <strong className="text-[#111827] font-mono">{roleModalData.user.email}</strong> from{' '}
-              <span className="text-[#6B7280] font-bold">{roleModalData.user.role}</span> to{' '}
-              <span className="text-[#0e6de4] font-bold">{roleModalData.targetRole}</span>?
+              <strong className="text-zinc-100 font-mono">{roleModalData.user.email}</strong> from{' '}
+              <span className="text-zinc-400 font-bold">{roleModalData.user.role}</span> to{' '}
+              <span className="text-blue-400 font-bold">{roleModalData.targetRole}</span>?
             </p>
-            <div className="p-3 bg-[#0e6de4]/5 border border-[#0e6de4]/20 rounded-lg text-[11px] text-[#0e6de4] font-medium">
+            <div className="p-3 bg-[#0e6de4]/5 border border-[#0e6de4]/20 rounded-lg text-[11px] text-blue-400 font-medium">
               This will update server-side authorization policies and invalidate cached permission tokens.
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
-              <Button variant="secondary" size="sm" onClick={() => setRoleModalData(null)} className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]">
+            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+              <Button variant="secondary" size="sm" onClick={() => setRoleModalData(null)} className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800">
                 Cancel
               </Button>
               <Button variant="primary" size="sm" onClick={executeRoleChange} className="bg-[#0e6de4] hover:bg-[#0c5bc0] text-white font-semibold">
@@ -1516,19 +1516,19 @@ export default function AdminUsersPage() {
       {/* CONFIRM SUSPEND / ACTIVATE MODAL */}
       {suspendModalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-md p-6 space-y-4 border-[#E5E7EB] bg-white shadow-2xl rounded-2xl text-[#111827]">
-            <h3 className="text-base font-bold text-[#111827] flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-rose-600" />
+          <Card className="w-full max-w-md p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-2xl rounded-2xl text-zinc-100">
+            <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-rose-400" />
               {suspendModalData.targetSuspended ? 'Confirm Account Suspension' : 'Confirm Account Activation'}
             </h3>
-            <p className="text-xs text-[#374151]">
+            <p className="text-xs text-zinc-300">
               {suspendModalData.targetSuspended
                 ? `Are you sure you want to suspend account ${suspendModalData.user.email}?`
                 : `Are you sure you want to reactivate access for ${suspendModalData.user.email}?`}
             </p>
 
             {suspendModalData.targetSuspended && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-[11px] text-rose-800 space-y-1">
+              <div className="p-3 bg-rose-950 border border-rose-900 rounded-lg text-[11px] text-rose-300 space-y-1">
                 <p className="font-bold">Suspension Impact:</p>
                 <ul className="list-disc pl-4 space-y-0.5 text-[10px]">
                   <li>User will immediately lose access to protected features.</li>
@@ -1538,8 +1538,8 @@ export default function AdminUsersPage() {
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
-              <Button variant="secondary" size="sm" onClick={() => setSuspendModalData(null)} className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]">
+            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+              <Button variant="secondary" size="sm" onClick={() => setSuspendModalData(null)} className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800">
                 Cancel
               </Button>
               <Button
@@ -1558,30 +1558,30 @@ export default function AdminUsersPage() {
       {/* PASSWORD RESET MODAL */}
       {resetPasswordModalUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-md p-6 space-y-4 border-[#E5E7EB] bg-white shadow-2xl rounded-2xl text-[#111827]">
-            <h3 className="text-base font-bold text-[#111827] flex items-center gap-2">
-              <KeyRound className="h-5 w-5 text-[#0e6de4]" />
+          <Card className="w-full max-w-md p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-2xl rounded-2xl text-zinc-100">
+            <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-blue-400" />
               Reset Account Password
             </h3>
-            <p className="text-xs text-[#374151]">
-              Initiating password reset for <strong className="text-[#111827] font-mono">{resetPasswordModalUser.email}</strong>.
+            <p className="text-xs text-zinc-300">
+              Initiating password reset for <strong className="text-zinc-100 font-mono">{resetPasswordModalUser.email}</strong>.
             </p>
 
             <form onSubmit={executePasswordReset} className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="font-semibold text-[#374151]">Set New Temporary Password (Optional)</label>
+                <label className="font-semibold text-zinc-300">Set New Temporary Password (Optional)</label>
                 <input
                   type="password"
                   minLength={12}
                   value={tempPassword}
                   onChange={(e) => setTempPassword(e.target.value)}
                   placeholder="Leave empty to generate secure reset procedure"
-                  className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[#111827] placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100 placeholder-[#9CA3AF] focus:border-[#0e6de4] focus:ring-1 focus:ring-[#0e6de4] focus:outline-none"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
-                <Button variant="secondary" size="sm" type="button" onClick={() => setResetPasswordModalUser(null)} className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]">
+              <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+                <Button variant="secondary" size="sm" type="button" onClick={() => setResetPasswordModalUser(null)} className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800">
                   Cancel
                 </Button>
                 <Button variant="primary" size="sm" type="submit" className="bg-[#0e6de4] hover:bg-[#0c5bc0] text-white font-bold">
@@ -1596,14 +1596,14 @@ export default function AdminUsersPage() {
       {/* DELETE USER CONFIRMATION MODAL */}
       {deleteModalUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-md p-6 space-y-4 border-rose-300 bg-white shadow-2xl rounded-2xl text-[#111827]">
-            <h3 className="text-base font-bold text-[#111827] flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-rose-600" />
+          <Card className="w-full max-w-md p-6 space-y-4 border-rose-800 bg-zinc-950 shadow-2xl rounded-2xl text-zinc-100">
+            <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-rose-400" />
               Confirm Permanent Account Deletion
             </h3>
-            <p className="text-xs text-[#374151]">
-              This action <strong className="text-rose-600 font-bold">cannot be undone</strong>. To confirm permanent deletion of{' '}
-              <strong className="text-[#111827] font-mono">{deleteModalUser.email}</strong>, type the target user's email address below:
+            <p className="text-xs text-zinc-300">
+              This action <strong className="text-rose-400 font-bold">cannot be undone</strong>. To confirm permanent deletion of{' '}
+              <strong className="text-zinc-100 font-mono">{deleteModalUser.email}</strong>, type the target user's email address below:
             </p>
 
             <div className="space-y-1.5 text-xs">
@@ -1612,11 +1612,11 @@ export default function AdminUsersPage() {
                 value={deleteConfirmEmailInput}
                 onChange={(e) => setDeleteConfirmEmailInput(e.target.value)}
                 placeholder={deleteModalUser.email}
-                className="w-full rounded-xl border border-rose-300 bg-white px-3 py-2 text-[#111827] focus:border-rose-600 focus:outline-none font-mono"
+                className="w-full rounded-xl border border-rose-800 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-rose-600 focus:outline-none font-mono"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
               <Button
                 variant="secondary"
                 size="sm"
@@ -1624,7 +1624,7 @@ export default function AdminUsersPage() {
                   setDeleteModalUser(null);
                   setDeleteConfirmEmailInput('');
                 }}
-                className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
+                className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
               >
                 Cancel
               </Button>
@@ -1645,24 +1645,24 @@ export default function AdminUsersPage() {
       {/* BULK ACTION CONFIRMATION MODAL */}
       {isBulkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-md p-6 space-y-4 border-[#E5E7EB] bg-white shadow-2xl rounded-2xl text-[#111827]">
-            <h3 className="text-base font-bold text-[#111827] flex items-center gap-2">
-              <Users className="h-5 w-5 text-[#0e6de4]" />
+          <Card className="w-full max-w-md p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-2xl rounded-2xl text-zinc-100">
+            <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-400" />
               Confirm Bulk {bulkActionType === 'suspend' ? 'Suspension' : 'Activation'}
             </h3>
-            <p className="text-xs text-[#374151]">
-              Are you sure you want to <strong className="text-[#111827] uppercase">{bulkActionType}</strong> {selectedEmails.length}{' '}
+            <p className="text-xs text-zinc-300">
+              Are you sure you want to <strong className="text-zinc-100 uppercase">{bulkActionType}</strong> {selectedEmails.length}{' '}
               selected user accounts?
             </p>
 
-            <div className="max-h-32 overflow-y-auto p-2 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB] text-[11px] font-mono text-[#374151] space-y-1">
+            <div className="max-h-32 overflow-y-auto p-2 bg-zinc-950 rounded-lg border border-zinc-800 text-[11px] font-mono text-zinc-300 space-y-1">
               {selectedEmails.map((email) => (
                 <div key={email}>• {email}</div>
               ))}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
-              <Button variant="secondary" size="sm" onClick={() => setIsBulkModalOpen(false)} className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]">
+            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+              <Button variant="secondary" size="sm" onClick={() => setIsBulkModalOpen(false)} className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800">
                 Cancel
               </Button>
               <Button

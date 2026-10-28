@@ -192,21 +192,21 @@ export default function AIProvidersSettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans">
       {/* Back Link & Header */}
-      <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+      <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
         <Link
           href="/admin/integrations"
-          className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-xs"
+          className="p-2 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors shadow-xs"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
+          <h1 className="text-xl font-extrabold text-zinc-100 flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-950 text-blue-400">
               <Bot className="h-5 w-5" />
             </div>
             <span>AI Personalization Engine Settings</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Global LLM key management & server environment architecture status.
           </p>
         </div>
@@ -214,29 +214,29 @@ export default function AIProvidersSettingsPage() {
 
       {/* Save Success Alert */}
       {saveSuccess && (
-        <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-emerald-900 bg-emerald-950 text-xs font-bold text-emerald-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{saveSuccess}</span>
         </div>
       )}
 
       {/* Save Error Alert */}
       {saveError && (
-        <div className="p-3.5 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-red-900 bg-red-950 text-xs font-bold text-red-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
           <span>{saveError}</span>
         </div>
       )}
 
       {/* Main Settings Card */}
-      <Card className="p-6 space-y-6 border-slate-200 bg-white shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <Card className="p-6 space-y-6 border-zinc-800 bg-zinc-950 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
           <div>
-            <h3 className="font-extrabold text-slate-900 text-sm">Active System AI Provider</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Select the global AI provider for system-wide personalization.</p>
+            <h3 className="font-extrabold text-zinc-100 text-sm">Active System AI Provider</h3>
+            <p className="text-xs text-zinc-400 mt-0.5">Select the global AI provider for system-wide personalization.</p>
           </div>
 
-          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-200 shrink-0">
+          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900 shrink-0">
             ACTIVE ENGINE: {activeProvider.toUpperCase()}
           </span>
         </div>
@@ -253,8 +253,8 @@ export default function AIProvidersSettingsPage() {
                 key={p.id}
                 className={`p-4 rounded-xl border cursor-pointer transition-all ${
                   activeProvider === p.id
-                    ? 'border-[#0e6de4] bg-blue-50/40 shadow-xs'
-                    : 'border-slate-200 bg-white hover:bg-slate-50'
+                    ? 'border-[#0e6de4] bg-blue-950/40 shadow-xs'
+                    : 'border-zinc-800 bg-zinc-950 hover:bg-zinc-900'
                 }`}
               >
                 <input
@@ -266,38 +266,38 @@ export default function AIProvidersSettingsPage() {
                   className="sr-only"
                 />
                 <div className="flex items-center justify-between">
-                  <p className={`font-bold text-xs ${activeProvider === p.id ? 'text-[#0e6de4]' : 'text-slate-900'}`}>
+                  <p className={`font-bold text-xs ${activeProvider === p.id ? 'text-blue-400' : 'text-zinc-100'}`}>
                     {p.title}
                   </p>
-                  {activeProvider === p.id && <CheckCircle2 className="h-4 w-4 text-[#0e6de4]" />}
+                  {activeProvider === p.id && <CheckCircle2 className="h-4 w-4 text-blue-400" />}
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{p.desc}</p>
+                <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">{p.desc}</p>
               </label>
             ))}
           </div>
 
           {/* OpenAI Configuration Box */}
-          <div className="space-y-2.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <KeyRound className="h-3.5 w-3.5 text-[#0e6de4]" />
+          <div className="space-y-2.5 p-4 rounded-xl border border-zinc-800 bg-zinc-900/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800/60 pb-2">
+              <label className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                <KeyRound className="h-3.5 w-3.5 text-blue-400" />
                 OpenAI Key Configuration
               </label>
 
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-slate-500 font-medium">Preview: {openaiMasked}</span>
+                <span className="text-[11px] font-mono text-zinc-400 font-medium">Preview: {openaiMasked}</span>
                 {openaiIsOverride ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                    <Lock className="h-3 w-3 text-amber-700" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-900 text-amber-200 border border-amber-800">
+                    <Lock className="h-3 w-3 text-amber-300" />
                     Custom Encrypted Vault Override
                   </span>
                 ) : openaiSource === 'env' ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#0e6de4] border border-blue-200">
-                    <Server className="h-3 w-3 text-[#0e6de4]" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-900 text-blue-400 border border-blue-900">
+                    <Server className="h-3 w-3 text-blue-400" />
                     ✓ Managed via Server Environment
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-900 text-zinc-400 border border-zinc-800">
                     Not Configured
                   </span>
                 )}
@@ -305,16 +305,16 @@ export default function AIProvidersSettingsPage() {
             </div>
 
             {openaiIsOverride && (
-              <div className="flex items-center justify-between bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-xs text-amber-900">
+              <div className="flex items-center justify-between bg-amber-950 p-2.5 rounded-lg border border-amber-900 text-xs text-amber-200">
                 <span>An encrypted vault override is currently overriding the server environment key.</span>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => handleClearOverride('OPENAI_API_KEY')}
-                  className="h-7 text-[11px] font-bold border-amber-300 text-amber-900 hover:bg-amber-100"
+                  className="h-7 text-[11px] font-bold border-amber-800 text-amber-200 hover:bg-amber-900"
                 >
-                  <Trash2 className="h-3 w-3 mr-1 text-amber-700" />
+                  <Trash2 className="h-3 w-3 mr-1 text-amber-300" />
                   Clear Override
                 </Button>
               </div>
@@ -325,32 +325,32 @@ export default function AIProvidersSettingsPage() {
               placeholder="sk-proj-•••••••••••••••••••••••• (Leave blank to keep server environment key)"
               value={openaiKey}
               onChange={(e) => setOpenaiKey(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
             />
           </div>
 
           {/* Anthropic Configuration Box */}
-          <div className="space-y-2.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <KeyRound className="h-3.5 w-3.5 text-[#0e6de4]" />
+          <div className="space-y-2.5 p-4 rounded-xl border border-zinc-800 bg-zinc-900/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800/60 pb-2">
+              <label className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                <KeyRound className="h-3.5 w-3.5 text-blue-400" />
                 Anthropic Claude Key Configuration
               </label>
 
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-slate-500 font-medium">Preview: {anthropicMasked}</span>
+                <span className="text-[11px] font-mono text-zinc-400 font-medium">Preview: {anthropicMasked}</span>
                 {anthropicIsOverride ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                    <Lock className="h-3 w-3 text-amber-700" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-900 text-amber-200 border border-amber-800">
+                    <Lock className="h-3 w-3 text-amber-300" />
                     Custom Encrypted Vault Override
                   </span>
                 ) : anthropicSource === 'env' ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#0e6de4] border border-blue-200">
-                    <Server className="h-3 w-3 text-[#0e6de4]" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-900 text-blue-400 border border-blue-900">
+                    <Server className="h-3 w-3 text-blue-400" />
                     ✓ Managed via Server Environment
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-900 text-zinc-400 border border-zinc-800">
                     Not Configured
                   </span>
                 )}
@@ -358,16 +358,16 @@ export default function AIProvidersSettingsPage() {
             </div>
 
             {anthropicIsOverride && (
-              <div className="flex items-center justify-between bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-xs text-amber-900">
+              <div className="flex items-center justify-between bg-amber-950 p-2.5 rounded-lg border border-amber-900 text-xs text-amber-200">
                 <span>An encrypted vault override is currently overriding the server environment key.</span>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => handleClearOverride('ANTHROPIC_API_KEY')}
-                  className="h-7 text-[11px] font-bold border-amber-300 text-amber-900 hover:bg-amber-100"
+                  className="h-7 text-[11px] font-bold border-amber-800 text-amber-200 hover:bg-amber-900"
                 >
-                  <Trash2 className="h-3 w-3 mr-1 text-amber-700" />
+                  <Trash2 className="h-3 w-3 mr-1 text-amber-300" />
                   Clear Override
                 </Button>
               </div>
@@ -378,22 +378,22 @@ export default function AIProvidersSettingsPage() {
               placeholder="sk-ant-•••••••••••••••••••••••• (Leave blank to keep server environment key)"
               value={anthropicKey}
               onChange={(e) => setAnthropicKey(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
             />
           </div>
 
           {/* Paid User BYOK Architecture Note */}
-          <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/70 text-xs text-slate-800 flex items-start gap-2.5">
-            <UserCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-xl border border-emerald-900 bg-emerald-950/70 text-xs text-zinc-200 flex items-start gap-2.5">
+            <UserCheck className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <span className="font-bold text-emerald-950">Paid User BYOK (Bring Your Own Key) Policy:</span>
-              <p className="text-[11px] leading-relaxed text-emerald-900">
+              <p className="text-[11px] leading-relaxed text-emerald-200">
                 Free users access standard outreach tools without API keys. Paid subscribers may optionally enter their own user-level OpenAI API Key in Settings to power personal campaign personalization. User-level keys remain strictly isolated and never override global admin keys.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end pt-3 border-t border-zinc-800">
             <Button
               variant="primary"
               size="md"
@@ -418,11 +418,11 @@ export default function AIProvidersSettingsPage() {
       </Card>
 
       {/* AI Test Connection Card */}
-      <Card className="p-6 space-y-4 border-slate-200 bg-white shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+      <Card className="p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
           <div>
-            <h3 className="font-extrabold text-slate-900 text-sm">Live AI Message Test Run</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Test message generation on a sample company lead.</p>
+            <h3 className="font-extrabold text-zinc-100 text-sm">Live AI Message Test Run</h3>
+            <p className="text-xs text-zinc-400 mt-0.5">Test message generation on a sample company lead.</p>
           </div>
 
           <Button
@@ -430,16 +430,16 @@ export default function AIProvidersSettingsPage() {
             size="sm"
             onClick={handleTestAI}
             disabled={isTesting}
-            className="font-bold border-slate-300 text-slate-700 hover:bg-slate-50"
+            className="font-bold border-zinc-700 text-zinc-300 hover:bg-zinc-900"
           >
             {isTesting ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 text-[#0e6de4] animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 text-blue-400 animate-spin" />
                 Generating...
               </>
             ) : (
               <>
-                <Sparkles className="h-3.5 w-3.5 mr-1.5 text-[#0e6de4]" />
+                <Sparkles className="h-3.5 w-3.5 mr-1.5 text-blue-400" />
                 Run Test Generation
               </>
             )}
@@ -447,24 +447,24 @@ export default function AIProvidersSettingsPage() {
         </div>
 
         {testResult && (
-          <div className="space-y-2 p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs">
+          <div className="space-y-2 p-4 rounded-xl border border-zinc-800 bg-zinc-900 text-xs">
             {testResult.error ? (
-              <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+              <div className="p-3 rounded-lg border border-red-900 bg-red-950 text-red-300 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
                 <span>{testResult.error}</span>
               </div>
             ) : (
               <>
-                <div className="flex justify-between font-mono text-[11px] text-slate-600 font-bold border-b border-slate-200 pb-2">
-                  <span className="text-[#0e6de4]">Provider: {testResult.provider} ({testResult.model})</span>
+                <div className="flex justify-between font-mono text-[11px] text-zinc-400 font-bold border-b border-zinc-800 pb-2">
+                  <span className="text-blue-400">Provider: {testResult.provider} ({testResult.model})</span>
                   <span>Tokens Used: {testResult.tokensUsed}</span>
                 </div>
                 {testResult.subject && (
-                  <p className="font-bold text-slate-900 text-xs">
-                    Subject: <span className="font-normal text-slate-700">{testResult.subject}</span>
+                  <p className="font-bold text-zinc-100 text-xs">
+                    Subject: <span className="font-normal text-zinc-300">{testResult.subject}</span>
                   </p>
                 )}
-                <div className="font-sans text-slate-800 text-xs bg-white p-3 rounded-lg border border-slate-200 whitespace-pre-wrap leading-relaxed shadow-2xs">
+                <div className="font-sans text-zinc-200 text-xs bg-zinc-950 p-3 rounded-lg border border-zinc-800 whitespace-pre-wrap leading-relaxed shadow-2xs">
                   {testResult.generatedMessage}
                 </div>
               </>

@@ -35,16 +35,16 @@ export default function EmergencyControlsPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
       {/* Header */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-rose-950 border border-rose-900 flex items-center justify-center text-rose-400 shrink-0">
             <ShieldAlert className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-[#111827]">
+            <h1 className="text-2xl font-black tracking-tight text-zinc-100">
               Emergency Controls & System Override
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 font-medium">
+            <p className="text-xs sm:text-sm text-zinc-400 mt-0.5 font-medium">
               High-priority security overrides, worker killswitch, and emergency rate limiting safeguards.
             </p>
           </div>
@@ -53,7 +53,7 @@ export default function EmergencyControlsPage() {
 
       {statusMessage && (
         <div className={`p-4 rounded-xl border text-xs font-bold flex items-center gap-2.5 shadow-2xs ${
-          killswitchActive ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          killswitchActive ? 'bg-rose-950 border-rose-900 text-rose-300' : 'bg-emerald-950 border-emerald-900 text-emerald-300'
         }`}>
           <AlertOctagon className="h-4 w-4 shrink-0" />
           <span>{statusMessage}</span>
@@ -61,18 +61,18 @@ export default function EmergencyControlsPage() {
       )}
 
       {/* Main Controls Card */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+      <div className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-xs space-y-6">
         {/* Master Killswitch Control */}
-        <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-5 rounded-xl border border-zinc-800 bg-zinc-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 border ${
-              killswitchActive ? 'bg-rose-100 border-rose-300 text-rose-700' : 'bg-emerald-100 border-emerald-300 text-emerald-700'
+              killswitchActive ? 'bg-rose-900 border-rose-800 text-rose-300' : 'bg-emerald-900 border-emerald-800 text-emerald-300'
             }`}>
               <Shield className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-extrabold text-[#111827] text-sm">Master Worker Killswitch</h3>
-              <p className="text-xs text-slate-500 mt-0.5 font-medium">
+              <h3 className="font-extrabold text-zinc-100 text-sm">Master Worker Killswitch</h3>
+              <p className="text-xs text-zinc-400 mt-0.5 font-medium">
                 Immediately stop all queue worker execution across all nodes.
               </p>
             </div>
@@ -92,14 +92,14 @@ export default function EmergencyControlsPage() {
         </div>
 
         {/* Campaign Pause Control */}
-        <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-5 rounded-xl border border-zinc-800 bg-zinc-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="h-11 w-11 rounded-xl bg-blue-50 border border-blue-200 text-[#0e6de4] flex items-center justify-center shrink-0">
+            <div className="h-11 w-11 rounded-xl bg-blue-950 border border-blue-900 text-blue-400 flex items-center justify-center shrink-0">
               <PauseCircle className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-extrabold text-[#111827] text-sm">Global Campaign Dispatch Pause</h3>
-              <p className="text-xs text-slate-500 mt-0.5 font-medium">
+              <h3 className="font-extrabold text-zinc-100 text-sm">Global Campaign Dispatch Pause</h3>
+              <p className="text-xs text-zinc-400 mt-0.5 font-medium">
                 Freeze active outreach dispatch while keeping workers operational for background tasks.
               </p>
             </div>

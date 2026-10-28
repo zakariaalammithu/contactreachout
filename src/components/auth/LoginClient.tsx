@@ -368,18 +368,18 @@ export default function LoginClient() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f6f9ff] p-4 sm:p-6 font-sans">
-      <div className="w-full max-w-[460px] rounded-3xl border border-blue-100 bg-white p-7 sm:p-9 shadow-xl shadow-blue-100/60 space-y-6">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-[460px] rounded-3xl border border-blue-900 bg-zinc-950 p-7 sm:p-9 shadow-xl shadow-blue-900/60 space-y-6">
         
         {/* VIEW 1 & 2: STANDARD LOGIN & SIGNUP HEADER */}
         {(activeTab === 'signup' || activeTab === 'signin') && (
           <div className="flex items-center gap-3 text-left">
             <img src="/brand/logo-icon.png" alt="ContactReachout logo" width="48" height="48" className="h-12 w-auto max-w-[48px] max-h-[48px] shrink-0 object-contain" />
             <div className="space-y-1">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-sans">
-                Welcome to <span className="text-[#0e6de4]">Contact</span><span className="text-slate-900">Reachout</span>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-100 font-sans">
+                Welcome to <span className="text-blue-400">Contact</span><span className="text-zinc-100">Reachout</span>
               </h1>
-              <p className="text-xs text-slate-500 font-normal">
+              <p className="text-xs text-zinc-400 font-normal">
                 Bulk Website Contact Form Outreach System
               </p>
             </div>
@@ -388,30 +388,30 @@ export default function LoginClient() {
 
         {/* Global Error Banner */}
         {errorMsg && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 animate-in fade-in duration-150">
-            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-950 border border-rose-900 text-xs text-rose-200 animate-in fade-in duration-150">
+            <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
             <div className="flex-1 font-medium">{errorMsg}</div>
           </div>
         )}
 
         {/* Global Success Banner */}
         {successMsg && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 animate-in fade-in duration-150">
-            <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-emerald-950 border border-emerald-900 text-xs text-emerald-200 animate-in fade-in duration-150">
+            <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex-1 font-medium">{successMsg}</div>
           </div>
         )}
 
         {/* Tab Switcher (Sign Up | Sign In) */}
         {(activeTab === 'signup' || activeTab === 'signin') && (
-          <div className="flex rounded-2xl bg-[#EDF2EF] p-1 text-xs">
+          <div className="flex rounded-2xl bg-zinc-800 p-1 text-xs">
             <button
               type="button"
               onClick={() => switchTab('signup')}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'signup'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-zinc-950 text-zinc-100 shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-100'
               }`}
             >
               Sign Up
@@ -421,8 +421,8 @@ export default function LoginClient() {
               onClick={() => switchTab('signin')}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'signin'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-zinc-950 text-zinc-100 shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-100'
               }`}
             >
               Sign In
@@ -434,70 +434,70 @@ export default function LoginClient() {
         {activeTab === 'signup' && (
           <form onSubmit={handleSignUpSubmit} className="space-y-3.5 text-left">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800">
-                Full Name <span className="text-rose-500">*</span>
+              <label className="text-xs font-bold text-zinc-200">
+                Full Name <span className="text-rose-400">*</span>
               </label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="e.g. John Doe"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800">
-                Email <span className="text-rose-500">*</span>
+              <label className="text-xs font-bold text-zinc-200">
+                Email <span className="text-rose-400">*</span>
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="name@company.com"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800">
+              <label className="text-xs font-bold text-zinc-200">
                 Phone Number
               </label>
               <input
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors font-mono"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors font-mono"
                 placeholder="+1 (555) 000-0000"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800">
-                Password <span className="text-rose-500">*</span>
+              <label className="text-xs font-bold text-zinc-200">
+                Password <span className="text-rose-400">*</span>
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="At least 6 characters"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800">
-                Confirm Password <span className="text-rose-500">*</span>
+              <label className="text-xs font-bold text-zinc-200">
+                Confirm Password <span className="text-rose-400">*</span>
               </label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="Re-enter password"
               />
             </div>
@@ -516,9 +516,9 @@ export default function LoginClient() {
 
             {/* Divider OR */}
             <div className="relative flex items-center justify-center pt-2">
-              <div className="border-t border-slate-200 w-full" />
-              <span className="bg-white px-3 text-[10px] font-bold text-slate-400 font-mono">OR</span>
-              <div className="border-t border-slate-200 w-full" />
+              <div className="border-t border-zinc-800 w-full" />
+              <span className="bg-zinc-950 px-3 text-[10px] font-bold text-zinc-400 font-mono">OR</span>
+              <div className="border-t border-zinc-800 w-full" />
             </div>
 
             {/* Continue with Google */}
@@ -526,18 +526,18 @@ export default function LoginClient() {
               type="button"
               onClick={handleGoogleSignInClick}
               disabled={isLoading}
-              className="w-full rounded-xl border border-slate-300 bg-white py-2.5 px-4 text-xs font-semibold text-slate-800 hover:bg-slate-50 flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-2.5 px-4 text-xs font-semibold text-zinc-200 hover:bg-zinc-900 flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
             >
               <GoogleIcon className="h-4 w-4" />
               <span>Continue with Google</span>
             </button>
 
-            <p className="text-[11px] text-slate-500 text-center pt-2 font-medium">
+            <p className="text-[11px] text-zinc-400 text-center pt-2 font-medium">
               Already have an account?{' '}
               <button
                 type="button"
                 onClick={() => switchTab('signin')}
-                className="text-blue-600 font-bold hover:underline cursor-pointer"
+                className="text-blue-400 font-bold hover:underline cursor-pointer"
               >
                 Sign In
               </button>
@@ -549,29 +549,29 @@ export default function LoginClient() {
         {activeTab === 'signin' && (
           <form onSubmit={handleSignInSubmit} className="space-y-4 text-left">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800">
-                Email <span className="text-rose-500">*</span>
+              <label className="text-xs font-bold text-zinc-200">
+                Email <span className="text-rose-400">*</span>
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="name@company.com"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800">
-                Password <span className="text-rose-500">*</span>
+              <label className="text-xs font-bold text-zinc-200">
+                Password <span className="text-rose-400">*</span>
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors"
                 placeholder="Enter password"
               />
             </div>
@@ -590,9 +590,9 @@ export default function LoginClient() {
 
             {/* Divider OR */}
             <div className="relative flex items-center justify-center pt-2">
-              <div className="border-t border-slate-200 w-full" />
-              <span className="bg-white px-3 text-[10px] font-bold text-slate-400 font-mono">OR</span>
-              <div className="border-t border-slate-200 w-full" />
+              <div className="border-t border-zinc-800 w-full" />
+              <span className="bg-zinc-950 px-3 text-[10px] font-bold text-zinc-400 font-mono">OR</span>
+              <div className="border-t border-zinc-800 w-full" />
             </div>
 
             {/* Continue with Google */}
@@ -600,18 +600,18 @@ export default function LoginClient() {
               type="button"
               onClick={handleGoogleSignInClick}
               disabled={isLoading}
-              className="w-full rounded-xl border border-slate-300 bg-white py-2.5 px-4 text-xs font-semibold text-slate-800 hover:bg-slate-50 flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-2.5 px-4 text-xs font-semibold text-zinc-200 hover:bg-zinc-900 flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
             >
               <GoogleIcon className="h-4 w-4" />
               <span>Continue with Google</span>
             </button>
 
-            <p className="text-[11px] text-slate-500 text-center pt-2 font-medium">
+            <p className="text-[11px] text-zinc-400 text-center pt-2 font-medium">
               Don't have an account?{' '}
               <button
                 type="button"
                 onClick={() => switchTab('signup')}
-                className="text-blue-600 font-bold hover:underline cursor-pointer"
+                className="text-blue-400 font-bold hover:underline cursor-pointer"
               >
                 Sign Up
               </button>
@@ -622,39 +622,39 @@ export default function LoginClient() {
         {/* GOOGLE OAUTH ACCOUNT CHOOSER */}
         {activeTab === 'google_chooser' && (
           <div className="space-y-5 text-left animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2 border-b border-zinc-800 pb-3">
               <GoogleIcon className="h-5 w-5" />
-              <span className="text-sm font-semibold text-slate-800">Sign in with Google</span>
+              <span className="text-sm font-semibold text-zinc-200">Sign in with Google</span>
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-2xl font-normal tracking-tight text-slate-900 font-sans">
+              <h2 className="text-2xl font-normal tracking-tight text-zinc-100 font-sans">
                 Choose an account
               </h2>
-              <p className="text-xs text-slate-600">
-                to continue to <strong className="text-blue-600 font-medium">ContactReachout</strong>
+              <p className="text-xs text-zinc-400">
+                to continue to <strong className="text-blue-400 font-medium">ContactReachout</strong>
               </p>
             </div>
 
-            <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+            <div className="divide-y divide-zinc-800 rounded-2xl border border-zinc-800 bg-zinc-950 overflow-hidden shadow-2xs">
               {googleAccounts.map((acc, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => handleSelectGoogleAccount(acc.email, acc.name)}
                   disabled={isLoading}
-                  className="w-full flex items-center justify-between p-3.5 hover:bg-slate-50 transition-colors cursor-pointer text-left"
+                  className="w-full flex items-center justify-between p-3.5 hover:bg-zinc-900 transition-colors cursor-pointer text-left"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`h-9 w-9 rounded-full ${acc.avatarBg} text-white font-bold flex items-center justify-center text-sm shadow-2xs uppercase`}>
                       {acc.name.substring(0, 1)}
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-900">{acc.name}</p>
-                      <p className="text-[11px] text-slate-500 font-mono">{acc.email}</p>
+                      <p className="text-xs font-bold text-zinc-100">{acc.name}</p>
+                      <p className="text-[11px] text-zinc-400 font-mono">{acc.email}</p>
                     </div>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono">Signed out</span>
+                  <span className="text-[10px] text-zinc-400 font-mono">Signed out</span>
                 </button>
               ))}
 
@@ -666,19 +666,19 @@ export default function LoginClient() {
                     handleSelectGoogleAccount(userEmail.trim(), userEmail.split('@')[0]);
                   }
                 }}
-                className="w-full flex items-center gap-3 p-3.5 hover:bg-slate-50 transition-colors cursor-pointer text-left font-medium text-xs text-slate-700"
+                className="w-full flex items-center gap-3 p-3.5 hover:bg-zinc-900 transition-colors cursor-pointer text-left font-medium text-xs text-zinc-300"
               >
-                <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
+                <div className="h-9 w-9 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
                   <User className="h-4 w-4" />
                 </div>
                 <span>Use another account</span>
               </button>
             </div>
 
-            <p className="text-[10px] text-slate-500 leading-relaxed pt-2">
+            <p className="text-[10px] text-zinc-400 leading-relaxed pt-2">
               Before using this app, you can review ContactReachout&apos;s{' '}
-              <a href="#" className="text-blue-600 underline font-medium">Privacy Policy</a> and{' '}
-              <a href="#" className="text-blue-600 underline font-medium">Terms of Service</a>.
+              <a href="#" className="text-blue-400 underline font-medium">Privacy Policy</a> and{' '}
+              <a href="#" className="text-blue-400 underline font-medium">Terms of Service</a>.
             </p>
 
             <div className="pt-2 text-center">
@@ -688,7 +688,7 @@ export default function LoginClient() {
                   setActiveTab('signup');
                   setErrorMsg('');
                 }}
-                className="text-xs text-slate-500 hover:text-slate-800 underline font-medium cursor-pointer"
+                className="text-xs text-zinc-400 hover:text-zinc-200 underline font-medium cursor-pointer"
               >
                 Cancel & Back to Sign Up
               </button>
@@ -699,18 +699,18 @@ export default function LoginClient() {
         {/* 6-DIGIT VERIFICATION SCREEN */}
         {activeTab === 'otp_verify' && (
           <form onSubmit={handleVerifyOtpSubmit} className="space-y-5 text-left animate-in fade-in duration-200">
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 space-y-1">
-              <div className="flex items-center gap-2 font-bold text-emerald-900">
-                <KeyRound className="h-4 w-4 text-emerald-600 shrink-0" />
+            <div className="p-4 rounded-2xl bg-emerald-950 border border-emerald-900 text-xs text-emerald-950 space-y-1">
+              <div className="flex items-center gap-2 font-bold text-emerald-200">
+                <KeyRound className="h-4 w-4 text-emerald-400 shrink-0" />
                 <span>Verification Code Sent</span>
               </div>
-              <p className="text-[11px] text-emerald-800 leading-relaxed">
+              <p className="text-[11px] text-emerald-300 leading-relaxed">
                 Enter the 6-digit verification code sent to <strong>{maskedEmail || maskEmailString(email)}</strong>.
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-800">
+              <label className="text-xs font-bold text-zinc-200">
                 Enter 6-digit verification code
               </label>
               <div className="flex gap-2 justify-between">
@@ -745,7 +745,7 @@ export default function LoginClient() {
                       }
                     }}
                     id={`otp-input-${idx}`}
-                    className="w-11 h-12 text-center text-lg font-bold font-mono rounded-xl border border-slate-300 bg-white focus:border-blue-600 focus:outline-none shadow-2xs"
+                    className="w-11 h-12 text-center text-lg font-bold font-mono rounded-xl border border-zinc-700 bg-zinc-950 focus:border-blue-600 focus:outline-none shadow-2xs"
                   />
                 ))}
               </div>
@@ -774,8 +774,8 @@ export default function LoginClient() {
                   disabled={cooldown > 0 || isLoading}
                   className={`font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                     cooldown > 0 || isLoading
-                      ? 'text-slate-400 cursor-not-allowed'
-                      : 'text-blue-600 hover:underline'
+                      ? 'text-zinc-400 cursor-not-allowed'
+                      : 'text-blue-400 hover:underline'
                   }`}
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -791,7 +791,7 @@ export default function LoginClient() {
                     setErrorMsg('');
                     setSuccessMsg('');
                   }}
-                  className="text-slate-500 hover:text-slate-800 underline font-medium cursor-pointer"
+                  className="text-zinc-400 hover:text-zinc-200 underline font-medium cursor-pointer"
                 >
                   Back to {otpPurpose === 'signup' ? 'Sign Up' : 'Sign In'}
                 </button>

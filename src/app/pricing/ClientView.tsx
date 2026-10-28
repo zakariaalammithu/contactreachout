@@ -29,21 +29,21 @@ export default function PricingPage() {
   const customPriceInfo = PricingService.calculateCustomCreditPrice(customCredits);
 
   return (
-    <div className="pricing-public-page min-h-screen bg-[#f3f6fa] text-slate-900 font-sans flex flex-col justify-between">
+    <div className="pricing-public-page min-h-screen bg-zinc-950 text-zinc-100 font-sans flex flex-col justify-between">
       <div>
         <LandingHeader />
 
         {/* Hero Header */}
         <section className="pt-14 pb-8 px-4 text-center max-w-4xl mx-auto space-y-3">
-          <span className="text-xs font-bold text-[#0e6de4] uppercase tracking-wider bg-blue-50/80 px-4 py-1.5 rounded-full border border-blue-200 inline-flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-[#0e6de4]" />
+          <span className="text-xs font-bold text-blue-400 uppercase tracking-wider bg-blue-950/80 px-4 py-1.5 rounded-full border border-blue-900 inline-flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-blue-400" />
             TRANSPARENT OUTREACH PRICING
           </span>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-zinc-100 tracking-tight leading-tight">
             Flexible outreach pricing. <br className="hidden sm:inline" />
-            <span className="text-[#0e6de4]">Choose your plan or buy credits as needed.</span>
+            <span className="text-blue-400">Choose your plan or buy credits as needed.</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
+          <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl mx-auto leading-relaxed font-medium">
             No hidden fees. Choose annual billing to save 20% or choose the plan that fits your outreach volume.
           </p>
         </section>
@@ -56,22 +56,22 @@ export default function PricingPage() {
             ['Save 20%', 'with annual subscription billing'],
             ['No hidden fees', 'transparent Stripe checkout'],
           ].map(([title, detail]) => (
-            <div key={title} className="rounded-2xl border border-blue-100 bg-white p-4 text-center shadow-xs">
-              <p className="text-base font-black text-[#0e6de4]">{title}</p>
-              <p className="mt-0.5 text-xs font-semibold text-slate-600">{detail}</p>
+            <div key={title} className="rounded-2xl border border-blue-900 bg-zinc-950 p-4 text-center shadow-xs">
+              <p className="text-base font-black text-blue-400">{title}</p>
+              <p className="mt-0.5 text-xs font-semibold text-zinc-400">{detail}</p>
             </div>
           ))}
         </section>
 
         {/* Billing Toggle (YEARLY | MONTHLY) - YEARLY DEFAULT */}
-        <div className="mx-auto mb-8 flex w-fit items-center gap-1 rounded-2xl border border-blue-200 bg-white p-1.5 shadow-xs">
+        <div className="mx-auto mb-8 flex w-fit items-center gap-1 rounded-2xl border border-blue-900 bg-zinc-950 p-1.5 shadow-xs">
           <button
             type="button"
             onClick={() => setBillingPeriod('yearly')}
             className={`rounded-xl px-6 py-2.5 text-xs font-black transition-all cursor-pointer ${
               isYearly
                 ? 'bg-[#0e6de4] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                : 'text-zinc-400 hover:text-zinc-100'
             }`}
           >
             YEARLY <span className="ml-1 text-[10px] font-mono opacity-90">(Save 20%)</span>
@@ -82,7 +82,7 @@ export default function PricingPage() {
             className={`rounded-xl px-6 py-2.5 text-xs font-black transition-all cursor-pointer ${
               !isYearly
                 ? 'bg-[#0e6de4] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                : 'text-zinc-400 hover:text-zinc-100'
             }`}
           >
             MONTHLY
@@ -92,37 +92,37 @@ export default function PricingPage() {
         {/* 5 Pricing Cards Grid */}
         <section className="py-4 px-4 sm:px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 items-stretch">
           {/* CARD 1: FREE */}
-          <div className="pricing-plan-card rounded-3xl border border-slate-200 bg-white p-6 flex flex-col justify-between shadow-xs hover:border-blue-300 transition-all relative">
+          <div className="pricing-plan-card rounded-3xl border border-zinc-800 bg-zinc-950 p-6 flex flex-col justify-between shadow-xs hover:border-blue-800 transition-all relative">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black font-mono text-[#0e6de4] uppercase tracking-wider bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                <span className="text-[10px] font-black font-mono text-blue-400 uppercase tracking-wider bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-900">
                   FREE
                 </span>
-                <span className="text-[10px] text-slate-500 font-medium">No Card Required</span>
+                <span className="text-[10px] text-zinc-400 font-medium">No Card Required</span>
               </div>
 
               <div>
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-base font-black text-zinc-100">
                   100 Credits/month
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">{freePlan.description}</p>
+                <p className="text-xs text-zinc-400 mt-1 font-medium">{freePlan.description}</p>
               </div>
 
-              <div className="py-3 border-y border-slate-100 space-y-0.5">
+              <div className="py-3 border-y border-zinc-800 space-y-0.5">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900">$0</span>
-                  <span className="text-xs font-bold text-slate-500">/ month</span>
+                  <span className="text-3xl font-black text-zinc-100">$0</span>
+                  <span className="text-xs font-bold text-zinc-400">/ month</span>
                 </div>
-                <p className="text-[10px] font-semibold text-slate-500 leading-tight">
+                <p className="text-[10px] font-semibold text-zinc-400 leading-tight">
                   Free plan • 100 monthly credits
                 </p>
               </div>
 
               <div className="space-y-2.5 pt-1">
-                <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Features:</p>
+                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-wider">Features:</p>
                 {freePlan.features.map((feat) => (
-                  <div key={feat} className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[#0e6de4] shrink-0" />
+                  <div key={feat} className="flex items-center gap-2 text-xs text-zinc-300 font-medium">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />
                     <span>{feat}</span>
                   </div>
                 ))}
@@ -133,7 +133,7 @@ export default function PricingPage() {
               <Link href="/signup" className="w-full">
                 <button
                   type="button"
-                  className="w-full py-3.5 rounded-xl border-2 border-[#0e6de4] text-[#0e6de4] hover:bg-blue-50 font-black text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center text-center uppercase tracking-wider"
+                  className="w-full py-3.5 rounded-xl border-2 border-[#0e6de4] text-blue-400 hover:bg-blue-950 font-black text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center text-center uppercase tracking-wider"
                 >
                   Start Free
                 </button>
@@ -142,39 +142,39 @@ export default function PricingPage() {
           </div>
 
           {/* CARD 2: STARTER */}
-          <div className="pricing-plan-card rounded-3xl border border-slate-200 bg-white p-6 flex flex-col justify-between shadow-xs hover:border-blue-300 transition-all relative">
+          <div className="pricing-plan-card rounded-3xl border border-zinc-800 bg-zinc-950 p-6 flex flex-col justify-between shadow-xs hover:border-blue-800 transition-all relative">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black font-mono text-[#0e6de4] uppercase tracking-wider bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                <span className="text-[10px] font-black font-mono text-blue-400 uppercase tracking-wider bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-900">
                   STARTER
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono font-bold">$0.0100 / credit</span>
+                <span className="text-[10px] text-zinc-400 font-mono font-bold">$0.0100 / credit</span>
               </div>
 
               <div>
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-base font-black text-zinc-100">
                   5,000 Credits/month
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">{package5000.description}</p>
+                <p className="text-xs text-zinc-400 mt-1 font-medium">{package5000.description}</p>
               </div>
 
-              <div className="py-3 border-y border-slate-100 space-y-0.5">
+              <div className="py-3 border-y border-zinc-800 space-y-0.5">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900">
+                  <span className="text-3xl font-black text-zinc-100">
                     ${isYearly ? PLAN_PRICING_DETAILS[5000].yearlyEffectiveMonthly : PLAN_PRICING_DETAILS[5000].monthlyPrice}
                   </span>
-                  <span className="text-xs font-bold text-slate-500">/ month</span>
+                  <span className="text-xs font-bold text-zinc-400">/ month</span>
                 </div>
-                <p className="text-[10px] font-semibold text-slate-500 leading-tight">
+                <p className="text-[10px] font-semibold text-zinc-400 leading-tight">
                   {isYearly ? `Billed $${PLAN_PRICING_DETAILS[5000].yearlyAnnualCharge} annually • Save 20%` : 'Billed $50 monthly'}
                 </p>
               </div>
 
               <div className="space-y-2.5 pt-1">
-                <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Features:</p>
+                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-wider">Features:</p>
                 {package5000.features.map((feat) => (
-                  <div key={feat} className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[#0e6de4] shrink-0" />
+                  <div key={feat} className="flex items-center gap-2 text-xs text-zinc-300 font-medium">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />
                     <span>{feat}</span>
                   </div>
                 ))}
@@ -194,43 +194,43 @@ export default function PricingPage() {
           </div>
 
           {/* CARD 3: GROWTH (MOST POPULAR) */}
-          <div className="pricing-plan-card rounded-3xl border-2 border-[#0e6de4] bg-white p-6 flex flex-col justify-between shadow-md relative">
+          <div className="pricing-plan-card rounded-3xl border-2 border-[#0e6de4] bg-zinc-950 p-6 flex flex-col justify-between shadow-md relative">
             <div className="absolute -top-3.5 right-4 px-3 py-0.5 rounded-full bg-[#0e6de4] text-white text-[10px] font-black font-mono uppercase shadow-xs">
               MOST POPULAR
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black font-mono text-[#0e6de4] uppercase tracking-wider bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                <span className="text-[10px] font-black font-mono text-blue-400 uppercase tracking-wider bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-900">
                   GROWTH
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono font-bold">$0.0099 / credit</span>
+                <span className="text-[10px] text-zinc-400 font-mono font-bold">$0.0099 / credit</span>
               </div>
 
               <div>
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-base font-black text-zinc-100">
                   10,000 Credits/month
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">{package10000.description}</p>
+                <p className="text-xs text-zinc-400 mt-1 font-medium">{package10000.description}</p>
               </div>
 
-              <div className="py-3 border-y border-slate-100 space-y-0.5">
+              <div className="py-3 border-y border-zinc-800 space-y-0.5">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900">
+                  <span className="text-3xl font-black text-zinc-100">
                     ${isYearly ? PLAN_PRICING_DETAILS[10000].yearlyEffectiveMonthly : PLAN_PRICING_DETAILS[10000].monthlyPrice}
                   </span>
-                  <span className="text-xs font-bold text-slate-500">/ month</span>
+                  <span className="text-xs font-bold text-zinc-400">/ month</span>
                 </div>
-                <p className="text-[10px] font-semibold text-slate-500 leading-tight">
+                <p className="text-[10px] font-semibold text-zinc-400 leading-tight">
                   {isYearly ? `Billed $${PLAN_PRICING_DETAILS[10000].yearlyAnnualCharge} annually • Save 20%` : 'Billed $99 monthly'}
                 </p>
               </div>
 
               <div className="space-y-2.5 pt-1">
-                <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Features:</p>
+                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-wider">Features:</p>
                 {package10000.features.map((feat) => (
-                  <div key={feat} className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[#0e6de4] shrink-0" />
+                  <div key={feat} className="flex items-center gap-2 text-xs text-zinc-300 font-medium">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />
                     <span>{feat}</span>
                   </div>
                 ))}
@@ -250,43 +250,43 @@ export default function PricingPage() {
           </div>
 
           {/* CARD 4: AGENCY (AI POWERED) */}
-          <div className="pricing-plan-card rounded-3xl border border-slate-200 bg-white p-6 flex flex-col justify-between shadow-xs hover:border-blue-300 transition-all relative">
-            <div className="absolute -top-3.5 right-4 px-3 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-black font-mono uppercase shadow-xs">
+          <div className="pricing-plan-card rounded-3xl border border-zinc-800 bg-zinc-950 p-6 flex flex-col justify-between shadow-xs hover:border-blue-800 transition-all relative">
+            <div className="absolute -top-3.5 right-4 px-3 py-0.5 rounded-full bg-zinc-950 text-white text-[10px] font-black font-mono uppercase shadow-xs">
               AI POWERED
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black font-mono text-[#0e6de4] uppercase tracking-wider bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                <span className="text-[10px] font-black font-mono text-blue-400 uppercase tracking-wider bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-900">
                   AGENCY
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono font-bold">$0.00199 / credit</span>
+                <span className="text-[10px] text-zinc-400 font-mono font-bold">$0.00199 / credit</span>
               </div>
 
               <div>
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-base font-black text-zinc-100">
                   100,000 Credits/month
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">{package100000.description}</p>
+                <p className="text-xs text-zinc-400 mt-1 font-medium">{package100000.description}</p>
               </div>
 
-              <div className="py-3 border-y border-slate-100 space-y-0.5">
+              <div className="py-3 border-y border-zinc-800 space-y-0.5">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900">
+                  <span className="text-3xl font-black text-zinc-100">
                     ${isYearly ? PLAN_PRICING_DETAILS[100000].yearlyEffectiveMonthly : PLAN_PRICING_DETAILS[100000].monthlyPrice}
                   </span>
-                  <span className="text-xs font-bold text-slate-500">/ month</span>
+                  <span className="text-xs font-bold text-zinc-400">/ month</span>
                 </div>
-                <p className="text-[10px] font-semibold text-slate-500 leading-tight">
+                <p className="text-[10px] font-semibold text-zinc-400 leading-tight">
                   {isYearly ? `Billed $${PLAN_PRICING_DETAILS[100000].yearlyAnnualCharge} annually • Save 20%` : 'Billed $199 monthly'}
                 </p>
               </div>
 
               <div className="space-y-2.5 pt-1">
-                <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Features:</p>
+                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-wider">Features:</p>
                 {package100000.features.map((feat) => (
-                  <div key={feat} className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[#0e6de4] shrink-0" />
+                  <div key={feat} className="flex items-center gap-2 text-xs text-zinc-300 font-medium">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />
                     <span>{feat}</span>
                   </div>
                 ))}
@@ -306,43 +306,43 @@ export default function PricingPage() {
           </div>
 
           {/* CARD 5: ENTERPRISE (BEST VALUE) */}
-          <div className="pricing-plan-card rounded-3xl border border-slate-200 bg-white p-6 flex flex-col justify-between shadow-xs hover:border-blue-300 transition-all relative">
+          <div className="pricing-plan-card rounded-3xl border border-zinc-800 bg-zinc-950 p-6 flex flex-col justify-between shadow-xs hover:border-blue-800 transition-all relative">
             <div className="absolute -top-3.5 right-4 px-3 py-0.5 rounded-full bg-blue-900 text-white text-[10px] font-black font-mono uppercase shadow-xs">
               BEST VALUE
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black font-mono text-[#0e6de4] uppercase tracking-wider bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                <span className="text-[10px] font-black font-mono text-blue-400 uppercase tracking-wider bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-900">
                   ENTERPRISE
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono font-bold">$0.00099 / credit</span>
+                <span className="text-[10px] text-zinc-400 font-mono font-bold">$0.00099 / credit</span>
               </div>
 
               <div>
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-base font-black text-zinc-100">
                   300,000 Credits/month
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">{package300000.description}</p>
+                <p className="text-xs text-zinc-400 mt-1 font-medium">{package300000.description}</p>
               </div>
 
-              <div className="py-3 border-y border-slate-100 space-y-0.5">
+              <div className="py-3 border-y border-zinc-800 space-y-0.5">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900">
+                  <span className="text-3xl font-black text-zinc-100">
                     ${isYearly ? PLAN_PRICING_DETAILS[300000].yearlyEffectiveMonthly : PLAN_PRICING_DETAILS[300000].monthlyPrice}
                   </span>
-                  <span className="text-xs font-bold text-slate-500">/ month</span>
+                  <span className="text-xs font-bold text-zinc-400">/ month</span>
                 </div>
-                <p className="text-[10px] font-semibold text-slate-500 leading-tight">
+                <p className="text-[10px] font-semibold text-zinc-400 leading-tight">
                   {isYearly ? `Billed $${PLAN_PRICING_DETAILS[300000].yearlyAnnualCharge} annually • Save 20%` : 'Billed $299 monthly'}
                 </p>
               </div>
 
               <div className="space-y-2.5 pt-1">
-                <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Features:</p>
+                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-wider">Features:</p>
                 {package300000.features.map((feat) => (
-                  <div key={feat} className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[#0e6de4] shrink-0" />
+                  <div key={feat} className="flex items-center gap-2 text-xs text-zinc-300 font-medium">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />
                     <span>{feat}</span>
                   </div>
                 ))}
@@ -362,20 +362,20 @@ export default function PricingPage() {
           </div>
 
           {/* Secondary Referral Benefit Note */}
-          <div className="mt-10 p-5 sm:p-6 rounded-3xl border border-blue-200/90 bg-gradient-to-r from-blue-50/90 via-white to-blue-50/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 max-w-5xl mx-auto shadow-sm transition-all hover:border-blue-300">
+          <div className="mt-10 p-5 sm:p-6 rounded-3xl border border-blue-900/90 bg-gradient-to-r from-blue-950/90 to-blue-950/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 max-w-5xl mx-auto shadow-sm transition-all hover:border-blue-800">
             <div className="flex items-start sm:items-center gap-4">
               <div className="p-3 rounded-2xl bg-[#0e6de4] text-white shadow-md shadow-blue-500/20 shrink-0 mt-0.5 sm:mt-0">
                 <Gift className="h-6 w-6" />
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-black text-slate-900 text-sm sm:text-base tracking-tight">Earn Bonus Credits</h3>
-                  <span className="inline-flex items-center rounded-full bg-blue-100/80 border border-blue-200 px-2.5 py-0.5 text-[10px] font-extrabold text-[#0e6de4]">
+                  <h3 className="font-black text-zinc-100 text-sm sm:text-base tracking-tight">Earn Bonus Credits</h3>
+                  <span className="inline-flex items-center rounded-full bg-blue-900/80 border border-blue-900 px-2.5 py-0.5 text-[10px] font-extrabold text-blue-400">
                     Referral Program
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                  Refer a new ContactReachout user and earn <strong className="font-extrabold text-[#0e6de4]">100 bonus credits</strong>. Your referral gets <strong className="font-extrabold text-[#0e6de4]">50 bonus credits</strong> after email verification.
+                <p className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed">
+                  Refer a new ContactReachout user and earn <strong className="font-extrabold text-blue-400">100 bonus credits</strong>. Your referral gets <strong className="font-extrabold text-blue-400">50 bonus credits</strong> after email verification.
                 </p>
               </div>
             </div>
@@ -391,16 +391,16 @@ export default function PricingPage() {
 
         {/* Interactive Custom Credit Amount Calculator Slider */}
         <section className="py-12 px-4 sm:px-6 max-w-4xl mx-auto">
-          <div className="pricing-calculator rounded-3xl border border-blue-100 bg-white p-8 space-y-6 shadow-xs">
+          <div className="pricing-calculator rounded-3xl border border-blue-900 bg-zinc-950 p-8 space-y-6 shadow-xs">
             <div className="text-center space-y-2">
-              <span className="text-xs font-mono font-bold text-[#0e6de4] uppercase tracking-wider bg-blue-50 px-3.5 py-1 rounded-full border border-blue-200 inline-flex items-center gap-1.5">
-                <Calculator className="h-3.5 w-3.5 text-[#0e6de4]" />
+              <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-wider bg-blue-950 px-3.5 py-1 rounded-full border border-blue-900 inline-flex items-center gap-1.5">
+                <Calculator className="h-3.5 w-3.5 text-blue-400" />
                 CUSTOM VOLUME CALCULATOR
               </span>
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-900">
+              <h3 className="text-2xl sm:text-3xl font-black text-zinc-100">
                 Slide to Set Any Custom Credit Amount
               </h3>
-              <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto font-medium">
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-xl mx-auto font-medium">
                 Adjust the credit quantity slider up to 300,000 credits to estimate your monthly or annual investment.
               </p>
             </div>
@@ -421,7 +421,7 @@ export default function PricingPage() {
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${
                       customCredits === p.qty
                         ? 'bg-[#0e6de4] border-[#0e6de4] text-white shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-blue-50 hover:text-[#0e6de4]'
+                        : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-blue-950 hover:text-blue-400'
                     }`}
                   >
                     {p.label}
@@ -430,11 +430,11 @@ export default function PricingPage() {
               </div>
 
               {/* Range Slider & Input Box */}
-              <div className="space-y-4 bg-blue-50/40 p-6 rounded-2xl border border-blue-100">
+              <div className="space-y-4 bg-blue-950/40 p-6 rounded-2xl border border-blue-900">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
                   <div className="space-y-1 text-center sm:text-left">
-                    <label htmlFor="custom-credits-input" className="text-xs text-slate-500 uppercase tracking-wider font-bold">Selected Volume:</label>
-                    <p className="text-2xl font-black text-slate-900">{customCredits.toLocaleString()} Credits</p>
+                    <label htmlFor="custom-credits-input" className="text-xs text-zinc-400 uppercase tracking-wider font-bold">Selected Volume:</label>
+                    <p className="text-2xl font-black text-zinc-100">{customCredits.toLocaleString()} Credits</p>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -446,9 +446,9 @@ export default function PricingPage() {
                       step="1000"
                       value={customCredits}
                       onChange={(e) => setCustomCredits(Math.max(1000, Math.min(300000, Number(e.target.value))))}
-                      className="w-36 p-2.5 text-center font-bold text-sm bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#0e6de4]"
+                      className="w-36 p-2.5 text-center font-bold text-sm bg-zinc-950 border border-zinc-700 rounded-xl text-zinc-100 focus:outline-none focus:border-[#0e6de4]"
                     />
-                    <span className="text-xs text-slate-500 font-bold">Qty</span>
+                    <span className="text-xs text-zinc-400 font-bold">Qty</span>
                   </div>
                 </div>
 
@@ -460,7 +460,7 @@ export default function PricingPage() {
                   value={customCredits}
                   aria-label="Select custom credit volume"
                   onChange={(e) => setCustomCredits(Number(e.target.value))}
-                  className="w-full h-3 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-[#0e6de4]"
+                  className="w-full h-3 bg-blue-900 rounded-lg appearance-none cursor-pointer accent-[#0e6de4]"
                 />
               </div>
 
@@ -484,28 +484,28 @@ export default function PricingPage() {
 
         {/* Factual Trust / Social Proof Section */}
         <section className="py-12 px-4 sm:px-6 max-w-7xl mx-auto">
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center sm:p-10 shadow-xs">
-            <p className="text-xs font-black uppercase tracking-widest text-[#0e6de4]">
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 text-center sm:p-10 shadow-xs">
+            <p className="text-xs font-black uppercase tracking-widest text-blue-400">
               Built for Serious Outreach Teams
             </p>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
+            <h2 className="mt-2 text-2xl sm:text-3xl font-black text-zinc-100">
               Accountable Contact-Form Outreach
             </h2>
             <div className="mt-8 grid gap-6 sm:grid-cols-3 max-w-4xl mx-auto">
-              <div className="rounded-2xl bg-blue-50/50 p-6 border border-blue-100">
-                <ShieldCheck className="h-7 w-7 text-[#0e6de4] mx-auto" />
-                <h3 className="mt-3 text-base font-black text-slate-900">100% Screenshot Proofs</h3>
-                <p className="mt-1 text-xs text-slate-600 font-medium">Every successful contact form submission generates visual proof in your dashboard.</p>
+              <div className="rounded-2xl bg-blue-950/50 p-6 border border-blue-900">
+                <ShieldCheck className="h-7 w-7 text-blue-400 mx-auto" />
+                <h3 className="mt-3 text-base font-black text-zinc-100">100% Screenshot Proofs</h3>
+                <p className="mt-1 text-xs text-zinc-400 font-medium">Every successful contact form submission generates visual proof in your dashboard.</p>
               </div>
-              <div className="rounded-2xl bg-blue-50/50 p-6 border border-blue-100">
-                <Zap className="h-7 w-7 text-[#0e6de4] mx-auto" />
-                <h3 className="mt-3 text-base font-black text-slate-900">Zero-Credit Loss</h3>
-                <p className="mt-1 text-xs text-slate-600 font-medium">Credits are deducted strictly on successful form submissions. Unreachable sites cost 0 credits.</p>
+              <div className="rounded-2xl bg-blue-950/50 p-6 border border-blue-900">
+                <Zap className="h-7 w-7 text-blue-400 mx-auto" />
+                <h3 className="mt-3 text-base font-black text-zinc-100">Zero-Credit Loss</h3>
+                <p className="mt-1 text-xs text-zinc-400 font-medium">Credits are deducted strictly on successful form submissions. Unreachable sites cost 0 credits.</p>
               </div>
-              <div className="rounded-2xl bg-blue-50/50 p-6 border border-blue-100">
-                <HelpCircle className="h-7 w-7 text-[#0e6de4] mx-auto" />
-                <h3 className="mt-3 text-base font-black text-slate-900">Dedicated Support</h3>
-                <p className="mt-1 text-xs text-slate-600 font-medium">Get direct email assistance for campaign setup, lead imports, and account management.</p>
+              <div className="rounded-2xl bg-blue-950/50 p-6 border border-blue-900">
+                <HelpCircle className="h-7 w-7 text-blue-400 mx-auto" />
+                <h3 className="mt-3 text-base font-black text-zinc-100">Dedicated Support</h3>
+                <p className="mt-1 text-xs text-zinc-400 font-medium">Get direct email assistance for campaign setup, lead imports, and account management.</p>
               </div>
             </div>
           </div>
@@ -523,7 +523,7 @@ export default function PricingPage() {
             <div className="mt-8">
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-base font-black text-[#0e6de4] shadow-md transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white"
+                className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-7 py-3.5 text-base font-black text-blue-400 shadow-md transition hover:bg-blue-950 focus:outline-none focus:ring-2 focus:ring-white"
               >
                 Start Free
                 <ArrowRight className="h-5 w-5" />

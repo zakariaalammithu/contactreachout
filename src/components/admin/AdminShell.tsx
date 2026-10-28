@@ -28,26 +28,26 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     : 'ADMIN CONSOLE';
 
   return (
-    <div className="admin-app-shell flex min-h-screen bg-[#f4f8fd] text-slate-900 font-sans selection:bg-blue-500/20 selection:text-blue-950">
+    <div className="admin-app-shell flex min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-blue-500/20 selection:text-white">
       {/* Single Admin Sidebar */}
       <AdminSidebar />
 
       {/* Admin Content Area */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Clean Admin Header */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200/90 bg-white/90 px-6 shadow-xs backdrop-blur-xl">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-zinc-800/90 bg-zinc-950/90 px-6 shadow-xs backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-[#0e6de4] shadow-xs">
+            <span className="flex items-center gap-1.5 rounded-full border border-blue-900 bg-blue-950 px-3 py-1 text-xs font-bold text-blue-400 shadow-xs">
               <Sparkles className="h-3.5 w-3.5" />
               {badgeText}
             </span>
-            <span className="hidden text-xs font-mono text-slate-400 sm:inline">• Server-authorized session</span>
+            <span className="hidden text-xs font-mono text-zinc-400 sm:inline">• Server-authorized session</span>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1 text-xs shadow-xs sm:flex">
+            <div className="hidden items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3.5 py-1 text-xs shadow-xs sm:flex">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span className="text-[11px] font-mono font-semibold text-slate-700">Dry-Run Protection Active</span>
+              <span className="text-[11px] font-mono font-semibold text-zinc-300">Dry-Run Protection Active</span>
             </div>
             <Link
               href="/admin/security"

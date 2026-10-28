@@ -6,7 +6,7 @@ export function LandingFooter() {
 }
 
 function SocialLink({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
-  return <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="grid h-10 w-10 place-items-center rounded-xl border border-white/25 text-white transition hover:bg-white hover:text-[#0e6de4]">{children}</a>;
+  return <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="grid h-10 w-10 place-items-center rounded-xl border border-white/25 text-white transition hover:bg-zinc-950 hover:text-blue-400">{children}</a>;
 }
 
 function FooterColumn({ title, links }: { title: string; links: string[][] }) {

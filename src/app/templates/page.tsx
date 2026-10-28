@@ -322,7 +322,7 @@ export default function TemplatesPage() {
                   className={`cursor-pointer p-4 transition-all duration-150 ${
                     isSelected
                       ? 'border-primary/50 bg-primary/10 shadow-lg shadow-primary/10'
-                      : 'glass-panel hover:bg-slate-900/60'
+                      : 'glass-panel hover:bg-zinc-950/60'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -340,7 +340,7 @@ export default function TemplatesPage() {
                           e.stopPropagation();
                           handleDelete(tpl.id);
                         }}
-                        className="rounded p-1 text-slate-500 hover:text-rose-400 transition-colors"
+                        className="rounded p-1 text-zinc-400 hover:text-rose-400 transition-colors"
                         title="Delete template"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -356,7 +356,7 @@ export default function TemplatesPage() {
                     {tpl.variables.slice(0, 4).map((v) => (
                       <span
                         key={v}
-                        className="rounded bg-slate-800/80 px-1.5 py-0.5 text-[10px] text-slate-300 font-mono"
+                        className="rounded bg-zinc-900/80 px-1.5 py-0.5 text-[10px] text-zinc-400 font-mono"
                       >
                         {`{{${v}}}`}
                       </span>
@@ -415,7 +415,7 @@ export default function TemplatesPage() {
                         Provider: {process.env.NEXT_PUBLIC_AI_PROVIDER || 'None / Offline Fallback'}
                       </span>
                     </h4>
-                    <p className="text-xs text-slate-300">
+                    <p className="text-xs text-zinc-400">
                       Uses minimal public company info. Truthfulness enforced: no deceptive claims or fake facts.
                     </p>
                   </div>
@@ -425,7 +425,7 @@ export default function TemplatesPage() {
                   type="checkbox"
                   checked={isAiEnabled}
                   onChange={(e) => setIsAiEnabled(e.target.checked)}
-                  className="h-5 w-5 rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-400"
+                  className="h-5 w-5 rounded border-zinc-700 bg-zinc-950 text-indigo-400 focus:ring-indigo-400"
                 />
               </div>
 
@@ -433,7 +433,7 @@ export default function TemplatesPage() {
                 <div className="space-y-3 pt-2 border-t border-indigo-500/20">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div className="sm:col-span-2 space-y-1">
-                      <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                         Campaign Prompt Guidance
                       </label>
                       <input
@@ -441,12 +441,12 @@ export default function TemplatesPage() {
                         value={aiInstructions}
                         onChange={(e) => setAiInstructions(e.target.value)}
                         placeholder="e.g. Focus on B2B partnership, courteous tone"
-                        className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white focus:border-indigo-400 focus:outline-none"
+                        className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-1.5 text-xs text-white focus:border-indigo-400 focus:outline-none"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                         Max Length ({aiMaxWords} words)
                       </label>
                       <input
@@ -456,7 +456,7 @@ export default function TemplatesPage() {
                         step="10"
                         value={aiMaxWords}
                         onChange={(e) => setAiMaxWords(Number(e.target.value))}
-                        className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                        className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                       />
                     </div>
                   </div>
@@ -479,7 +479,7 @@ export default function TemplatesPage() {
 
             {/* Template Name */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                 Template Name
               </label>
               <input
@@ -487,13 +487,13 @@ export default function TemplatesPage() {
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="e.g. Partnership Cold Inquiry v3"
-                className="w-full rounded-lg border border-slate-800 bg-slate-900/90 px-4 py-2 text-sm text-white focus:border-primary focus:outline-none"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950/90 px-4 py-2 text-sm text-white focus:border-primary focus:outline-none"
               />
             </div>
 
             {/* Variable Insertion Toolbar */}
-            <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <div className="space-y-2 rounded-xl border border-zinc-700 bg-black/60 p-3.5">
+              <div className="flex items-center justify-between text-xs font-semibold text-zinc-400">
                 <span>Click to Insert Variable:</span>
                 <span className="text-[11px] text-muted-foreground">Inserts into message body</span>
               </div>
@@ -503,7 +503,7 @@ export default function TemplatesPage() {
                     key={v}
                     type="button"
                     onClick={() => handleInsertVariable(v)}
-                    className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs font-mono text-primary hover:bg-primary/15 hover:border-primary/40 transition-all active:scale-95"
+                    className="inline-flex items-center gap-1 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs font-mono text-primary hover:bg-primary/15 hover:border-primary/40 transition-all active:scale-95"
                   >
                     + {`{{${v}}}`}
                   </button>
@@ -541,7 +541,7 @@ export default function TemplatesPage() {
 
             {/* Subject Line */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                 Subject Line Template (Editable)
               </label>
               <input
@@ -550,17 +550,17 @@ export default function TemplatesPage() {
                 value={formSubject}
                 onChange={(e) => setFormSubject(e.target.value)}
                 placeholder="e.g. Inquiry regarding {{company_name}}"
-                className="w-full rounded-lg border border-slate-800 bg-slate-900/90 px-4 py-2 text-sm text-white focus:border-primary focus:outline-none"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950/90 px-4 py-2 text-sm text-white focus:border-primary focus:outline-none"
               />
             </div>
 
             {/* Message Body (Editable) */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                   Message Body (Manual Editing Supported)
                 </label>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-zinc-400">
                   Supports Spintax syntax: <code className="text-primary">{'{Hi|Hello|Dear}'}</code>
                 </span>
               </div>
@@ -570,20 +570,20 @@ export default function TemplatesPage() {
                 value={formBody}
                 onChange={(e) => setFormBody(e.target.value)}
                 placeholder="Hi {{first_name}},\n\nI came across {{company_name}}..."
-                className="w-full rounded-lg border border-slate-800 bg-slate-900/90 p-4 text-xs font-mono leading-relaxed text-white focus:border-primary focus:outline-none"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950/90 p-4 text-xs font-mono leading-relaxed text-white focus:border-primary focus:outline-none"
               />
             </div>
 
             {/* Compliance Footer */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                 Anti-Spam Compliance Footer (Mandatory Physical Address & Opt-Out)
               </label>
               <input
                 type="text"
                 value={formFooter}
                 onChange={(e) => setFormFooter(e.target.value)}
-                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-400 focus:border-primary focus:outline-none font-mono"
+                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-xs text-zinc-400 focus:border-primary focus:outline-none font-mono"
               />
             </div>
           </Card>
@@ -603,7 +603,7 @@ export default function TemplatesPage() {
                   <select
                     value={selectedLeadId}
                     onChange={(e) => setSelectedLeadId(e.target.value)}
-                    className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs text-white focus:border-primary focus:outline-none"
+                    className="rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-white focus:border-primary focus:outline-none"
                   >
                     {mockLeads.map((lead) => (
                       <option key={lead.id} value={lead.id}>
@@ -617,7 +617,7 @@ export default function TemplatesPage() {
                 <button
                   type="button"
                   onClick={() => setRandomizeSpintax(!randomizeSpintax)}
-                  className="rounded-md border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:text-white"
+                  className="rounded-md border border-zinc-700 bg-zinc-950 p-1.5 text-zinc-400 hover:text-white"
                   title="Re-roll Spintax Variant"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
@@ -626,7 +626,7 @@ export default function TemplatesPage() {
             </div>
 
             {/* Preview Output Box */}
-            <div className="rounded-xl border border-primary/20 bg-slate-950 p-5 space-y-3 shadow-inner">
+            <div className="rounded-xl border border-primary/20 bg-black p-5 space-y-3 shadow-inner">
               <div className="space-y-1">
                 <span className="text-[11px] uppercase font-bold tracking-wider text-muted-foreground">
                   Subject Line:
@@ -634,20 +634,20 @@ export default function TemplatesPage() {
                 <p className="text-sm font-semibold text-white">{previewSubject}</p>
               </div>
 
-              <div className="h-px bg-slate-900" />
+              <div className="h-px bg-zinc-950" />
 
               <div className="space-y-1">
                 <span className="text-[11px] uppercase font-bold tracking-wider text-muted-foreground">
                   Message Body:
                 </span>
-                <p className="text-xs font-mono text-slate-200 whitespace-pre-line leading-relaxed">
+                <p className="text-xs font-mono text-zinc-300 whitespace-pre-line leading-relaxed">
                   {previewBody}
                 </p>
               </div>
 
-              <div className="h-px bg-slate-900" />
+              <div className="h-px bg-zinc-950" />
 
-              <p className="text-[11px] text-slate-500 font-mono pt-1">{formFooter}</p>
+              <p className="text-[11px] text-zinc-400 font-mono pt-1">{formFooter}</p>
             </div>
           </Card>
         </div>

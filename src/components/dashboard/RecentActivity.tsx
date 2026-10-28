@@ -23,10 +23,10 @@ export function RecentActivity() {
           {mockLeads.slice(0, 5).map((lead) => (
             <div
               key={lead.id}
-              className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/50 border border-slate-800/60 transition-all hover:bg-slate-900/80"
+              className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-950/50 border border-zinc-700/60 transition-all hover:bg-zinc-950/80"
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-300">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-zinc-400">
                   <Globe className="h-4 w-4" />
                 </div>
                 <div className="truncate">

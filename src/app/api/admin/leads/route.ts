@@ -11,6 +11,10 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const q = url.searchParams.get('q')?.toLowerCase().trim() || '';
+  const jobTitleFilter = url.searchParams.get('jobTitle')?.toLowerCase().trim() || '';
+  const companyFilter = url.searchParams.get('company')?.toLowerCase().trim() || '';
+  const websiteFilter = url.searchParams.get('website')?.toLowerCase().trim() || '';
+  const fileNameFilter = url.searchParams.get('fileName')?.toLowerCase().trim() || '';
   const userFilter = url.searchParams.get('userEmail') || 'all';
   const listFilter = url.searchParams.get('listName') || 'all';
   const statusFilter = url.searchParams.get('status')?.toUpperCase() || 'ALL';
@@ -60,6 +64,7 @@ export async function GET(req: NextRequest) {
       const matchOwnerEmail = l.ownerEmail.toLowerCase().includes(q);
       const matchList = (l.listName || '').toLowerCase().includes(q);
       const matchContactUrl = (l.contactPageUrl || '').toLowerCase().includes(q);
+      const matchTitle = (l.title || '').toLowerCase().includes(q);
       return (
         matchCompany ||
         matchDomain ||
@@ -69,7 +74,8 @@ export async function GET(req: NextRequest) {
         matchOwnerName ||
         matchOwnerEmail ||
         matchList ||
-        matchContactUrl
+        matchContactUrl ||
+        matchTitle
       );
     });
   }
@@ -118,6 +124,29 @@ export async function GET(req: NextRequest) {
       }
       return true;
     });
+  }
+
+  // 9b. Advanced Field Filters (Apollo-style: job title, company, website, file name)
+  if (jobTitleFilter) {
+    leads = leads.filter((l) => (l.title || '').toLowerCase().includes(jobTitleFilter));
+  }
+
+  if (companyFilter) {
+    leads = leads.filter((l) => l.companyName.toLowerCase().includes(companyFilter));
+  }
+
+  if (websiteFilter) {
+    leads = leads.filter(
+      (l) => l.domain.toLowerCase().includes(websiteFilter) || l.website.toLowerCase().includes(websiteFilter)
+    );
+  }
+
+  if (fileNameFilter) {
+    leads = leads.filter(
+      (l) =>
+        (l.listName || '').toLowerCase().includes(fileNameFilter) ||
+        (l.sourceFileName || '').toLowerCase().includes(fileNameFilter)
+    );
   }
 
   // 10. Real Summary Metrics (Calculated directly from filtered/queried leads)

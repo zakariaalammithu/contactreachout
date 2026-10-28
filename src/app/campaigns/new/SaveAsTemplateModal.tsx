@@ -66,19 +66,19 @@ export function SaveAsTemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in duration-150">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-lg rounded-2xl bg-zinc-950 p-6 shadow-2xl animate-in fade-in zoom-in duration-150">
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Save Message Template</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h3 className="text-lg font-bold text-zinc-100">Save Message Template</h3>
+            <p className="text-xs text-zinc-400 mt-0.5">
               Save message content to reuse across initial and follow-up outreach steps.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+            className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-400 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -86,15 +86,15 @@ export function SaveAsTemplateModal({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           {error && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+            <div className="flex items-center gap-2 rounded-xl border border-red-900 bg-red-950 p-3 text-xs font-semibold text-red-300">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
               <span>{error}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-800">
-              Template Name <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold text-zinc-200">
+              Template Name <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -104,20 +104,20 @@ export function SaveAsTemplateModal({
                 if (error) setError('');
               }}
               placeholder="e.g., Partnership Outreach, Follow-up General"
-              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+              className="mt-1.5 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-sm font-medium text-zinc-100 outline-none focus:border-blue-500"
               autoFocus
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-800">
+              <label className="block text-xs font-bold text-zinc-200">
                 Category Filter
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as any)}
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 cursor-pointer"
+                className="mt-1.5 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-semibold text-zinc-200 outline-none focus:border-blue-500 cursor-pointer"
               >
                 <option value="general">General / Any Step</option>
                 <option value="initial">Initial Message</option>
@@ -126,7 +126,7 @@ export function SaveAsTemplateModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-800">
+              <label className="block text-xs font-bold text-zinc-200">
                 Optional Subject
               </label>
               <input
@@ -134,27 +134,27 @@ export function SaveAsTemplateModal({
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Partnership Inquiry"
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 outline-none focus:border-blue-500"
+                className="mt-1.5 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-medium text-zinc-100 outline-none focus:border-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-800">
-              Message Content <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold text-zinc-200">
+              Message Content <span className="text-red-400">*</span>
             </label>
             <div
-              className="mt-1.5 max-h-36 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800 leading-relaxed font-mono"
+              className="mt-1.5 max-h-36 overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-xs text-zinc-200 leading-relaxed font-mono"
             >
               {body ? (
                 <div dangerouslySetInnerHTML={{ __html: body }} />
               ) : (
-                <span className="text-slate-400 italic">No message content in editor</span>
+                <span className="text-zinc-400 italic">No message content in editor</span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
+          <div className="flex items-center justify-end gap-2 border-t border-zinc-800 pt-4 mt-6">
             <Button
               type="button"
               variant="outline"

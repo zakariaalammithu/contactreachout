@@ -479,12 +479,12 @@ export default function LeadsPage() {
     <div className="space-y-6 w-full max-w-[1750px] pb-12">
       {/* Floating Selection Bar */}
       {selectedLeadIds.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl border border-slate-800 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-zinc-950 text-white px-5 py-3.5 rounded-2xl shadow-xl border border-zinc-700 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-3">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold font-mono">
               {selectedLeadIds.length}
             </span>
-            <span className="text-xs font-bold text-slate-200">
+            <span className="text-xs font-bold text-zinc-300">
               lead{selectedLeadIds.length > 1 ? 's' : ''} selected
             </span>
           </div>
@@ -508,7 +508,7 @@ export default function LeadsPage() {
 
             <button
               onClick={() => setSelectedLeadIds([])}
-              className="text-xs text-slate-400 hover:text-white px-2 py-1 transition-colors cursor-pointer"
+              className="text-xs text-zinc-400 hover:text-white px-2 py-1 transition-colors cursor-pointer"
             >
               Clear Selection
             </button>
@@ -518,8 +518,8 @@ export default function LeadsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Contact Lists</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-100">Contact Lists</h1>
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
             Organize your uploaded lead lists and use them in campaigns.
           </p>
         </div>
@@ -530,10 +530,10 @@ export default function LeadsPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start w-full">
-      <Card className="border-slate-200 bg-white p-3.5 shadow-sm lg:sticky lg:top-4 shrink-0 w-full">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <p className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-            <Filter className="h-3.5 w-3.5 text-blue-600" />
+      <Card className="border-zinc-800 bg-zinc-950 p-3.5 shadow-sm lg:sticky lg:top-4 shrink-0 w-full">
+        <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-zinc-200 flex items-center gap-1.5">
+            <Filter className="h-3.5 w-3.5 text-blue-400" />
             <span>Filters</span>
           </p>
           {(activeListId || campaignFilter !== 'ALL' || statusFilter !== 'ALL') && (
@@ -545,30 +545,30 @@ export default function LeadsPage() {
                 setCampaignFilter('ALL');
                 setStatusFilter('ALL');
               }}
-              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
+              className="text-[11px] font-bold text-blue-400 hover:text-blue-300 underline cursor-pointer"
             >
               Clear All Filters
             </button>
           )}
         </div>
 
-        <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200/80 bg-white overflow-hidden text-xs">
+        <div className="mt-3 divide-y divide-zinc-800 rounded-xl border border-zinc-800/80 bg-zinc-950 overflow-hidden text-xs">
           {/* 1. Campaigns */}
           <details className="group px-3 py-2.5" open={campaignFilter !== 'ALL'}>
-            <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-slate-700 hover:text-blue-600">
+            <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-zinc-300 hover:text-blue-400">
               <span className="flex items-center gap-2">
                 <span>Campaigns</span>
                 {campaignFilter !== 'ALL' && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-700 text-[10px] font-mono">1 selected</span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-900 text-blue-300 text-[10px] font-mono">1 selected</span>
                 )}
               </span>
-              <span className="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+              <span className="text-zinc-400 transition-transform group-open:rotate-180">⌄</span>
             </summary>
             <div className="mt-2 space-y-1 pt-1">
               <select
                 value={campaignFilter}
                 onChange={(e) => setCampaignFilter(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-500"
+                className="w-full rounded-lg border border-zinc-700 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-blue-500"
               >
                 <option value="ALL">All Campaigns</option>
                 {campaigns.map((c) => (
@@ -582,18 +582,18 @@ export default function LeadsPage() {
 
           {/* 2. Lists */}
           <details className="group px-3 py-2.5" open={!!activeListId}>
-            <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-slate-700 hover:text-blue-600">
+            <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-zinc-300 hover:text-blue-400">
               <span className="flex items-center gap-2">
                 <span>Lists</span>
                 {activeListId && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-700 text-[10px] font-mono">1 selected</span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-900 text-blue-300 text-[10px] font-mono">1 selected</span>
                 )}
               </span>
-              <span className="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+              <span className="text-zinc-400 transition-transform group-open:rotate-180">⌄</span>
             </summary>
             <div className="mt-2 space-y-2 pt-1">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
                 <input
                   value={listSearch}
                   onFocus={() => setListDropdownOpen(true)}
@@ -606,7 +606,7 @@ export default function LeadsPage() {
                       ? leadLists.find((l) => l.id === activeListId || l.name === activeListId)?.name || 'Search lists'
                       : 'Search lists'
                   }
-                  className="w-full rounded-lg border border-slate-300 py-1.5 pl-8 pr-7 text-xs text-slate-800 outline-none focus:border-blue-500"
+                  className="w-full rounded-lg border border-zinc-700 py-1.5 pl-8 pr-7 text-xs text-zinc-200 outline-none focus:border-blue-500"
                 />
                 {activeListId && (
                   <button
@@ -616,14 +616,14 @@ export default function LeadsPage() {
                       setListSearch('');
                       setListDropdownOpen(false);
                     }}
-                    className="absolute right-2 top-1.5 text-xs text-slate-400 hover:text-slate-700 font-bold"
+                    className="absolute right-2 top-1.5 text-xs text-zinc-400 hover:text-zinc-300 font-bold"
                   >
                     ×
                   </button>
                 )}
               </div>
               {listDropdownOpen && (
-                <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-md">
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-1 shadow-md">
                   {visibleLists.length ? (
                     visibleLists.map((list) => {
                       const selected = activeListId === list.id || activeListId === list.name;
@@ -637,16 +637,16 @@ export default function LeadsPage() {
                             setListDropdownOpen(false);
                           }}
                           className={`block w-full rounded-md px-2.5 py-1.5 text-left text-xs ${
-                            selected ? 'bg-blue-50 font-bold text-blue-700' : 'text-slate-700 hover:bg-slate-50'
+                            selected ? 'bg-blue-950 font-bold text-blue-300' : 'text-zinc-300 hover:bg-zinc-900'
                           }`}
                         >
                           {list.name || list.fileName}
-                          <span className="ml-1 text-slate-400">({listLeadCount(list)})</span>
+                          <span className="ml-1 text-zinc-400">({listLeadCount(list)})</span>
                         </button>
                       );
                     })
                   ) : (
-                    <p className="px-2 py-2 text-xs text-slate-400">No lists found</p>
+                    <p className="px-2 py-2 text-xs text-zinc-400">No lists found</p>
                   )}
                 </div>
               )}
@@ -657,11 +657,11 @@ export default function LeadsPage() {
           <div
             onClick={() => setStatusFilter(statusFilter === 'PROSPECT' ? 'ALL' : 'PROSPECT')}
             className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
-              statusFilter === 'PROSPECT' ? 'bg-slate-100 text-slate-900 border-l-4 border-l-slate-700' : 'text-slate-700 hover:bg-slate-50'
+              statusFilter === 'PROSPECT' ? 'bg-zinc-900 text-zinc-100 border-l-4 border-l-slate-700' : 'text-zinc-300 hover:bg-zinc-900'
             }`}
           >
             <span>Prospects</span>
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-mono">
+            <span className="px-2 py-0.5 rounded-full bg-zinc-900 text-zinc-300 text-[10px] font-mono">
               {allLeads.filter((l) => {
                 const s = String(l.status || 'PROSPECT').toUpperCase();
                 return s === 'PROSPECT' || s === 'UNCONTACTED' || s === 'NEW';
@@ -673,14 +673,14 @@ export default function LeadsPage() {
           <div
             onClick={() => setStatusFilter(statusFilter === 'DELIVERED' ? 'ALL' : 'DELIVERED')}
             className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
-              statusFilter === 'DELIVERED' ? 'bg-emerald-50 text-emerald-900 border-l-4 border-l-emerald-600' : 'text-slate-700 hover:bg-slate-50'
+              statusFilter === 'DELIVERED' ? 'bg-emerald-950 text-emerald-200 border-l-4 border-l-emerald-600' : 'text-zinc-300 hover:bg-zinc-900'
             }`}
           >
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span>Delivered</span>
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-mono">
+            <span className="px-2 py-0.5 rounded-full bg-emerald-900 text-emerald-300 text-[10px] font-mono">
               {allLeads.filter((l) => {
                 const s = String(l.status || '').toUpperCase();
                 return s === 'DELIVERED' || s === 'REACHED' || s === 'SENT';
@@ -692,14 +692,14 @@ export default function LeadsPage() {
           <div
             onClick={() => setStatusFilter(statusFilter === 'PENDING' ? 'ALL' : 'PENDING')}
             className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
-              statusFilter === 'PENDING' ? 'bg-blue-50 text-blue-900 border-l-4 border-l-blue-600' : 'text-slate-700 hover:bg-slate-50'
+              statusFilter === 'PENDING' ? 'bg-blue-950 text-blue-200 border-l-4 border-l-blue-600' : 'text-zinc-300 hover:bg-zinc-900'
             }`}
           >
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-blue-500" />
               <span>Pending</span>
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-mono">
+            <span className="px-2 py-0.5 rounded-full bg-blue-900 text-blue-300 text-[10px] font-mono">
               {allLeads.filter((l) => String(l.status || '').toUpperCase() === 'PENDING').length}
             </span>
           </div>
@@ -708,14 +708,14 @@ export default function LeadsPage() {
           <div
             onClick={() => setStatusFilter(statusFilter === 'FAILED' ? 'ALL' : 'FAILED')}
             className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
-              statusFilter === 'FAILED' ? 'bg-rose-50 text-rose-900 border-l-4 border-l-rose-600' : 'text-slate-700 hover:bg-slate-50'
+              statusFilter === 'FAILED' ? 'bg-rose-950 text-rose-200 border-l-4 border-l-rose-600' : 'text-zinc-300 hover:bg-zinc-900'
             }`}
           >
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-rose-500" />
               <span>Failed</span>
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-mono">
+            <span className="px-2 py-0.5 rounded-full bg-rose-900 text-rose-300 text-[10px] font-mono">
               {allLeads.filter((l) => String(l.status || '').toUpperCase() === 'FAILED').length}
             </span>
           </div>
@@ -724,14 +724,14 @@ export default function LeadsPage() {
           <div
             onClick={() => setStatusFilter(statusFilter === 'NO_FORM' ? 'ALL' : 'NO_FORM')}
             className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
-              statusFilter === 'NO_FORM' ? 'bg-amber-50 text-amber-900 border-l-4 border-l-amber-600' : 'text-slate-700 hover:bg-slate-50'
+              statusFilter === 'NO_FORM' ? 'bg-amber-950 text-amber-200 border-l-4 border-l-amber-600' : 'text-zinc-300 hover:bg-zinc-900'
             }`}
           >
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
               <span>No-Form</span>
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-mono">
+            <span className="px-2 py-0.5 rounded-full bg-amber-900 text-amber-300 text-[10px] font-mono">
               {allLeads.filter((l) => {
                 const s = String(l.status || '').toUpperCase();
                 return s === 'NO_FORM' || s === 'NO_CONTACT_PAGE';
@@ -743,14 +743,14 @@ export default function LeadsPage() {
           <div
             onClick={() => setStatusFilter(statusFilter === 'REVIEW' ? 'ALL' : 'REVIEW')}
             className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
-              statusFilter === 'REVIEW' ? 'bg-purple-50 text-purple-900 border-l-4 border-l-purple-600' : 'text-slate-700 hover:bg-slate-50'
+              statusFilter === 'REVIEW' ? 'bg-purple-950 text-purple-200 border-l-4 border-l-purple-600' : 'text-zinc-300 hover:bg-zinc-900'
             }`}
           >
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-purple-500" />
               <span>Review</span>
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-mono">
+            <span className="px-2 py-0.5 rounded-full bg-purple-900 text-purple-300 text-[10px] font-mono">
               {allLeads.filter((l) => {
                 const s = String(l.status || '').toUpperCase();
                 return s === 'REVIEW' || s === 'CAPTCHA' || s === 'CAPTCHA_REVIEW';
@@ -762,14 +762,14 @@ export default function LeadsPage() {
           <div
             onClick={() => setStatusFilter(statusFilter === 'REPLIED' ? 'ALL' : 'REPLIED')}
             className={`px-3 py-2.5 flex items-center justify-between cursor-pointer font-bold transition-colors ${
-              statusFilter === 'REPLIED' ? 'bg-indigo-50 text-indigo-900 border-l-4 border-l-indigo-600' : 'text-slate-700 hover:bg-slate-50'
+              statusFilter === 'REPLIED' ? 'bg-indigo-950 text-indigo-200 border-l-4 border-l-indigo-600' : 'text-zinc-300 hover:bg-zinc-900'
             }`}
           >
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-indigo-500" />
               <span>Replied</span>
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-mono">
+            <span className="px-2 py-0.5 rounded-full bg-indigo-900 text-indigo-300 text-[10px] font-mono">
               {allLeads.filter((l) => {
                 const s = String(l.status || '').toUpperCase();
                 return s === 'REPLIED' || s === 'INTERESTED';
@@ -785,16 +785,16 @@ export default function LeadsPage() {
 
       {/* Newly Uploaded Banner */}
       {newlyImportedCount > 0 && (
-        <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="p-4 rounded-2xl border border-emerald-900 bg-emerald-950/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold shrink-0">
-              <FileSpreadsheet className="h-5 w-5 text-emerald-700" />
+            <div className="h-10 w-10 rounded-2xl bg-emerald-900 text-emerald-300 flex items-center justify-center font-bold shrink-0">
+              <FileSpreadsheet className="h-5 w-5 text-emerald-300" />
             </div>
             <div>
               <p className="text-xs font-extrabold text-emerald-950">
                 {newlyImportedCount} Leads Successfully Imported!
               </p>
-              <p className="text-[11px] text-emerald-800 mt-0.5">
+              <p className="text-[11px] text-emerald-300 mt-0.5">
                 Your uploaded file records are displayed at the top of the table. Click &quot;View Full Lead Info&quot; to inspect all 12+ fields & custom attributes.
               </p>
             </div>
@@ -812,51 +812,51 @@ export default function LeadsPage() {
       {/* Search Bar */}
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
           <input
             type="text"
             placeholder="Search by company, name, title, email, domain, file name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:outline-none shadow-2xs font-medium"
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-2.5 pl-10 pr-4 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:outline-none shadow-2xs font-medium"
           />
         </div>
       </div>
 
       {/* Leads Table with Excel-Style Freeze Header (Sticky Top Header) */}
-      <Card className="glass-panel overflow-hidden border-slate-300 bg-white shadow-sm flex flex-col">
+      <Card className="glass-panel overflow-hidden border-zinc-700 bg-zinc-950 shadow-sm flex flex-col">
         {/* Scrollable Container with Sticky Frozen Header */}
         <div className="overflow-x-auto overflow-y-auto max-h-[600px] relative">
           <table className="w-full text-left text-xs border-collapse">
             {/* Excel Freeze Header (Pinned Sticky Header) */}
-            <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 border-b-2 border-slate-300 uppercase font-mono text-[10px] shadow-xs">
+            <thead className="sticky top-0 z-20 bg-zinc-900 text-zinc-200 border-b-2 border-zinc-700 uppercase font-mono text-[10px] shadow-xs">
               <tr>
-                <th className="p-3.5 w-10 text-center font-extrabold tracking-wider bg-slate-100">
+                <th className="p-3.5 w-10 text-center font-extrabold tracking-wider bg-zinc-900">
                   <input
                     type="checkbox"
                     checked={isAllPageSelected}
                     onChange={toggleSelectAllPage}
-                    className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    className="h-3.5 w-3.5 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer"
                     title="Select All Leads on this page"
                   />
                 </th>
-                <th className="p-3.5 w-12 text-center font-extrabold tracking-wider bg-slate-100">#</th>
-                <th className="p-3.5 font-extrabold tracking-wider bg-slate-100">Company & Domain</th>
-                <th className="p-3.5 font-extrabold tracking-wider bg-slate-100">Contact Person & Title</th>
-                <th className="p-3.5 font-extrabold tracking-wider bg-slate-100">Email & Industry</th>
-                <th className="p-3.5 font-extrabold tracking-wider bg-slate-100">Location</th>
-                <th className="p-3.5 font-extrabold tracking-wider bg-slate-100">Status</th>
-                <th className="p-3.5 font-extrabold tracking-wider bg-slate-100">Uploaded Source File</th>
-                <th className="p-3.5 font-extrabold tracking-wider text-right bg-slate-100">Actions</th>
+                <th className="p-3.5 w-12 text-center font-extrabold tracking-wider bg-zinc-900">#</th>
+                <th className="p-3.5 font-extrabold tracking-wider bg-zinc-900">Company & Domain</th>
+                <th className="p-3.5 font-extrabold tracking-wider bg-zinc-900">Contact Person & Title</th>
+                <th className="p-3.5 font-extrabold tracking-wider bg-zinc-900">Email & Industry</th>
+                <th className="p-3.5 font-extrabold tracking-wider bg-zinc-900">Location</th>
+                <th className="p-3.5 font-extrabold tracking-wider bg-zinc-900">Status</th>
+                <th className="p-3.5 font-extrabold tracking-wider bg-zinc-900">Uploaded Source File</th>
+                <th className="p-3.5 font-extrabold tracking-wider text-right bg-zinc-900">Actions</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-zinc-800 text-zinc-300">
               {currentPaginatedLeads.map((lead, idx) => (
                 <tr
                   key={lead.id || idx}
-                  className={`hover:bg-blue-50/50 transition-colors cursor-pointer ${
-                    selectedLeadIds.includes(lead.id) ? 'bg-blue-50/70 font-semibold' : ''
+                  className={`hover:bg-blue-950/50 transition-colors cursor-pointer ${
+                    selectedLeadIds.includes(lead.id) ? 'bg-blue-950/70 font-semibold' : ''
                   }`}
                   onClick={(e) => toggleSelectLead(lead.id, e)}
                 >
@@ -866,20 +866,20 @@ export default function LeadsPage() {
                       type="checkbox"
                       checked={selectedLeadIds.includes(lead.id)}
                       onChange={(e) => toggleSelectLead(lead.id, e as any)}
-                      className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="h-3.5 w-3.5 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer"
                     />
                   </td>
                   {/* Lead Number (#) Column */}
-                  <td className="p-3.5 w-12 text-center font-mono font-bold text-slate-500 text-[11px]">
+                  <td className="p-3.5 w-12 text-center font-mono font-bold text-zinc-400 text-[11px]">
                     #{startIndex + idx + 1}
                   </td>
                   {/* Company & Domain */}
                   <td className="p-3.5 font-medium">
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-slate-900 text-xs">{lead.companyName || lead.company_name}</span>
+                        <span className="font-bold text-zinc-100 text-xs">{lead.companyName || lead.company_name}</span>
                         {lead.isNewlyImported && (
-                          <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-mono text-[9px] font-bold">
+                          <span className="px-1.5 py-0.2 rounded-full bg-zinc-900 text-zinc-400 font-mono text-[9px] font-bold">
                             Uploaded
                           </span>
                         )}
@@ -888,7 +888,7 @@ export default function LeadsPage() {
                         href={lead.website || `https://${lead.domain}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] text-slate-700 hover:text-[#0e6de4] hover:underline font-mono flex items-center gap-1"
+                        className="text-[11px] text-zinc-300 hover:text-blue-400 hover:underline font-mono flex items-center gap-1"
                       >
                         {lead.domain || lead.website || 'website.com'}
                         <ExternalLink className="h-2.5 w-2.5" />
@@ -899,27 +899,27 @@ export default function LeadsPage() {
                   {/* Contact Person & Title */}
                   <td className="p-3.5">
                     <div className="space-y-0.5">
-                      <p className="font-bold text-slate-900">
+                      <p className="font-bold text-zinc-100">
                         {lead.firstName || lead.first_name || lead.lastName || lead.last_name
                           ? `${lead.firstName || lead.first_name || ''} ${lead.lastName || lead.last_name || ''}`.trim()
                           : '—'}
                       </p>
-                      <p className="text-[11px] text-slate-500 font-mono">{lead.title || 'Decision Maker'}</p>
+                      <p className="text-[11px] text-zinc-400 font-mono">{lead.title || 'Decision Maker'}</p>
                     </div>
                   </td>
 
                   {/* Email & Industry */}
                   <td className="p-3.5">
                     <div className="space-y-0.5">
-                      <p className="font-mono text-[11px] text-slate-900 font-medium">{lead.email || '—'}</p>
-                      <p className="text-[10px] text-slate-500 font-semibold">{lead.industry || 'B2B Services'}</p>
+                      <p className="font-mono text-[11px] text-zinc-100 font-medium">{lead.email || '—'}</p>
+                      <p className="text-[10px] text-zinc-400 font-semibold">{lead.industry || 'B2B Services'}</p>
                     </div>
                   </td>
 
                   {/* Location */}
                   <td className="p-3.5">
-                    <div className="flex items-center gap-1 text-slate-600 text-[11px]">
-                      <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                    <div className="flex items-center gap-1 text-zinc-400 text-[11px]">
+                      <MapPin className="h-3 w-3 text-zinc-400 shrink-0" />
                       <span>
                         {[lead.city, lead.state, lead.country].filter(Boolean).join(', ') || 'Global'}
                       </span>
@@ -930,19 +930,19 @@ export default function LeadsPage() {
                   <td className="p-3.5">
                     {(() => {
                       const st = String(lead.status || 'PROSPECT').toUpperCase().trim();
-                      let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
+                      let badgeStyle = 'bg-zinc-900 text-zinc-300 border-zinc-800';
                       if (st === 'DELIVERED' || st === 'REACHED' || st === 'SENT') {
-                        badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                        badgeStyle = 'bg-emerald-950 text-emerald-300 border-emerald-900';
                       } else if (st === 'FAILED') {
-                        badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200';
+                        badgeStyle = 'bg-rose-950 text-rose-300 border-rose-900';
                       } else if (st === 'NO_FORM' || st === 'NO_CONTACT_PAGE') {
-                        badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200';
+                        badgeStyle = 'bg-amber-950 text-amber-300 border-amber-900';
                       } else if (st === 'REVIEW' || st === 'CAPTCHA' || st === 'CAPTCHA_REVIEW') {
-                        badgeStyle = 'bg-purple-50 text-purple-700 border-purple-200';
+                        badgeStyle = 'bg-purple-950 text-purple-300 border-purple-900';
                       } else if (st === 'REPLIED' || st === 'INTERESTED') {
-                        badgeStyle = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                        badgeStyle = 'bg-indigo-950 text-indigo-300 border-indigo-900';
                       } else if (st === 'PENDING') {
-                        badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200';
+                        badgeStyle = 'bg-blue-950 text-blue-300 border-blue-900';
                       }
                       return (
                         <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-mono font-bold uppercase ${badgeStyle}`}>
@@ -954,7 +954,7 @@ export default function LeadsPage() {
 
                   {/* Source File Name */}
                   <td className="p-3.5 text-[10px] font-mono">
-                    <span className="font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200 inline-block truncate max-w-[160px]">
+                    <span className="font-medium text-zinc-400 bg-zinc-900 px-2 py-1 rounded border border-zinc-800 inline-block truncate max-w-[160px]">
                       📁 {lead.sourceFileName || uploadedFileName || 'Uploaded File'}
                     </span>
                   </td>
@@ -963,7 +963,7 @@ export default function LeadsPage() {
                   <td className="p-3.5 text-right">
                     <button
                       onClick={() => setSelectedLeadForModal(lead)}
-                      className="px-3 py-1.5 rounded-xl bg-white text-slate-700 hover:bg-slate-50 border border-slate-300 text-xs font-semibold flex items-center gap-1.5 ml-auto transition-colors cursor-pointer shadow-2xs"
+                      className="px-3 py-1.5 rounded-xl bg-zinc-950 text-zinc-300 hover:bg-zinc-900 border border-zinc-700 text-xs font-semibold flex items-center gap-1.5 ml-auto transition-colors cursor-pointer shadow-2xs"
                       title="Inspect all uploaded fields in large spreadsheet modal"
                     >
                       <Eye className="h-3.5 w-3.5" />
@@ -977,20 +977,20 @@ export default function LeadsPage() {
         </div>
 
         {/* Excel-Style Pagination Footer Bar (Page 1, Page 2 ... Previous / Next) */}
-        <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-4 text-slate-600 font-mono">
+        <div className="p-3.5 bg-zinc-900 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-4 text-zinc-400 font-mono">
             <span>
-              Showing <strong className="text-slate-900">{totalLeads > 0 ? startIndex + 1 : 0}</strong> to{' '}
-              <strong className="text-slate-900">{endIndex}</strong> of{' '}
-              <strong className="text-slate-900">{totalLeads}</strong> Total Leads
+              Showing <strong className="text-zinc-100">{totalLeads > 0 ? startIndex + 1 : 0}</strong> to{' '}
+              <strong className="text-zinc-100">{endIndex}</strong> of{' '}
+              <strong className="text-zinc-100">{totalLeads}</strong> Total Leads
             </span>
 
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-500">Rows per page:</span>
+              <span className="text-[11px] text-zinc-400">Rows per page:</span>
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
-                className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-bold text-slate-800 focus:outline-none"
+                className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs font-bold text-zinc-200 focus:outline-none"
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
@@ -1005,7 +1005,7 @@ export default function LeadsPage() {
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+              className="px-3 py-1.5 rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-300 hover:bg-zinc-900 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               <span>Previous</span>
@@ -1019,7 +1019,7 @@ export default function LeadsPage() {
                 className={`h-8 w-8 rounded-xl font-mono text-xs font-bold transition-colors cursor-pointer ${
                   currentPage === pageNum
                     ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
+                    : 'bg-zinc-950 border border-zinc-700 text-zinc-300 hover:bg-zinc-900'
                 }`}
               >
                 {pageNum}
@@ -1029,7 +1029,7 @@ export default function LeadsPage() {
             <button
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages || totalLeads === 0}
-              className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+              className="px-3 py-1.5 rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-300 hover:bg-zinc-900 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
             >
               <span>Next</span>
               <ChevronRight className="h-3.5 w-3.5" />
@@ -1043,31 +1043,31 @@ export default function LeadsPage() {
       </div>
 
       {selectedLeadForModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-zinc-950 rounded-3xl border border-zinc-800 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+            <div className="p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                <div className="h-10 w-10 rounded-2xl bg-blue-900 text-blue-300 flex items-center justify-center font-bold">
                   <FileSpreadsheet className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <h3 className="text-base font-extrabold text-zinc-100 flex items-center gap-2">
                     <span>{selectedLeadForModal.companyName || selectedLeadForModal.company_name || 'Lead Record Inspector'}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-[#0e6de4] font-mono font-bold">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900 text-blue-400 font-mono font-bold">
                       Full Sheet Record
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+                  <p className="text-xs text-zinc-400 font-mono flex items-center gap-1.5 mt-0.5">
                     <span>📁 Uploaded Source File:</span>
-                    <strong className="text-slate-800">{selectedLeadForModal.sourceFileName || uploadedFileName || 'Uploaded Lead File'}</strong>
+                    <strong className="text-zinc-200">{selectedLeadForModal.sourceFileName || uploadedFileName || 'Uploaded Lead File'}</strong>
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={() => setSelectedLeadForModal(null)}
-                className="h-8 w-8 rounded-full bg-slate-200/80 hover:bg-slate-300 text-slate-600 flex items-center justify-center cursor-pointer transition-colors"
+                className="h-8 w-8 rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1076,15 +1076,15 @@ export default function LeadsPage() {
             {/* Modal Body - All 12+ Fields Spreadsheet Inspection Grid */}
             <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
               {/* Account & Person Banner */}
-              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-blue-950/60 border border-blue-900 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider text-[#0e6de4] font-bold font-mono">Company / Domain</span>
-                  <h4 className="text-sm font-extrabold text-slate-900">{selectedLeadForModal.companyName || selectedLeadForModal.company_name}</h4>
+                  <span className="text-[10px] uppercase tracking-wider text-blue-400 font-bold font-mono">Company / Domain</span>
+                  <h4 className="text-sm font-extrabold text-zinc-100">{selectedLeadForModal.companyName || selectedLeadForModal.company_name}</h4>
                   <a
                     href={selectedLeadForModal.website || `https://${selectedLeadForModal.domain}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-[#0e6de4] font-mono hover:underline flex items-center gap-1"
+                    className="text-xs text-blue-400 font-mono hover:underline flex items-center gap-1"
                   >
                     {selectedLeadForModal.website || selectedLeadForModal.domain}
                     <ExternalLink className="h-3 w-3" />
@@ -1092,64 +1092,64 @@ export default function LeadsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider text-slate-600 font-bold font-mono">Contact Person</span>
-                  <h4 className="text-sm font-extrabold text-slate-900">
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold font-mono">Contact Person</span>
+                  <h4 className="text-sm font-extrabold text-zinc-100">
                     {`${selectedLeadForModal.firstName || selectedLeadForModal.first_name || ''} ${selectedLeadForModal.lastName || selectedLeadForModal.last_name || ''}`.trim() || 'Decision Maker'}
                   </h4>
-                  <p className="text-xs text-slate-600 font-medium">{selectedLeadForModal.title || 'Chief Executive Officer'}</p>
+                  <p className="text-xs text-zinc-400 font-medium">{selectedLeadForModal.title || 'Chief Executive Officer'}</p>
                 </div>
               </div>
 
               {/* Standard 12 Field Spreadsheet Grid */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono flex items-center gap-2">
-                  <Briefcase className="h-3.5 w-3.5 text-blue-600" />
+                <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono flex items-center gap-2">
+                  <Briefcase className="h-3.5 w-3.5 text-blue-400" />
                   Standard B2B Account Fields ({Object.keys(selectedLeadForModal).length} Total Attributes)
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Email Address</span>
-                    <p className="font-mono text-xs font-bold text-slate-900">{selectedLeadForModal.email || '—'}</p>
+                  <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Email Address</span>
+                    <p className="font-mono text-xs font-bold text-zinc-100">{selectedLeadForModal.email || '—'}</p>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Industry Category</span>
-                    <p className="font-semibold text-xs text-slate-900">{selectedLeadForModal.industry || 'B2B Services'}</p>
+                  <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Industry Category</span>
+                    <p className="font-semibold text-xs text-zinc-100">{selectedLeadForModal.industry || 'B2B Services'}</p>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Personal LinkedIn</span>
+                  <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Personal LinkedIn</span>
                     {selectedLeadForModal.personLinkedinUrl ? (
-                      <a href={selectedLeadForModal.personLinkedinUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline font-mono truncate block">
+                      <a href={selectedLeadForModal.personLinkedinUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline font-mono truncate block">
                         {selectedLeadForModal.personLinkedinUrl}
                       </a>
                     ) : (
-                      <p className="text-slate-400 font-mono">—</p>
+                      <p className="text-zinc-400 font-mono">—</p>
                     )}
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Company LinkedIn</span>
+                  <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Company LinkedIn</span>
                     {selectedLeadForModal.companyLinkedinUrl ? (
-                      <a href={selectedLeadForModal.companyLinkedinUrl} target="_blank" rel="noreferrer" className="text-xs text-purple-600 hover:underline font-mono truncate block">
+                      <a href={selectedLeadForModal.companyLinkedinUrl} target="_blank" rel="noreferrer" className="text-xs text-purple-400 hover:underline font-mono truncate block">
                         {selectedLeadForModal.companyLinkedinUrl}
                       </a>
                     ) : (
-                      <p className="text-slate-400 font-mono">—</p>
+                      <p className="text-zinc-400 font-mono">—</p>
                     )}
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Location Address</span>
-                    <p className="text-xs font-medium text-slate-800">
+                  <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Location Address</span>
+                    <p className="text-xs font-medium text-zinc-200">
                       {[selectedLeadForModal.city, selectedLeadForModal.state, selectedLeadForModal.country].filter(Boolean).join(', ') || 'Global'}
                     </p>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Outreach Pipeline Status</span>
-                    <p className="font-mono font-bold text-xs text-emerald-700">
+                  <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Outreach Pipeline Status</span>
+                    <p className="font-mono font-bold text-xs text-emerald-300">
                       🟢 {selectedLeadForModal.status || 'PENDING'}
                     </p>
                   </div>
@@ -1157,9 +1157,9 @@ export default function LeadsPage() {
               </div>
 
               {/* Custom Personalization Variables Section */}
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wider font-mono flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+              <div className="space-y-3 pt-2 border-t border-zinc-800">
+                <h4 className="text-xs font-bold text-purple-200 uppercase tracking-wider font-mono flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-purple-400" />
                   Custom Personalization Variables & Message Attributes
                 </h4>
 
@@ -1168,11 +1168,11 @@ export default function LeadsPage() {
                     const val = selectedLeadForModal[key];
                     if (!val) return null;
                     return (
-                      <div key={key} className="p-3 rounded-xl bg-purple-50/60 border border-purple-200 space-y-1">
-                        <span className="text-[10px] font-bold text-purple-700 uppercase font-mono">
+                      <div key={key} className="p-3 rounded-xl bg-purple-950/60 border border-purple-900 space-y-1">
+                        <span className="text-[10px] font-bold text-purple-300 uppercase font-mono">
                           Variable: {`{{${key}}}`}
                         </span>
-                        <p className="text-xs font-mono text-purple-950 bg-white p-2 rounded-lg border border-purple-100 whitespace-pre-wrap">
+                        <p className="text-xs font-mono text-purple-950 bg-zinc-950 p-2 rounded-lg border border-purple-900 whitespace-pre-wrap">
                           {val}
                         </p>
                       </div>
@@ -1183,7 +1183,7 @@ export default function LeadsPage() {
             </div>
 
             {/* Modal Actions */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+            <div className="p-4 border-t border-zinc-800 bg-zinc-900 flex items-center justify-between">
               <Link href="/campaigns/new">
                 <Button variant="primary" size="sm" className="font-bold bg-blue-600 hover:bg-blue-700 cursor-pointer">
                   <Plus className="h-3.5 w-3.5 mr-1" />
@@ -1193,7 +1193,7 @@ export default function LeadsPage() {
 
               <button
                 onClick={() => setSelectedLeadForModal(null)}
-                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-2xs transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs shadow-2xs transition-colors cursor-pointer"
               >
                 Close Inspector
               </button>

@@ -85,25 +85,25 @@ export default function AdminAuditLogsPage() {
     switch (status.toLowerCase()) {
       case 'success':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 className="h-3 w-3 text-emerald-600" /> SUCCESS
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-emerald-950 text-emerald-300 border border-emerald-900">
+            <CheckCircle2 className="h-3 w-3 text-emerald-400" /> SUCCESS
           </span>
         );
       case 'failed':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-rose-50 text-rose-700 border border-rose-200">
-            <XCircle className="h-3 w-3 text-rose-600" /> FAILED
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-rose-950 text-rose-300 border border-rose-900">
+            <XCircle className="h-3 w-3 text-rose-400" /> FAILED
           </span>
         );
       case 'blocked':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200">
-            <AlertCircle className="h-3 w-3 text-amber-600" /> BLOCKED
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-amber-950 text-amber-300 border border-amber-900">
+            <AlertCircle className="h-3 w-3 text-amber-400" /> BLOCKED
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-zinc-900 text-zinc-300 border border-zinc-800">
             {status.toUpperCase()}
           </span>
         );
@@ -113,13 +113,13 @@ export default function AdminAuditLogsPage() {
   return (
     <div className="space-y-6 max-w-[1500px] mx-auto pb-10">
       {/* Header */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-xs flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2.5">
-            <ScrollText className="h-6 w-6 text-[#0e6de4]" />
+          <h1 className="text-2xl font-black tracking-tight text-zinc-100 flex items-center gap-2.5">
+            <ScrollText className="h-6 w-6 text-blue-400" />
             Super Admin Audit Trail
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-medium">
             Immutable server-side audit log of administrative actions, role modifications, queue changes, and API key updates.
           </p>
         </div>
@@ -136,15 +136,15 @@ export default function AdminAuditLogsPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center gap-3">
+      <div className="bg-zinc-950 p-4 rounded-2xl border border-zinc-800 shadow-xs flex flex-col md:flex-row items-center gap-3">
         <form onSubmit={handleSearchSubmit} className="relative flex-1 w-full">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
           <input
             type="text"
             placeholder="Search by action, email, or resource..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-xs font-semibold text-[#111827] placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-100 focus:outline-none transition shadow-2xs"
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-2.5 pl-10 pr-4 text-xs font-semibold text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-900 focus:outline-none transition shadow-2xs"
           />
         </form>
 
@@ -152,7 +152,7 @@ export default function AdminAuditLogsPage() {
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 focus:border-[#0e6de4] focus:outline-none shadow-2xs cursor-pointer flex-1 md:flex-initial"
+            className="rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs font-bold text-zinc-300 focus:border-[#0e6de4] focus:outline-none shadow-2xs cursor-pointer flex-1 md:flex-initial"
           >
             <option value="all">All Actions</option>
             <option value="admin_login_success">Admin Login Success</option>
@@ -165,7 +165,7 @@ export default function AdminAuditLogsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 focus:border-[#0e6de4] focus:outline-none shadow-2xs cursor-pointer flex-1 md:flex-initial"
+            className="rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs font-bold text-zinc-300 focus:border-[#0e6de4] focus:outline-none shadow-2xs cursor-pointer flex-1 md:flex-initial"
           >
             <option value="all">All Statuses</option>
             <option value="success">Success</option>
@@ -176,12 +176,12 @@ export default function AdminAuditLogsPage() {
       </div>
 
       {/* Audit Log Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
-          <span className="text-xs font-extrabold text-[#111827]">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-800/80 bg-zinc-900/50 flex items-center justify-between">
+          <span className="text-xs font-extrabold text-zinc-100">
             Immutable Event Trail ({totalLogs} recorded)
           </span>
-          <span className="text-[11px] font-mono font-bold text-slate-600 bg-slate-200/60 px-2.5 py-1 rounded-md">
+          <span className="text-[11px] font-mono font-bold text-zinc-400 bg-zinc-800/60 px-2.5 py-1 rounded-md">
             Page {page} of {totalPages}
           </span>
         </div>
@@ -189,7 +189,7 @@ export default function AdminAuditLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase text-[11px]">
+              <tr className="bg-zinc-900 border-b border-zinc-800 text-zinc-300 font-bold uppercase text-[11px]">
                 <th className="px-6 py-4">Timestamp (UTC)</th>
                 <th className="px-5 py-4">Admin Actor</th>
                 <th className="px-5 py-4">Action</th>
@@ -199,28 +199,28 @@ export default function AdminAuditLogsPage() {
                 <th className="px-6 py-4 text-right">Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-zinc-800">
               {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-6 py-4 font-mono text-[11px] font-bold text-slate-600 whitespace-nowrap align-middle">
+                <tr key={log.id} className="hover:bg-zinc-900/80 transition-colors">
+                  <td className="px-6 py-4 font-mono text-[11px] font-bold text-zinc-400 whitespace-nowrap align-middle">
                     {new Date(log.timestamp).toISOString().replace('T', ' ').slice(0, 19)}
                   </td>
 
                   <td className="px-5 py-4 whitespace-nowrap align-middle">
-                    <span className="font-bold text-[#111827]">{log.userEmail}</span>
+                    <span className="font-bold text-zinc-100">{log.userEmail}</span>
                   </td>
 
-                  <td className="px-5 py-4 font-mono font-extrabold text-[#0e6de4] text-[11px] whitespace-nowrap align-middle">
+                  <td className="px-5 py-4 font-mono font-extrabold text-blue-400 text-[11px] whitespace-nowrap align-middle">
                     {log.action}
                   </td>
 
                   <td className="px-5 py-4 whitespace-nowrap align-middle">
-                    <span className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-[10px] font-mono font-bold text-slate-700">
+                    <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[10px] font-mono font-bold text-zinc-300">
                       {log.resourceType}
                     </span>
                   </td>
 
-                  <td className="px-5 py-4 font-mono text-[11px] text-slate-600 font-semibold whitespace-nowrap align-middle">
+                  <td className="px-5 py-4 font-mono text-[11px] text-zinc-400 font-semibold whitespace-nowrap align-middle">
                     {log.ipAddress}
                   </td>
 
@@ -232,7 +232,7 @@ export default function AdminAuditLogsPage() {
                     <button
                       type="button"
                       onClick={() => setSelectedLog(log)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#0e6de4] hover:bg-blue-50 border border-blue-200 transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-400 hover:bg-blue-950 border border-blue-900 transition cursor-pointer"
                     >
                       <Code2 className="h-3.5 w-3.5" /> View JSON
                     </button>
@@ -244,9 +244,9 @@ export default function AdminAuditLogsPage() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between">
-          <span className="text-xs text-slate-500 font-medium">
-            Showing page <span className="font-bold text-slate-700">{page}</span> of <span className="font-bold text-slate-700">{totalPages}</span> ({totalLogs} total events)
+        <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
+          <span className="text-xs text-zinc-400 font-medium">
+            Showing page <span className="font-bold text-zinc-300">{page}</span> of <span className="font-bold text-zinc-300">{totalPages}</span> ({totalLogs} total events)
           </span>
 
           <div className="flex items-center gap-2">
@@ -254,7 +254,7 @@ export default function AdminAuditLogsPage() {
               type="button"
               disabled={page <= 1 || isLoading}
               onClick={() => fetchLogs(page - 1)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 disabled:opacity-40 cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-300 bg-zinc-950 border border-zinc-700 hover:bg-zinc-900 disabled:opacity-40 cursor-pointer shadow-2xs"
             >
               <ChevronLeft className="h-4 w-4" /> Previous
             </button>
@@ -262,7 +262,7 @@ export default function AdminAuditLogsPage() {
               type="button"
               disabled={page >= totalPages || isLoading}
               onClick={() => fetchLogs(page + 1)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 disabled:opacity-40 cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-300 bg-zinc-950 border border-zinc-700 hover:bg-zinc-900 disabled:opacity-40 cursor-pointer shadow-2xs"
             >
               Next <ChevronRight className="h-4 w-4" />
             </button>
@@ -273,42 +273,42 @@ export default function AdminAuditLogsPage() {
       {/* Metadata Detail Modal */}
       {selectedLog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-sm font-black text-[#111827] font-mono">
+          <div className="w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <h3 className="text-sm font-black text-zinc-100 font-mono">
                 Audit Payload: {selectedLog.action}
               </h3>
               <button
                 type="button"
                 onClick={() => setSelectedLog(null)}
-                className="text-slate-400 hover:text-slate-700 text-sm font-bold cursor-pointer"
+                className="text-zinc-400 hover:text-zinc-300 text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-2 text-xs font-medium">
-              <div className="flex justify-between border-b border-slate-100 pb-1.5 text-slate-600">
+              <div className="flex justify-between border-b border-zinc-800 pb-1.5 text-zinc-400">
                 <span>Actor:</span>
-                <span className="font-bold text-[#111827]">{selectedLog.userEmail}</span>
+                <span className="font-bold text-zinc-100">{selectedLog.userEmail}</span>
               </div>
-              <div className="flex justify-between border-b border-slate-100 pb-1.5 text-slate-600">
+              <div className="flex justify-between border-b border-zinc-800 pb-1.5 text-zinc-400">
                 <span>Timestamp (UTC):</span>
-                <span className="font-mono font-bold text-slate-800">{new Date(selectedLog.timestamp).toISOString()}</span>
+                <span className="font-mono font-bold text-zinc-200">{new Date(selectedLog.timestamp).toISOString()}</span>
               </div>
-              <div className="flex justify-between border-b border-slate-100 pb-1.5 text-slate-600">
+              <div className="flex justify-between border-b border-zinc-800 pb-1.5 text-zinc-400">
                 <span>Client IP Address:</span>
-                <span className="font-mono font-bold text-slate-800">{selectedLog.ipAddress}</span>
+                <span className="font-mono font-bold text-zinc-200">{selectedLog.ipAddress}</span>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-zinc-400">
                 <span>Resource ID:</span>
-                <span className="font-mono font-bold text-slate-800">{selectedLog.resourceId || 'global'}</span>
+                <span className="font-mono font-bold text-zinc-200">{selectedLog.resourceId || 'global'}</span>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <p className="text-xs font-extrabold text-[#111827]">Sanitized JSON Metadata (Zero Secrets):</p>
-              <pre className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-60">
+              <p className="text-xs font-extrabold text-zinc-100">Sanitized JSON Metadata (Zero Secrets):</p>
+              <pre className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-700 text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-60">
                 {JSON.stringify(selectedLog.metadata, null, 2)}
               </pre>
             </div>
@@ -317,7 +317,7 @@ export default function AdminAuditLogsPage() {
               <button
                 type="button"
                 onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-xs font-bold text-zinc-300 cursor-pointer"
               >
                 Close Payload
               </button>

@@ -225,36 +225,36 @@ export default function AdminCampaignsPage() {
       case 'RUNNING':
       case 'ACTIVE':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-900">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             RUNNING
           </span>
         );
       case 'COMPLETED':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-            <CheckCircle2 className="w-3 h-3 text-blue-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-950 text-blue-300 border border-blue-900">
+            <CheckCircle2 className="w-3 h-3 text-blue-400" />
             COMPLETED
           </span>
         );
       case 'PAUSED':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock className="w-3 h-3 text-amber-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-950 text-amber-300 border border-amber-900">
+            <Clock className="w-3 h-3 text-amber-400" />
             PAUSED
           </span>
         );
       case 'FAILED':
       case 'CANCELLED':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-            <AlertTriangle className="w-3 h-3 text-red-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-950 text-red-300 border border-red-900">
+            <AlertTriangle className="w-3 h-3 text-red-400" />
             {s}
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-zinc-900 text-zinc-300 border border-zinc-800">
             {s || 'DRAFT'}
           </span>
         );
@@ -265,19 +265,19 @@ export default function AdminCampaignsPage() {
   if (errorState && (errorState.status === 401 || errorState.status === 403)) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4">
-        <Card className="p-8 bg-white border border-red-100 shadow-sm text-center">
-          <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <Card className="p-8 bg-zinc-950 border border-red-900 shadow-sm text-center">
+          <div className="w-14 h-14 bg-red-950 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
             <ShieldAlert className="h-7 w-7" />
           </div>
-          <h2 className="text-xl font-bold text-[#111827]">403 — Unauthorized Access</h2>
-          <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">
+          <h2 className="text-xl font-bold text-zinc-100">403 — Unauthorized Access</h2>
+          <p className="text-sm text-zinc-400 max-w-md mx-auto mt-2">
             {errorState.message}
           </p>
           <div className="mt-6">
             <Button
               variant="outline"
               onClick={() => (window.location.href = '/dashboard')}
-              className="border-slate-200 text-slate-700 hover:bg-slate-50"
+              className="border-zinc-800 text-zinc-300 hover:bg-zinc-900"
             >
               Back to Dashboard
             </Button>
@@ -292,13 +292,13 @@ export default function AdminCampaignsPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#111827] flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-[#0e6de4]/10 text-[#0e6de4]">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-[#0e6de4]/10 text-blue-400">
               <Send className="h-5 w-5" />
             </div>
             Global Tenant Campaigns Inspector
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
             Role-aware multi-tenant outreach campaign governance & live metric monitoring.
           </p>
         </div>
@@ -309,7 +309,7 @@ export default function AdminCampaignsPage() {
             size="sm"
             onClick={fetchCampaigns}
             disabled={isLoading}
-            className="h-9 border-slate-200 text-slate-700 hover:bg-slate-50 bg-white"
+            className="h-9 border-zinc-800 text-zinc-300 hover:bg-zinc-900 bg-zinc-950"
           >
             <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -318,11 +318,11 @@ export default function AdminCampaignsPage() {
       </div>
 
       {/* Filter & Controls Bar */}
-      <Card className="p-4 bg-white border border-slate-200/80 shadow-sm rounded-xl">
+      <Card className="p-4 bg-zinc-950 border border-zinc-800/80 shadow-sm rounded-xl">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Omni Search Box */}
           <div className="relative md:col-span-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <input
               type="text"
               placeholder="Search Campaign Name, Owner, Email, or ID..."
@@ -331,12 +331,12 @@ export default function AdminCampaignsPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-[#111827] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4]"
+              className="w-full pl-9 pr-4 py-2 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4]"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-400"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -346,14 +346,14 @@ export default function AdminCampaignsPage() {
           {/* Super Admin User Filter Dropdown */}
           <div className="md:col-span-3">
             <div className="relative">
-              <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <select
                 value={selectedUserFilter}
                 onChange={(e) => {
                   setSelectedUserFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4] appearance-none"
+                className="w-full pl-9 pr-4 py-2 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4] appearance-none"
               >
                 <option value="all">All Users ({usersList.length > 0 ? usersList.length : 'All'})</option>
                 {usersList.map((u) => (
@@ -368,14 +368,14 @@ export default function AdminCampaignsPage() {
           {/* Status Filter */}
           <div className="md:col-span-3">
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <select
                 value={selectedStatusFilter}
                 onChange={(e) => {
                   setSelectedStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4] appearance-none"
+                className="w-full pl-9 pr-4 py-2 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4] appearance-none"
               >
                 <option value="all">All Statuses</option>
                 <option value="running">RUNNING</option>
@@ -397,7 +397,7 @@ export default function AdminCampaignsPage() {
                 setSortBy(sb);
                 setSortOrder(so as 'asc' | 'desc');
               }}
-              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4]"
+              className="w-full px-3 py-2 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#0e6de4]/20 focus:border-[#0e6de4]"
             >
               <option value="createdAt-desc">Newest First</option>
               <option value="createdAt-asc">Oldest First</option>
@@ -410,20 +410,20 @@ export default function AdminCampaignsPage() {
       </Card>
 
       {/* Main Campaign Data Table */}
-      <Card className="bg-white border border-slate-200/80 shadow-sm rounded-xl overflow-hidden">
+      <Card className="bg-zinc-950 border border-zinc-800/80 shadow-sm rounded-xl overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-3 border-[#0e6de4] border-t-transparent mb-3"></div>
-            <p className="text-xs text-slate-500 font-medium">Fetching real campaign telemetry...</p>
+            <p className="text-xs text-zinc-400 font-medium">Fetching real campaign telemetry...</p>
           </div>
         ) : campaigns.length === 0 ? (
           /* Clean Real Empty State (No Hardcoded Fake Data) */
           <div className="p-16 text-center">
-            <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 bg-zinc-900 text-zinc-400 rounded-full flex items-center justify-center mx-auto mb-3">
               <Inbox className="h-6 w-6" />
             </div>
-            <h3 className="text-sm font-bold text-[#111827]">No campaigns found</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            <h3 className="text-sm font-bold text-zinc-100">No campaigns found</h3>
+            <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
               {search || selectedUserFilter !== 'all' || selectedStatusFilter !== 'all'
                 ? 'No outreach campaigns match your active search or filter criteria.'
                 : 'There are currently no campaigns created in the system database.'}
@@ -437,7 +437,7 @@ export default function AdminCampaignsPage() {
                   setSelectedUserFilter('all');
                   setSelectedStatusFilter('all');
                 }}
-                className="mt-4 text-xs border-slate-200 text-slate-700"
+                className="mt-4 text-xs border-zinc-800 text-zinc-300"
               >
                 Reset Filters
               </Button>
@@ -446,7 +446,7 @@ export default function AdminCampaignsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
+              <thead className="bg-zinc-900/80 border-b border-zinc-800 text-zinc-400 font-semibold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">Campaign Name</th>
                   <th className="px-5 py-3.5">Owner / User</th>
@@ -456,16 +456,16 @@ export default function AdminCampaignsPage() {
                   <th className="px-5 py-3.5 text-right">Controls</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-zinc-800">
                 {campaigns.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
+                  <tr key={c.id} className="hover:bg-zinc-900/60 transition-colors">
                     {/* Campaign Name & Details */}
-                    <td className="px-5 py-3.5 font-medium text-[#111827]">
-                      <div className="font-semibold text-sm text-[#111827]">{c.name}</div>
-                      <div className="flex items-center gap-2 mt-0.5 font-mono text-[10px] text-slate-400">
+                    <td className="px-5 py-3.5 font-medium text-zinc-100">
+                      <div className="font-semibold text-sm text-zinc-100">{c.name}</div>
+                      <div className="flex items-center gap-2 mt-0.5 font-mono text-[10px] text-zinc-400">
                         <span>ID: {c.id}</span>
                         {c.tag && (
-                          <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-sans text-[10px]">
+                          <span className="px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 font-sans text-[10px]">
                             {c.tag}
                           </span>
                         )}
@@ -473,9 +473,9 @@ export default function AdminCampaignsPage() {
                     </td>
 
                     {/* Owner / User Column */}
-                    <td className="px-5 py-3.5 text-slate-600">
+                    <td className="px-5 py-3.5 text-zinc-400">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-[#0e6de4]/10 text-[#0e6de4] flex items-center justify-center font-semibold text-xs border border-[#0e6de4]/20 flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-[#0e6de4]/10 text-blue-400 flex items-center justify-center font-semibold text-xs border border-[#0e6de4]/20 flex-shrink-0">
                           {c.ownerAvatarUrl ? (
                             <img src={c.ownerAvatarUrl} alt={c.ownerName} className="w-full h-full rounded-full object-cover" />
                           ) : (
@@ -483,23 +483,23 @@ export default function AdminCampaignsPage() {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-medium text-xs text-[#111827] truncate">{c.ownerName}</div>
-                          <div className="text-[11px] text-slate-400 truncate">{c.ownerEmail}</div>
+                          <div className="font-medium text-xs text-zinc-100 truncate">{c.ownerName}</div>
+                          <div className="text-[11px] text-zinc-400 truncate">{c.ownerEmail}</div>
                         </div>
                       </div>
                     </td>
 
                     {/* Progress: Processed / Total (%) */}
-                    <td className="px-5 py-3.5 font-mono text-slate-700 font-medium">
+                    <td className="px-5 py-3.5 font-mono text-zinc-300 font-medium">
                       {c.progressText}
                     </td>
 
                     {/* Success Rate */}
                     <td className="px-5 py-3.5 font-mono">
                       {c.successRateText === '—' ? (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-zinc-400">—</span>
                       ) : (
-                        <span className="font-bold text-emerald-600">{c.successRateText}</span>
+                        <span className="font-bold text-emerald-400">{c.successRateText}</span>
                       )}
                     </td>
 
@@ -514,9 +514,9 @@ export default function AdminCampaignsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleInspectClick(c)}
-                        className="h-8 text-xs border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-[#0e6de4] font-medium"
+                        className="h-8 text-xs border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-blue-400 font-medium"
                       >
-                        <Eye className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                        <Eye className="w-3.5 h-3.5 mr-1 text-zinc-400" />
                         Inspect
                       </Button>
                     </td>
@@ -529,11 +529,11 @@ export default function AdminCampaignsPage() {
 
         {/* Pagination Bar */}
         {campaigns.length > 0 && (
-          <div className="px-5 py-3.5 bg-slate-50/50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="px-5 py-3.5 bg-zinc-900/50 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-400">
             <div>
-              Showing <span className="font-semibold text-[#111827]">{(page - 1) * limit + 1}</span> to{' '}
-              <span className="font-semibold text-[#111827]">{Math.min(page * limit, totalCount)}</span> of{' '}
-              <span className="font-semibold text-[#111827]">{totalCount}</span> campaigns
+              Showing <span className="font-semibold text-zinc-100">{(page - 1) * limit + 1}</span> to{' '}
+              <span className="font-semibold text-zinc-100">{Math.min(page * limit, totalCount)}</span> of{' '}
+              <span className="font-semibold text-zinc-100">{totalCount}</span> campaigns
             </div>
 
             <div className="flex items-center gap-4">
@@ -545,7 +545,7 @@ export default function AdminCampaignsPage() {
                     setLimit(Number(e.target.value));
                     setPage(1);
                   }}
-                  className="bg-white border border-slate-200 rounded px-2 py-1 text-xs text-[#111827] focus:outline-none"
+                  className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-100 focus:outline-none"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -559,7 +559,7 @@ export default function AdminCampaignsPage() {
                   size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="h-7 px-2 border-slate-200 text-slate-700 bg-white"
+                  className="h-7 px-2 border-zinc-800 text-zinc-300 bg-zinc-950"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
@@ -571,7 +571,7 @@ export default function AdminCampaignsPage() {
                   size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="h-7 px-2 border-slate-200 text-slate-700 bg-white"
+                  className="h-7 px-2 border-zinc-800 text-zinc-300 bg-zinc-950"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
@@ -583,20 +583,20 @@ export default function AdminCampaignsPage() {
 
       {/* Inspect Campaign Detail Slide-Over Drawer */}
       {inspectCampaign && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end">
-          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 transform transition-all duration-300">
+        <div className="fixed inset-0 z-50 overflow-hidden bg-zinc-950/40 backdrop-blur-xs flex justify-end">
+          <div className="w-full max-w-xl bg-zinc-950 h-full shadow-2xl flex flex-col border-l border-zinc-800 transform transition-all duration-300">
             {/* Drawer Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
+            <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
               <div>
-                <h2 className="text-base font-bold text-[#111827] flex items-center gap-2">
-                  <Send className="h-4 w-4 text-[#0e6de4]" />
+                <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                  <Send className="h-4 w-4 text-blue-400" />
                   Campaign Inspection
                 </h2>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">ID: {inspectCampaign.id}</p>
+                <p className="text-xs text-zinc-400 font-mono mt-0.5">ID: {inspectCampaign.id}</p>
               </div>
               <button
                 onClick={() => setInspectCampaign(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                className="p-1 text-zinc-400 hover:text-zinc-400 rounded-lg hover:bg-zinc-900"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -607,18 +607,18 @@ export default function AdminCampaignsPage() {
               {isInspectLoading ? (
                 <div className="py-12 text-center">
                   <div className="inline-block animate-spin rounded-full h-7 w-7 border-3 border-[#0e6de4] border-t-transparent mb-2"></div>
-                  <p className="text-xs text-slate-500">Loading campaign parameters...</p>
+                  <p className="text-xs text-zinc-400">Loading campaign parameters...</p>
                 </div>
               ) : (
                 <>
                   {/* Title & Status Card */}
-                  <Card className="p-4 bg-slate-50/60 border border-slate-200/80 rounded-xl">
+                  <Card className="p-4 bg-zinc-900/60 border border-zinc-800/80 rounded-xl">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-base font-bold text-[#111827]">{inspectCampaign.name}</h3>
+                        <h3 className="text-base font-bold text-zinc-100">{inspectCampaign.name}</h3>
                         {inspectCampaign.organizationName ? (
-                          <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                            <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                          <div className="text-xs text-zinc-400 flex items-center gap-1 mt-1">
+                            <Building2 className="h-3.5 w-3.5 text-zinc-400" />
                             {inspectCampaign.organizationName}
                           </div>
                         ) : null}
@@ -629,23 +629,23 @@ export default function AdminCampaignsPage() {
 
                   {/* Campaign Owner Information */}
                   <div>
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+                    <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2.5">
                       Owner Information
                     </h4>
-                    <Card className="p-4 bg-white border border-slate-200 rounded-xl space-y-3">
+                    <Card className="p-4 bg-zinc-950 border border-zinc-800 rounded-xl space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#0e6de4]/10 text-[#0e6de4] flex items-center justify-center font-bold text-sm border border-[#0e6de4]/20">
+                        <div className="w-9 h-9 rounded-full bg-[#0e6de4]/10 text-blue-400 flex items-center justify-center font-bold text-sm border border-[#0e6de4]/20">
                           {inspectCampaign.ownerName.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-semibold text-sm text-[#111827]">{inspectCampaign.ownerName}</div>
-                          <div className="text-xs text-slate-500 flex items-center gap-1">
-                            <Mail className="h-3 w-3 text-slate-400" />
+                          <div className="font-semibold text-sm text-zinc-100">{inspectCampaign.ownerName}</div>
+                          <div className="text-xs text-zinc-400 flex items-center gap-1">
+                            <Mail className="h-3 w-3 text-zinc-400" />
                             {inspectCampaign.ownerEmail}
                           </div>
                         </div>
                       </div>
-                      <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 font-mono">
+                      <div className="pt-2 border-t border-zinc-800 text-[11px] text-zinc-400 font-mono">
                         User ID: {inspectCampaign.ownerUserId || 'N/A'}
                       </div>
                     </Card>
@@ -653,26 +653,26 @@ export default function AdminCampaignsPage() {
 
                   {/* Campaign Timestamps */}
                   <div>
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                    <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-zinc-400" />
                       Lifecycle Timestamps
                     </h4>
-                    <Card className="p-4 bg-white border border-slate-200 rounded-xl grid grid-cols-3 gap-3 text-center">
+                    <Card className="p-4 bg-zinc-950 border border-zinc-800 rounded-xl grid grid-cols-3 gap-3 text-center">
                       <div>
-                        <div className="text-[10px] text-slate-400 font-semibold uppercase">Created At</div>
-                        <div className="text-xs font-medium text-[#111827] mt-1">
+                        <div className="text-[10px] text-zinc-400 font-semibold uppercase">Created At</div>
+                        <div className="text-xs font-medium text-zinc-100 mt-1">
                           {formatDate(inspectCampaign.createdAt)}
                         </div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-slate-400 font-semibold uppercase">Started At</div>
-                        <div className="text-xs font-medium text-[#111827] mt-1">
+                        <div className="text-[10px] text-zinc-400 font-semibold uppercase">Started At</div>
+                        <div className="text-xs font-medium text-zinc-100 mt-1">
                           {formatDate(inspectCampaign.startedAt)}
                         </div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-slate-400 font-semibold uppercase">Completed At</div>
-                        <div className="text-xs font-medium text-[#111827] mt-1">
+                        <div className="text-[10px] text-zinc-400 font-semibold uppercase">Completed At</div>
+                        <div className="text-xs font-medium text-zinc-100 mt-1">
                           {formatDate(inspectCampaign.completedAt)}
                         </div>
                       </div>
@@ -681,28 +681,28 @@ export default function AdminCampaignsPage() {
 
                   {/* Real Metrics Grid */}
                   <div>
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                      <BarChart2 className="h-3.5 w-3.5 text-slate-400" />
+                    <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                      <BarChart2 className="h-3.5 w-3.5 text-zinc-400" />
                       Prospect & Submission Telemetry
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <Card className="p-3 bg-slate-50/50 border border-slate-200 text-center rounded-xl">
-                        <div className="text-[10px] text-slate-500 font-semibold uppercase">Total Prospects</div>
-                        <div className="text-base font-bold font-mono text-[#111827] mt-0.5">
+                      <Card className="p-3 bg-zinc-900/50 border border-zinc-800 text-center rounded-xl">
+                        <div className="text-[10px] text-zinc-400 font-semibold uppercase">Total Prospects</div>
+                        <div className="text-base font-bold font-mono text-zinc-100 mt-0.5">
                           {inspectCampaign.totalProspects.toLocaleString()}
                         </div>
                       </Card>
 
-                      <Card className="p-3 bg-emerald-50/50 border border-emerald-100 text-center rounded-xl">
-                        <div className="text-[10px] text-emerald-700 font-semibold uppercase">Delivered (Sent)</div>
-                        <div className="text-base font-bold font-mono text-emerald-700 mt-0.5">
+                      <Card className="p-3 bg-emerald-950/50 border border-emerald-900 text-center rounded-xl">
+                        <div className="text-[10px] text-emerald-300 font-semibold uppercase">Delivered (Sent)</div>
+                        <div className="text-base font-bold font-mono text-emerald-300 mt-0.5">
                           {inspectCampaign.deliveredCount.toLocaleString()}
                         </div>
                       </Card>
 
-                      <Card className="p-3 bg-amber-50/50 border border-amber-100 text-center rounded-xl">
-                        <div className="text-[10px] text-amber-700 font-semibold uppercase">Pending</div>
-                        <div className="text-base font-bold font-mono text-amber-700 mt-0.5">
+                      <Card className="p-3 bg-amber-950/50 border border-amber-900 text-center rounded-xl">
+                        <div className="text-[10px] text-amber-300 font-semibold uppercase">Pending</div>
+                        <div className="text-base font-bold font-mono text-amber-300 mt-0.5">
                           {Math.max(
                             0,
                             inspectCampaign.totalProspects - inspectCampaign.processedProspects
@@ -710,37 +710,37 @@ export default function AdminCampaignsPage() {
                         </div>
                       </Card>
 
-                      <Card className="p-3 bg-red-50/50 border border-red-100 text-center rounded-xl">
-                        <div className="text-[10px] text-red-700 font-semibold uppercase">Failed</div>
-                        <div className="text-base font-bold font-mono text-red-700 mt-0.5">
+                      <Card className="p-3 bg-red-950/50 border border-red-900 text-center rounded-xl">
+                        <div className="text-[10px] text-red-300 font-semibold uppercase">Failed</div>
+                        <div className="text-base font-bold font-mono text-red-300 mt-0.5">
                           {inspectCampaign.failedCount.toLocaleString()}
                         </div>
                       </Card>
 
-                      <Card className="p-3 bg-slate-50/50 border border-slate-200 text-center rounded-xl">
-                        <div className="text-[10px] text-slate-500 font-semibold uppercase">No-Form</div>
-                        <div className="text-base font-bold font-mono text-[#111827] mt-0.5">
+                      <Card className="p-3 bg-zinc-900/50 border border-zinc-800 text-center rounded-xl">
+                        <div className="text-[10px] text-zinc-400 font-semibold uppercase">No-Form</div>
+                        <div className="text-base font-bold font-mono text-zinc-100 mt-0.5">
                           {inspectCampaign.noFormCount.toLocaleString()}
                         </div>
                       </Card>
 
-                      <Card className="p-3 bg-indigo-50/50 border border-indigo-100 text-center rounded-xl">
-                        <div className="text-[10px] text-indigo-700 font-semibold uppercase">Review / CAPTCHA</div>
-                        <div className="text-base font-bold font-mono text-indigo-700 mt-0.5">
+                      <Card className="p-3 bg-indigo-950/50 border border-indigo-900 text-center rounded-xl">
+                        <div className="text-[10px] text-indigo-300 font-semibold uppercase">Review / CAPTCHA</div>
+                        <div className="text-base font-bold font-mono text-indigo-300 mt-0.5">
                           {inspectCampaign.reviewCount.toLocaleString()}
                         </div>
                       </Card>
 
-                      <Card className="p-3 bg-blue-50/50 border border-blue-100 text-center rounded-xl">
-                        <div className="text-[10px] text-blue-700 font-semibold uppercase">Replied</div>
-                        <div className="text-base font-bold font-mono text-blue-700 mt-0.5">
+                      <Card className="p-3 bg-blue-950/50 border border-blue-900 text-center rounded-xl">
+                        <div className="text-[10px] text-blue-300 font-semibold uppercase">Replied</div>
+                        <div className="text-base font-bold font-mono text-blue-300 mt-0.5">
                           {inspectCampaign.repliedCount.toLocaleString()}
                         </div>
                       </Card>
 
-                      <Card className="p-3 bg-emerald-50 border border-emerald-200 text-center rounded-xl">
-                        <div className="text-[10px] text-emerald-800 font-bold uppercase">Success Rate</div>
-                        <div className="text-base font-bold font-mono text-emerald-800 mt-0.5">
+                      <Card className="p-3 bg-emerald-950 border border-emerald-900 text-center rounded-xl">
+                        <div className="text-[10px] text-emerald-300 font-bold uppercase">Success Rate</div>
+                        <div className="text-base font-bold font-mono text-emerald-300 mt-0.5">
                           {inspectCampaign.successRateText}
                         </div>
                       </Card>
@@ -750,13 +750,13 @@ export default function AdminCampaignsPage() {
                   {/* Telemetry Logs if present */}
                   {inspectDetails?.logs && inspectDetails.logs.length > 0 ? (
                     <div>
-                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+                      <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2.5">
                         Recent Processing Logs ({inspectDetails.logs.length})
                       </h4>
-                      <div className="bg-slate-900 text-slate-200 rounded-xl p-3 font-mono text-[11px] max-h-48 overflow-y-auto space-y-1.5">
+                      <div className="bg-zinc-950 text-zinc-300 rounded-xl p-3 font-mono text-[11px] max-h-48 overflow-y-auto space-y-1.5">
                         {inspectDetails.logs.map((log: any, idx: number) => (
-                          <div key={idx} className="border-b border-slate-800 pb-1.5 last:border-0 last:pb-0">
-                            <span className="text-slate-400">[{log.time || log.timestamp || 'LOG'}]</span>{' '}
+                          <div key={idx} className="border-b border-zinc-700 pb-1.5 last:border-0 last:pb-0">
+                            <span className="text-zinc-400">[{log.time || log.timestamp || 'LOG'}]</span>{' '}
                             <span className="text-blue-400">{log.domain || 'Target'}</span>:{' '}
                             <span
                               className={
@@ -780,12 +780,12 @@ export default function AdminCampaignsPage() {
             </div>
 
             {/* Drawer Footer */}
-            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/80 flex justify-end">
+            <div className="px-6 py-3.5 border-t border-zinc-800 bg-zinc-900/80 flex justify-end">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setInspectCampaign(null)}
-                className="border-slate-200 text-slate-700 hover:bg-slate-100"
+                className="border-zinc-800 text-zinc-300 hover:bg-zinc-900"
               >
                 Close Inspector
               </Button>

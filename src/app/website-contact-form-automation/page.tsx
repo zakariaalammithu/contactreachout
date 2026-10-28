@@ -20,37 +20,37 @@ export const metadata: Metadata = {
 
 export default function WebsiteContactFormAutomationPage() {
   return (
-    <div className="min-h-screen bg-[#f4f7ff] text-slate-950 flex flex-col justify-between">
+    <div className="min-h-screen bg-black text-white flex flex-col justify-between">
       <LandingHeader />
       <main className="py-16 px-4 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold text-[#0e6de4]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-900 bg-blue-950 px-4 py-1.5 text-xs font-bold text-blue-400">
               Automated Prospecting
             </span>
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
               Website Contact Form Automation
             </h1>
-            <p className="mt-4 text-lg leading-8 text-slate-600">
+            <p className="mt-4 text-lg leading-8 text-zinc-400">
               Find clients through website contact forms automatically. Import lead lists, map fields, and execute high-converting outreach at scale.
             </p>
           </div>
 
           <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-              <Search className="h-8 w-8 text-[#0e6de4]" />
-              <h3 className="mt-6 text-xl font-black text-slate-900">Form & Endpoint Scanner</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Scans domain URLs to find contact pages, inquiry forms, and iframe embedded forms automatically.</p>
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-sm">
+              <Search className="h-8 w-8 text-blue-400" />
+              <h3 className="mt-6 text-xl font-black text-zinc-100">Form & Endpoint Scanner</h3>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">Scans domain URLs to find contact pages, inquiry forms, and iframe embedded forms automatically.</p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-              <Bot className="h-8 w-8 text-[#0e6de4]" />
-              <h3 className="mt-6 text-xl font-black text-slate-900">AI Personalization</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Generates relevant messages tailored to prospect industry and value proposition.</p>
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-sm">
+              <Bot className="h-8 w-8 text-blue-400" />
+              <h3 className="mt-6 text-xl font-black text-zinc-100">AI Personalization</h3>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">Generates relevant messages tailored to prospect industry and value proposition.</p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-              <Gauge className="h-8 w-8 text-[#0e6de4]" />
-              <h3 className="mt-6 text-xl font-black text-slate-900">Pacing & Concurrency Controls</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Set sending speed and concurrency to ensure smooth and accountable campaign execution.</p>
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-sm">
+              <Gauge className="h-8 w-8 text-blue-400" />
+              <h3 className="mt-6 text-xl font-black text-zinc-100">Pacing & Concurrency Controls</h3>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">Set sending speed and concurrency to ensure smooth and accountable campaign execution.</p>
             </div>
           </div>
 

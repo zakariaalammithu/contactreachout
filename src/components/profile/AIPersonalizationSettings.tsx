@@ -110,8 +110,8 @@ export function AIPersonalizationSettings() {
 
   if (loading) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-3xl border border-blue-100 bg-white p-8">
-        <Loader2 className="h-6 w-6 animate-spin text-[#0e6de4]" />
+      <div className="flex h-48 items-center justify-center rounded-3xl border border-blue-900 bg-zinc-950 p-8">
+        <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
       </div>
     );
   }
@@ -119,20 +119,20 @@ export function AIPersonalizationSettings() {
   // FREE USER UI — STRICT LOCKOUT WITH UPGRADE ACTION
   if (!isPaidPlan) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400">
               <Lock className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900">AI Personalization</h2>
-                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600">
+                <h2 className="text-lg font-bold text-zinc-100">AI Personalization</h2>
+                <span className="rounded-full bg-zinc-900 px-2.5 py-0.5 text-xs font-bold text-zinc-400">
                   Locked (Free Plan)
                 </span>
               </div>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-zinc-400">
                 AI Personalization requires a paid ContactReachout plan.
               </p>
             </div>
@@ -146,11 +146,11 @@ export function AIPersonalizationSettings() {
           </Link>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-2">
-          <p className="text-xs font-bold text-slate-800">
+        <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-2">
+          <p className="text-xs font-bold text-zinc-200">
             Why is AI Personalization locked?
           </p>
-          <p className="text-xs text-slate-600 leading-relaxed">
+          <p className="text-xs text-zinc-400 leading-relaxed">
             ContactReachout AI Personalization is exclusive to paid plans. Adding your own OpenAI API key does not enable AI Personalization on the Free plan. Upgrade to any paid plan (Starter, Growth, Agency, Enterprise) to unlock AI-powered outreach and optional custom API key support.
           </p>
         </div>
@@ -160,17 +160,17 @@ export function AIPersonalizationSettings() {
 
   // PAID USER UI — FULL PROVIDER SELECTION & SECURE OPENAI KEY CONFIGURATION
   return (
-    <div className="rounded-3xl border border-blue-100 bg-white p-6 sm:p-8 shadow-xs space-y-6">
-      <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-5">
+    <div className="rounded-3xl border border-blue-900 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-6">
+      <div className="flex items-start justify-between gap-4 border-b border-zinc-800 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-slate-900">AI Personalization</h2>
-            <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700 flex items-center gap-1">
+            <h2 className="text-lg font-bold text-zinc-100">AI Personalization</h2>
+            <span className="rounded-full bg-emerald-950 border border-emerald-900 px-2.5 py-0.5 text-xs font-bold text-emerald-300 flex items-center gap-1">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Active ({userPlan})
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-zinc-400">
             Choose your preferred AI provider for generating personalized website contact-form messages.
           </p>
         </div>
@@ -180,14 +180,14 @@ export function AIPersonalizationSettings() {
         <div
           className={`flex items-center gap-2 rounded-xl border p-3.5 text-xs font-semibold ${
             message.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-              : 'border-red-200 bg-red-50 text-red-800'
+              ? 'border-emerald-900 bg-emerald-950 text-emerald-300'
+              : 'border-red-900 bg-red-950 text-red-300'
           }`}
         >
           {message.type === 'success' ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
           ) : (
-            <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
           )}
           <span>{message.text}</span>
         </div>
@@ -195,7 +195,7 @@ export function AIPersonalizationSettings() {
 
       <form onSubmit={handleSave} className="space-y-6">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-3">
+          <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">
             Select AI Provider
           </label>
 
@@ -204,14 +204,14 @@ export function AIPersonalizationSettings() {
             <label
               className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-5 transition-all ${
                 providerChoice === 'contactreachout'
-                  ? 'border-[#0e6de4] bg-blue-50/50 shadow-2xs'
-                  : 'border-slate-200 bg-white hover:border-blue-200'
+                  ? 'border-[#0e6de4] bg-blue-950/50 shadow-2xs'
+                  : 'border-zinc-800 bg-zinc-950 hover:border-blue-900'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-[#0e6de4]" />
-                  <span className="text-sm font-bold text-slate-900">ContactReachout AI</span>
+                  <Bot className="h-5 w-5 text-blue-400" />
+                  <span className="text-sm font-bold text-zinc-100">ContactReachout AI</span>
                 </div>
                 <input
                   type="radio"
@@ -219,10 +219,10 @@ export function AIPersonalizationSettings() {
                   value="contactreachout"
                   checked={providerChoice === 'contactreachout'}
                   onChange={() => setProviderChoice('contactreachout')}
-                  className="h-4 w-4 text-[#0e6de4] focus:ring-blue-500 cursor-pointer"
+                  className="h-4 w-4 text-blue-400 focus:ring-blue-500 cursor-pointer"
                 />
               </div>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
                 Use the high-performance AI provider fully managed and configured by ContactReachout.
               </p>
             </label>
@@ -231,14 +231,14 @@ export function AIPersonalizationSettings() {
             <label
               className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-5 transition-all ${
                 providerChoice === 'user_openai'
-                  ? 'border-[#0e6de4] bg-blue-50/50 shadow-2xs'
-                  : 'border-slate-200 bg-white hover:border-blue-200'
+                  ? 'border-[#0e6de4] bg-blue-950/50 shadow-2xs'
+                  : 'border-zinc-800 bg-zinc-950 hover:border-blue-900'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <KeyRound className="h-5 w-5 text-[#0e6de4]" />
-                  <span className="text-sm font-bold text-slate-900">Use My OpenAI API Key</span>
+                  <KeyRound className="h-5 w-5 text-blue-400" />
+                  <span className="text-sm font-bold text-zinc-100">Use My OpenAI API Key</span>
                 </div>
                 <input
                   type="radio"
@@ -246,10 +246,10 @@ export function AIPersonalizationSettings() {
                   value="user_openai"
                   checked={providerChoice === 'user_openai'}
                   onChange={() => setProviderChoice('user_openai')}
-                  className="h-4 w-4 text-[#0e6de4] focus:ring-blue-500 cursor-pointer"
+                  className="h-4 w-4 text-blue-400 focus:ring-blue-500 cursor-pointer"
                 />
               </div>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
                 Use your own OpenAI API key for AI Personalization.
               </p>
             </label>
@@ -258,17 +258,17 @@ export function AIPersonalizationSettings() {
 
         {/* OpenAI Key Configuration Fields (Available when My OpenAI API Key selected) */}
         {providerChoice === 'user_openai' && (
-          <div className="rounded-2xl border border-blue-200 bg-slate-50/80 p-5 space-y-4 animate-in fade-in duration-150">
+          <div className="rounded-2xl border border-blue-900 bg-zinc-900/80 p-5 space-y-4 animate-in fade-in duration-150">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-slate-800">
+              <label className="block text-xs font-bold text-zinc-200">
                 OpenAI API Key
               </label>
-              <span className="text-[11px] font-semibold text-slate-500">
+              <span className="text-[11px] font-semibold text-zinc-400">
                 Status:{' '}
                 {openaiConfigured ? (
-                  <span className="text-emerald-700 font-bold">Configured ({maskedApiKey})</span>
+                  <span className="text-emerald-300 font-bold">Configured ({maskedApiKey})</span>
                 ) : (
-                  <span className="text-amber-700 font-bold">Not Configured</span>
+                  <span className="text-amber-300 font-bold">Not Configured</span>
                 )}
               </span>
             </div>
@@ -278,11 +278,11 @@ export function AIPersonalizationSettings() {
               value={openaiKeyInput}
               onChange={(e) => setOpenaiKeyInput(e.target.value)}
               placeholder={openaiConfigured ? `•••••••••••••••• (Leave blank to keep existing key)` : 'sk-...'}
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-mono outline-none focus:border-blue-500"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm font-mono outline-none focus:border-blue-500"
             />
 
             <div className="flex items-center justify-between gap-3 pt-2">
-              <p className="text-[11px] text-slate-500 font-medium">
+              <p className="text-[11px] text-zinc-400 font-medium">
                 Your API key is securely encrypted server-side and is only used for your account&apos;s AI requests.
               </p>
               <Button
@@ -290,7 +290,7 @@ export function AIPersonalizationSettings() {
                 variant="outline"
                 onClick={handleTestConnection}
                 disabled={testing}
-                className="px-3.5 py-1.5 text-xs font-semibold cursor-pointer shrink-0 border-slate-300 text-slate-700 hover:text-slate-900"
+                className="px-3.5 py-1.5 text-xs font-semibold cursor-pointer shrink-0 border-zinc-700 text-zinc-300 hover:text-zinc-100"
               >
                 {testing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
                 Test Connection
@@ -299,7 +299,7 @@ export function AIPersonalizationSettings() {
           </div>
         )}
 
-        <div className="flex items-center justify-end border-t border-slate-100 pt-4">
+        <div className="flex items-center justify-end border-t border-zinc-800 pt-4">
           <Button
             type="submit"
             disabled={saving}

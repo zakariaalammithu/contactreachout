@@ -86,14 +86,14 @@ export default function TermsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f4f8fd] text-[#111827] font-sans selection:bg-blue-500/20 selection:text-blue-950">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-blue-500/20 selection:text-blue-950">
       <LandingHeader />
 
       <main className="px-4 py-8 sm:px-6 lg:py-12">
         <div className="mx-auto max-w-7xl space-y-8">
           {/* Header Banner */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10 shadow-xs">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#0e6de4] uppercase tracking-wider font-mono">
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-10 shadow-xs">
+            <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider font-mono">
               <Link href="/help" className="hover:underline">
                 Support
               </Link>
@@ -101,13 +101,13 @@ export default function TermsPage() {
               <span>Terms & Conditions</span>
             </div>
 
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-[#111827] sm:text-5xl">
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-zinc-100 sm:text-5xl">
               Terms & Conditions
             </h1>
-            <p className="mt-3 text-sm sm:text-base text-slate-600 font-medium max-w-3xl leading-relaxed">
-              These Terms govern your use of <strong className="font-extrabold text-[#111827]">ContactReachout</strong> and its website contact-form outreach platform.
+            <p className="mt-3 text-sm sm:text-base text-zinc-400 font-medium max-w-3xl leading-relaxed">
+              These Terms govern your use of <strong className="font-extrabold text-zinc-100">ContactReachout</strong> and its website contact-form outreach platform.
             </p>
-            <p className="mt-3 text-xs font-mono font-bold text-slate-500">
+            <p className="mt-3 text-xs font-mono font-bold text-zinc-400">
               Last Updated: September 23, 2026
             </p>
           </div>
@@ -119,17 +119,17 @@ export default function TermsPage() {
               <button
                 type="button"
                 onClick={() => setMobileNavOpen(!mobileNavOpen)}
-                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 font-extrabold text-[#111827] text-sm shadow-2xs"
+                className="flex w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-950 p-4 font-extrabold text-zinc-100 text-sm shadow-2xs"
               >
                 <span className="flex items-center gap-2">
-                  <ListFilter className="h-4 w-4 text-[#0e6de4]" />
+                  <ListFilter className="h-4 w-4 text-blue-400" />
                   On this page ({SECTIONS.length} sections)
                 </span>
-                <ChevronDown className={`h-4 w-4 text-[#0e6de4] transition-transform ${mobileNavOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 text-blue-400 transition-transform ${mobileNavOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {mobileNavOpen && (
-                <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-md space-y-1 max-h-80 overflow-y-auto">
+                <div className="mt-2 rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-md space-y-1 max-h-80 overflow-y-auto">
                   {SECTIONS.map((s) => (
                     <button
                       key={s.id}
@@ -138,7 +138,7 @@ export default function TermsPage() {
                       className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition ${
                         activeSection === s.id
                           ? 'bg-[#0e6de4] text-white'
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                          : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
                       }`}
                     >
                       {s.shortTitle}
@@ -150,8 +150,8 @@ export default function TermsPage() {
 
             {/* Desktop Sticky "On This Page" Sidebar */}
             <aside className="hidden lg:block">
-              <div className="sticky top-24 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 font-mono">
+              <div className="sticky top-24 rounded-3xl border border-zinc-800 bg-zinc-950 p-5 shadow-xs space-y-3">
+                <h3 className="text-xs font-black uppercase tracking-wider text-zinc-400 font-mono">
                   On This Page
                 </h3>
                 <nav className="space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto pr-1">
@@ -163,7 +163,7 @@ export default function TermsPage() {
                       className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 block truncate ${
                         activeSection === s.id
                           ? 'bg-[#0e6de4] text-white shadow-xs'
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                          : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
                       }`}
                       title={s.title}
                     >
@@ -177,12 +177,12 @@ export default function TermsPage() {
             {/* Content Column */}
             <div className="space-y-6">
               {/* Section 1 */}
-              <section id="section-1" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-1" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 01
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">1. Acceptance of Terms</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">1. Acceptance of Terms</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     By accessing, registering for, or using the <strong>ContactReachout</strong> platform, website, software, or services, you agree to be bound by these Terms & Conditions (&quot;Terms&quot;). If you do not agree to all of these Terms, you must not access or use ContactReachout.
                   </p>
@@ -193,16 +193,16 @@ export default function TermsPage() {
               </section>
 
               {/* Section 2 */}
-              <section id="section-2" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-2" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 02
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">2. Description of ContactReachout</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">2. Description of ContactReachout</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     ContactReachout is a software platform designed to manage and execute bulk website contact-form outreach workflows. The platform provides software tools for:
                   </p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li>Website contact-form outreach workflow management</li>
                     <li>Lead list uploading, column mapping, and prospect management</li>
                     <li>Campaign creation, editing, draft saving, and dispatch controls</li>
@@ -219,14 +219,14 @@ export default function TermsPage() {
               </section>
 
               {/* Section 3 */}
-              <section id="section-3" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-3" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 03
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">3. Eligibility and Account Registration</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">3. Eligibility and Account Registration</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>To register for and use an account on ContactReachout, you agree that:</p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li>You must provide accurate, current, and complete registration information.</li>
                     <li>You are responsible for maintaining the confidentiality and security of your account login credentials.</li>
                     <li>You must promptly update your account details if your contact information or billing details change.</li>
@@ -237,38 +237,38 @@ export default function TermsPage() {
               </section>
 
               {/* Section 4 */}
-              <section id="section-4" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-4" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 04
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">4. Acceptable and Lawful Use</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">4. Acceptable and Lawful Use</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     You agree to use ContactReachout strictly in compliance with all applicable local, national, and international laws, regulations, and industry standards. Responsible outreach requirements include:
                   </p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li><strong>Lawful Targeting:</strong> Ensuring your prospect targeting adheres to relevant commercial communications laws.</li>
                     <li><strong>Accurate Sender Information:</strong> Providing truthful, non-deceptive identity details, sender name, and email address in your outreach messages.</li>
                     <li><strong>Appropriate Outreach Content:</strong> Ensuring message text is relevant, professional, and compliant.</li>
                     <li><strong>Respecting Consent & Opt-Outs:</strong> Promptly honoring all recipient requests to unsubscribe or opt out of further communications.</li>
                     <li><strong>Compliance:</strong> Adhering to applicable data protection and electronic communications regulations in your operating jurisdictions.</li>
                   </ul>
-                  <p className="text-slate-500 italic text-xs">
+                  <p className="text-zinc-400 italic text-xs">
                     Note: ContactReachout provides software tooling and does not provide legal counsel. Users are responsible for evaluating legal requirements applicable to their specific commercial activities.
                   </p>
                 </div>
               </section>
 
               {/* Section 5 */}
-              <section id="section-5" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-50 text-rose-700 border border-rose-200">
+              <section id="section-5" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-950 text-rose-300 border border-rose-900">
                   Section 05
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">5. Prohibited Activities</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">5. Prohibited Activities</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>You may not engage in any of the following prohibited activities while using ContactReachout:</p>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
-                    <ul className="list-disc pl-5 space-y-1.5 text-slate-800 font-semibold">
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 space-y-2">
+                    <ul className="list-disc pl-5 space-y-1.5 text-zinc-200 font-semibold">
                       <li>Engaging in unlawful, fraudulent, deceptive, or misleading commercial activities.</li>
                       <li>Using false sender identities, fake company names, or misleading header information.</li>
                       <li>Sending abusive, threatening, defamatory, obscene, or harassing outreach messages.</li>
@@ -286,25 +286,25 @@ export default function TermsPage() {
               </section>
 
               {/* Section 6 */}
-              <section id="section-6" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-6" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 06
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">6. Campaign Safeguards</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">6. Campaign Safeguards</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     To maintain system integrity and respects third-party website protections, ContactReachout records diagnostic submission outcomes, including:
                   </p>
                   <div className="grid sm:grid-cols-2 gap-2 text-xs font-bold">
-                    <span className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800">✓ Submitted</span>
-                    <span className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800">✕ Failed</span>
-                    <span className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800">∅ Unavailable</span>
-                    <span className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800">🚫 Blocked</span>
-                    <span className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800">🤖 CAPTCHA / Security Challenge</span>
-                    <span className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800">🔍 Review Required</span>
+                    <span className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200">✓ Submitted</span>
+                    <span className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200">✕ Failed</span>
+                    <span className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200">∅ Unavailable</span>
+                    <span className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200">🚫 Blocked</span>
+                    <span className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200">🤖 CAPTCHA / Security Challenge</span>
+                    <span className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200">🔍 Review Required</span>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 font-extrabold text-xs">
+                  <div className="p-4 rounded-2xl bg-amber-950 border border-amber-900 text-amber-200 font-extrabold text-xs">
                     &quot;Users must not attempt to bypass CAPTCHA, bot-protection, security challenges, or other safeguards.&quot;
                   </div>
 
@@ -315,14 +315,14 @@ export default function TermsPage() {
               </section>
 
               {/* Section 7 */}
-              <section id="section-7" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-7" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 07
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">7. Contact-Form Outreach Responsibility</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">7. Contact-Form Outreach Responsibility</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>As an outreach sender, you retain full responsibility for:</p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li>Selecting appropriate target websites and business recipients.</li>
                     <li>Verifying imported lead list data and email/website fields.</li>
                     <li>Reviewing and approving all message text prior to launching a campaign.</li>
@@ -336,34 +336,34 @@ export default function TermsPage() {
               </section>
 
               {/* Section 8 */}
-              <section id="section-8" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-8" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 08
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">8. AI Personalization</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">8. AI Personalization</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>Where AI personalization features are enabled in your plan:</p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li>All AI-generated messages must be reviewed and verified by you before initiating dispatch.</li>
                     <li>Users remain solely responsible for the final message content sent to recipients.</li>
                     <li>AI outputs may occasionally contain inaccuracies or require manual adjustments.</li>
                     <li>ContactReachout does not guarantee that AI-generated content is suitable or accurate for every prospective scenario.</li>
                   </ul>
-                  <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50 text-xs font-bold text-[#0e6de4]">
+                  <div className="p-3.5 rounded-xl border border-blue-900 bg-blue-950/50 text-xs font-bold text-blue-400">
                     Product Rules: Free account tier users cannot access AI Personalization. Paid plan AI Personalization does not consume additional outreach credits.
                   </div>
                 </div>
               </section>
 
               {/* Section 9 */}
-              <section id="section-9" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-9" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 09
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">9. Credits and Usage</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">9. Credits and Usage</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>Platform credit allocation and usage rules are governed as follows:</p>
-                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2 text-xs font-semibold text-slate-800">
+                  <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-900 space-y-2 text-xs font-semibold text-zinc-200">
                     <p>• Free accounts receive <strong>100 free credits</strong> upon initial account registration.</p>
                     <p>• A successful website contact-form submission consumes <strong>1 credit</strong>.</p>
                     <p>• AI Personalization uses <strong>0 credits</strong> on eligible paid plans.</p>
@@ -376,16 +376,16 @@ export default function TermsPage() {
               </section>
 
               {/* Section 10 */}
-              <section id="section-10" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-10" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 10
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">10. Pricing and Payments</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">10. Pricing and Payments</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
-                    Current subscription rates and package pricing are displayed on the official <Link href="/pricing" className="text-[#0e6de4] underline font-bold">Pricing</Link> page.
+                    Current subscription rates and package pricing are displayed on the official <Link href="/pricing" className="text-blue-400 underline font-bold">Pricing</Link> page.
                   </p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li>Paid plans are billed on a monthly or annual recurring basis according to your selected plan.</li>
                     <li>Annual plans may display a calculated monthly equivalent price while checkout charges the annual total.</li>
                     <li>Payments are securely processed through configured payment processors (e.g., Stripe).</li>
@@ -395,32 +395,32 @@ export default function TermsPage() {
               </section>
 
               {/* Section 11 */}
-              <section id="section-11" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-11" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 11
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">11. Refunds and Cancellations</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">11. Refunds and Cancellations</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     Subscription cancellations and refund requests are handled in accordance with the applicable billing policy presented at purchase or published separately by ContactReachout.
                   </p>
                   <p>
-                    You may cancel your recurring subscription at any time through your dashboard billing controls or by contacting support at <a href="mailto:hello@contactreachout.com" className="text-[#0e6de4] underline font-bold">hello@contactreachout.com</a>. Upon cancellation, your subscription remains active until the end of your current billing period.
+                    You may cancel your recurring subscription at any time through your dashboard billing controls or by contacting support at <a href="mailto:hello@contactreachout.com" className="text-blue-400 underline font-bold">hello@contactreachout.com</a>. Upon cancellation, your subscription remains active until the end of your current billing period.
                   </p>
                 </div>
               </section>
 
               {/* Section 12 */}
-              <section id="section-12" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-12" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 12
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">12. Third-Party Services</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">12. Third-Party Services</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     ContactReachout integrates with third-party infrastructure and service providers to deliver functionality, including:
                   </p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li>Payment processing services (e.g., Stripe)</li>
                     <li>Transactional email dispatch infrastructure (e.g., Resend)</li>
                     <li>AI model providers (e.g., OpenAI, Anthropic)</li>
@@ -434,12 +434,12 @@ export default function TermsPage() {
               </section>
 
               {/* Section 13 */}
-              <section id="section-13" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-13" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 13
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">13. Service Availability</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">13. Service Availability</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     While ContactReachout strives to deliver reliable platform availability, service access may occasionally be interrupted due to scheduled maintenance, infrastructure upgrades, emergency security responses, network outages, or third-party availability issues.
                   </p>
@@ -450,16 +450,16 @@ export default function TermsPage() {
               </section>
 
               {/* Section 14 */}
-              <section id="section-14" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-14" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 14
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">14. User Content and Data</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">14. User Content and Data</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     You retain ownership and responsibility for all lead lists, contact records, campaign templates, message text, and information uploaded or submitted to ContactReachout.
                   </p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li>You warrant that you have all necessary authority and rights to use uploaded lead data.</li>
                     <li>You must not upload unlawful, stolen, or unauthorized personal data.</li>
                     <li>You are responsible for reviewing imported prospect information before starting campaign dispatches.</li>
@@ -468,25 +468,25 @@ export default function TermsPage() {
               </section>
 
               {/* Section 15 */}
-              <section id="section-15" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-15" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 15
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">15. Privacy</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">15. Privacy</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
-                    Your privacy is important to us. Personal information, account data, and system analytics collected by ContactReachout are handled in accordance with our official <Link href="/privacy" className="text-[#0e6de4] underline font-bold">Privacy Policy</Link>.
+                    Your privacy is important to us. Personal information, account data, and system analytics collected by ContactReachout are handled in accordance with our official <Link href="/privacy" className="text-blue-400 underline font-bold">Privacy Policy</Link>.
                   </p>
                 </div>
               </section>
 
               {/* Section 16 */}
-              <section id="section-16" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-16" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 16
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">16. Intellectual Property</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">16. Intellectual Property</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     The ContactReachout platform, software code, user interfaces, branding, logos, graphics, and documentation are owned by or licensed to ContactReachout and are protected by applicable copyright, trademark, and intellectual property laws.
                   </p>
@@ -497,16 +497,16 @@ export default function TermsPage() {
               </section>
 
               {/* Section 17 */}
-              <section id="section-17" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-17" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 17
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">17. Account Suspension and Termination</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">17. Account Suspension and Termination</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     ContactReachout reserves the right to restrict, suspend, or terminate access to the service without prior notice if we determine that:
                   </p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li>You have violated any provision of these Terms.</li>
                     <li>Your account is involved in unlawful, abusive, or spam activity.</li>
                     <li>Security concerns, credential compromises, or automated attacks are detected.</li>
@@ -520,14 +520,14 @@ export default function TermsPage() {
               </section>
 
               {/* Section 18 */}
-              <section id="section-18" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-18" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 18
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">18. Security</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">18. Security</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>Account security is a shared responsibility:</p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
+                  <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
                     <li>You must maintain strong account passwords and protect login credentials.</li>
                     <li>You must not share account credentials or unauthorized third-party access.</li>
                     <li>You must report suspected unauthorized access or breaches immediately.</li>
@@ -537,12 +537,12 @@ export default function TermsPage() {
               </section>
 
               {/* Section 19 */}
-              <section id="section-19" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-19" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 19
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">19. Disclaimer</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">19. Disclaimer</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     THE CONTACTREACHOUT PLATFORM IS PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; BASIS. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, CONTACTREACHOUT DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
                   </p>
@@ -553,28 +553,28 @@ export default function TermsPage() {
               </section>
 
               {/* Section 20 */}
-              <section id="section-20" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-20" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 20
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">20. Limitation of Liability</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">20. Limitation of Liability</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     TO THE MAXIMUM EXTENT PERMITTED BY LAW, CONTACTREACHOUT SHALL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL, OR PUNITIVE DAMAGES, LOSS OF PROFITS, DATA, OR BUSINESS OPPORTUNITIES ARISING FROM OR RELATED TO YOUR USE OF THE SERVICE.
                   </p>
-                  <p className="text-slate-500 italic text-xs">
+                  <p className="text-zinc-400 italic text-xs">
                     [Legal Review Placeholder: Total aggregate liability under these Terms shall be limited to amounts paid by the user to ContactReachout in the twelve (12) months preceding the event, subject to applicable governing law.]
                   </p>
                 </div>
               </section>
 
               {/* Section 21 */}
-              <section id="section-21" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-21" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 21
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">21. Changes to These Terms</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">21. Changes to These Terms</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     ContactReachout reserves the right to modify or update these Terms at any time. When material changes occur, the &quot;Last Updated&quot; date at the top of this document will be updated accordingly. Continued use of the service after published updates constitutes acceptance of the revised Terms.
                   </p>
@@ -582,39 +582,39 @@ export default function TermsPage() {
               </section>
 
               {/* Section 22 */}
-              <section id="section-22" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-22" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-3 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 22
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">22. Governing Law / Dispute Resolution</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">22. Governing Law / Dispute Resolution</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     These Terms shall be governed by and construed in accordance with applicable laws, without regard to conflict of law principles.
                   </p>
-                  <p className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 font-mono text-xs text-slate-700">
+                  <p className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-900 font-mono text-xs text-zinc-300">
                     [Governing Jurisdiction Placeholder — Subject to final legal and corporate counsel determination.]
                   </p>
                 </div>
               </section>
 
               {/* Section 23 */}
-              <section id="section-23" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-4 scroll-mt-24">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-[#0e6de4] border border-blue-100">
+              <section id="section-23" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xs space-y-4 scroll-mt-24">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-900">
                   Section 23
                 </span>
-                <h2 className="text-xl font-black text-[#111827] sm:text-2xl">23. Contact Information</h2>
-                <div className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed space-y-3">
+                <h2 className="text-xl font-black text-zinc-100 sm:text-2xl">23. Contact Information</h2>
+                <div className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed space-y-3">
                   <p>
                     If you have questions, concerns, or inquiries regarding these Terms & Conditions, please contact the ContactReachout support team:
                   </p>
-                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/80 space-y-2">
-                    <p className="font-extrabold text-[#111827]">ContactReachout Support</p>
+                  <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-900/80 space-y-2">
+                    <p className="font-extrabold text-zinc-100">ContactReachout Support</p>
                     <p className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-[#0e6de4]" />
-                      Email: <a href="mailto:hello@contactreachout.com" className="text-[#0e6de4] font-bold underline">hello@contactreachout.com</a>
+                      <Mail className="h-4 w-4 text-blue-400" />
+                      Email: <a href="mailto:hello@contactreachout.com" className="text-blue-400 font-bold underline">hello@contactreachout.com</a>
                     </p>
-                    <p className="text-xs text-slate-500 pt-1">
-                      Direct Support Channel: <Link href="/contact" className="text-[#0e6de4] font-bold underline">Contact Support Page</Link>
+                    <p className="text-xs text-zinc-400 pt-1">
+                      Direct Support Channel: <Link href="/contact" className="text-blue-400 font-bold underline">Contact Support Page</Link>
                     </p>
                   </div>
                 </div>

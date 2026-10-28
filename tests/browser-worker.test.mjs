@@ -18,6 +18,18 @@ describe('browser worker submission safety', () => {
     expect(result).toMatchObject({ status: 'FAILED', diagnosticCode: 'BROWSER_RUNTIME_UNAVAILABLE', successVerified: false, submitAttempted: false });
   });
 
+  it('does not block unlisted domains client-side; the worker enforces authorization', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';
+    // No BROWSER_WORKER_ALLOWED_DOMAINS: the app must still call the worker,
+    // which authorizes via its static list or dynamic campaign-lead check.
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'SUCCESS', successVerified: true, submitAttempted: true, diagnosticCode: 'SUCCESS_VERIFIED' }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await submitWithBrowserWorker(input);
+    expect(result.status).toBe('SUCCESS');
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it('accepts only explicit verified worker success and sends an idempotency key', async () => {
     process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
     process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';

@@ -267,15 +267,15 @@ export default function ResultsDashboardPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 lg:grid-cols-10">
         {[
           { label: 'Total', count: statusSummary.total, color: 'text-white', filter: 'ALL' },
-          { label: 'Pending', count: statusSummary.pending, color: 'text-slate-400', filter: 'PENDING' },
+          { label: 'Pending', count: statusSummary.pending, color: 'text-zinc-400', filter: 'PENDING' },
           { label: 'Processing', count: statusSummary.processing, color: 'text-cyan-400', filter: 'PROCESSING' },
           { label: 'Success', count: statusSummary.success, color: 'text-emerald-400', filter: 'SUCCESS' },
           { label: 'Failed', count: statusSummary.failed, color: 'text-rose-400', filter: 'FAILED' },
           { label: 'CAPTCHA', count: statusSummary.captcha, color: 'text-amber-400', filter: 'CAPTCHA' },
           { label: 'Review Req.', count: statusSummary.reviewRequired, color: 'text-orange-400', filter: 'REVIEW_REQUIRED' },
-          { label: 'Blocked', count: statusSummary.blocked, color: 'text-red-500', filter: 'BLOCKED' },
-          { label: 'No Contact', count: statusSummary.noContactPage, color: 'text-slate-500', filter: 'NO_CONTACT_PAGE' },
-          { label: 'No Form', count: statusSummary.noForm, color: 'text-slate-500', filter: 'NO_FORM' },
+          { label: 'Blocked', count: statusSummary.blocked, color: 'text-red-400', filter: 'BLOCKED' },
+          { label: 'No Contact', count: statusSummary.noContactPage, color: 'text-zinc-400', filter: 'NO_CONTACT_PAGE' },
+          { label: 'No Form', count: statusSummary.noForm, color: 'text-zinc-400', filter: 'NO_FORM' },
         ].map((stat) => (
           <Card
             key={stat.label}
@@ -283,7 +283,7 @@ export default function ResultsDashboardPage() {
             className={`glass-panel p-3 text-center cursor-pointer transition-all ${
               selectedStatus === stat.filter
                 ? 'border-primary/60 bg-primary/10 shadow-md shadow-primary/10'
-                : 'hover:bg-slate-900/60'
+                : 'hover:bg-zinc-950/60'
             }`}
           >
             <p className="text-[10px] text-muted-foreground uppercase font-bold truncate">{stat.label}</p>
@@ -297,13 +297,13 @@ export default function ResultsDashboardPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {/* Omni Search */}
           <div className="relative lg:col-span-2">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search company, website, contact, or error..."
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 pl-9 pr-4 py-1.5 text-xs text-white focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-zinc-700 bg-black pl-9 pr-4 py-1.5 text-xs text-white focus:border-primary focus:outline-none"
             />
           </div>
 
@@ -311,7 +311,7 @@ export default function ResultsDashboardPage() {
           <select
             value={selectedCampaign}
             onChange={(e) => setSelectedCampaign(e.target.value)}
-            className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white focus:border-primary focus:outline-none"
+            className="rounded-lg border border-zinc-700 bg-black px-3 py-1.5 text-xs text-white focus:border-primary focus:outline-none"
           >
             <option value="ALL">All Campaigns</option>
             <option value="camp-01">Q3 Enterprise Fintech Outreach</option>
@@ -322,7 +322,7 @@ export default function ResultsDashboardPage() {
           <select
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
-            className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white focus:border-primary focus:outline-none"
+            className="rounded-lg border border-zinc-700 bg-black px-3 py-1.5 text-xs text-white focus:border-primary focus:outline-none"
           >
             <option value="ALL">All Countries</option>
             <option value="United States">United States</option>
@@ -336,7 +336,7 @@ export default function ResultsDashboardPage() {
           <select
             value={selectedIndustry}
             onChange={(e) => setSelectedIndustry(e.target.value)}
-            className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white focus:border-primary focus:outline-none"
+            className="rounded-lg border border-zinc-700 bg-black px-3 py-1.5 text-xs text-white focus:border-primary focus:outline-none"
           >
             <option value="ALL">All Industries</option>
             <option value="FinTech">FinTech</option>
@@ -352,7 +352,7 @@ export default function ResultsDashboardPage() {
       <Card className="glass-panel overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/90 text-muted-foreground border-b border-slate-800 uppercase font-mono tracking-wider">
+            <thead className="bg-zinc-950/90 text-muted-foreground border-b border-zinc-700 uppercase font-mono tracking-wider">
               <tr>
                 <th className="p-3.5">Company & Website</th>
                 <th className="p-3.5">Contact Page</th>
@@ -362,9 +362,9 @@ export default function ResultsDashboardPage() {
                 <th className="p-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-zinc-700/60 text-zinc-400">
               {filteredResults.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-900/40 transition-colors">
+                <tr key={item.id} className="hover:bg-zinc-950/40 transition-colors">
                   <td className="p-3.5">
                     <div className="font-bold text-white flex items-center gap-1.5">
                       <Building2 className="h-3.5 w-3.5 text-primary" />
@@ -380,11 +380,11 @@ export default function ResultsDashboardPage() {
                     </a>
                   </td>
 
-                  <td className="p-3.5 font-mono text-[11px] max-w-xs truncate text-slate-400">
+                  <td className="p-3.5 font-mono text-[11px] max-w-xs truncate text-zinc-400">
                     {item.contactPageUrl ? (
-                      <span className="text-slate-300">{item.contactPageUrl}</span>
+                      <span className="text-zinc-400">{item.contactPageUrl}</span>
                     ) : (
-                      <span className="text-slate-500 italic">None Discovered</span>
+                      <span className="text-zinc-400 italic">None Discovered</span>
                     )}
                   </td>
 
@@ -392,14 +392,14 @@ export default function ResultsDashboardPage() {
                     <Badge status={item.status as any} />
                   </td>
 
-                  <td className="p-3.5 text-slate-400 truncate max-w-[160px]">
+                  <td className="p-3.5 text-zinc-400 truncate max-w-[160px]">
                     {item.campaignName}
                   </td>
 
-                  <td className="p-3.5 font-mono text-[11px] text-slate-400">
+                  <td className="p-3.5 font-mono text-[11px] text-zinc-400">
                     <div>{new Date(item.startedAt).toLocaleTimeString()}</div>
                     {item.completedAt && (
-                      <div className="text-slate-500">
+                      <div className="text-zinc-400">
                         {new Date(item.completedAt).toLocaleTimeString()}
                       </div>
                     )}
@@ -427,7 +427,7 @@ export default function ResultsDashboardPage() {
       {/* Detailed Result & Visual Proof Modal Lightbox */}
       {isProofModalOpen && selectedResult && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <Card className="glass-panel w-full max-w-3xl border-slate-700 bg-slate-950 p-6 space-y-5 shadow-2xl overflow-y-auto max-h-[90vh]">
+          <Card className="glass-panel w-full max-w-3xl border-zinc-700 bg-black p-6 space-y-5 shadow-2xl overflow-y-auto max-h-[90vh]">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
@@ -442,7 +442,7 @@ export default function ResultsDashboardPage() {
 
               <button
                 onClick={() => setIsProofModalOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:text-white hover:bg-slate-900 transition-colors"
+                className="rounded-lg p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-950 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -450,14 +450,14 @@ export default function ResultsDashboardPage() {
 
             {/* Status & Diagnostic Details */}
             <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-              <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/50 p-3">
                 <span className="text-muted-foreground">Final Status:</span>
                 <div className="mt-1">
                   <Badge status={selectedResult.status as any} />
                 </div>
               </div>
 
-              <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/50 p-3">
                 <span className="text-muted-foreground">HTTP Status:</span>
                 <p className="font-bold text-white mt-1">
                   {selectedResult.httpStatus ? `HTTP ${selectedResult.httpStatus}` : 'N/A'}
@@ -479,13 +479,13 @@ export default function ResultsDashboardPage() {
             {/* Rendered Outreach Message Payload */}
             {selectedResult.renderedMessage && (
               <div className="space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
                   <Mail className="h-4 w-4 text-primary" /> Rendered Outreach Payload
                 </h4>
-                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2 text-xs font-mono">
+                <div className="rounded-xl border border-zinc-700 bg-zinc-950/60 p-4 space-y-2 text-xs font-mono">
                   <p className="font-bold text-white">Subject: {selectedResult.renderedSubject}</p>
-                  <div className="h-px bg-slate-800" />
-                  <p className="text-slate-300 whitespace-pre-line leading-relaxed">
+                  <div className="h-px bg-zinc-900" />
+                  <p className="text-zinc-400 whitespace-pre-line leading-relaxed">
                     {selectedResult.renderedMessage}
                   </p>
                 </div>
@@ -494,15 +494,15 @@ export default function ResultsDashboardPage() {
 
             {/* Screenshot Proof Lightbox */}
             <div className="space-y-2">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-primary" /> Visual Verification Proof
               </h4>
-              <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 text-center overflow-hidden">
+              <div className="rounded-xl border border-zinc-700 bg-zinc-950/80 p-4 text-center overflow-hidden">
                 {selectedResult.screenshotBase64 ? (
                   <img
                     src={selectedResult.screenshotBase64}
                     alt="Submission Proof Screenshot"
-                    className="w-full rounded-lg border border-slate-800 shadow-inner max-h-64 object-contain mx-auto"
+                    className="w-full rounded-lg border border-zinc-700 shadow-inner max-h-64 object-contain mx-auto"
                   />
                 ) : (
                   <div className="py-8 text-xs text-muted-foreground font-mono">

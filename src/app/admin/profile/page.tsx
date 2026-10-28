@@ -97,7 +97,7 @@ export default function AdminProfilePage() {
           <UserCheck className="h-6 w-6 text-indigo-400" />
           Super Admin Profile & Security
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+        <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
           Manage root administrator credentials, active session tokens, and authentication settings.
         </p>
       </div>
@@ -124,7 +124,7 @@ export default function AdminProfilePage() {
           </div>
           <div>
             <h3 className="text-lg font-bold text-white">Ethan Carter (Root Super Admin)</h3>
-            <p className="text-xs text-slate-400 font-mono">mithusquare@gmail.com</p>
+            <p className="text-xs text-zinc-400 font-mono">mithusquare@gmail.com</p>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-purple-500/20 text-purple-400 border border-purple-500/30">
                 ROLE: SUPER_ADMIN
@@ -146,7 +146,7 @@ export default function AdminProfilePage() {
 
         <form onSubmit={handleChangePassword} className="space-y-3.5">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300">New Master Password</label>
+            <label className="text-xs font-semibold text-zinc-400">New Master Password</label>
             <input
               type="password"
               required
@@ -154,12 +154,12 @@ export default function AdminProfilePage() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Minimum 8 characters with numbers & symbols"
-              className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-black px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300">Confirm New Password</label>
+            <label className="text-xs font-semibold text-zinc-400">Confirm New Password</label>
             <input
               type="password"
               required
@@ -167,7 +167,7 @@ export default function AdminProfilePage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Re-type new password"
-              className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-black px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
             />
           </div>
 
@@ -185,7 +185,7 @@ export default function AdminProfilePage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-white">Active Sessions & Token Revocation</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Revoke all active browser tokens if suspicious activity is suspected.</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Revoke all active browser tokens if suspicious activity is suspected.</p>
           </div>
 
           <Button variant="destructive" size="sm" onClick={handleRevokeSessions}>

@@ -107,26 +107,26 @@ export default function AiPersonalizationClient() {
     <div className="mx-auto max-w-6xl space-y-6 pb-16">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-black text-[#0e6de4]">Controlled personalization workflow</p>
-          <h1 className="mt-1 text-3xl font-black text-slate-950">AI Personalization</h1>
-          <p className="mt-2 text-sm text-slate-600">Configure → generate → review one by one → edit → approve → start campaign.</p>
+          <p className="text-sm font-black text-blue-400">Controlled personalization workflow</p>
+          <h1 className="mt-1 text-3xl font-black text-white">AI Personalization</h1>
+          <p className="mt-2 text-sm text-zinc-400">Configure → generate → review one by one → edit → approve → start campaign.</p>
         </div>
-        <Link href={sourceId ? `/campaigns/new?edit=${sourceId}` : '/campaigns/new'} className="rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-black text-[#0e6de4]">Open campaign</Link>
+        <Link href={sourceId ? `/campaigns/new?edit=${sourceId}` : '/campaigns/new'} className="rounded-xl border border-blue-900 bg-zinc-950 px-4 py-2.5 text-sm font-black text-blue-400">Open campaign</Link>
       </div>
 
       {/* Free Plan Lock Banner */}
       {!isPaidPlan && (
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400">
               <Lock className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900">AI Personalization is a paid feature.</h3>
-                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600">Free Plan</span>
+                <h3 className="font-bold text-zinc-100">AI Personalization is a paid feature.</h3>
+                <span className="rounded-full bg-zinc-900 px-2.5 py-0.5 text-xs font-bold text-zinc-400">Free Plan</span>
               </div>
-              <p className="mt-1 text-xs text-slate-600">Upgrade your plan to personalize website contact-form messages with AI.</p>
+              <p className="mt-1 text-xs text-zinc-400">Upgrade your plan to personalize website contact-form messages with AI.</p>
             </div>
           </div>
           <Link href="/pricing">
@@ -139,24 +139,24 @@ export default function AiPersonalizationClient() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
-        <section className="space-y-5 rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+        <section className="space-y-5 rounded-3xl border border-blue-900 bg-zinc-950 p-6 shadow-sm">
           <Step title="1. Select prospects">
-            <div className="grid grid-cols-2 gap-2 rounded-xl bg-blue-50 p-1">
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-blue-950 p-1">
               {(['campaign','list'] as const).map(type => (
-                <button key={type} onClick={() => {setSourceType(type);setSourceId('')}} className={`rounded-lg px-3 py-2 text-xs font-black ${sourceType === type ? 'bg-[#0e6de4] text-white' : 'text-slate-600'}`}>
+                <button key={type} onClick={() => {setSourceType(type);setSourceId('')}} className={`rounded-lg px-3 py-2 text-xs font-black ${sourceType === type ? 'bg-[#0e6de4] text-white' : 'text-zinc-400'}`}>
                   {type === 'campaign' ? 'Campaign' : 'Lead List'}
                 </button>
               ))}
             </div>
-            <select value={sourceId} onChange={e => setSourceId(e.target.value)} className="w-full rounded-xl border border-blue-100 px-3 py-3 text-sm font-semibold">
+            <select value={sourceId} onChange={e => setSourceId(e.target.value)} className="w-full rounded-xl border border-blue-900 px-3 py-3 text-sm font-semibold">
               <option value="">Select source</option>
               {(sourceType === 'campaign' ? campaigns : leadLists).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
-            <p className="rounded-xl bg-blue-50 p-3 text-sm font-bold text-blue-800">{selectedLeads.length} prospects selected</p>
+            <p className="rounded-xl bg-blue-950 p-3 text-sm font-bold text-blue-300">{selectedLeads.length} prospects selected</p>
           </Step>
 
           <Step title="2. What are you offering?">
-            <textarea rows={5} value={offer} onChange={e => setOffer(e.target.value)} placeholder="Describe the product or service you want to promote…" className="w-full rounded-xl border border-blue-100 p-3 text-sm" />
+            <textarea rows={5} value={offer} onChange={e => setOffer(e.target.value)} placeholder="Describe the product or service you want to promote…" className="w-full rounded-xl border border-blue-900 p-3 text-sm" />
           </Step>
 
           <Step title="3. Message settings">
@@ -174,7 +174,7 @@ export default function AiPersonalizationClient() {
           </Step>
 
           <Step title="4. Custom Instructions">
-            <textarea rows={6} value={instructions} onChange={e => setInstructions(e.target.value)} className="w-full rounded-xl border border-blue-100 p-3 text-sm" />
+            <textarea rows={6} value={instructions} onChange={e => setInstructions(e.target.value)} className="w-full rounded-xl border border-blue-900 p-3 text-sm" />
           </Step>
 
           <Button onClick={generateAll} disabled={busy || !selectedLeads.length} className="w-full py-3 cursor-pointer">
@@ -183,30 +183,30 @@ export default function AiPersonalizationClient() {
           </Button>
         </section>
 
-        <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+        <section className="rounded-3xl border border-blue-900 bg-zinc-950 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-black">AI Message Review</h2>
-              <p className="text-xs text-slate-500">{drafts.length ? `${reviewed} / ${drafts.length} reviewed` : 'Generate messages to begin'}</p>
+              <p className="text-xs text-zinc-400">{drafts.length ? `${reviewed} / ${drafts.length} reviewed` : 'Generate messages to begin'}</p>
             </div>
-            {drafts.length > 0 && <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">Prospect {currentIndex + 1} of {drafts.length}</span>}
+            {drafts.length > 0 && <span className="rounded-full bg-blue-950 px-3 py-1 text-xs font-black text-blue-300">Prospect {currentIndex + 1} of {drafts.length}</span>}
           </div>
 
-          {notice && <p className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm font-semibold text-blue-800">{notice}</p>}
+          {notice && <p className="mt-4 rounded-xl border border-blue-900 bg-blue-950 p-3 text-sm font-semibold text-blue-300">{notice}</p>}
 
           {current && lead ? (
             <div className="mt-6 space-y-5">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="font-black text-slate-950">{[lead.firstName,lead.lastName].filter(Boolean).join(' ') || lead.companyName}</p>
-                <p className="mt-1 text-sm text-slate-600">{[lead.title,lead.companyName].filter(Boolean).join(' · ')}</p>
-                <p className="mt-1 text-xs text-[#0e6de4]">{lead.website}</p>
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+                <p className="font-black text-white">{[lead.firstName,lead.lastName].filter(Boolean).join(' ') || lead.companyName}</p>
+                <p className="mt-1 text-sm text-zinc-400">{[lead.title,lead.companyName].filter(Boolean).join(' · ')}</p>
+                <p className="mt-1 text-xs text-blue-400">{lead.website}</p>
               </div>
 
-              {current.error && <p className="rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-700">{current.error}</p>}
+              {current.error && <p className="rounded-xl bg-rose-950 p-3 text-sm font-semibold text-rose-300">{current.error}</p>}
 
-              <label className="block text-sm font-black text-slate-700">
+              <label className="block text-sm font-black text-zinc-300">
                 AI Personalized Message
-                <textarea rows={14} value={current.body} onChange={e => updateDraft({body:e.target.value,status:'Edited'})} onBlur={() => current.status === 'Not Reviewed' && updateDraft({status:'Reviewed'})} className="mt-2 w-full rounded-2xl border border-blue-100 p-4 text-sm leading-7 outline-none focus:border-[#0e6de4]" />
+                <textarea rows={14} value={current.body} onChange={e => updateDraft({body:e.target.value,status:'Edited'})} onBlur={() => current.status === 'Not Reviewed' && updateDraft({status:'Reviewed'})} className="mt-2 w-full rounded-2xl border border-blue-900 p-4 text-sm leading-7 outline-none focus:border-[#0e6de4]" />
               </label>
 
               <div className="flex flex-wrap gap-2">
@@ -215,16 +215,16 @@ export default function AiPersonalizationClient() {
                 <Button onClick={() => updateDraft({status:'Approved'})}><CheckCircle2 className="mr-2 h-4 w-4" />Approve</Button>
               </div>
 
-              <div className="flex items-center justify-between border-t border-slate-100 pt-5">
+              <div className="flex items-center justify-between border-t border-zinc-800 pt-5">
                 <Button variant="outline" disabled={currentIndex === 0} onClick={() => setCurrentIndex(i => i-1)}><ArrowLeft className="mr-2 h-4 w-4" />Previous</Button>
-                <span className="text-xs font-black text-[#0e6de4]">{current.status}</span>
+                <span className="text-xs font-black text-blue-400">{current.status}</span>
                 <Button variant="outline" disabled={currentIndex === drafts.length-1} onClick={() => setCurrentIndex(i => i+1)}>Next<ArrowRight className="ml-2 h-4 w-4" /></Button>
               </div>
 
               <Button onClick={save} disabled={!drafts.length} className="w-full py-3"><Bot className="mr-2 h-4 w-4" />Save approved messages to campaign</Button>
             </div>
           ) : (
-            <div className="mt-6 grid min-h-[520px] place-items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+            <div className="mt-6 grid min-h-[520px] place-items-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900 p-8 text-center text-sm text-zinc-400">
               Your individually generated prospect messages will appear here.
             </div>
           )}
@@ -237,5 +237,5 @@ export default function AiPersonalizationClient() {
   );
 }
 
-function Step({ title, children }: { title: string; children: React.ReactNode }) { return <div className="space-y-3"><h2 className="font-black text-slate-950">{title}</h2>{children}</div>; }
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-xs font-bold text-slate-600"><span className="mb-1 block">{label}</span>{children}</label>; }
+function Step({ title, children }: { title: string; children: React.ReactNode }) { return <div className="space-y-3"><h2 className="font-black text-white">{title}</h2>{children}</div>; }
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-xs font-bold text-zinc-400"><span className="mb-1 block">{label}</span>{children}</label>; }

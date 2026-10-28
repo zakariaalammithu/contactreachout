@@ -20,32 +20,32 @@ export const metadata: Metadata = {
 
 export default function AiOutreachPage() {
   return (
-    <div className="min-h-screen bg-[#f4f7ff] text-slate-950 flex flex-col justify-between">
+    <div className="min-h-screen bg-black text-white flex flex-col justify-between">
       <LandingHeader />
       <main className="py-16 px-4 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold text-[#0e6de4]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-900 bg-blue-950 px-4 py-1.5 text-xs font-bold text-blue-400">
               <Sparkles className="h-3.5 w-3.5" /> AI Personalization
             </span>
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
               AI-Powered Outreach Messages That Convert
             </h1>
-            <p className="mt-4 text-lg leading-8 text-slate-600">
+            <p className="mt-4 text-lg leading-8 text-zinc-400">
               Personalize every contact form submission with AI context. Higher relevance means higher response rates from decision makers.
             </p>
           </div>
 
           <div className="mt-16 grid gap-8 md:grid-cols-2">
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-              <Bot className="h-8 w-8 text-[#0e6de4]" />
-              <h3 className="mt-6 text-xl font-black text-slate-900">Contextual Draft Generation</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Leverage company data, industry context, and lead attributes to produce authentic outreach copy.</p>
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-sm">
+              <Bot className="h-8 w-8 text-blue-400" />
+              <h3 className="mt-6 text-xl font-black text-zinc-100">Contextual Draft Generation</h3>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">Leverage company data, industry context, and lead attributes to produce authentic outreach copy.</p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-              <CheckCircle2 className="h-8 w-8 text-[#0e6de4]" />
-              <h3 className="mt-6 text-xl font-black text-slate-900">Human Approval Controls</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Review and tweak AI-generated templates before campaign submission to maintain brand accuracy.</p>
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-sm">
+              <CheckCircle2 className="h-8 w-8 text-blue-400" />
+              <h3 className="mt-6 text-xl font-black text-zinc-100">Human Approval Controls</h3>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">Review and tweak AI-generated templates before campaign submission to maintain brand accuracy.</p>
             </div>
           </div>
 

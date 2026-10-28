@@ -141,21 +141,21 @@ export default function GoogleSheetsSettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans">
       {/* Back Link & Header */}
-      <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+      <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
         <Link
           href="/admin/integrations"
-          className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-xs"
+          className="p-2 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors shadow-xs"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
+          <h1 className="text-xl font-extrabold text-zinc-100 flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-950 text-blue-400">
               <FileSpreadsheet className="h-5 w-5" />
             </div>
             <span>Google Sheets OAuth2 Integration</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Google Cloud OAuth credentials for bidirectional spreadsheet imports and lead status sync.
           </p>
         </div>
@@ -163,39 +163,39 @@ export default function GoogleSheetsSettingsPage() {
 
       {/* Success Feedback Alert */}
       {saveSuccess && (
-        <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-emerald-900 bg-emerald-950 text-xs font-bold text-emerald-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{saveSuccess}</span>
         </div>
       )}
 
       {/* Error Feedback Alert */}
       {saveError && (
-        <div className="p-3.5 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-red-900 bg-red-950 text-xs font-bold text-red-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
           <span>{saveError}</span>
         </div>
       )}
 
       {/* Settings Form Card */}
-      <Card className="p-6 space-y-6 border-slate-200 bg-white shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <Card className="p-6 space-y-6 border-zinc-800 bg-zinc-950 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
           <div>
-            <h3 className="font-extrabold text-slate-900 text-sm">OAuth 2.0 Credential Status</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h3 className="font-extrabold text-zinc-100 text-sm">OAuth 2.0 Credential Status</h3>
+            <p className="text-xs text-zinc-400 mt-0.5">
               Google Cloud Console OAuth App configuration.
             </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             {isOverrideActive ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                <Lock className="h-3.5 w-3.5 text-amber-700" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-900 text-amber-200 border border-amber-800">
+                <Lock className="h-3.5 w-3.5 text-amber-300" />
                 Custom Encrypted Vault Override
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#0e6de4] border border-blue-200">
-                <Server className="h-3.5 w-3.5 text-[#0e6de4]" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-900 text-blue-400 border border-blue-900">
+                <Server className="h-3.5 w-3.5 text-blue-400" />
                 ✓ Managed via Server Environment
               </span>
             )}
@@ -204,9 +204,9 @@ export default function GoogleSheetsSettingsPage() {
 
         {/* Status Banner */}
         {isOverrideActive ? (
-          <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs space-y-2">
+          <div className="p-4 rounded-xl border border-amber-900 bg-amber-950 text-amber-200 text-xs space-y-2">
             <div className="flex items-center gap-2 font-bold">
-              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+              <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
               <span>An encrypted vault override is currently active for Google OAuth.</span>
             </div>
             <div className="pl-6 pt-1">
@@ -216,19 +216,19 @@ export default function GoogleSheetsSettingsPage() {
                 size="sm"
                 disabled={isClearingOverride}
                 onClick={handleClearOverride}
-                className="text-xs font-bold border-amber-300 text-amber-900 hover:bg-amber-100"
+                className="text-xs font-bold border-amber-800 text-amber-200 hover:bg-amber-900"
               >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5 text-amber-700" />
+                <Trash2 className="h-3.5 w-3.5 mr-1.5 text-amber-300" />
                 Clear Custom Vault Override (Revert to Server Environment)
               </Button>
             </div>
           </div>
         ) : (
-          <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/60 text-slate-700 text-xs flex items-start gap-2.5">
-            <ShieldCheck className="h-4 w-4 text-[#0e6de4] shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-xl border border-blue-900 bg-blue-950/60 text-zinc-300 text-xs flex items-start gap-2.5">
+            <ShieldCheck className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="font-bold text-slate-900">Google OAuth is currently using the secure server environment configuration.</p>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
+              <p className="font-bold text-zinc-100">Google OAuth is currently using the secure server environment configuration.</p>
+              <p className="text-zinc-400 text-[11px] leading-relaxed">
                 Credentials do not need to be entered here unless you intentionally want to store a custom vault override.
               </p>
             </div>
@@ -237,8 +237,8 @@ export default function GoogleSheetsSettingsPage() {
 
         <form onSubmit={handleSave} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <KeyRound className="h-3.5 w-3.5 text-[#0e6de4]" />
+            <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+              <KeyRound className="h-3.5 w-3.5 text-blue-400" />
               Google OAuth Client ID (Optional Override)
             </label>
             <input
@@ -246,45 +246,45 @@ export default function GoogleSheetsSettingsPage() {
               placeholder="1234567890-abcdef.apps.googleusercontent.com"
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
             />
-            <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono mt-1">
+            <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono mt-1">
               <span>Active Preview: {maskedClientId}</span>
-              <span className="text-amber-700 font-sans font-semibold">Do not use email addresses as Client ID</span>
+              <span className="text-amber-300 font-sans font-semibold">Do not use email addresses as Client ID</span>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Google OAuth Client Secret (Optional Override)</label>
+            <label className="text-xs font-bold text-zinc-300">Google OAuth Client Secret (Optional Override)</label>
             <input
               type="password"
               placeholder="GOCSPX-••••••••••••••••••••••••"
               value={clientSecret}
               onChange={(e) => setClientSecret(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
             />
-            <p className="text-[11px] text-slate-500 font-mono">
+            <p className="text-[11px] text-zinc-400 font-mono">
               Leave blank to keep server environment configuration active.
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Authorized Redirect URI</label>
+            <label className="text-xs font-bold text-zinc-300">Authorized Redirect URI</label>
             <input
               type="text"
               value={redirectUri}
               onChange={(e) => setRedirectUri(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
             />
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-zinc-400">
               Must match the Authorized redirect URI configured in Google Cloud Console exactly.
             </p>
           </div>
 
-          <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+          <div className="flex items-center justify-between p-3.5 rounded-xl border border-zinc-800 bg-zinc-900/60">
             <div>
-              <p className="text-xs font-bold text-slate-900">Enable Google Sheets Global Sync</p>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs font-bold text-zinc-100">Enable Google Sheets Global Sync</p>
+              <p className="text-[11px] text-zinc-400">
                 Allow authorized users to connect their personal Google Drive accounts for spreadsheet lead imports.
               </p>
             </div>
@@ -292,11 +292,11 @@ export default function GoogleSheetsSettingsPage() {
               type="checkbox"
               checked={isEnabled}
               onChange={(e) => setIsEnabled(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-[#0e6de4] focus:ring-[#0e6de4] cursor-pointer"
+              className="h-4 w-4 rounded border-zinc-700 text-blue-400 focus:ring-[#0e6de4] cursor-pointer"
             />
           </div>
 
-          <div className="flex items-center justify-end pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end pt-4 border-t border-zinc-800">
             <Button
               variant="primary"
               size="md"

@@ -1460,18 +1460,18 @@ export default function CampaignsPage() {
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-16 font-sans">
       {/* 1. Top Filter Bar & Action Controls (Sticky Header Bar) */}
-      <div className="sticky top-0 z-20 -mx-4 sm:-mx-5 lg:-mx-6 -mt-4 sm:-mt-5 lg:-mt-6 px-4 sm:px-5 lg:px-6 py-3 bg-[#f4f8fd]/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans">
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-5 lg:-mx-6 -mt-4 sm:-mt-5 lg:-mt-6 px-4 sm:px-5 lg:px-6 py-3 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans">
         {/* Left Filter Dropdowns */}
         <div className="flex flex-wrap items-center gap-2">
           <label className="relative min-w-[220px] flex-1 sm:flex-none">
-            <Search className="pointer-events-none absolute left-3 top-2 h-3.5 w-3.5 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-2 h-3.5 w-3.5 text-zinc-400" />
             <input
               type="search"
               value={campaignSearch}
               onChange={(event) => setCampaignSearch(event.target.value)}
               placeholder="Search campaigns..."
               aria-label="Search campaigns by name"
-              className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs font-medium text-slate-700 shadow-2xs outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 py-1.5 pl-8 pr-3 text-xs font-medium text-zinc-300 shadow-2xs outline-none placeholder:text-zinc-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-900"
             />
           </label>
           {/* All Folders */}
@@ -1482,14 +1482,14 @@ export default function CampaignsPage() {
                 setFolderFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="appearance-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 pr-8 text-xs font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-none cursor-pointer"
+              className="appearance-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-1.5 pr-8 text-xs font-semibold text-zinc-300 shadow-2xs focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="All Folders">All Folders</option>
               <option value="B2B SaaS">B2B SaaS</option>
               <option value="Healthcare">Healthcare</option>
               <option value="Agencies">Agencies</option>
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
           </div>
 
           {/* All Tags */}
@@ -1500,14 +1500,14 @@ export default function CampaignsPage() {
                 setTagFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="appearance-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 pr-8 text-xs font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-none cursor-pointer"
+              className="appearance-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-1.5 pr-8 text-xs font-semibold text-zinc-300 shadow-2xs focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="All Tags">All Tags</option>
               <option value="071928SAASC">071928SAASC</option>
               <option value="070326BRR">070326BRR</option>
               <option value="062226SAASHC">062226SAASHC</option>
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
           </div>
 
           {/* All Statuses */}
@@ -1518,7 +1518,7 @@ export default function CampaignsPage() {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="appearance-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 pr-8 text-xs font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:outline-none cursor-pointer"
+              className="appearance-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-1.5 pr-8 text-xs font-semibold text-zinc-300 shadow-2xs focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="All Statuses">All Statuses</option>
               <option value="Active">Active</option>
@@ -1526,7 +1526,7 @@ export default function CampaignsPage() {
               <option value="Draft">Draft</option>
               <option value="Archived">Archived</option>
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
           </div>
         </div>
 
@@ -1557,7 +1557,7 @@ export default function CampaignsPage() {
             )}
           </button>
           {createNavigationError && (
-            <p role="alert" className="max-w-56 text-xs font-medium text-rose-600" aria-live="polite">
+            <p role="alert" className="max-w-56 text-xs font-medium text-rose-400" aria-live="polite">
               {createNavigationError}
             </p>
           )}
@@ -1566,15 +1566,15 @@ export default function CampaignsPage() {
 
       {/* COMPACT CREATE CAMPAIGN MODAL */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-zinc-950 shadow-2xl border border-zinc-800 animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="text-base font-bold text-slate-900">Create Campaign</h2>
+            <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+              <h2 className="text-base font-bold text-zinc-100">Create Campaign</h2>
               <button
                 type="button"
                 onClick={() => { setIsCreateModalOpen(false); setNameError(''); }}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+                className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-400 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1583,7 +1583,7 @@ export default function CampaignsPage() {
             {/* Modal Content */}
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">
                   Campaign Name
                 </label>
                 <input
@@ -1604,20 +1604,20 @@ export default function CampaignsPage() {
                     }
                   }}
                   placeholder="e.g. Austin SaaS Partnerships"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 transition-all"
+                  className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-medium text-zinc-100 placeholder-slate-400 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 transition-all"
                 />
                 {nameError && (
-                  <p className="mt-1.5 text-xs font-medium text-rose-600">{nameError}</p>
+                  <p className="mt-1.5 text-xs font-medium text-rose-400">{nameError}</p>
                 )}
               </div>
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+            <div className="flex items-center justify-end gap-3 border-t border-zinc-800 bg-zinc-900/50 px-6 py-4">
               <button
                 type="button"
                 onClick={() => { setIsCreateModalOpen(false); setNameError(''); }}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
+                className="rounded-xl border border-zinc-700 bg-zinc-950 px-5 py-2.5 text-xs font-bold text-zinc-300 shadow-2xs hover:bg-zinc-900 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -1636,12 +1636,12 @@ export default function CampaignsPage() {
 
       {/* Floating Selection Action Bar */}
       {selectedIds.length > 0 && (
-        <div className="flex items-center justify-between bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-800 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="flex items-center justify-between bg-zinc-950 text-white px-5 py-3 rounded-2xl shadow-xl border border-zinc-700 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-3">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold font-mono">
               {selectedIds.length}
             </span>
-            <span className="text-xs font-bold text-slate-200">
+            <span className="text-xs font-bold text-zinc-300">
               campaign{selectedIds.length > 1 ? 's' : ''} selected
             </span>
           </div>
@@ -1655,7 +1655,7 @@ export default function CampaignsPage() {
             </button>
             <button
               onClick={() => setSelectedIds([])}
-              className="text-xs text-slate-400 hover:text-white px-2 py-1 transition-colors"
+              className="text-xs text-zinc-400 hover:text-white px-2 py-1 transition-colors"
             >
               Clear Selection
             </button>
@@ -1664,49 +1664,49 @@ export default function CampaignsPage() {
       )}
 
       {/* 2. Main Campaigns Table with 8 Real Bulk Contact Outreach Columns (Responsive Wrapper) */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/40 p-1">
+      <div className="overflow-x-auto rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-1">
         <div className="min-w-[900px] lg:min-w-0 space-y-3">
           {/* Frozen / Sticky Table Header Columns */}
-        <div className="sticky top-0 z-20 grid grid-cols-12 items-center px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 font-mono bg-slate-100/95 backdrop-blur-md border-y border-slate-200/90 shadow-2xs rounded-xl">
+        <div className="sticky top-0 z-20 grid grid-cols-12 items-center px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono bg-zinc-900/95 backdrop-blur-md border-y border-zinc-800/90 shadow-2xs rounded-xl">
           <div className="col-span-3 flex items-center gap-3">
             <input
               type="checkbox"
               checked={paginatedCampaigns.length > 0 && paginatedCampaigns.every((campaign) => selectedIds.includes(campaign.id))}
               onChange={toggleSelectAll}
-              className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              className="h-3.5 w-3.5 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer"
             />
-            <span className="font-extrabold text-slate-800">CAMPAIGNS</span>
+            <span className="font-extrabold text-zinc-200">CAMPAIGNS</span>
           </div>
 
-          <div className="col-span-1 text-center font-bold text-slate-700">
+          <div className="col-span-1 text-center font-bold text-zinc-300">
             <span>PROSPECTS</span>
           </div>
 
-          <div className="col-span-1 text-center font-bold text-emerald-700">
+          <div className="col-span-1 text-center font-bold text-emerald-300">
             <span>DELIVERED</span>
           </div>
 
-          <div className="col-span-1 text-center font-bold text-blue-700">
+          <div className="col-span-1 text-center font-bold text-blue-300">
             <span>PENDING</span>
           </div>
 
-          <div className="col-span-1 text-center font-bold text-rose-700">
+          <div className="col-span-1 text-center font-bold text-rose-300">
             <span>FAILED</span>
           </div>
 
-          <div className="col-span-1 text-center font-bold text-amber-700">
+          <div className="col-span-1 text-center font-bold text-amber-300">
             <span>NO-FORM</span>
           </div>
 
-          <div className="col-span-1 text-center font-bold text-purple-700">
+          <div className="col-span-1 text-center font-bold text-purple-300">
             <span>REVIEW</span>
           </div>
 
-          <div className="col-span-1 text-center font-bold text-indigo-700">
+          <div className="col-span-1 text-center font-bold text-indigo-300">
             <span>REPLIED</span>
           </div>
 
-          <div className="col-span-2 text-center font-bold text-slate-600">
+          <div className="col-span-2 text-center font-bold text-zinc-400">
             <span>ACTIONS</span>
           </div>
         </div>
@@ -1714,12 +1714,12 @@ export default function CampaignsPage() {
         {/* Campaign Rows */}
         <div className="space-y-2.5">
           {filtered.length === 0 ? (
-            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 text-sm">
+            <div className="p-12 text-center bg-zinc-950 rounded-2xl border border-zinc-800 text-zinc-400 text-sm">
               No campaigns found. Click{' '}
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(true)}
-                className="font-bold text-blue-600 underline cursor-pointer"
+                className="font-bold text-blue-400 underline cursor-pointer"
               >
                 Create Campaign
               </button>{' '}
@@ -1735,8 +1735,8 @@ export default function CampaignsPage() {
                   onClick={() => setSelectedReportCamp(camp)}
                   className={`grid grid-cols-12 items-center px-6 py-3.5 rounded-2xl border transition-all cursor-pointer group shadow-2xs ${
                     selectedIds.includes(camp.id)
-                      ? 'border-blue-400 bg-blue-50/30'
-                      : 'border-slate-200/90 bg-white hover:border-blue-400 hover:shadow-md'
+                      ? 'border-blue-400 bg-blue-950/30'
+                      : 'border-zinc-800/90 bg-zinc-950 hover:border-blue-400 hover:shadow-md'
                   }`}
                 >
                   {/* Col 1: Checkbox + Status Indicator + Name & Tags */}
@@ -1746,31 +1746,31 @@ export default function CampaignsPage() {
                       checked={selectedIds.includes(camp.id)}
                       onClick={(e) => e.stopPropagation()}
                       onChange={() => toggleSelect(camp.id)}
-                      className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
+                      className="h-3.5 w-3.5 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer shrink-0"
                     />
 
                     {/* Left Status Bar / Icon */}
                     <div className="flex items-center justify-center shrink-0">
                       {camp.status === 'active' && (
-                        <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200" title="Active Running">
+                        <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-full bg-emerald-950 border border-emerald-900" title="Active Running">
                           <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                           </span>
-                          <span className="text-[9px] font-extrabold text-emerald-700 tracking-wider font-mono uppercase">RUNNING</span>
+                          <span className="text-[9px] font-extrabold text-emerald-300 tracking-wider font-mono uppercase">RUNNING</span>
                         </div>
                       )}
                       {camp.status === 'paused' && (
-                        <div className="h-3.5 w-3.5 rounded-full border-2 border-slate-400 flex items-center justify-center text-[9px] font-bold text-slate-500" title="Paused">
+                        <div className="h-3.5 w-3.5 rounded-full border-2 border-zinc-600 flex items-center justify-center text-[9px] font-bold text-zinc-400" title="Paused">
                           ⏸
                         </div>
                       )}
                       {camp.status === 'draft' && (
-                        <Edit2 className="h-3.5 w-3.5 text-slate-400" />
+                        <Edit2 className="h-3.5 w-3.5 text-zinc-400" />
                       )}
                       {camp.status === 'archived' && (
                         <span title="Archived">
-                          <Archive className="h-3.5 w-3.5 text-slate-400" />
+                          <Archive className="h-3.5 w-3.5 text-zinc-400" />
                         </span>
                       )}
                     </div>
@@ -1778,25 +1778,25 @@ export default function CampaignsPage() {
                     {/* Campaign Name & Subtitle Meta */}
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <h3
-                        className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate cursor-pointer hover:underline"
+                        className="text-xs font-bold text-zinc-100 group-hover:text-blue-400 transition-colors truncate cursor-pointer hover:underline"
                         title="Click to view campaign details & telemetry report"
                       >
                         {camp.name}
                       </h3>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono truncate">
+                      <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono truncate">
                         <span>{camp.date}</span>
                         <span>•</span>
-                        <span className="text-slate-500">✈ {formatSenderCount(camp.sendersCount)}</span>
+                        <span className="text-zinc-400">✈ {formatSenderCount(camp.sendersCount)}</span>
                         {camp.status === 'active' && (
                           <>
                             <span>•</span>
-                            <span className="text-emerald-700 font-bold font-mono">
+                            <span className="text-emerald-300 font-bold font-mono">
                               Progress {processedCount}/{camp.prospects}
                             </span>
                           </>
                         )}
                         {camp.tag && (
-                          <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold">
+                          <span className="px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 font-bold">
                             {camp.tag}
                           </span>
                         )}
@@ -1806,16 +1806,16 @@ export default function CampaignsPage() {
 
                   {/* Col 2: PROSPECTS */}
                   <div className="col-span-1 text-center">
-                    <span className="text-xs font-bold text-slate-900 font-mono">
+                    <span className="text-xs font-bold text-zinc-100 font-mono">
                       {camp.prospects}
                     </span>
                   </div>
 
                   {/* Col 3: DELIVERED */}
                   <div className="col-span-1 text-center">
-                    <span className="text-xs font-bold text-emerald-600 font-mono">
+                    <span className="text-xs font-bold text-emerald-400 font-mono">
                       {camp.reached}{' '}
-                      <span className="text-[10px] text-emerald-700 font-normal">
+                      <span className="text-[10px] text-emerald-300 font-normal">
                         ({camp.prospects > 0 ? Math.round((camp.reached / camp.prospects) * 100) : 0}%)
                       </span>
                     </span>
@@ -1823,35 +1823,35 @@ export default function CampaignsPage() {
 
                   {/* Col 4: PENDING */}
                   <div className="col-span-1 text-center">
-                    <span className="text-xs font-semibold text-blue-600 font-mono">
+                    <span className="text-xs font-semibold text-blue-400 font-mono">
                       {pendingCount}
                     </span>
                   </div>
 
                   {/* Col 5: FAILED */}
                   <div className="col-span-1 text-center">
-                    <span className={`text-xs font-semibold font-mono ${camp.failed ? 'text-rose-600 font-bold' : 'text-slate-300'}`}>
+                    <span className={`text-xs font-semibold font-mono ${camp.failed ? 'text-rose-400 font-bold' : 'text-zinc-400'}`}>
                       {camp.failed || 0}
                     </span>
                   </div>
 
                   {/* Col 6: NO-FORM */}
                   <div className="col-span-1 text-center">
-                    <span className={`text-xs font-semibold font-mono ${camp.noContactPage ? 'text-amber-600 font-bold' : 'text-slate-300'}`}>
+                    <span className={`text-xs font-semibold font-mono ${camp.noContactPage ? 'text-amber-400 font-bold' : 'text-zinc-400'}`}>
                       {camp.noContactPage || 0}
                     </span>
                   </div>
 
                   {/* Col 7: REVIEW (CAPTCHA) */}
                   <div className="col-span-1 text-center">
-                    <span className={`text-xs font-semibold font-mono ${camp.captchaBlocked ? 'text-purple-600 font-bold' : 'text-slate-300'}`}>
+                    <span className={`text-xs font-semibold font-mono ${camp.captchaBlocked ? 'text-purple-400 font-bold' : 'text-zinc-400'}`}>
                       {camp.captchaBlocked || 0}
                     </span>
                   </div>
 
                   {/* Col 8: REPLIED */}
                   <div className="col-span-1 text-center">
-                    <span className={`text-xs font-semibold font-mono ${camp.replied ? 'text-indigo-600 font-bold' : 'text-slate-300'}`}>
+                    <span className={`text-xs font-semibold font-mono ${camp.replied ? 'text-indigo-400 font-bold' : 'text-zinc-400'}`}>
                       {camp.replied || 0}
                     </span>
                   </div>
@@ -1861,13 +1861,15 @@ export default function CampaignsPage() {
                     {/* Active / Paused Toggle Switch */}
                     <button
                       onClick={(e) => toggleCampaignStatus(camp.id, e)}
+                      aria-pressed={camp.status === 'active'}
+                      aria-label={camp.status === 'active' ? 'Pause campaign' : 'Activate campaign'}
                       className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        camp.status === 'active' ? 'bg-[#2563EB]' : 'bg-slate-300'
+                        camp.status === 'active' ? 'bg-[#2563EB]' : 'bg-zinc-700'
                       }`}
                       title={camp.status === 'active' ? 'Click to Pause' : 'Click to Activate'}
                     >
                       <span
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-zinc-950 shadow ring-0 transition duration-200 ease-in-out ${
                           camp.status === 'active' ? 'translate-x-4' : 'translate-x-0'
                         }`}
                       />
@@ -1896,7 +1898,7 @@ export default function CampaignsPage() {
                           router.prefetch(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
                         } catch (e) {}
                       }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-[#0e6de4] hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-50"
+                      className="p-1 rounded-lg text-zinc-400 hover:text-blue-400 hover:bg-blue-950 transition-colors cursor-pointer disabled:opacity-50"
                       title="Edit Campaign"
                     >
                       {navigatingRoute === camp.id ? (
@@ -1912,7 +1914,7 @@ export default function CampaignsPage() {
                         e.stopPropagation();
                         setSelectedReportCamp(camp);
                       }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-[#0e6de4] hover:bg-blue-50 transition-colors cursor-pointer"
+                      className="p-1 rounded-lg text-zinc-400 hover:text-blue-400 hover:bg-blue-950 transition-colors cursor-pointer"
                       title="View Campaign Telemetry & Analytics"
                     >
                       <BarChart2 className="h-3.5 w-3.5" />
@@ -1927,8 +1929,8 @@ export default function CampaignsPage() {
                         }}
                         className={`p-1 rounded-lg transition-colors cursor-pointer ${
                           openMenuCampId === camp.id
-                            ? 'bg-slate-100 text-slate-800'
-                            : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                            ? 'bg-zinc-900 text-zinc-200'
+                            : 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900'
                         }`}
                         title="Campaign Actions"
                       >
@@ -1938,21 +1940,21 @@ export default function CampaignsPage() {
                       {/* Popover Action Menu */}
                       {openMenuCampId === camp.id && (
                         <div
-                          className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-white border border-slate-200 shadow-xl z-50 py-1 font-sans text-xs text-left"
+                          className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-zinc-950 border border-zinc-800 shadow-xl z-50 py-1 font-sans text-xs text-left"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
                             onClick={(e) => handleCopyCampaign(camp.id, e)}
-                            className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors font-medium cursor-pointer"
+                            className="w-full text-left px-3 py-2 text-zinc-300 hover:bg-zinc-900 flex items-center gap-2 transition-colors font-medium cursor-pointer"
                           >
-                            <Copy className="h-3.5 w-3.5 text-slate-400" />
+                            <Copy className="h-3.5 w-3.5 text-zinc-400" />
                             Copy Campaign
                           </button>
                           <button
                             onClick={(e) => handleArchiveCampaign(camp.id, e)}
-                            className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors font-medium cursor-pointer"
+                            className="w-full text-left px-3 py-2 text-zinc-300 hover:bg-zinc-900 flex items-center gap-2 transition-colors font-medium cursor-pointer"
                           >
-                            <Archive className="h-3.5 w-3.5 text-slate-400" />
+                            <Archive className="h-3.5 w-3.5 text-zinc-400" />
                             Archive
                           </button>
                           <button
@@ -1961,20 +1963,20 @@ export default function CampaignsPage() {
                               setOpenMenuCampId(null);
                               router.push(`/campaigns/new?id=${encodeURIComponent(camp.id)}`);
                             }}
-                            className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors font-medium cursor-pointer"
+                            className="w-full text-left px-3 py-2 text-zinc-300 hover:bg-zinc-900 flex items-center gap-2 transition-colors font-medium cursor-pointer"
                           >
-                            <Edit2 className="h-3.5 w-3.5 text-slate-400" />
+                            <Edit2 className="h-3.5 w-3.5 text-zinc-400" />
                             Edit
                           </button>
-                          <div className="my-1 border-t border-slate-100" />
+                          <div className="my-1 border-t border-zinc-800" />
                           <button
                             onClick={(e) => {
                               setOpenMenuCampId(null);
                               handleDeleteSingle(camp.id, e);
                             }}
-                            className="w-full text-left px-3 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors font-medium cursor-pointer"
+                            className="w-full text-left px-3 py-2 text-rose-400 hover:bg-rose-950 flex items-center gap-2 transition-colors font-medium cursor-pointer"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                            <Trash2 className="h-3.5 w-3.5 text-rose-400" />
                             Delete
                           </button>
                         </div>
@@ -1987,8 +1989,8 @@ export default function CampaignsPage() {
           )}
         </div>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3 text-slate-600">
+        <div className="flex flex-col gap-3 rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-3 text-zinc-400">
             <span className="font-medium">
               Showing {firstVisibleCampaign}–{lastVisibleCampaign} of {filtered.length}{campaignSearch.trim() || folderFilter !== 'All Folders' || tagFilter !== 'All Tags' || statusFilter !== 'All Statuses' ? ' matching' : ''} campaigns
             </span>
@@ -2000,7 +2002,7 @@ export default function CampaignsPage() {
                   setPageSize(Number(event.target.value));
                   setCurrentPage(1);
                 }}
-                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500"
+                className="rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs font-semibold text-zinc-300 outline-none focus:border-blue-500"
                 aria-label="Campaigns per page"
               >
                 {[10, 20, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
@@ -2013,19 +2015,19 @@ export default function CampaignsPage() {
               type="button"
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               disabled={activePage === 1}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex items-center gap-1 rounded-lg border border-zinc-800 px-2 py-1.5 font-semibold text-zinc-300 transition-colors hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-45"
             >
               <ChevronLeft className="h-3.5 w-3.5" /> Previous
             </button>
             {paginationItems.map((item, index) => item === 'ellipsis' ? (
-              <span key={`ellipsis-${index}`} className="px-1.5 text-slate-400" aria-hidden="true">…</span>
+              <span key={`ellipsis-${index}`} className="px-1.5 text-zinc-400" aria-hidden="true">…</span>
             ) : (
               <button
                 key={item}
                 type="button"
                 onClick={() => setCurrentPage(item)}
                 aria-current={item === activePage ? 'page' : undefined}
-                className={`min-w-7 rounded-lg px-2 py-1.5 font-bold transition-colors ${item === activePage ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                className={`min-w-7 rounded-lg px-2 py-1.5 font-bold transition-colors ${item === activePage ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:bg-zinc-900'}`}
               >
                 {item}
               </button>
@@ -2034,7 +2036,7 @@ export default function CampaignsPage() {
               type="button"
               onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
               disabled={activePage === totalPages}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex items-center gap-1 rounded-lg border border-zinc-800 px-2 py-1.5 font-semibold text-zinc-300 transition-colors hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-45"
             >
               Next <ChevronRight className="h-3.5 w-3.5" />
             </button>
@@ -2042,40 +2044,40 @@ export default function CampaignsPage() {
         </div>
 
         {/* 3. Bottom Summary Row (Aggregating all 8 Contact Form Outreach Metrics) */}
-        <div className="grid grid-cols-12 items-center px-6 py-4 rounded-2xl border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-2xs">
-          <div className="col-span-3 text-slate-600 font-sans">
+        <div className="grid grid-cols-12 items-center px-6 py-4 rounded-2xl border border-zinc-800 bg-zinc-950 text-xs font-bold text-zinc-300 shadow-2xs">
+          <div className="col-span-3 text-zinc-400 font-sans">
             Showing {filtered.length} campaigns
           </div>
 
-          <div className="col-span-1 text-center font-mono font-bold text-slate-900">
+          <div className="col-span-1 text-center font-mono font-bold text-zinc-100">
             {totals.totalProspects}
           </div>
 
-          <div className="col-span-1 text-center font-mono font-bold text-emerald-600">
+          <div className="col-span-1 text-center font-mono font-bold text-emerald-400">
             {totals.totalDelivered}
           </div>
 
-          <div className="col-span-1 text-center font-mono font-bold text-blue-600">
+          <div className="col-span-1 text-center font-mono font-bold text-blue-400">
             {totals.totalPending}
           </div>
 
-          <div className="col-span-1 text-center font-mono font-bold text-rose-600">
+          <div className="col-span-1 text-center font-mono font-bold text-rose-400">
             {totals.totalFailed}
           </div>
 
-          <div className="col-span-1 text-center font-mono font-bold text-amber-600">
+          <div className="col-span-1 text-center font-mono font-bold text-amber-400">
             {totals.totalNoForm}
           </div>
 
-          <div className="col-span-1 text-center font-mono font-bold text-purple-600">
+          <div className="col-span-1 text-center font-mono font-bold text-purple-400">
             {totals.totalCaptcha}
           </div>
 
-          <div className="col-span-1 text-center font-mono font-bold text-indigo-600">
+          <div className="col-span-1 text-center font-mono font-bold text-indigo-400">
             {totals.totalReplied}
           </div>
 
-          <div className="col-span-2 text-center text-[10px] text-slate-400 font-mono">
+          <div className="col-span-2 text-center text-[10px] text-zinc-400 font-mono">
             Total Totals
           </div>
         </div>
@@ -2085,21 +2087,21 @@ export default function CampaignsPage() {
       {/* DETAILED CAMPAIGN GRAPH & METRICS REPORT MODAL */}
       {selectedReportCamp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5 overflow-hidden font-sans">
+          <div className="w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-5 overflow-hidden font-sans">
             {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-4 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-blue-50 text-[#0e6de4]">
+                <div className="p-2.5 rounded-2xl bg-blue-950 text-blue-400">
                   <BarChart2 className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                  <h3 className="text-lg font-extrabold text-zinc-100 flex items-center gap-2">
                     <span>{selectedReportCamp.name}</span>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0e6de4] font-mono font-bold">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-900 text-blue-400 font-mono font-bold">
                       {selectedReportCamp.status.toUpperCase()}
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  <p className="text-xs text-zinc-400 font-mono mt-0.5">
                     Campaign ID: {selectedReportCamp.id} • Created: {selectedReportCamp.date}
                   </p>
                 </div>
@@ -2109,18 +2111,18 @@ export default function CampaignsPage() {
                 <button
                   type="button"
                   onClick={() => router.push(`/campaigns/new?id=${encodeURIComponent(selectedReportCamp.id)}`)}
-                  className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 hover:bg-zinc-900 px-3 py-1.5 text-xs font-bold text-zinc-300 transition-colors cursor-pointer"
                 >
-                  <Edit2 className="h-3.5 w-3.5 text-slate-500" />
+                  <Edit2 className="h-3.5 w-3.5 text-zinc-400" />
                   <span>Edit Campaign</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleExportSingleCampaignCSV(selectedReportCamp)}
-                  className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-800 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-emerald-800 bg-emerald-950 hover:bg-emerald-900 px-3 py-1.5 text-xs font-bold text-emerald-300 transition-colors cursor-pointer"
                   title="Download CSV Report"
                 >
-                  <Download className="h-3.5 w-3.5 text-emerald-600" />
+                  <Download className="h-3.5 w-3.5 text-emerald-400" />
                   <span>Download CSV</span>
                 </button>
                 <button
@@ -2135,7 +2137,7 @@ export default function CampaignsPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedReportCamp(null)}
-                  className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer ml-1"
+                  className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 transition-colors cursor-pointer ml-1"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -2179,99 +2181,99 @@ export default function CampaignsPage() {
                   <>
                     {/* 1. CONTACTREACHOUT 9 KPI METRICS GRID */}
                     <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-2 font-mono">
-                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Prospects</span>
-                        <p className="text-lg font-extrabold text-slate-900">{prospects}</p>
+                      <div className="p-3 rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Prospects</span>
+                        <p className="text-lg font-extrabold text-zinc-100">{prospects}</p>
                       </div>
 
-                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Processed</span>
-                        <p className="text-lg font-extrabold text-slate-900">{processed}</p>
+                      <div className="p-3 rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Processed</span>
+                        <p className="text-lg font-extrabold text-zinc-100">{processed}</p>
                       </div>
 
-                      <div className="p-3 rounded-2xl border border-blue-200 bg-white shadow-2xs space-y-1">
-                        <span className="text-[10px] font-bold text-[#0e6de4] uppercase tracking-wider block">Delivered</span>
-                        <p className="text-lg font-extrabold text-[#0e6de4]">{delivered}</p>
+                      <div className="p-3 rounded-2xl border border-blue-900 bg-zinc-950 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block">Delivered</span>
+                        <p className="text-lg font-extrabold text-blue-400">{delivered}</p>
                       </div>
 
-                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Pending</span>
-                        <p className="text-lg font-extrabold text-slate-700">{pending}</p>
+                      <div className="p-3 rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Pending</span>
+                        <p className="text-lg font-extrabold text-zinc-300">{pending}</p>
                       </div>
 
-                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Failed</span>
-                        <p className="text-lg font-extrabold text-slate-800">{failed}</p>
+                      <div className="p-3 rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Failed</span>
+                        <p className="text-lg font-extrabold text-zinc-200">{failed}</p>
                       </div>
 
-                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">No Form</span>
-                        <p className="text-lg font-extrabold text-slate-800">{noForm}</p>
+                      <div className="p-3 rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">No Form</span>
+                        <p className="text-lg font-extrabold text-zinc-200">{noForm}</p>
                       </div>
 
-                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Review Req</span>
-                        <p className="text-lg font-extrabold text-slate-800">{reviewRequired}</p>
+                      <div className="p-3 rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Review Req</span>
+                        <p className="text-lg font-extrabold text-zinc-200">{reviewRequired}</p>
                       </div>
 
-                      <div className="p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Exec Error</span>
-                        <p className="text-lg font-extrabold text-slate-800">{executionError}</p>
+                      <div className="p-3 rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Exec Error</span>
+                        <p className="text-lg font-extrabold text-zinc-200">{executionError}</p>
                       </div>
 
-                      <div className="p-3 rounded-2xl border border-blue-200 bg-white shadow-2xs space-y-1">
-                        <span className="text-[10px] font-bold text-[#0e6de4] uppercase tracking-wider block">Credits Used</span>
-                        <p className="text-lg font-extrabold text-[#0e6de4]">{creditsUsed}</p>
+                      <div className="p-3 rounded-2xl border border-blue-900 bg-zinc-950 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block">Credits Used</span>
+                        <p className="text-lg font-extrabold text-blue-400">{creditsUsed}</p>
                       </div>
                     </div>
 
                     {/* 2. MAIN GRAPH: OVERALL CAMPAIGN RESULTS */}
-                    <div className="p-5 rounded-3xl border border-slate-200 bg-white space-y-4 shadow-2xs">
-                      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div className="p-5 rounded-3xl border border-zinc-800 bg-zinc-950 space-y-4 shadow-2xs">
+                      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-zinc-800 pb-3">
                         <div>
-                          <h4 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-[#0e6de4]" />
+                          <h4 className="text-sm font-extrabold text-zinc-100 tracking-tight flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-blue-400" />
                             <span>Overall Campaign Results</span>
                           </h4>
-                          <p className="text-xs text-slate-500 font-sans mt-0.5">
+                          <p className="text-xs text-zinc-400 font-sans mt-0.5">
                             Current totals calculated from this campaign&apos;s prospects and recorded outcomes.
                           </p>
                         </div>
-                        <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#0e6de4]">Live campaign totals</span>
+                        <span className="rounded-full border border-blue-900 bg-blue-950 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-400">Live campaign totals</span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7" aria-label="Campaign result legend">
                         {overallChartData.map((item) => (
-                          <div key={item.metric} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2">
+                          <div key={item.metric} className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/70 px-3 py-2">
                             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
-                            <div className="min-w-0"><p className="truncate text-[9px] font-black tracking-wide text-slate-500">{item.metric}</p><p className="text-sm font-black text-slate-900">{item.value}</p></div>
+                            <div className="min-w-0"><p className="truncate text-[9px] font-black tracking-wide text-zinc-400">{item.metric}</p><p className="text-sm font-black text-zinc-100">{item.value}</p></div>
                           </div>
                         ))}
                       </div>
 
                       {prospects === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 px-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 text-center space-y-2">
-                          <BarChart2 className="h-10 w-10 text-slate-300" />
-                          <p className="text-sm font-bold text-slate-700">No campaign prospects yet</p>
-                          <p className="text-xs text-slate-500 max-w-sm">Add prospects to this campaign to generate an overall results breakdown.</p>
+                        <div className="flex flex-col items-center justify-center py-12 px-4 rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/50 text-center space-y-2">
+                          <BarChart2 className="h-10 w-10 text-zinc-400" />
+                          <p className="text-sm font-bold text-zinc-300">No campaign prospects yet</p>
+                          <p className="text-xs text-zinc-400 max-w-sm">Add prospects to this campaign to generate an overall results breakdown.</p>
                         </div>
                       ) : (
-                        <div className="relative h-72 w-full overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-b from-white to-blue-50/40 px-2 py-4 sm:h-80 sm:px-4">
-                          <div className="pointer-events-none absolute inset-x-6 top-3 h-20 rounded-full bg-blue-200/20 blur-3xl" />
+                        <div className="relative h-72 w-full overflow-hidden rounded-2xl border border-blue-900 bg-zinc-950 px-2 py-4 sm:h-80 sm:px-4">
+                          <div className="pointer-events-none absolute inset-x-6 top-3 h-20 rounded-full bg-blue-800/20 blur-3xl" />
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={overallChartData} margin={{ top: 28, right: 10, bottom: 12, left: -18 }}>
-                              <CartesianGrid vertical={false} stroke="#dbe5f2" strokeDasharray="3 5" />
-                              <XAxis dataKey="metric" axisLine={false} tickLine={false} interval={0} tick={{ fill: '#475569', fontSize: 10, fontWeight: 800 }} />
+                              <CartesianGrid vertical={false} stroke="#27272a" strokeDasharray="3 5" />
+                              <XAxis dataKey="metric" axisLine={false} tickLine={false} interval={0} tick={{ fill: '#a1a1aa', fontSize: 10, fontWeight: 800 }} />
                               <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={34} tick={{ fill: '#94a3b8', fontSize: 10 }} />
                               <Tooltip
-                                cursor={{ fill: '#dbeafe', opacity: 0.28 }}
-                                contentStyle={{ borderRadius: 16, border: '1px solid #dbeafe', boxShadow: '0 14px 34px rgba(15, 23, 42, .12)', fontSize: 12 }}
-                                labelStyle={{ color: '#0f172a', fontWeight: 800, marginBottom: 6 }}
+                                cursor={{ fill: '#27272a', opacity: 0.28 }}
+                                contentStyle={{ borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 14px 34px rgba(0, 0, 0, .5)', backgroundColor: '#09090b', color: '#fafafa', fontSize: 12 }}
+                                labelStyle={{ color: '#fafafa', fontWeight: 800, marginBottom: 6 }}
                                 formatter={(value: number) => [value.toLocaleString(), 'Count']}
                               />
                               <Bar dataKey="value" name="Count" radius={[10, 10, 3, 3]} maxBarSize={58}>
                                 {overallChartData.map((item) => <Cell key={item.metric} fill={item.color} />)}
-                                <LabelList dataKey="value" position="top" fill="#0f172a" fontSize={12} fontWeight={800} />
+                                <LabelList dataKey="value" position="top" fill="#fafafa" fontSize={12} fontWeight={800} />
                               </Bar>
                             </BarChart>
                           </ResponsiveContainer>
@@ -2280,81 +2282,81 @@ export default function CampaignsPage() {
                     </div>
 
                     {/* 3. OUTCOME BREAKDOWN TABLE */}
-                    <div className="p-5 rounded-3xl border border-slate-200 bg-white space-y-3 shadow-2xs">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 font-mono flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-[#0e6de4]" />
+                    <div className="p-5 rounded-3xl border border-zinc-800 bg-zinc-950 space-y-3 shadow-2xs">
+                      <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-zinc-300 font-mono flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-blue-400" />
                           <span>OUTCOME BREAKDOWN</span>
                         </h4>
-                        <span className="text-[10px] text-slate-400 font-mono">Calculated from total {prospects} prospects</span>
+                        <span className="text-[10px] text-zinc-400 font-mono">Calculated from total {prospects} prospects</span>
                       </div>
 
-                      <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                      <div className="overflow-x-auto rounded-2xl border border-zinc-800">
                         <table className="w-full text-left text-xs font-sans border-collapse">
                           <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-extrabold text-slate-600 uppercase tracking-wider font-mono">
+                            <tr className="bg-zinc-900 border-b border-zinc-800 text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider font-mono">
                               <th className="p-3">Outcome</th>
                               <th className="p-3 text-center">Count</th>
                               <th className="p-3 text-center">Percentage</th>
                               <th className="p-3">Description</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                          <tbody className="divide-y divide-zinc-800 font-mono text-[11px]">
                             {[
                               {
                                 label: 'Delivered',
                                 count: delivered,
-                                color: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                                color: 'bg-emerald-900 text-emerald-300 border-emerald-800',
                                 desc: 'Real contact-form submission verified successful (1 credit deducted per delivery).',
                               },
                               {
                                 label: 'Pending',
                                 count: pending,
-                                color: 'bg-slate-100 text-slate-700 border-slate-300',
+                                color: 'bg-zinc-900 text-zinc-300 border-zinc-700',
                                 desc: 'Awaiting outreach processing window.',
                               },
                               {
                                 label: 'Failed',
                                 count: failed,
-                                color: 'bg-rose-100 text-rose-800 border-rose-300',
+                                color: 'bg-rose-900 text-rose-300 border-rose-800',
                                 desc: 'Form found but HTTP submission or verification failed (0 credits).',
                               },
                               {
                                 label: 'No Form',
                                 count: noForm,
-                                color: 'bg-amber-100 text-amber-800 border-amber-300',
+                                color: 'bg-amber-900 text-amber-300 border-amber-800',
                                 desc: 'Target website inspected but no public contact form verified (0 credits).',
                               },
                               {
                                 label: 'Review Required',
                                 count: reviewRequired,
-                                color: 'bg-purple-100 text-purple-800 border-purple-300',
+                                color: 'bg-purple-900 text-purple-300 border-purple-800',
                                 desc: 'CAPTCHA, bot protection, or field uncertainty routed to review (0 credits).',
                               },
                               {
                                 label: 'Execution Error',
                                 count: executionError,
-                                color: 'bg-red-100 text-red-800 border-red-300',
+                                color: 'bg-red-900 text-red-300 border-red-800',
                                 desc: 'Browser launch, DNS timeout, or infrastructure runtime error (0 credits).',
                               },
                               {
                                 label: 'Dry Run Completed',
                                 count: dryRunCompleted,
-                                color: 'bg-teal-100 text-teal-800 border-teal-300',
+                                color: 'bg-teal-900 text-teal-300 border-teal-800',
                                 desc: 'Workflow simulation completed safely in test mode (0 credits).',
                               },
                             ].map((row, idx) => {
                               const pct = prospects > 0 ? Math.round((row.count / prospects) * 100) : 0;
                               return (
-                                <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                                <tr key={idx} className="hover:bg-zinc-900 transition-colors">
                                   <td className="p-3">
                                     <span className={`px-2.5 py-0.5 rounded-md font-bold text-[10px] border ${row.color}`}>
                                       {row.label}
                                     </span>
                                   </td>
-                                  <td className="p-3 text-center font-extrabold text-slate-900">{row.count}</td>
-                                  <td className="p-3 text-center font-bold text-slate-700">{pct}%</td>
-                                  <td className="p-3 text-[10px] text-slate-500 font-sans">{row.desc}</td>
+                                  <td className="p-3 text-center font-extrabold text-zinc-100">{row.count}</td>
+                                  <td className="p-3 text-center font-bold text-zinc-300">{pct}%</td>
+                                  <td className="p-3 text-[10px] text-zinc-400 font-sans">{row.desc}</td>
                                 </tr>
                               );
                             })}
@@ -2367,14 +2369,14 @@ export default function CampaignsPage() {
               })()}
 
               {/* Outreach Success Yield Performance Box */}
-              <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-2 shadow-2xs">
+              <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950 space-y-2 shadow-2xs">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold font-mono">
-                  <span className="text-slate-700 uppercase tracking-wider">Outreach Deliverability Yield</span>
-                  <span className="text-[#0e6de4] font-extrabold text-sm">
+                  <span className="text-zinc-300 uppercase tracking-wider">Outreach Deliverability Yield</span>
+                  <span className="text-blue-400 font-extrabold text-sm">
                     {selectedReportCamp.prospects > 0 ? Math.round((selectedReportCamp.reached / selectedReportCamp.prospects) * 100) : 0}% Form Deliverability Rate ({selectedReportCamp.reached} / {selectedReportCamp.prospects})
                   </span>
                 </div>
-                <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden p-0.5 border border-slate-200">
+                <div className="h-3 w-full rounded-full bg-zinc-900 overflow-hidden p-0.5 border border-zinc-800">
                   <div
                     className="h-full rounded-full bg-[#0e6de4] transition-all duration-500"
                     style={{
@@ -2394,118 +2396,118 @@ export default function CampaignsPage() {
                   const durationStr = totalMs > 0 ? (mins > 0 ? `${mins}m ${seconds % 60}s` : `${seconds}s`) : 'N/A';
 
                   return (
-                    <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 font-mono pt-1">
-                      <span>Started At: <strong className="text-slate-700">{startedAtStr}</strong></span>
-                      <span>Finished At: <strong className="text-slate-700">{finishedAtStr}</strong></span>
-                      <span>Duration: <strong className="text-blue-600">{durationStr}</strong></span>
+                    <div className="flex flex-wrap items-center justify-between text-[11px] text-zinc-400 font-mono pt-1">
+                      <span>Started At: <strong className="text-zinc-300">{startedAtStr}</strong></span>
+                      <span>Finished At: <strong className="text-zinc-300">{finishedAtStr}</strong></span>
+                      <span>Duration: <strong className="text-blue-400">{durationStr}</strong></span>
                     </div>
                   );
                 })()}
               </div>
 
               {/* Execution Flow Diagram */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 shadow-2xs">
-                <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider font-mono">
+              <div className="p-3.5 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-1.5 shadow-2xs">
+                <div className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider font-mono">
                   Outreach Execution Flow Lifecycle
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono font-bold text-slate-700">
-                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Website</span>
-                  <span className="text-slate-400">→</span>
-                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Contact Page</span>
-                  <span className="text-slate-400">→</span>
-                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Form</span>
-                  <span className="text-slate-400">→</span>
-                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Fields</span>
-                  <span className="text-slate-400">→</span>
-                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Submission</span>
-                  <span className="text-slate-400">→</span>
-                  <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 shadow-2xs">Verification</span>
-                  <span className="text-slate-400">→</span>
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono font-bold text-zinc-300">
+                  <span className="px-2 py-0.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 shadow-2xs">Website</span>
+                  <span className="text-zinc-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 shadow-2xs">Contact Page</span>
+                  <span className="text-zinc-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 shadow-2xs">Form</span>
+                  <span className="text-zinc-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 shadow-2xs">Fields</span>
+                  <span className="text-zinc-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 shadow-2xs">Submission</span>
+                  <span className="text-zinc-400">→</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 shadow-2xs">Verification</span>
+                  <span className="text-zinc-400">→</span>
                   <span className="px-2.5 py-0.5 rounded-lg bg-[#0e6de4] text-white shadow-2xs font-extrabold">Final Status</span>
                 </div>
               </div>
 
               {/* Collapsible Status Guide */}
-              <div className="rounded-2xl border border-blue-100 bg-blue-50/40 overflow-hidden text-xs">
+              <div className="rounded-2xl border border-blue-900 bg-blue-950/40 overflow-hidden text-xs">
                 <button
                   type="button"
                   onClick={() => setIsStatusGuideOpen(!isStatusGuideOpen)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 text-left font-bold text-[#0e6de4] hover:bg-blue-50/80 transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-left font-bold text-blue-400 hover:bg-blue-950/80 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <Info className="h-4 w-4 text-[#0e6de4]" />
+                    <Info className="h-4 w-4 text-blue-400" />
                     <span>Status Guide / What does this mean?</span>
                   </div>
-                  <span className="text-xs font-mono font-normal text-slate-500">
+                  <span className="text-xs font-mono font-normal text-zinc-400">
                     {isStatusGuideOpen ? 'Hide Guide ▲' : 'Show Guide ▼'}
                   </span>
                 </button>
 
                 {isStatusGuideOpen && (
-                  <div className="p-4 border-t border-blue-100/80 bg-white space-y-2 animate-in fade-in duration-150">
+                  <div className="p-4 border-t border-blue-900/80 bg-zinc-950 space-y-2 animate-in fade-in duration-150">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 font-sans">
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                      <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-mono font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded bg-teal-900 text-teal-300 font-mono font-bold text-[10px]">
                             DRY_RUN_COMPLETED
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                        <p className="text-[11px] text-zinc-400 leading-relaxed">
                           Website and form processing was completed in test/simulation mode; no real submission was made.
                         </p>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                      <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded bg-emerald-900 text-emerald-300 font-mono font-bold text-[10px]">
                             DELIVERED
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                        <p className="text-[11px] text-zinc-400 leading-relaxed">
                           A real message was submitted to the website contact form and success was verified.
                         </p>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                      <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-mono font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded bg-rose-900 text-rose-300 font-mono font-bold text-[10px]">
                             SUBMISSION_FAILED
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                        <p className="text-[11px] text-zinc-400 leading-relaxed">
                           The website and contact form were found, but the real submission was not successfully completed or verified.
                         </p>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                      <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-mono font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded bg-amber-900 text-amber-300 font-mono font-bold text-[10px]">
                             UNREACHABLE
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                        <p className="text-[11px] text-zinc-400 leading-relaxed">
                           The target website could not be reached/loaded, such as DNS, timeout, or connection error.
                         </p>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                      <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-mono font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded bg-amber-900 text-amber-300 font-mono font-bold text-[10px]">
                             NO_FORM
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                        <p className="text-[11px] text-zinc-400 leading-relaxed">
                           The target website/contact page was successfully reached, but no contact form was found.
                         </p>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                      <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-mono font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded bg-purple-900 text-purple-300 font-mono font-bold text-[10px]">
                             REVIEW_REQUIRED
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                        <p className="text-[11px] text-zinc-400 leading-relaxed">
                           The website/form was found, but CAPTCHA, bot protection, required-field uncertainty, or another safety condition prevented automated submission.
                         </p>
                       </div>
@@ -2517,19 +2519,19 @@ export default function CampaignsPage() {
               {/* Target Website Audit Breakdown Table */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono flex items-center gap-2">
                     <span>Target Website Audit Breakdown</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-normal">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-900 text-zinc-400 font-normal">
                       {getCampaignAuditLogs(selectedReportCamp).length} Prospects Logged
                     </span>
                   </h4>
-                  <span className="text-[10px] text-slate-400 font-mono">Canonical Telemetry Feed</span>
+                  <span className="text-[10px] text-zinc-400 font-mono">Canonical Telemetry Feed</span>
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+                <div className="overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-950">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-extrabold text-slate-600 uppercase tracking-wider font-mono">
+                      <tr className="bg-zinc-900 border-b border-zinc-800 text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider font-mono">
                         <th className="p-2.5">Website Domain</th>
                         <th className="p-2.5">Website Status</th>
                         <th className="p-2.5">Contact Page URL</th>
@@ -2543,66 +2545,66 @@ export default function CampaignsPage() {
                         <th className="p-2.5 text-center">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-sans text-[11px]">
+                    <tbody className="divide-y divide-zinc-800 font-sans text-[11px]">
                       {getCampaignAuditLogs(selectedReportCamp).length === 0 ? (
                         <tr>
-                          <td colSpan={11} className="p-8 text-center text-xs font-mono text-slate-500 bg-slate-50/50">
+                          <td colSpan={11} className="p-8 text-center text-xs font-mono text-zinc-400 bg-zinc-900/50">
                             No website audit records found for this campaign.
                           </td>
                         </tr>
                       ) : (
                         getCampaignAuditLogs(selectedReportCamp).map((item: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
-                            <td className="p-2.5 font-bold text-slate-900 font-mono">{item.domain}</td>
+                          <tr key={idx} className="hover:bg-blue-950/30 transition-colors">
+                            <td className="p-2.5 font-bold text-zinc-100 font-mono">{item.domain}</td>
                             <td className="p-2.5">
                               <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
                                 item.websiteStatus === 'Reachable'
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  ? 'bg-emerald-900 text-emerald-300 border border-emerald-800'
                                   : item.websiteStatus === 'Unreachable'
-                                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                                  : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                  ? 'bg-rose-900 text-rose-300 border border-rose-800'
+                                  : 'bg-zinc-900 text-zinc-400 border border-zinc-800'
                               }`}>
                                 {item.websiteStatus}
                               </span>
                             </td>
-                            <td className="p-2.5 text-slate-600 font-mono text-[10px] max-w-[140px] truncate" title={item.url}>
+                            <td className="p-2.5 text-zinc-400 font-mono text-[10px] max-w-[140px] truncate" title={item.url}>
                               {item.url}
                             </td>
                             <td className="p-2.5">
                               <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
-                                item.formStatus === 'DETECTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                                item.formStatus === 'DETECTED' ? 'bg-emerald-900 text-emerald-300' : 'bg-zinc-900 text-zinc-400'
                               }`}>
                                 {item.formStatus}
                               </span>
                             </td>
-                            <td className="p-2.5 text-slate-600 text-[10px] max-w-[110px] truncate" title={item.fieldsDetected}>
+                            <td className="p-2.5 text-zinc-400 text-[10px] max-w-[110px] truncate" title={item.fieldsDetected}>
                               {item.fieldsDetected}
                             </td>
                             <td className="p-2.5 font-mono text-[10px] font-semibold">{item.submissionStatus}</td>
-                            <td className="p-2.5 font-mono text-[10px] text-slate-600">{item.successVerification}</td>
+                            <td className="p-2.5 font-mono text-[10px] text-zinc-400">{item.successVerification}</td>
                             <td className="p-2.5">
                               <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${
-                                item.finalStatus === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                                item.finalStatus === 'FAILED' || item.finalStatus === 'SUBMIT_FAILED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
-                                item.finalStatus === 'NO_CONTACT_PAGE' || item.finalStatus === 'NO-FORM' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                                item.finalStatus === 'CAPTCHA_REVIEW' || item.finalStatus === 'REVIEW' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
-                                'bg-blue-100 text-blue-800 border border-blue-300'
+                                item.finalStatus === 'DELIVERED' ? 'bg-emerald-900 text-emerald-300 border border-emerald-800' :
+                                item.finalStatus === 'FAILED' || item.finalStatus === 'SUBMIT_FAILED' ? 'bg-rose-900 text-rose-300 border border-rose-800' :
+                                item.finalStatus === 'NO_CONTACT_PAGE' || item.finalStatus === 'NO-FORM' ? 'bg-amber-900 text-amber-300 border border-amber-800' :
+                                item.finalStatus === 'CAPTCHA_REVIEW' || item.finalStatus === 'REVIEW' ? 'bg-purple-900 text-purple-300 border border-purple-800' :
+                                'bg-blue-900 text-blue-300 border border-blue-800'
                               }`}>
                                 {item.finalStatus}
                               </span>
                             </td>
-                            <td className="p-2.5 text-[10px] text-slate-500 max-w-[130px] truncate font-mono" title={item.details || item.code}>
+                            <td className="p-2.5 text-[10px] text-zinc-400 max-w-[130px] truncate font-mono" title={item.details || item.code}>
                               {item.details || item.code}
                             </td>
-                            <td className="p-2.5 text-[10px] text-slate-400 font-mono shrink-0">{item.time}</td>
+                            <td className="p-2.5 text-[10px] text-zinc-400 font-mono shrink-0">{item.time}</td>
                             <td className="p-2.5 text-center">
                               <button
                                 type="button"
                                 onClick={() => setSelectedProspectDetail(item)}
-                                className="px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-400 text-slate-700 hover:text-[#0e6de4] text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                className="px-2 py-1 rounded-lg border border-zinc-800 bg-zinc-950 hover:bg-blue-950 hover:border-blue-400 text-zinc-300 hover:text-blue-400 text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 mx-auto"
                                 title="View detailed prospect telemetry log"
                               >
-                                <Eye className="h-3 w-3 text-[#0e6de4]" />
+                                <Eye className="h-3 w-3 text-blue-400" />
                                 <span>View Log</span>
                               </button>
                             </td>
@@ -2616,22 +2618,22 @@ export default function CampaignsPage() {
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 shrink-0">
+            <div className="flex items-center justify-between pt-3 border-t border-zinc-800 shrink-0">
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => handleExportSingleCampaignCSV(selectedReportCamp)}
-                  className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-950 hover:bg-zinc-900 px-4 py-2 text-xs font-bold text-zinc-300 shadow-2xs transition-colors cursor-pointer"
                 >
-                  <Download className="h-4 w-4 text-emerald-600" />
+                  <Download className="h-4 w-4 text-emerald-400" />
                   <span>Download Report CSV</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleExportSingleCampaignPDF(selectedReportCamp)}
-                  className="flex items-center gap-1.5 rounded-xl border border-blue-300 bg-blue-50 hover:bg-blue-100 px-4 py-2 text-xs font-bold text-[#0e6de4] shadow-2xs transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-blue-800 bg-blue-950 hover:bg-blue-900 px-4 py-2 text-xs font-bold text-blue-400 shadow-2xs transition-colors cursor-pointer"
                 >
-                  <Printer className="h-4 w-4 text-[#0e6de4]" />
+                  <Printer className="h-4 w-4 text-blue-400" />
                   <span>Download Report PDF</span>
                 </button>
               </div>
@@ -2639,7 +2641,7 @@ export default function CampaignsPage() {
               <button
                 type="button"
                 onClick={() => setSelectedReportCamp(null)}
-                className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                className="rounded-xl bg-zinc-950 hover:bg-zinc-900 text-white px-5 py-2 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
               >
                 Close Report
               </button>
@@ -2651,29 +2653,29 @@ export default function CampaignsPage() {
       {/* PROSPECT DETAILED TELEMETRY DRAWER / MODAL */}
       {selectedProspectDetail && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-xl overflow-hidden rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 font-sans">
+          <div className="w-full max-w-xl overflow-hidden rounded-3xl bg-zinc-950 p-6 shadow-2xl border border-zinc-800 space-y-4 font-sans">
             {/* Prospect Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
+                <div className="p-2 rounded-xl bg-blue-950 text-blue-400">
                   <FileText className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-slate-900 font-mono flex items-center gap-2">
+                  <h4 className="text-base font-bold text-zinc-100 font-mono flex items-center gap-2">
                     <span>{selectedProspectDetail.domain}</span>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
-                      selectedProspectDetail.finalStatus === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                      selectedProspectDetail.finalStatus === 'DELIVERED' ? 'bg-emerald-900 text-emerald-300' : 'bg-rose-900 text-rose-300'
                     }`}>
                       {selectedProspectDetail.finalStatus}
                     </span>
                   </h4>
-                  <p className="text-xs text-slate-500 font-mono">Prospect Audit Telemetry Inspector</p>
+                  <p className="text-xs text-zinc-400 font-mono">Prospect Audit Telemetry Inspector</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedProspectDetail(null)}
-                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+                className="rounded-full p-1 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-300 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -2682,34 +2684,34 @@ export default function CampaignsPage() {
             {/* Prospect Telemetry Body */}
             <div className="space-y-3 max-h-[70vh] overflow-y-auto text-xs">
               {/* URLs & Target Details */}
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px] font-mono">Target Website URLs</div>
+              <div className="p-3 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2">
+                <div className="font-bold text-zinc-300 uppercase tracking-wider text-[10px] font-mono">Target Website URLs</div>
                 <div className="grid grid-cols-1 gap-1 font-mono text-[11px]">
-                  <div><span className="text-slate-500">Domain:</span> <span className="font-bold text-slate-900">{selectedProspectDetail.domain}</span></div>
-                  <div><span className="text-slate-500">Contact URL:</span> <a href={selectedProspectDetail.url} target="_blank" rel="noreferrer" className="text-[#0e6de4] underline">{selectedProspectDetail.url}</a></div>
+                  <div><span className="text-zinc-400">Domain:</span> <span className="font-bold text-zinc-100">{selectedProspectDetail.domain}</span></div>
+                  <div><span className="text-zinc-400">Contact URL:</span> <a href={selectedProspectDetail.url} target="_blank" rel="noreferrer" className="text-blue-400 underline">{selectedProspectDetail.url}</a></div>
                 </div>
               </div>
 
               {/* Form Inspection & Detection */}
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px] font-mono">Form Detection & Field Mapping</div>
+              <div className="p-3 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2">
+                <div className="font-bold text-zinc-300 uppercase tracking-wider text-[10px] font-mono">Form Detection & Field Mapping</div>
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div><span className="text-slate-500">Form Status:</span> <strong className="text-slate-900 font-mono">{selectedProspectDetail.formStatus}</strong></div>
-                  <div><span className="text-slate-500">Fields Mapped:</span> <strong className="text-slate-900">{selectedProspectDetail.fieldsDetected}</strong></div>
-                  <div><span className="text-slate-500">Tech Stack:</span> <span className="font-mono text-slate-700">{selectedProspectDetail.techStack}</span></div>
-                  <div><span className="text-slate-500">Domain Registration/Age:</span> <span className="font-mono text-slate-700">{selectedProspectDetail.domainAge}</span></div>
+                  <div><span className="text-zinc-400">Form Status:</span> <strong className="text-zinc-100 font-mono">{selectedProspectDetail.formStatus}</strong></div>
+                  <div><span className="text-zinc-400">Fields Mapped:</span> <strong className="text-zinc-100">{selectedProspectDetail.fieldsDetected}</strong></div>
+                  <div><span className="text-zinc-400">Tech Stack:</span> <span className="font-mono text-zinc-300">{selectedProspectDetail.techStack}</span></div>
+                  <div><span className="text-zinc-400">Domain Registration/Age:</span> <span className="font-mono text-zinc-300">{selectedProspectDetail.domainAge}</span></div>
                 </div>
               </div>
 
               {/* Submission Outcome & Verification */}
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px] font-mono">Execution & Verification Details</div>
+              <div className="p-3 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2">
+                <div className="font-bold text-zinc-300 uppercase tracking-wider text-[10px] font-mono">Execution & Verification Details</div>
                 <div className="space-y-1 text-[11px]">
-                  <div><span className="text-slate-500">Submission Outcome:</span> <strong className="text-slate-900 font-mono">{selectedProspectDetail.submissionStatus}</strong></div>
-                  <div><span className="text-slate-500">Success Verification:</span> <strong className="text-emerald-700 font-mono">{selectedProspectDetail.successVerification}</strong></div>
-                  <div><span className="text-slate-500">Diagnostic Code:</span> <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800 font-mono">{selectedProspectDetail.code}</code></div>
-                  <div><span className="text-slate-500">Diagnostic Details:</span> <p className="mt-0.5 p-2 rounded bg-white border border-slate-200 text-slate-800 font-mono text-[10px] leading-relaxed">{selectedProspectDetail.details}</p></div>
-                  <div className="pt-1 flex justify-between text-slate-500 font-mono text-[10px]">
+                  <div><span className="text-zinc-400">Submission Outcome:</span> <strong className="text-zinc-100 font-mono">{selectedProspectDetail.submissionStatus}</strong></div>
+                  <div><span className="text-zinc-400">Success Verification:</span> <strong className="text-emerald-300 font-mono">{selectedProspectDetail.successVerification}</strong></div>
+                  <div><span className="text-zinc-400">Diagnostic Code:</span> <code className="bg-zinc-800 px-1 py-0.5 rounded text-zinc-200 font-mono">{selectedProspectDetail.code}</code></div>
+                  <div><span className="text-zinc-400">Diagnostic Details:</span> <p className="mt-0.5 p-2 rounded bg-zinc-950 border border-zinc-800 text-zinc-200 font-mono text-[10px] leading-relaxed">{selectedProspectDetail.details}</p></div>
+                  <div className="pt-1 flex justify-between text-zinc-400 font-mono text-[10px]">
                     <span>Timestamp: {selectedProspectDetail.time}</span>
                     <span>Mode: {selectedProspectDetail.isDryRun ? 'Dry Run' : 'Live Submission'}</span>
                   </div>
@@ -2718,11 +2720,11 @@ export default function CampaignsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-2 border-t border-slate-100 flex justify-end">
+            <div className="pt-2 border-t border-zinc-800 flex justify-end">
               <button
                 type="button"
                 onClick={() => setSelectedProspectDetail(null)}
-                className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-xs font-bold transition-colors cursor-pointer"
+                className="rounded-xl bg-zinc-950 hover:bg-zinc-900 text-white px-4 py-2 text-xs font-bold transition-colors cursor-pointer"
               >
                 Close Inspector
               </button>

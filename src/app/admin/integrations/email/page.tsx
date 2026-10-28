@@ -220,21 +220,21 @@ export default function ResendEmailSettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans">
       {/* Back Link & Header */}
-      <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+      <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
         <Link
           href="/admin/integrations"
-          className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-xs"
+          className="p-2 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors shadow-xs"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
+          <h1 className="text-xl font-extrabold text-zinc-100 flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-950 text-blue-400">
               <Mail className="h-5 w-5" />
             </div>
             <span>Resend Email Integration</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Server-side email dispatch configuration for outreach verification, system notifications, and campaign execution.
           </p>
         </div>
@@ -242,36 +242,36 @@ export default function ResendEmailSettingsPage() {
 
       {/* Save Success Alert */}
       {saveSuccess && (
-        <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-emerald-900 bg-emerald-950 text-xs font-bold text-emerald-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{saveSuccess}</span>
         </div>
       )}
 
       {/* Save Error Alert */}
       {saveError && (
-        <div className="p-3.5 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-red-900 bg-red-950 text-xs font-bold text-red-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
           <span>{saveError}</span>
         </div>
       )}
 
       {/* Credential Architecture Status Card */}
-      <Card className="p-6 space-y-4 border-slate-200 bg-white shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <Card className="p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Connection Status</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Connection Status</span>
             <div className="flex items-center gap-2 mt-1">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
                 testIsSuccess === true
-                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  ? 'bg-emerald-900 text-emerald-300 border-emerald-900'
                   : testIsSuccess === false
-                    ? 'bg-red-50 text-red-800 border-red-200'
+                    ? 'bg-red-950 text-red-300 border-red-900'
                     : isConfigured
-                      ? 'bg-amber-50 text-amber-900 border-amber-200'
-                      : 'bg-slate-100 text-slate-700 border-slate-200'
+                      ? 'bg-amber-950 text-amber-200 border-amber-900'
+                      : 'bg-zinc-900 text-zinc-300 border-zinc-800'
               }`}>
-                {testIsSuccess === true ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                {testIsSuccess === true ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <AlertCircle className="h-3.5 w-3.5" />}
                 {testIsSuccess === true
                   ? 'Connected'
                   : testIsSuccess === false
@@ -284,16 +284,16 @@ export default function ResendEmailSettingsPage() {
           </div>
 
           <div className="flex flex-col items-start sm:items-end">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active Credential Source</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Active Credential Source</span>
             <div className="mt-1">
               {isOverrideActive ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                  <Lock className="h-3.5 w-3.5 text-amber-700" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-900 text-amber-200 border border-amber-800">
+                  <Lock className="h-3.5 w-3.5 text-amber-300" />
                   Custom Encrypted Vault Override
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#0e6de4] border border-blue-200">
-                  <Server className="h-3.5 w-3.5 text-[#0e6de4]" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-900 text-blue-400 border border-blue-900">
+                  <Server className="h-3.5 w-3.5 text-blue-400" />
                   ✓ Managed via Server Environment
                 </span>
               )}
@@ -303,13 +303,13 @@ export default function ResendEmailSettingsPage() {
 
         {/* Status Description Banner */}
         {isOverrideActive ? (
-          <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/80 text-amber-900 text-xs space-y-2">
+          <div className="p-4 rounded-xl border border-amber-900 bg-amber-950/80 text-amber-200 text-xs space-y-2">
             <div className="flex items-center gap-2 font-bold text-amber-950">
-              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+              <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
               <span>An encrypted runtime override is currently active.</span>
             </div>
-            <p className="text-amber-800 leading-relaxed pl-6">
-              This overrides the Vercel server environment key with a custom database-vault encrypted key (Preview: <code className="font-mono bg-amber-100 px-1.5 py-0.5 rounded text-amber-950 font-bold">{maskedApiKey}</code>).
+            <p className="text-amber-300 leading-relaxed pl-6">
+              This overrides the Vercel server environment key with a custom database-vault encrypted key (Preview: <code className="font-mono bg-amber-900 px-1.5 py-0.5 rounded text-amber-950 font-bold">{maskedApiKey}</code>).
             </p>
             <div className="pl-6 pt-1">
               <Button
@@ -317,7 +317,7 @@ export default function ResendEmailSettingsPage() {
                 size="sm"
                 onClick={handleClearOverride}
                 disabled={isClearingOverride}
-                className="text-xs font-bold border-amber-300 text-amber-900 hover:bg-amber-100 hover:text-amber-950"
+                className="text-xs font-bold border-amber-800 text-amber-200 hover:bg-amber-900 hover:text-amber-950"
               >
                 {isClearingOverride ? (
                   <>
@@ -326,7 +326,7 @@ export default function ResendEmailSettingsPage() {
                   </>
                 ) : (
                   <>
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5 text-amber-700" />
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5 text-amber-300" />
                     Clear Custom Vault Override (Revert to Server Environment)
                   </>
                 )}
@@ -334,17 +334,17 @@ export default function ResendEmailSettingsPage() {
             </div>
           </div>
         ) : (
-          <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/60 text-slate-700 text-xs space-y-1.5">
-            <div className="flex items-center gap-2 font-bold text-[#0e6de4]">
+          <div className="p-4 rounded-xl border border-blue-900 bg-blue-950/60 text-zinc-300 text-xs space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-blue-400">
               <ShieldCheck className="h-4 w-4 shrink-0" />
               <span>Resend is currently using the secure server environment configuration.</span>
             </div>
-            <p className="text-slate-600 leading-relaxed pl-6">
+            <p className="text-zinc-400 leading-relaxed pl-6">
               An API key does not need to be entered here unless you intentionally want to create a runtime encrypted override.
             </p>
-            <div className="pl-6 flex items-center gap-2 pt-1 text-[11px] font-mono text-slate-500">
+            <div className="pl-6 flex items-center gap-2 pt-1 text-[11px] font-mono text-zinc-400">
               <span>Active Environment Credential:</span>
-              <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800 font-bold">
+              <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-200 font-bold">
                 {isLoading ? 'Loading...' : maskedApiKey}
               </span>
             </div>
@@ -353,10 +353,10 @@ export default function ResendEmailSettingsPage() {
       </Card>
 
       {/* Main Settings Form Card */}
-      <Card className="p-6 space-y-6 border-slate-200 bg-white shadow-xs">
+      <Card className="p-6 space-y-6 border-zinc-800 bg-zinc-950 shadow-xs">
         <div>
-          <h3 className="font-extrabold text-slate-900 text-sm">Sender Configuration & Optional Override</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h3 className="font-extrabold text-zinc-100 text-sm">Sender Configuration & Optional Override</h3>
+          <p className="text-xs text-zinc-400 mt-0.5">
             Manage Default Sender identity or optionally store an encrypted key override.
           </p>
         </div>
@@ -364,45 +364,45 @@ export default function ResendEmailSettingsPage() {
         <form onSubmit={handleSaveConfig} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Default From Email</label>
+              <label className="text-xs font-bold text-zinc-300">Default From Email</label>
               <input
                 type="email"
                 required
                 placeholder="auth@contactreachout.com"
                 value={fromEmail}
                 onChange={(e) => setFromEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Default Sender Name</label>
+              <label className="text-xs font-bold text-zinc-300">Default Sender Name</label>
               <input
                 type="text"
                 required
                 placeholder="ContactReachout"
                 value={fromName}
                 onChange={(e) => setFromName(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Reply-To Email</label>
+            <label className="text-xs font-bold text-zinc-300">Reply-To Email</label>
             <input
               type="email"
               placeholder="hello@contactreachout.com"
               value={replyToEmail}
               onChange={(e) => setReplyToEmail(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
             />
           </div>
 
           {/* Optional Runtime Override Section */}
-          <div className="pt-3 border-t border-slate-100 space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <KeyRound className="h-3.5 w-3.5 text-[#0e6de4]" />
+          <div className="pt-3 border-t border-zinc-800 space-y-1.5">
+            <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+              <KeyRound className="h-3.5 w-3.5 text-blue-400" />
               Custom Encrypted Vault API Key (Optional Override)
             </label>
             <input
@@ -410,14 +410,14 @@ export default function ResendEmailSettingsPage() {
               placeholder="re_••••••••••••••••••••••••"
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
             />
-            <p className="text-[11px] text-slate-500 font-mono">
+            <p className="text-[11px] text-zinc-400 font-mono">
               Leave blank to keep server environment configuration active.
             </p>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
             <Button
               variant="primary"
               size="md"
@@ -442,11 +442,11 @@ export default function ResendEmailSettingsPage() {
       </Card>
 
       {/* Diagnostics & Test Email Dispatcher Card */}
-      <Card className="p-6 space-y-4 border-slate-200 bg-white shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+      <Card className="p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
           <div>
-            <h3 className="font-extrabold text-slate-900 text-sm">Resend Diagnostics & Live Test Dispatch</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h3 className="font-extrabold text-zinc-100 text-sm">Resend Diagnostics & Live Test Dispatch</h3>
+            <p className="text-xs text-zinc-400 mt-0.5">
               Tests connectivity using the active credential ({isOverrideActive ? 'Encrypted Vault Override' : 'Server Environment'}).
             </p>
           </div>
@@ -456,16 +456,16 @@ export default function ResendEmailSettingsPage() {
             size="sm"
             onClick={handleTestConnection}
             disabled={isTestingConnection}
-            className="font-bold border-slate-300 text-slate-700 hover:bg-slate-50"
+            className="font-bold border-zinc-700 text-zinc-300 hover:bg-zinc-900"
           >
             {isTestingConnection ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 text-[#0e6de4] animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 text-blue-400 animate-spin" />
                 Testing...
               </>
             ) : (
               <>
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5 text-[#0e6de4]" />
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5 text-blue-400" />
                 Test API Connection
               </>
             )}
@@ -473,14 +473,14 @@ export default function ResendEmailSettingsPage() {
         </div>
 
         <div className="space-y-3">
-          <label className="text-xs font-bold text-slate-700">Send Test Verification Email</label>
+          <label className="text-xs font-bold text-zinc-300">Send Test Verification Email</label>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="email"
               placeholder="recipient@example.com"
               value={testRecipient}
               onChange={(e) => setTestRecipient(e.target.value)}
-              className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
+              className="flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
             />
             <Button
               variant="primary"
@@ -507,18 +507,18 @@ export default function ResendEmailSettingsPage() {
             <div
               className={`p-3 rounded-xl border text-xs font-mono flex items-start gap-2.5 animate-in fade-in duration-150 ${
                 testIsSuccess === true
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  ? 'border-emerald-900 bg-emerald-950 text-emerald-300'
                   : testIsSuccess === false
-                  ? 'border-red-200 bg-red-50 text-red-800'
-                  : 'border-blue-200 bg-blue-50 text-blue-800'
+                  ? 'border-red-900 bg-red-950 text-red-300'
+                  : 'border-blue-900 bg-blue-950 text-blue-300'
               }`}
             >
               {testIsSuccess === true ? (
-                <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
               ) : testIsSuccess === false ? (
-                <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
               ) : (
-                <Info className="h-4 w-4 text-[#0e6de4] shrink-0 mt-0.5" />
+                <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
               )}
               <span className="leading-relaxed break-all">{testStatusMessage}</span>
             </div>

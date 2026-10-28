@@ -126,44 +126,44 @@ export default function GlobalCampaignSettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans">
       {/* Header */}
-      <div className="border-b border-slate-200 pb-4">
-        <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
+      <div className="border-b border-zinc-800 pb-4">
+        <h1 className="text-xl font-extrabold text-zinc-100 flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-blue-950 text-blue-400">
             <Sliders className="h-5 w-5" />
           </div>
           <span>Global Campaign Policies & Live Killswitch</span>
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-zinc-400 mt-1">
           System-wide outreach governance and high-level live submission safety killswitch.
         </p>
       </div>
 
       {/* Success Banner */}
       {saveSuccess && (
-        <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-emerald-900 bg-emerald-950 text-xs font-bold text-emerald-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{saveSuccess}</span>
         </div>
       )}
 
       {/* Error Banner */}
       {saveError && (
-        <div className="p-3.5 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-red-900 bg-red-950 text-xs font-bold text-red-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
           <span>{saveError}</span>
         </div>
       )}
 
       {/* Global Live Submission Killswitch Card */}
-      <Card className="p-6 space-y-4 border-rose-200 bg-rose-50/60 shadow-xs">
+      <Card className="p-6 space-y-4 border-rose-900 bg-rose-950/60 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-rose-600" />
-              <h3 className="text-sm font-extrabold text-slate-900">SYSTEM-WIDE LIVE SUBMISSION KILLSWITCH</h3>
+              <Flame className="h-5 w-5 text-rose-400" />
+              <h3 className="text-sm font-extrabold text-zinc-100">SYSTEM-WIDE LIVE SUBMISSION KILLSWITCH</h3>
             </div>
-            <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
-              When <strong className="text-slate-900">DISABLED</strong>, all form submissions across all tenant campaigns operate exclusively in simulated Dry-Run Test Mode. Live network dispatches are strictly forbidden.
+            <p className="text-xs text-zinc-400 max-w-xl leading-relaxed">
+              When <strong className="text-zinc-100">DISABLED</strong>, all form submissions across all tenant campaigns operate exclusively in simulated Dry-Run Test Mode. Live network dispatches are strictly forbidden.
             </p>
           </div>
 
@@ -171,8 +171,8 @@ export default function GlobalCampaignSettingsPage() {
             <span
               className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold border ${
                 liveEnabled
-                  ? 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse'
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  ? 'bg-rose-900 text-rose-300 border-rose-800 animate-pulse'
+                  : 'bg-emerald-950 text-emerald-300 border-emerald-900'
               }`}
             >
               LIVE: {isLoading ? 'LOADING...' : liveEnabled ? 'ENABLED (LIVE OUTREACH ACTIVE)' : 'DISABLED (SAFE DRY-RUN)'}
@@ -197,16 +197,16 @@ export default function GlobalCampaignSettingsPage() {
       </Card>
 
       {/* Rate Limits & Pacing Card */}
-      <Card className="p-6 space-y-5 border-slate-200 bg-white shadow-xs">
-        <div className="border-b border-slate-100 pb-3">
-          <h3 className="font-extrabold text-slate-900 text-sm">Global Rate Limits & Pacing</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Define system-wide daily ceilings, concurrency, and navigation delays.</p>
+      <Card className="p-6 space-y-5 border-zinc-800 bg-zinc-950 shadow-xs">
+        <div className="border-b border-zinc-800 pb-3">
+          <h3 className="font-extrabold text-zinc-100 text-sm">Global Rate Limits & Pacing</h3>
+          <p className="text-xs text-zinc-400 mt-0.5">Define system-wide daily ceilings, concurrency, and navigation delays.</p>
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="space-y-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-              <label className="text-xs font-bold text-slate-700">Global Daily Quota Cap</label>
+            <div className="space-y-1.5 p-4 rounded-xl border border-zinc-800 bg-zinc-900/50">
+              <label className="text-xs font-bold text-zinc-300">Global Daily Quota Cap</label>
               <input
                 type="number"
                 min="1"
@@ -214,13 +214,13 @@ export default function GlobalCampaignSettingsPage() {
                 disabled={isLoading || isSaving}
                 value={dailyLimit}
                 onChange={(e) => setDailyLimit(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono disabled:bg-slate-100"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono disabled:bg-zinc-900"
               />
-              <p className="text-[11px] text-slate-500 font-mono">Leads / day system ceiling.</p>
+              <p className="text-[11px] text-zinc-400 font-mono">Leads / day system ceiling.</p>
             </div>
 
-            <div className="space-y-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-              <label className="text-xs font-bold text-slate-700">Global Max Concurrency</label>
+            <div className="space-y-1.5 p-4 rounded-xl border border-zinc-800 bg-zinc-900/50">
+              <label className="text-xs font-bold text-zinc-300">Global Max Concurrency</label>
               <input
                 type="number"
                 min="1"
@@ -228,13 +228,13 @@ export default function GlobalCampaignSettingsPage() {
                 disabled={isLoading || isSaving}
                 value={maxConcurrency}
                 onChange={(e) => setMaxConcurrency(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono disabled:bg-slate-100"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono disabled:bg-zinc-900"
               />
-              <p className="text-[11px] text-slate-500 font-mono">Worker threads limit (1-20).</p>
+              <p className="text-[11px] text-zinc-400 font-mono">Worker threads limit (1-20).</p>
             </div>
 
-            <div className="space-y-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-              <label className="text-xs font-bold text-slate-700">Inter-Page Delay (ms)</label>
+            <div className="space-y-1.5 p-4 rounded-xl border border-zinc-800 bg-zinc-900/50">
+              <label className="text-xs font-bold text-zinc-300">Inter-Page Delay (ms)</label>
               <input
                 type="number"
                 min="500"
@@ -243,13 +243,13 @@ export default function GlobalCampaignSettingsPage() {
                 disabled={isLoading || isSaving}
                 value={interDelay}
                 onChange={(e) => setInterDelay(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono disabled:bg-slate-100"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono disabled:bg-zinc-900"
               />
-              <p className="text-[11px] text-slate-500 font-mono">Pacing delay (500ms - 30,000ms).</p>
+              <p className="text-[11px] text-zinc-400 font-mono">Pacing delay (500ms - 30,000ms).</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end pt-3 border-t border-zinc-800">
             <Button
               variant="primary"
               size="md"
@@ -275,24 +275,24 @@ export default function GlobalCampaignSettingsPage() {
 
       {/* Confirmation Modal Before Enabling Live Submissions */}
       {isConfirmingLive && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <Card className="w-full max-w-md p-6 space-y-4 border-rose-200 bg-white shadow-xl">
-            <div className="flex items-center gap-2 text-rose-600 font-extrabold text-sm border-b border-slate-100 pb-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 p-4 backdrop-blur-xs">
+          <Card className="w-full max-w-md p-6 space-y-4 border-rose-900 bg-zinc-950 shadow-xl">
+            <div className="flex items-center gap-2 text-rose-400 font-extrabold text-sm border-b border-zinc-800 pb-2">
               <Flame className="h-5 w-5" />
               <span>Confirm System-Wide Live Mode Activation</span>
             </div>
 
-            <p className="text-xs text-slate-700 leading-relaxed">
+            <p className="text-xs text-zinc-300 leading-relaxed">
               Enabling live submissions allows approved campaigns to dispatch real contact-form payloads to target domain websites. Live submissions cannot be undone and will deduct credits for successful messages.
             </p>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsConfirmingLive(false)}
-                className="font-bold border-slate-300 text-slate-700"
+                className="font-bold border-zinc-700 text-zinc-300"
               >
                 Cancel (Keep Dry-Run)
               </Button>

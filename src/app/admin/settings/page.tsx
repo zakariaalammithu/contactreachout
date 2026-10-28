@@ -85,13 +85,13 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-10">
       {/* Header */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2.5">
-            <Settings className="h-6 w-6 text-[#0e6de4]" />
+          <h1 className="text-2xl font-black tracking-tight text-zinc-100 flex items-center gap-2.5">
+            <Settings className="h-6 w-6 text-blue-400" />
             Global System Settings
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-medium">
             General application parameters, maintenance mode state, and administrator contact coordinates.
           </p>
         </div>
@@ -100,7 +100,7 @@ export default function AdminSettingsPage() {
           type="button"
           onClick={fetchSettings}
           disabled={isLoading}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition disabled:opacity-50 cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:bg-zinc-800 transition disabled:opacity-50 cursor-pointer shrink-0"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           Reload Settings
@@ -108,25 +108,25 @@ export default function AdminSettingsPage() {
       </div>
 
       {saveSuccess && (
-        <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-800 flex items-center gap-2.5 shadow-2xs">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div className="p-4 rounded-xl border border-emerald-900 bg-emerald-950 text-xs font-bold text-emerald-300 flex items-center gap-2.5 shadow-2xs">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>System settings saved successfully and persisted across sessions.</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-xs font-bold text-rose-800 flex items-center gap-2.5 shadow-2xs">
-          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+        <div className="p-4 rounded-xl border border-rose-900 bg-rose-950 text-xs font-bold text-rose-300 flex items-center gap-2.5 shadow-2xs">
+          <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {/* Main Form Card */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+      <div className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-xs space-y-6">
         <form onSubmit={handleSave} className="space-y-5">
           {/* Application Title */}
           <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-[#111827] block">
+            <label className="text-xs font-extrabold text-zinc-100 block">
               Application Title
             </label>
             <input
@@ -135,9 +135,9 @@ export default function AdminSettingsPage() {
               value={appName}
               onChange={(e) => setAppName(e.target.value)}
               placeholder="ContactReachout"
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-[#111827] font-semibold focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-100 focus:outline-none shadow-2xs transition"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 font-semibold focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-900 focus:outline-none shadow-2xs transition"
             />
-            <p className="text-[11px] text-slate-500 font-medium">
+            <p className="text-[11px] text-zinc-400 font-medium">
               Official enterprise system name displayed in email headers and admin consoles.
             </p>
           </div>
@@ -145,11 +145,11 @@ export default function AdminSettingsPage() {
           {/* Master Root Admin Email */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-extrabold text-[#111827] block">
+              <label className="text-xs font-extrabold text-zinc-100 block">
                 Master Root Admin Email
               </label>
               {!isSuperAdmin && (
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                <span className="text-[10px] font-bold text-amber-300 bg-amber-950 px-2 py-0.5 rounded-full border border-amber-900 flex items-center gap-1">
                   <Shield className="h-3 w-3" /> Super Admin Only
                 </span>
               )}
@@ -162,20 +162,20 @@ export default function AdminSettingsPage() {
               onChange={(e) => setSystemContact(e.target.value)}
               className={`w-full rounded-xl border px-3.5 py-2.5 text-xs font-mono font-bold shadow-2xs transition ${
                 isSuperAdmin
-                  ? 'border-slate-300 bg-white text-[#111827] focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-100 focus:outline-none'
-                  : 'border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed'
+                  ? 'border-zinc-700 bg-zinc-950 text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-900 focus:outline-none'
+                  : 'border-zinc-800 bg-zinc-900 text-zinc-400 cursor-not-allowed'
               }`}
             />
-            <p className="text-[11px] text-slate-500 font-medium">
+            <p className="text-[11px] text-zinc-400 font-medium">
               Sensitive system notification recipient. Modification requires Super Admin privileges.
             </p>
           </div>
 
           {/* System Maintenance Mode Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition">
+          <div className="flex items-center justify-between p-4 rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-900 transition">
             <div className="space-y-0.5 pr-4">
-              <p className="text-xs font-extrabold text-[#111827]">System Maintenance Mode</p>
-              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+              <p className="text-xs font-extrabold text-zinc-100">System Maintenance Mode</p>
+              <p className="text-[11px] text-zinc-400 font-medium leading-relaxed">
                 Temporarily pause new campaign dispatches and outreach tasks for platform maintenance.
               </p>
             </div>
@@ -186,12 +186,12 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setMaintenanceMode(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0e6de4]" />
+              <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-950 after:border-zinc-700 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0e6de4]" />
             </label>
           </div>
 
           {/* Submit Action */}
-          <div className="flex justify-end pt-4 border-t border-slate-200">
+          <div className="flex justify-end pt-4 border-t border-zinc-800">
             <button
               type="submit"
               disabled={isSaving || isLoading}

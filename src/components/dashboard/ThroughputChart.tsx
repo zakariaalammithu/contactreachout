@@ -64,8 +64,8 @@ export function ThroughputChart() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="time" stroke="#64748b" fontSize={12} tickLine={false} />
-              <YAxis stroke="#64748b" fontSize={12} tickLine={false} />
+              <XAxis dataKey="time" stroke="#27272a" fontSize={12} tickLine={false} tick={{ fill: "#a1a1aa" }} />
+              <YAxis stroke="#27272a" fontSize={12} tickLine={false} tick={{ fill: "#a1a1aa" }} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#0f172a',

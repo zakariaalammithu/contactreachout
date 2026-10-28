@@ -86,43 +86,43 @@ export default function StripeIntegrationPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/admin/integrations"
-          className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-xs"
+          className="rounded-xl border border-zinc-800 bg-zinc-950 p-2 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100 shadow-xs"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-extrabold text-slate-900">
-            <CreditCard className="h-6 w-6 text-violet-600" />
+          <h1 className="flex items-center gap-2 text-xl font-extrabold text-zinc-100">
+            <CreditCard className="h-6 w-6 text-violet-400" />
             Stripe Integration
           </h1>
-          <p className="text-xs text-slate-500">Configure billing Checkout and webhook signatures.</p>
+          <p className="text-xs text-zinc-400">Configure billing Checkout and webhook signatures.</p>
         </div>
       </div>
 
-      <Card className="space-y-5 border-slate-200 bg-white p-6 shadow-xs">
+      <Card className="space-y-5 border-zinc-800 bg-zinc-950 p-6 shadow-xs">
         {/* Connection & Credential Source Status */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Connection Status</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Connection Status</span>
             <div className="mt-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-900 text-emerald-300 border border-emerald-900">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                 Active
               </span>
             </div>
           </div>
 
           <div className="flex flex-col items-start sm:items-end">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active Credential Source</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Active Credential Source</span>
             <div className="mt-1">
               {isOverrideActive ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                  <Lock className="h-3.5 w-3.5 text-amber-700" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-900 text-amber-200 border border-amber-800">
+                  <Lock className="h-3.5 w-3.5 text-amber-300" />
                   Custom Encrypted Vault Override
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#0e6de4] border border-blue-200">
-                  <Server className="h-3.5 w-3.5 text-[#0e6de4]" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-900 text-blue-400 border border-blue-900">
+                  <Server className="h-3.5 w-3.5 text-blue-400" />
                   ✓ Managed via Server Environment
                 </span>
               )}
@@ -132,13 +132,13 @@ export default function StripeIntegrationPage() {
 
         {/* Override / Status Banner */}
         {isOverrideActive ? (
-          <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs space-y-2">
+          <div className="p-4 rounded-xl border border-amber-900 bg-amber-950 text-amber-200 text-xs space-y-2">
             <div className="flex items-center gap-2 font-bold">
-              <TriangleAlert className="h-4 w-4 text-amber-600 shrink-0" />
+              <TriangleAlert className="h-4 w-4 text-amber-400 shrink-0" />
               <span>An encrypted runtime override is currently active.</span>
             </div>
-            <p className="text-amber-800 leading-relaxed pl-6">
-              This overrides the server environment key with a custom database-vault key (Preview: <code className="font-mono bg-amber-100 px-1 rounded font-bold">{masked}</code>).
+            <p className="text-amber-300 leading-relaxed pl-6">
+              This overrides the server environment key with a custom database-vault key (Preview: <code className="font-mono bg-amber-900 px-1 rounded font-bold">{masked}</code>).
             </p>
             <div className="pl-6 pt-1">
               <Button
@@ -146,20 +146,20 @@ export default function StripeIntegrationPage() {
                 size="sm"
                 disabled={busy}
                 onClick={() => run('clear_override')}
-                className="text-xs font-bold border-amber-300 text-amber-900 hover:bg-amber-100"
+                className="text-xs font-bold border-amber-800 text-amber-200 hover:bg-amber-900"
               >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5 text-amber-700" />
+                <Trash2 className="h-3.5 w-3.5 mr-1.5 text-amber-300" />
                 Clear Custom Override (Revert to Server Environment)
               </Button>
             </div>
           </div>
         ) : (
-          <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/60 text-slate-700 text-xs flex items-start gap-2.5">
-            <ShieldCheck className="h-4 w-4 text-[#0e6de4] shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-xl border border-blue-900 bg-blue-950/60 text-zinc-300 text-xs flex items-start gap-2.5">
+            <ShieldCheck className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="font-bold text-slate-900">Stripe is currently using the secure server environment configuration.</p>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
-                An API key does not need to be entered here unless you intentionally want to create a runtime encrypted override. (Preview: <code className="font-mono font-bold text-slate-800">{masked}</code>)
+              <p className="font-bold text-zinc-100">Stripe is currently using the secure server environment configuration.</p>
+              <p className="text-zinc-400 text-[11px] leading-relaxed">
+                An API key does not need to be entered here unless you intentionally want to create a runtime encrypted override. (Preview: <code className="font-mono font-bold text-zinc-200">{masked}</code>)
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ export default function StripeIntegrationPage() {
 
         {/* Key Form */}
         <div className="space-y-3 pt-2">
-          <label className="block space-y-1.5 text-xs font-bold text-slate-700">
+          <label className="block space-y-1.5 text-xs font-bold text-zinc-300">
             <span>Custom Encrypted API Key (Optional Override)</span>
             <input
               type="password"
@@ -175,16 +175,16 @@ export default function StripeIntegrationPage() {
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="sk_live_••••••••••••••••••••••••"
               autoComplete="off"
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-mono placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 font-mono placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
             />
           </label>
-          <p className="text-[11px] text-slate-500 font-mono">
+          <p className="text-[11px] text-zinc-400 font-mono">
             Leave blank to keep server environment configuration active.
           </p>
 
           <div className="flex flex-wrap justify-end gap-3 pt-2">
-            <Button variant="outline" size="sm" disabled={busy} onClick={() => run('test')} className="font-bold border-slate-300 text-slate-700 hover:bg-slate-50">
-              <TestTube2 className="mr-1.5 h-4 w-4 text-[#0e6de4]" />
+            <Button variant="outline" size="sm" disabled={busy} onClick={() => run('test')} className="font-bold border-zinc-700 text-zinc-300 hover:bg-zinc-900">
+              <TestTube2 className="mr-1.5 h-4 w-4 text-blue-400" />
               Test Connection
             </Button>
             <Button variant="primary" size="sm" disabled={busy || !apiKey} onClick={() => run('save')} className="font-bold bg-[#0e6de4] text-white hover:bg-[#0c5bc2]">
@@ -195,15 +195,15 @@ export default function StripeIntegrationPage() {
         </div>
 
         {/* Checkout & Webhooks */}
-        <div className="border-t border-slate-100 pt-5 space-y-4">
+        <div className="border-t border-zinc-800 pt-5 space-y-4">
           <div>
-            <p className="text-sm font-extrabold text-slate-900">Stripe Checkout & Webhook Settings</p>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Webhook signing secret status: <span className="font-bold text-slate-800">{webhookConfigured ? '✓ Configured' : 'Not Configured'}</span> (Endpoint: <code className="font-mono text-slate-800">/api/billing/webhook</code>)
+            <p className="text-sm font-extrabold text-zinc-100">Stripe Checkout & Webhook Settings</p>
+            <p className="mt-0.5 text-xs text-zinc-400">
+              Webhook signing secret status: <span className="font-bold text-zinc-200">{webhookConfigured ? '✓ Configured' : 'Not Configured'}</span> (Endpoint: <code className="font-mono text-zinc-200">/api/billing/webhook</code>)
             </p>
           </div>
 
-          <label className="block space-y-1.5 text-xs font-bold text-slate-700">
+          <label className="block space-y-1.5 text-xs font-bold text-zinc-300">
             <span>Webhook Signing Secret</span>
             <input
               type="password"
@@ -211,13 +211,13 @@ export default function StripeIntegrationPage() {
               onChange={(e) => setWebhookSecret(e.target.value)}
               placeholder="whsec_••••••••••••••••••••••••"
               autoComplete="off"
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-mono placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 font-mono placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
             />
           </label>
 
           <div className="grid gap-3 sm:grid-cols-2">
             {[5000, 10000, 100000, 300000].map((credits) => (
-              <label key={credits} className="block space-y-1.5 text-xs font-bold text-slate-700">
+              <label key={credits} className="block space-y-1.5 text-xs font-bold text-zinc-300">
                 <span>{credits.toLocaleString()} Credits Price ID</span>
                 <input
                   type="password"
@@ -225,7 +225,7 @@ export default function StripeIntegrationPage() {
                   onChange={(e) => setPriceIds((current) => ({ ...current, [credits]: e.target.value }))}
                   placeholder="price_••••••••••••••••"
                   autoComplete="off"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-mono placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 font-mono placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
                 />
               </label>
             ))}
@@ -236,8 +236,8 @@ export default function StripeIntegrationPage() {
           <div
             className={`flex items-center gap-2 rounded-xl border p-3 text-xs font-bold ${
               status.type === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                : 'border-red-200 bg-red-50 text-red-800'
+                ? 'border-emerald-900 bg-emerald-950 text-emerald-300'
+                : 'border-red-900 bg-red-950 text-red-300'
             }`}
           >
             <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -245,7 +245,7 @@ export default function StripeIntegrationPage() {
           </div>
         )}
 
-        <div className="flex justify-end pt-2 border-t border-slate-100">
+        <div className="flex justify-end pt-2 border-t border-zinc-800">
           <Button
             variant="primary"
             size="sm"

@@ -13,15 +13,15 @@ const buttonVariants = cva(
         gradient:
           'bg-gradient-to-r from-[#0e6de4] to-[#0758bd] text-white hover:from-[#0758bd] hover:to-[#064da5] shadow-md shadow-blue-500/20 rounded-xl',
         secondary:
-          'bg-white text-slate-800 hover:bg-slate-50 border border-slate-200/90 shadow-sm rounded-xl',
+          'bg-zinc-950 text-zinc-200 hover:bg-zinc-900 border border-zinc-800/90 shadow-sm rounded-xl',
         outline:
-          'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl shadow-xs',
+          'border border-zinc-700 bg-zinc-950 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 rounded-xl shadow-xs',
         ghost:
-          'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-xl',
+          'bg-transparent text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100 rounded-xl',
         destructive:
-          'bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 rounded-xl shadow-xs',
+          'bg-rose-950 text-rose-400 border border-rose-900 hover:bg-rose-900 rounded-xl shadow-xs',
         success:
-          'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl shadow-xs',
+          'bg-emerald-950 text-emerald-300 border border-emerald-900 hover:bg-emerald-900 rounded-xl shadow-xs',
         glow:
           'bg-[#0e6de4] text-white hover:bg-[#0758bd] shadow-lg shadow-blue-500/25 rounded-full',
       },

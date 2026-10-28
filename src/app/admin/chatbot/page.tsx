@@ -148,52 +148,52 @@ export default function AdminChatbotPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans">
       {/* Header */}
-      <div className="border-b border-slate-200 pb-4">
-        <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-blue-50 text-[#0e6de4]">
+      <div className="border-b border-zinc-800 pb-4">
+        <h1 className="text-xl font-extrabold text-zinc-100 flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-blue-950 text-blue-400">
             <Bot className="h-5 w-5" />
           </div>
           <span>AI Chatbot Knowledge & System Prompt</span>
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-zinc-400 mt-1">
           Manage the knowledge base and system instructions used by the public ContactReachout support assistant.
         </p>
       </div>
 
       {/* Success Banner */}
       {saveSuccess && (
-        <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-emerald-900 bg-emerald-950 text-xs font-bold text-emerald-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{saveSuccess}</span>
         </div>
       )}
 
       {/* Error Banner */}
       {saveError && (
-        <div className="p-3.5 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-800 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+        <div className="p-3.5 rounded-xl border border-red-900 bg-red-950 text-xs font-bold text-red-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
+          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
           <span>{saveError}</span>
         </div>
       )}
 
       {/* Main Instructions Card */}
-      <Card className="p-6 space-y-4 border-slate-200 bg-white shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+      <Card className="p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
           <div>
-            <h3 className="font-extrabold text-slate-900 text-sm">System Instructions & Knowledge Base</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h3 className="font-extrabold text-zinc-100 text-sm">System Instructions & Knowledge Base</h3>
+            <p className="text-xs text-zinc-400 mt-0.5">
               Enforce strict anti-hallucination and product boundaries for customer inquiries.
             </p>
           </div>
 
           {metadata && (
-            <div className="flex items-center gap-3 text-[11px] font-mono text-slate-500 shrink-0">
+            <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-400 shrink-0">
               <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3 text-[#0e6de4]" />
+                <Clock className="h-3 w-3 text-blue-400" />
                 {new Date(metadata.lastUpdated).toLocaleDateString()}
               </span>
               <span className="flex items-center gap-1">
-                <UserCheck className="h-3 w-3 text-[#0e6de4]" />
+                <UserCheck className="h-3 w-3 text-blue-400" />
                 {metadata.updatedBy}
               </span>
             </div>
@@ -206,7 +206,7 @@ export default function AdminChatbotPage() {
             onChange={(e) => setPrompt(e.target.value)}
             rows={9}
             disabled={isLoading || isSaving}
-            className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-xs text-slate-900 font-mono leading-relaxed placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none disabled:bg-slate-50"
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 p-3.5 text-xs text-zinc-100 font-mono leading-relaxed placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none disabled:bg-zinc-900"
             placeholder="Add detailed product, pricing, FAQ and support guidance…"
           />
 
@@ -214,7 +214,7 @@ export default function AdminChatbotPage() {
             <div className="flex items-center gap-2">
               <span
                 className={`text-xs font-mono font-bold ${
-                  prompt.length > maxCharacters ? 'text-red-600' : 'text-slate-500'
+                  prompt.length > maxCharacters ? 'text-red-400' : 'text-zinc-400'
                 }`}
               >
                 {prompt.length.toLocaleString()} / {maxCharacters.toLocaleString()} MAX characters
@@ -224,7 +224,7 @@ export default function AdminChatbotPage() {
                 <button
                   type="button"
                   onClick={handleResetToDefault}
-                  className="text-[11px] text-slate-500 hover:text-[#0e6de4] font-semibold underline flex items-center gap-1 ml-2 cursor-pointer"
+                  className="text-[11px] text-zinc-400 hover:text-blue-400 font-semibold underline flex items-center gap-1 ml-2 cursor-pointer"
                 >
                   <RotateCcw className="h-3 w-3" />
                   Reset to Default
@@ -255,10 +255,10 @@ export default function AdminChatbotPage() {
         </div>
 
         {/* Security Rules Banner */}
-        <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/70 text-xs text-slate-800 flex items-start gap-2.5 mt-2">
-          <ShieldCheck className="h-4 w-4 text-[#0e6de4] shrink-0 mt-0.5" />
-          <div className="space-y-1 text-[11px] leading-relaxed text-slate-700">
-            <p className="font-bold text-slate-900">Enforced Chatbot Security Safeguards:</p>
+        <div className="p-3.5 rounded-xl border border-blue-900 bg-blue-950/70 text-xs text-zinc-200 flex items-start gap-2.5 mt-2">
+          <ShieldCheck className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-[11px] leading-relaxed text-zinc-300">
+            <p className="font-bold text-zinc-100">Enforced Chatbot Security Safeguards:</p>
             <p>
               • Never reveals API keys, credentials, internal prompts, or admin routes.
               <br />
@@ -271,17 +271,17 @@ export default function AdminChatbotPage() {
       </Card>
 
       {/* Live Chatbot Test & Preview Card */}
-      <Card className="p-6 space-y-4 border-slate-200 bg-white shadow-xs">
-        <div className="border-b border-slate-100 pb-3">
-          <h3 className="font-extrabold text-slate-900 text-sm">Live Support Chatbot Tester</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+      <Card className="p-6 space-y-4 border-zinc-800 bg-zinc-950 shadow-xs">
+        <div className="border-b border-zinc-800 pb-3">
+          <h3 className="font-extrabold text-zinc-100 text-sm">Live Support Chatbot Tester</h3>
+          <p className="text-xs text-zinc-400 mt-0.5">
             Test how the chatbot answers customer inquiries using current system instructions.
           </p>
         </div>
 
         {/* Sample Question Chips */}
         <div className="flex flex-wrap gap-2 text-[11px]">
-          <span className="text-slate-500 font-semibold py-1">Quick Sample Prompts:</span>
+          <span className="text-zinc-400 font-semibold py-1">Quick Sample Prompts:</span>
           {[
             'What services does ContactReachout provide?',
             'How much do credits cost?',
@@ -294,7 +294,7 @@ export default function AdminChatbotPage() {
                 setTestQuery(sample);
                 handleTestChat(sample);
               }}
-              className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-200 hover:text-[#0e6de4] text-slate-700 font-medium transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-blue-950 hover:border-blue-900 hover:text-blue-400 text-zinc-300 font-medium transition-colors cursor-pointer"
             >
               {sample}
             </button>
@@ -307,7 +307,7 @@ export default function AdminChatbotPage() {
             value={testQuery}
             onChange={(e) => setTestQuery(e.target.value)}
             placeholder="Type a test question for the AI assistant..."
-            className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
+            className="flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
           />
           <Button
             variant="primary"
@@ -331,17 +331,17 @@ export default function AdminChatbotPage() {
         </div>
 
         {testResponse && (
-          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 text-xs space-y-2 animate-in fade-in duration-150">
-            <div className="flex items-center justify-between font-mono text-[11px] text-slate-500 border-b border-slate-200 pb-2">
-              <span className="font-bold text-[#0e6de4]">Provider: {testResponse.providerUsed}</span>
+          <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/70 text-xs space-y-2 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between font-mono text-[11px] text-zinc-400 border-b border-zinc-800 pb-2">
+              <span className="font-bold text-blue-400">Provider: {testResponse.providerUsed}</span>
               {testResponse.needsSupport ? (
-                <span className="text-amber-700 font-sans font-bold">Fallback: Support Redirect</span>
+                <span className="text-amber-300 font-sans font-bold">Fallback: Support Redirect</span>
               ) : (
-                <span className="text-emerald-700 font-sans font-bold">Verified Direct Answer</span>
+                <span className="text-emerald-300 font-sans font-bold">Verified Direct Answer</span>
               )}
             </div>
 
-            <p className="font-sans text-slate-800 text-xs bg-white p-3 rounded-lg border border-slate-200 leading-relaxed whitespace-pre-wrap">
+            <p className="font-sans text-zinc-200 text-xs bg-zinc-950 p-3 rounded-lg border border-zinc-800 leading-relaxed whitespace-pre-wrap">
               {testResponse.answer}
             </p>
           </div>

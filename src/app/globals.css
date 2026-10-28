@@ -8,23 +8,24 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 
 @layer base {
   :root {
-    --background: 210 40% 98%;       /* #F8FAFC Crisp Light Canvas */
-    --foreground: 222 47% 11%;       /* #0F172A Deep Slate Text */
+    color-scheme: dark;
+    --background: 0 0% 0%;  /* #000000 Pure Black Canvas */
+    --foreground: 0 0% 98%;  /* #FAFAFA Near White Text */
 
-    --card: 0 0% 100%;               /* #FFFFFF Pure White Surface */
-    --card-foreground: 222 47% 11%;
+    --card: 240 10% 4%;  /* #09090B Zinc 950 Surface */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 240 10% 4%;
+    --popover-foreground: 0 0% 98%;
 
     --primary: 213 88% 47%;          /* #0E6DE4 ContactReachout Blue */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;        /* #F1F5F9 Soft Pearl */
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 240 4% 16%;  /* #27272A Zinc 800 */
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%; /* #64748B Slate */
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;  /* #A1A1AA Zinc 400 */
 
     --accent: 213 88% 47%;           /* #0E6DE4 ContactReachout Blue */
     --accent-foreground: 0 0% 100%;
@@ -32,53 +33,53 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
     --destructive: 350 89% 60%;      /* #F43F5E */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;           /* #E2E8F0 Crisp Light Border */
-    --input: 214 32% 91%;
+    --border: 240 4% 16%;  /* #27272A Zinc 800 Border */
+    --input: 240 4% 16%;
     --ring: 213 88% 47%;
 
     --radius: 1.25rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 213 88% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
+    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 4% 16%;
     --sidebar-ring: 213 88% 47%;
   }
 }
 
 .input {
   width: 100%;
-  border: 1px solid #dbeafe;
+  border: 1px solid #3f3f46;
   border-radius: 0.75rem;
-  background: #fff;
+  background: #09090b;
   padding: 0.75rem;
-  color: #0f172a;
+  color: #fafafa;
   font-size: 0.875rem;
 }
 
 .input:focus {
   border-color: #0e6de4;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(14, 109, 228, 0.1);
+  box-shadow: 0 0 0 3px rgba(14, 109, 228, 0.25);
 }
 
 .input {
   width: 100%;
-  border: 1px solid #dbeafe;
+  border: 1px solid #3f3f46;
   border-radius: 0.75rem;
-  background: #fff;
+  background: #09090b;
   padding: 0.75rem;
-  color: #0f172a;
+  color: #fafafa;
   font-size: 0.875rem;
 }
 
 .input:focus {
   border-color: #0e6de4;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(14, 109, 228, 0.1);
+  box-shadow: 0 0 0 3px rgba(14, 109, 228, 0.25);
 }
 
 @layer base {
@@ -86,11 +87,24 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
     @apply border-border;
   }
   body {
-    @apply bg-[#F5F8FC] text-slate-900 antialiased selection:bg-blue-500/20 selection:text-blue-950;
+    @apply bg-black text-zinc-100 antialiased selection:bg-blue-500/40 selection:text-white;
     font-feature-settings: "rlig" 1, "calt" 1;
-    background-color: #F5F8FC;
-    color: #0F172A;
+    background-color: #000000;
+    color: #FAFAFA;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.10)' stroke-width='1'%3E%3Cpath d='M-50 -480c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 -320c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 -160c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 0c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 160c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 320c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 480c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 640c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 800px 800px;
+    background-attachment: fixed;
   }
+}
+
+/* Page-root containers must stay transparent so the faint diagonal contour
+   pattern painted on <body> stays visible across the whole site. Without this,
+   every page's solid root background hides the body pattern completely.
+   (Unlayered on purpose: this must beat the Tailwind bg utilities.) */
+body > div.min-h-screen.bg-zinc-950,
+body > div.min-h-screen.bg-black {
+  background-color: transparent;
 }
 
 /* ==============================================================================
@@ -100,7 +114,7 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 /* ContactReachout Clean SaaS Backdrop */
 .heyreach-backdrop {
   position: relative;
-  background-color: #F4F8FD;
+  background-color: #000000;
   background-image: 
     radial-gradient(at 10% 8%, rgba(14, 109, 228, 0.06) 0px, transparent 50%),
     radial-gradient(at 85% 12%, rgba(14, 109, 228, 0.04) 0px, transparent 55%),
@@ -109,7 +123,7 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 
 .aimfox-light-backdrop {
   position: relative;
-  background-color: #F4F8FD;
+  background-color: #000000;
   background-image: 
     radial-gradient(at 15% 10%, rgba(14, 109, 228, 0.05) 0px, transparent 50%),
     radial-gradient(at 85% 15%, rgba(14, 109, 228, 0.04) 0px, transparent 55%),
@@ -118,49 +132,32 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 
 /* Pure White Glassmorphism Card */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(9, 9, 11, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  border: 1px solid rgba(63, 63, 70, 0.9);
   border-radius: var(--radius);
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.02);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
 }
 
 .glass-panel-interactive {
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(9, 9, 11, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  border: 1px solid rgba(63, 63, 70, 0.9);
   border-radius: var(--radius);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
 }
 
 .glass-panel-interactive:hover {
-  background: #FFFFFF;
-  border-color: rgba(99, 102, 241, 0.4);
+  background: #09090b;
+  border-color: rgba(14, 109, 228, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 16px 36px -4px rgba(99, 102, 241, 0.12), 0 0 0 1px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 16px 36px -4px rgba(14, 109, 228, 0.12), 0 0 0 1px rgba(14, 109, 228, 0.15);
 }
 
-/* Heyreach Signature Text Gradients */
-.text-heyreach-gradient {
-  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 40%, #9333EA 70%, #FF5722 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
 
-.text-aimfox-coral {
-  background: linear-gradient(135deg, #FF4500 0%, #FF6B4A 60%, #FFA07A 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.text-aimfox-purple {
-  background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #9333EA 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
 
 /* Heyreach & Aimfox Buttons */
 .btn-heyreach-primary {
@@ -207,9 +204,9 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 
 /* Pill Badges */
 .badge-aimfox-pill {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  color: #334155;
+  background: rgba(9, 9, 11, 0.95);
+  border: 1px solid rgba(63, 63, 70, 0.9);
+  color: #d4d4d8;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -279,7 +276,7 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 .home-saas-main {
   --home-brand: #0e6de4;
   --home-brand-deep: #0758bd;
-  --home-canvas: #edf5ff;
+  --home-canvas: #000000;
   overflow: hidden;
   background:
     radial-gradient(circle at 50% 0%, rgba(14, 109, 228, 0.1), transparent 24rem),
@@ -291,17 +288,17 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
   width: min(1280px, calc(100% - 2rem));
   margin: 1.25rem auto;
   overflow: hidden;
-  border: 1px solid rgba(14, 109, 228, 0.12);
+  border: 1px solid rgba(14, 109, 228, 0.25);
   border-radius: 2.5rem;
-  background: #ffffff;
-  box-shadow: 0 20px 60px rgba(14, 68, 137, 0.08);
+  background: #09090b;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .home-saas-main > section:first-child {
   width: min(1280px, calc(100% - 2rem));
   margin-top: 0;
   border-radius: 3rem;
-  box-shadow: 0 28px 90px rgba(14, 68, 137, 0.1);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55);
 }
 
 .home-saas-main > section:nth-child(2),
@@ -309,7 +306,7 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 .home-saas-main > section:nth-child(6),
 .home-saas-main > section:nth-child(8),
 .home-saas-main > section:nth-child(10) {
-  background: linear-gradient(145deg, #f7fbff 0%, #eef6ff 100%);
+  background: linear-gradient(145deg, #0c0c0f 0%, #121215 100%);
 }
 
 /* Product-section components already contain their own bordered card. Flatten
@@ -321,9 +318,9 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 }
 
 .home-saas-main > section:nth-child(n + 5):nth-child(-n + 10) > div {
-  border-color: rgba(14, 109, 228, 0.13) !important;
+  border-color: rgba(14, 109, 228, 0.3) !important;
   border-radius: 2.5rem !important;
-  box-shadow: 0 20px 60px rgba(14, 68, 137, 0.08) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Keep all Home Page accents on the ContactReachout brand blue. */
@@ -355,12 +352,16 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 }
 
 /* Hero product preview cards use a refined translucent surface treatment. */
+.home-saas-main > section:first-child .hero-glow-card {
+  box-shadow: 0 0 0 1px rgba(192, 132, 252, 0.28), 0 0 90px -20px rgba(239, 68, 68, 0.5), 0 0 90px -12px rgba(168, 85, 247, 0.5);
+}
+
 .home-saas-main > section:first-child .rounded-3xl {
-  background-color: rgba(255, 255, 255, 0.78) !important;
+  background-color: rgba(24, 24, 27, 0.78) !important;
   border-color: rgba(14, 109, 228, 0.2) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 22px 65px rgba(14, 68, 137, 0.12) !important;
+  box-shadow: 0 22px 65px rgba(0, 0, 0, 0.5) !important;
 }
 
 .home-saas-main > section:nth-child(12) > div {
@@ -411,12 +412,12 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 .features-section article p { font-size: .98rem; }
 
 .home-saas-main article {
-  box-shadow: 0 10px 32px rgba(14, 68, 137, 0.055);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* Public pricing surfaces stay light while preserving every pricing value and action. */
 .pricing-public-page .pricing-plan-card {
-  color: #0f172a;
+  color: #fafafa;
   box-shadow: 0 16px 44px rgba(14, 68, 137, 0.08);
 }
 
@@ -425,13 +426,13 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 }
 
 .pricing-public-page .pricing-plan-card .text-white {
-  color: #0f172a !important;
+  color: #fafafa !important;
 }
 
 .pricing-public-page .pricing-plan-card .text-slate-200,
 .pricing-public-page .pricing-plan-card .text-slate-300,
 .pricing-public-page .pricing-plan-card .text-slate-400 {
-  color: #64748b !important;
+  color: #a1a1aa !important;
 }
 
 .pricing-public-page .pricing-plan-card button,
@@ -454,17 +455,17 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 }
 
 .pricing-public-page .pricing-calculator {
-  color: #0f172a;
+  color: #fafafa;
 }
 
 .pricing-public-page .pricing-calculator .text-white {
-  color: #0f172a !important;
+  color: #fafafa !important;
 }
 
 .pricing-public-page .pricing-calculator > div:nth-child(2) > div:nth-child(2),
 .pricing-public-page .pricing-calculator [class*="bg-[#0F132C]"] {
-  border-color: #dbeafe !important;
-  background: #f8fbff !important;
+  border-color: #27272a !important;
+  background: #0a0a0c !important;
 }
 
 .pricing-public-page .pricing-calculator a button,
@@ -473,27 +474,27 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 }
 
 .pricing-public-page .pricing-calculator input[type="number"] {
-  border-color: #bfdbfe;
-  background: #ffffff;
-  color: #0e6de4;
+  border-color: #3f3f46;
+  background: #09090b;
+  color: #60a5fa;
 }
 
 .pricing-public-page .pricing-rules thead {
-  border-color: #dbeafe;
-  background: #eff6ff;
-  color: #334155;
+  border-color: #27272a;
+  background: #0a1a2e;
+  color: #d4d4d8;
 }
 
 .pricing-public-page .pricing-rules tbody {
-  color: #334155;
+  color: #d4d4d8;
 }
 
 .pricing-public-page .pricing-rules tbody tr {
-  border-color: #e2e8f0;
+  border-color: #27272a;
 }
 
 .pricing-public-page .pricing-rules td.text-slate-400 {
-  color: #64748b !important;
+  color: #a1a1aa !important;
 }
 
 /* Unified authenticated-app surfaces. These rules are deliberately scoped to
@@ -501,7 +502,7 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
    their intended behavior. */
 .app-dashboard-shell main,
 .admin-app-shell main {
-  background: #f4f8fd;
+  background: transparent;
 }
 
 .app-dashboard-shell main .glass-panel,
@@ -510,23 +511,23 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 .admin-app-shell main [class*="rounded-3xl"][class*="border"] {
   border-color: rgba(14, 109, 228, 0.12) !important;
   border-radius: 1.5rem;
-  box-shadow: 0 12px 36px rgba(14, 68, 137, 0.07);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
 }
 
 .app-dashboard-shell main [class*="bg-slate-900"]:not(button):not(a),
 .app-dashboard-shell main [class*="bg-slate-950"]:not(button):not(a),
 .admin-app-shell main [class*="bg-slate-900"]:not(button):not(a),
 .admin-app-shell main [class*="bg-slate-950"]:not(button):not(a) {
-  border-color: #dbeafe !important;
-  background: #ffffff !important;
-  color: #0f172a !important;
+  border-color: #27272a !important;
+  background: #09090b !important;
+  color: #fafafa !important;
 }
 
 .app-dashboard-shell main [class*="bg-slate-900"] .text-white:not(button):not(a),
 .app-dashboard-shell main [class*="bg-slate-950"] .text-white:not(button):not(a),
 .admin-app-shell main [class*="bg-slate-900"] .text-white:not(button):not(a),
 .admin-app-shell main [class*="bg-slate-950"] .text-white:not(button):not(a) {
-  color: #0f172a !important;
+  color: #fafafa !important;
 }
 
 .app-dashboard-shell main [class*="bg-slate-900"] .text-slate-300,
@@ -537,7 +538,7 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 .admin-app-shell main [class*="bg-slate-900"] .text-slate-400,
 .admin-app-shell main [class*="bg-slate-950"] .text-slate-300,
 .admin-app-shell main [class*="bg-slate-950"] .text-slate-400 {
-  color: #64748b !important;
+  color: #a1a1aa !important;
 }
 
 .app-dashboard-shell main input[class*="bg-slate-9"],
@@ -546,9 +547,9 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 .admin-app-shell main input[class*="bg-slate-9"],
 .admin-app-shell main textarea[class*="bg-slate-9"],
 .admin-app-shell main select[class*="bg-slate-9"] {
-  border-color: #bfdbfe !important;
-  background: #ffffff !important;
-  color: #0f172a !important;
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
+  color: #fafafa !important;
 }
 
 .app-dashboard-shell main button[class*="bg-slate-9"],
@@ -597,7 +598,11 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
   .home-saas-main > section:first-child h1 { font-size: clamp(2rem, 10vw, 2.6rem); }
   .home-saas-main > section:first-child h1 span { white-space: normal; }
   .home-saas-main > section:first-child .grid { min-width: 0; }
-  .home-saas-main > section:first-child .rounded-3xl { max-width: 100%; }
+  .home-saas-main > section:first-child .hero-glow-card {
+  box-shadow: 0 0 0 1px rgba(192, 132, 252, 0.28), 0 0 90px -20px rgba(239, 68, 68, 0.5), 0 0 90px -12px rgba(168, 85, 247, 0.5);
+}
+
+.home-saas-main > section:first-child .rounded-3xl { max-width: 100%; }
   .home-saas-main .flex.flex-col.gap-3\.5 > a { width: 100%; }
   .home-saas-main {
     padding-top: 0.5rem;
@@ -622,38 +627,38 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 }
 
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: #0a0a0c;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #3f3f46;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #52525b;
 }
 
-.pricing-public-page .pricing-plan-card h3,.pricing-public-page .pricing-plan-card p,.pricing-public-page .pricing-plan-card span{color:#0f172a}.pricing-public-page .pricing-plan-card button,.pricing-public-page .pricing-plan-card a.bg-slate-800,.pricing-public-page .pricing-plan-card a.bg-indigo-600,.pricing-public-page .pricing-plan-card a.bg-purple-600,.pricing-public-page .pricing-plan-card button span{color:#fff}.pricing-public-page .pricing-plan-card .bg-slate-800,.pricing-public-page .pricing-plan-card .bg-indigo-600,.pricing-public-page .pricing-plan-card .bg-purple-600{background-color:#0e6de4}.pricing-public-page .pricing-plan-card{background:#fff!important;border-color:#bfdbfe!important}
+.pricing-public-page .pricing-plan-card h3,.pricing-public-page .pricing-plan-card p,.pricing-public-page .pricing-plan-card span{color:#fafafa}.pricing-public-page .pricing-plan-card button,.pricing-public-page .pricing-plan-card a.bg-slate-800,.pricing-public-page .pricing-plan-card a.bg-indigo-600,.pricing-public-page .pricing-plan-card a.bg-purple-600,.pricing-public-page .pricing-plan-card button span{color:#fff}.pricing-public-page .pricing-plan-card .bg-slate-800,.pricing-public-page .pricing-plan-card .bg-indigo-600,.pricing-public-page .pricing-plan-card .bg-purple-600{background-color:#0e6de4}.pricing-public-page .pricing-plan-card{background:#09090b!important;border-color:#27272a!important}
 
 .features-section,
 .features-section > div {
   max-width: 1280px;
   border-radius: 2.5rem;
-  background: #fff !important;
+  background: #09090b !important;
   padding: 3.5rem 2rem;
 }
-.features-section h2 { color: #0f172a; font-size: clamp(2.25rem, 4vw, 3rem); letter-spacing: -0.04em; }
-.features-section > div > div:first-child > p:first-child { display: inline-flex; align-items: center; border: 1px solid #bfdbfe; border-radius: 9999px; background: #eff6ff; padding: .45rem .85rem; color: #0e6de4 !important; font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.features-section > div > div:first-child > p:last-child { max-width: 58rem; color: #64748b; font-size: 1.125rem; line-height: 1.75; }
+.features-section h2 { color: #fafafa; font-size: clamp(2.25rem, 4vw, 3rem); letter-spacing: -0.04em; }
+.features-section > div > div:first-child > p:first-child { display: inline-flex; align-items: center; border: 1px solid #1e3a5f; border-radius: 9999px; background: #0a1a2e; padding: .45rem .85rem; color: #93c5fd !important; font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.features-section > div > div:first-child > p:last-child { max-width: 58rem; color: #a1a1aa; font-size: 1.125rem; line-height: 1.75; }
 .features-section h2,
 .features-section > div > div:first-child > p:last-child { color: #fff !important; }
-.features-section article { border-color: #dbeafe !important; background: linear-gradient(145deg, #fff 0%, #f8fbff 100%) !important; border-radius: 1.5rem; padding: 1.75rem; box-shadow: 0 12px 30px rgba(14,109,228,.06); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
-.features-section article:hover { border-color: #93c5fd !important; box-shadow: 0 18px 38px rgba(14,109,228,.12); }
+.features-section article { border-color: #27272a !important; background: linear-gradient(145deg, #131316 0%, #0a0a0c 100%) !important; border-radius: 1.5rem; padding: 1.75rem; box-shadow: 0 12px 30px rgba(14,109,228,.06); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.features-section article:hover { border-color: #93c5fd !important; box-shadow: 0 18px 38px rgba(14,109,228,.25); }
 .features-section article svg { color: #0e6de4 !important; }
-.features-section article > svg { display: block; width: 2.75rem; height: 2.75rem; border-radius: 1rem; background: #e7f1ff; padding: .6rem; }
-.features-section article h3 { margin-top: 1.25rem; color: #0f172a; font-size: 1.15rem; letter-spacing: -.02em; }
-.features-section article p { margin-top: .55rem; color: #64748b; line-height: 1.65; }
+.features-section article > svg { display: block; width: 2.75rem; height: 2.75rem; border-radius: 1rem; background: #12233a; padding: .6rem; }
+.features-section article h3 { margin-top: 1.25rem; color: #fafafa; font-size: 1.15rem; letter-spacing: -.02em; }
+.features-section article p { margin-top: .55rem; color: #a1a1aa; line-height: 1.65; }
 @media (min-width: 640px) { .features-section > div { padding: 4.5rem 2.5rem; } .features-section article { padding: 2rem; } }
 
 /* Subtle translucent surfaces for public product cards. The content remains fully
@@ -661,9 +666,9 @@ label:has(> input[type='checkbox']) > input[type='checkbox'] { pointer-events: a
 .home-saas-main article,
 .home-saas-main [class*="rounded-2xl"][class*="border-blue-100"],
 .home-saas-main [class*="rounded-3xl"][class*="border-blue-100"] {
-  background-color: rgba(255, 255, 255, 0.76) !important;
+  background-color: rgba(24, 24, 27, 0.76) !important;
   border-color: rgba(14, 109, 228, 0.16) !important;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 12px 30px rgba(14, 109, 228, 0.07);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }

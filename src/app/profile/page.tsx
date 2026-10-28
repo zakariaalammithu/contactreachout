@@ -60,20 +60,20 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#0e6de4]">Account Settings</p>
-        <h1 className="mt-2 text-3xl font-black text-slate-950">Settings & Profile</h1>
-        <p className="mt-2 text-sm text-slate-500">Manage your personal profile, contact reply settings, and AI personalization provider settings.</p>
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-400">Account Settings</p>
+        <h1 className="mt-2 text-3xl font-black text-white">Settings & Profile</h1>
+        <p className="mt-2 text-sm text-zinc-400">Manage your personal profile, contact reply settings, and AI personalization provider settings.</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
         <button
           type="button"
           onClick={() => setActiveTab('profile')}
           className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'profile'
               ? 'bg-[#0e6de4] text-white shadow-2xs'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              : 'bg-zinc-950 text-zinc-400 hover:bg-zinc-900 border border-zinc-800'
           }`}
         >
           <User className="h-4 w-4" />
@@ -86,7 +86,7 @@ export default function ProfilePage() {
           className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'ai'
               ? 'bg-[#0e6de4] text-white shadow-2xs'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              : 'bg-zinc-950 text-zinc-400 hover:bg-zinc-900 border border-zinc-800'
           }`}
         >
           <Bot className="h-4 w-4" />
@@ -118,13 +118,13 @@ function ProfileField({
   onChange?: (value: string) => void;
 }) {
   return (
-    <label className="text-sm font-bold text-slate-700">
+    <label className="text-sm font-bold text-zinc-300">
       {label}
       <input
         value={value}
         disabled={disabled}
         onChange={(event) => onChange?.(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0e6de4] disabled:bg-slate-50 disabled:text-slate-500 font-medium"
+        className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-[#0e6de4] disabled:bg-zinc-900 disabled:text-zinc-400 font-medium"
       />
     </label>
   );

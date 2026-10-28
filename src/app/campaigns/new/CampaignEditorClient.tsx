@@ -872,14 +872,14 @@ export default function CampaignEditorClient() {
 
     {/* UPLOAD CSV / XLSX MODAL */}
     {uploadModalOpen && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs">
-        <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h2 className="text-base font-bold text-slate-900">Upload CSV file to import from</h2>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+        <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-zinc-950 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+            <h2 className="text-base font-bold text-zinc-100">Upload CSV file to import from</h2>
             <button
               type="button"
               onClick={() => { setUploadModalOpen(false); setUploadModalError(''); }}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-400 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -887,8 +887,8 @@ export default function CampaignEditorClient() {
 
           <div className="p-6">
             {uploadModalError && (
-              <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-800">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-900 bg-rose-950 p-3 text-xs font-semibold text-rose-300">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
                 <span>{uploadModalError}</span>
               </div>
             )}
@@ -913,32 +913,32 @@ export default function CampaignEditorClient() {
               }}
               className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
                 isDragging
-                  ? 'border-[#0e6de4] bg-blue-50/80 scale-[1.01]'
-                  : 'border-slate-200 bg-slate-50/50 hover:border-blue-300 hover:bg-slate-50'
+                  ? 'border-[#0e6de4] bg-blue-950/80 scale-[1.01]'
+                  : 'border-zinc-800 bg-zinc-900/50 hover:border-blue-800 hover:bg-zinc-900'
               }`}
             >
               {isParsingFile ? (
                 <div className="flex flex-col items-center py-4">
-                  <Loader2 className="h-10 w-10 animate-spin text-[#0e6de4]" />
-                  <p className="mt-3 text-sm font-bold text-slate-800">Reading spreadsheet file...</p>
-                  <p className="mt-1 text-xs text-slate-500">Detecting columns and sample rows</p>
+                  <Loader2 className="h-10 w-10 animate-spin text-blue-400" />
+                  <p className="mt-3 text-sm font-bold text-zinc-200">Reading spreadsheet file...</p>
+                  <p className="mt-1 text-xs text-zinc-400">Detecting columns and sample rows</p>
                 </div>
               ) : (
                 <>
-                  <div className="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-[#0e6de4]">
+                  <div className="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-blue-950 text-blue-400">
                     <UploadCloud className="h-6 w-6" />
                   </div>
-                  <p className="text-sm font-medium text-slate-700">
+                  <p className="text-sm font-medium text-zinc-300">
                     Drop file to upload or{' '}
                     <button
                       type="button"
                       onClick={() => uploadInputRef.current?.click()}
-                      className="font-bold text-[#0e6de4] underline underline-offset-2 hover:text-blue-700 cursor-pointer"
+                      className="font-bold text-blue-400 underline underline-offset-2 hover:text-blue-300 cursor-pointer"
                     >
                       select file from computer
                     </button>
                   </p>
-                  <p className="mt-2 text-xs font-semibold text-slate-400">
+                  <p className="mt-2 text-xs font-semibold text-zinc-400">
                     Supported: .CSV, .XLSX
                   </p>
                 </>
@@ -946,11 +946,11 @@ export default function CampaignEditorClient() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+          <div className="flex items-center justify-between border-t border-zinc-800 bg-zinc-900/50 px-6 py-4">
             <button
               type="button"
               onClick={() => downloadSampleCsv('b2b-saas')}
-              className="text-xs font-semibold text-[#0e6de4] hover:underline cursor-pointer flex items-center gap-1.5"
+              className="text-xs font-semibold text-blue-400 hover:underline cursor-pointer flex items-center gap-1.5"
             >
               <FileSpreadsheet className="h-3.5 w-3.5" />
               <span>Download Example CSV</span>
@@ -958,7 +958,7 @@ export default function CampaignEditorClient() {
             <button
               type="button"
               onClick={() => { setUploadModalOpen(false); setUploadModalError(''); }}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer"
+              className="rounded-xl border border-zinc-700 bg-zinc-950 px-5 py-2 text-sm font-semibold text-zinc-300 shadow-2xs hover:bg-zinc-900 cursor-pointer"
             >
               Cancel
             </button>
@@ -968,14 +968,14 @@ export default function CampaignEditorClient() {
     )}
 
     {manualModalOpen && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs">
-        <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h2 className="text-base font-bold text-slate-900">Enter Websites Manually</h2>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+        <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-zinc-950 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+            <h2 className="text-base font-bold text-zinc-100">Enter Websites Manually</h2>
             <button
               type="button"
               onClick={() => setManualModalOpen(false)}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+              className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-400 transition-colors cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -983,7 +983,7 @@ export default function CampaignEditorClient() {
 
           <div className="p-6 space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
                 Website URL(s)
               </label>
               <textarea
@@ -991,13 +991,13 @@ export default function CampaignEditorClient() {
                 value={manualBulkWebsites}
                 onChange={(event) => setManualBulkWebsites(event.target.value)}
                 placeholder={'https://example.com\nhttps://example2.com\nhttps://example3.com'}
-                className="w-full rounded-xl border border-slate-300 p-3 text-sm font-mono text-slate-900 placeholder-slate-400 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 p-3 text-sm font-mono text-zinc-100 placeholder-slate-400 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
-              <p className="mt-1 text-xs text-slate-500">Paste one website URL per line.</p>
+              <p className="mt-1 text-xs text-zinc-400">Paste one website URL per line.</p>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
                 Lead List Name / File Name
               </label>
               <input
@@ -1005,16 +1005,16 @@ export default function CampaignEditorClient() {
                 value={manualListName}
                 onChange={(event) => setManualListName(event.target.value)}
                 placeholder="e.g. My Healthcare Leads"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-medium text-zinc-100 placeholder-slate-400 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2.5 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+          <div className="flex justify-end gap-2.5 border-t border-zinc-800 bg-zinc-900/50 px-6 py-4">
             <button
               type="button"
               onClick={() => setManualModalOpen(false)}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
+              className="rounded-xl border border-zinc-700 bg-zinc-950 px-5 py-2.5 text-xs font-bold text-zinc-300 shadow-2xs hover:bg-zinc-900 transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -1034,16 +1034,16 @@ export default function CampaignEditorClient() {
         </div>
       </div>
     )}
-    {listsModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-bold text-slate-900">Choose Lead Lists</h2><p className="mt-1 text-sm text-slate-500">Select one or more lists to add to this campaign.</p></div><List className="h-5 w-5 text-[#0e6de4]" /></div><div className="mt-5 space-y-3">{ownedLeadLists.length ? ownedLeadLists.map((list) => { const count = leads.filter((lead) => lead.listId === list.id || lead.listName === list.name).length; const checked = listsModalSelection.includes(list.id); return <label key={list.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border p-4 transition-colors ${checked ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-200'}`}><span className="flex items-center gap-3"><FileSpreadsheet className="h-5 w-5 text-blue-600" /><span><span className="block text-sm font-bold text-slate-900">{list.name}</span><span className="block text-xs text-slate-500">{count} leads</span></span></span><input type="checkbox" checked={checked} onChange={() => setListsModalSelection((current) => current.includes(list.id) ? current.filter((id) => id !== list.id) : [...current, list.id])} className="h-5 w-5" /></label>; }) : <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-600">No lead lists are available yet.</div>}</div><div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={() => setListsModalOpen(false)} className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700">Cancel</button><Button type="button" onClick={() => { setSelectedListIds(listsModalSelection); setSelectedListId(listsModalSelection[0] || ''); setListsModalOpen(false); setError(listsModalSelection.length ? '' : 'Select at least one lead list.'); }} className="px-5 py-2.5">Add to Campaign</Button></div></div></div>}
+    {listsModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-zinc-950 p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-bold text-zinc-100">Choose Lead Lists</h2><p className="mt-1 text-sm text-zinc-400">Select one or more lists to add to this campaign.</p></div><List className="h-5 w-5 text-blue-400" /></div><div className="mt-5 space-y-3">{ownedLeadLists.length ? ownedLeadLists.map((list) => { const count = leads.filter((lead) => lead.listId === list.id || lead.listName === list.name).length; const checked = listsModalSelection.includes(list.id); return <label key={list.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border p-4 transition-colors ${checked ? 'border-blue-500 bg-blue-950' : 'border-zinc-800 bg-zinc-950 hover:border-blue-900'}`}><span className="flex items-center gap-3"><FileSpreadsheet className="h-5 w-5 text-blue-400" /><span><span className="block text-sm font-bold text-zinc-100">{list.name}</span><span className="block text-xs text-zinc-400">{count} leads</span></span></span><input type="checkbox" checked={checked} onChange={() => setListsModalSelection((current) => current.includes(list.id) ? current.filter((id) => id !== list.id) : [...current, list.id])} className="h-5 w-5" /></label>; }) : <div className="rounded-2xl border border-dashed border-zinc-700 p-6 text-center text-sm text-zinc-400">No lead lists are available yet.</div>}</div><div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={() => setListsModalOpen(false)} className="rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-300">Cancel</button><Button type="button" onClick={() => { setSelectedListIds(listsModalSelection); setSelectedListId(listsModalSelection[0] || ''); setListsModalOpen(false); setError(listsModalSelection.length ? '' : 'Select at least one lead list.'); }} className="px-5 py-2.5">Add to Campaign</Button></div></div></div>}
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
-      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-zinc-800 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/campaigns" className="rounded-xl bg-slate-100 p-2 text-slate-700 hover:bg-slate-200">
+          <Link href="/campaigns" className="rounded-xl bg-zinc-900 p-2 text-zinc-300 hover:bg-zinc-800">
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold text-slate-900">Edit campaign</h1>
+              <h1 className="text-2xl font-bold text-zinc-100">Edit campaign</h1>
               {isRenaming ? (
                 <div className="flex items-center gap-1.5 ml-1 sm:ml-2">
                   <input
@@ -1054,7 +1054,7 @@ export default function CampaignEditorClient() {
                       if (e.key === 'Enter') saveInlineRename();
                       if (e.key === 'Escape') setIsRenaming(false);
                     }}
-                    className="rounded-lg border border-[#0e6de4] px-3 py-1 text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="rounded-lg border border-[#0e6de4] px-3 py-1 text-sm font-bold text-zinc-100 outline-none focus:ring-2 focus:ring-blue-500/20"
                     autoFocus
                   />
                   <button
@@ -1067,22 +1067,22 @@ export default function CampaignEditorClient() {
                   <button
                     type="button"
                     onClick={() => setIsRenaming(false)}
-                    className="rounded-lg bg-slate-200 px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-300 cursor-pointer"
+                    className="rounded-lg bg-zinc-800 px-2.5 py-1 text-xs font-bold text-zinc-400 hover:bg-zinc-700 cursor-pointer"
                   >
                     Cancel
                   </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 ml-1 sm:ml-2">
-                  <span className="text-sm font-medium text-slate-400">•</span>
-                  <span className="text-sm font-semibold text-slate-600">
+                  <span className="text-sm font-medium text-zinc-400">•</span>
+                  <span className="text-sm font-semibold text-zinc-400">
                     Campaign Name:{' '}
-                    <span className="font-bold text-slate-900">{campaignName || 'New Campaign'}</span>
+                    <span className="font-bold text-zinc-100">{campaignName || 'New Campaign'}</span>
                   </span>
                   <button
                     type="button"
                     onClick={() => { setEditingName(campaignName); setIsRenaming(true); }}
-                    className="p-1 text-slate-400 hover:text-[#0e6de4] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                    className="p-1 text-zinc-400 hover:text-blue-400 hover:bg-blue-950 rounded-lg transition-colors cursor-pointer"
                     title="Rename Campaign"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
@@ -1090,7 +1090,7 @@ export default function CampaignEditorClient() {
                 </div>
               )}
             </div>
-            <p className="text-sm text-slate-500">Configure your outreach workflow: prospects, messages, and safety settings.</p>
+            <p className="text-sm text-zinc-400">Configure your outreach workflow: prospects, messages, and safety settings.</p>
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -1100,7 +1100,7 @@ export default function CampaignEditorClient() {
             onClick={() => saveCampaign(false)}
             className="min-w-[148px] whitespace-nowrap px-6 py-3 cursor-pointer"
           >
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-500" /> : <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-400" /> : <Save className="mr-2 h-4 w-4" />}
             {isSaving ? 'Saving...' : 'Save Draft'}
           </Button>
 
@@ -1131,8 +1131,8 @@ export default function CampaignEditorClient() {
           </Button>
         </div>
       </div>
-      {error && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">{error}</div>}
-      <div className="flex overflow-x-auto scrollbar-none flex-nowrap sm:flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2">
+      {error && <div className="rounded-xl border border-amber-900 bg-amber-950 p-3 text-sm font-medium text-amber-300">{error}</div>}
+      <div className="flex overflow-x-auto scrollbar-none flex-nowrap sm:flex-wrap gap-2 rounded-2xl border border-zinc-800 bg-zinc-950 p-2">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -1140,8 +1140,8 @@ export default function CampaignEditorClient() {
             onClick={() => setActiveTab(tab.id)}
             className={`rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-75 active:scale-95 cursor-pointer ${
               activeTab === tab.id
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                ? 'bg-zinc-900 text-white shadow-xs'
+                : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
             }`}
           >
             {tab.label}
@@ -1151,32 +1151,32 @@ export default function CampaignEditorClient() {
 
       {activeTab === 'setup' && (
         <div className="space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-2xs sm:p-8 space-y-6">
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xs sm:p-8 space-y-6">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Campaign Details</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Set the campaign name and category tag for organizing your outreach.</p>
+              <h2 className="text-lg font-bold text-zinc-100">Campaign Details</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">Set the campaign name and category tag for organizing your outreach.</p>
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Campaign Name</label>
+                <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Campaign Name</label>
                 <input
                   type="text"
                   value={campaignName}
                   onChange={(e) => setCampaignName(e.target.value)}
                   placeholder="e.g. B2B SaaS Outreach Campaign"
-                  className="w-full rounded-xl border border-slate-300 p-3 text-sm font-bold text-slate-900 focus:border-[#0e6de4] focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-700 p-3 text-sm font-bold text-zinc-100 focus:border-[#0e6de4] focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Industry / Tag</label>
+                <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Industry / Tag</label>
                 <input
                   type="text"
                   value={tag}
                   onChange={(e) => setTag(e.target.value)}
                   placeholder="e.g. SaaS, Healthcare, Agencies"
-                  className="w-full rounded-xl border border-slate-300 p-3 text-sm font-bold text-slate-900 focus:border-[#0e6de4] focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-700 p-3 text-sm font-bold text-zinc-100 focus:border-[#0e6de4] focus:outline-none"
                 />
               </div>
             </div>
@@ -1185,10 +1185,10 @@ export default function CampaignEditorClient() {
       )}
 
       {activeTab === 'message' && (
-        <div className="float-left mr-6 flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 lg:w-60">
-          <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5 px-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Message Sequence</span>
-            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0e6de4] border border-blue-200/60">
+        <div className="float-left mr-6 flex w-full flex-col gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-3.5 lg:w-60">
+          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 px-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Message Sequence</span>
+            <span className="rounded-full bg-blue-950 px-2 py-0.5 text-[10px] font-bold text-blue-400 border border-blue-900/60">
               {messageSequences.length - 1}/5 Follow-ups
             </span>
           </div>
@@ -1210,12 +1210,12 @@ export default function CampaignEditorClient() {
                   onClick={() => handleSelectSequence(item.id)}
                   className={`group relative rounded-xl border p-3 transition-all cursor-pointer ${
                     isSelected
-                      ? 'border-[#0e6de4] bg-white shadow-xs ring-2 ring-blue-500/20'
-                      : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50'
+                      ? 'border-[#0e6de4] bg-zinc-950 shadow-xs ring-2 ring-blue-500/20'
+                      : 'border-zinc-800 bg-zinc-950 hover:border-blue-800 hover:bg-zinc-900'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`text-xs font-bold ${isSelected ? 'text-[#0e6de4]' : 'text-slate-900'}`}>
+                    <span className={`text-xs font-bold ${isSelected ? 'text-blue-400' : 'text-zinc-100'}`}>
                       {isInitial ? 'Initial Message' : `Follow-up ${index}`}
                     </span>
                     {!isInitial && (
@@ -1225,26 +1225,26 @@ export default function CampaignEditorClient() {
                           e.stopPropagation();
                           deleteSequence(item.id);
                         }}
-                        className="rounded p-0.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                        className="rounded p-0.5 text-zinc-400 hover:bg-rose-950 hover:text-rose-400 transition-colors cursor-pointer"
                         title="Delete Follow-up"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>
-                  <p className="mt-1 line-clamp-1 text-[11px] font-medium text-slate-500">
+                  <p className="mt-1 line-clamp-1 text-[11px] font-medium text-zinc-400">
                     {subjectDisplay}
                   </p>
-                  <div className="mt-2 flex items-center justify-between pt-1 border-t border-slate-100">
+                  <div className="mt-2 flex items-center justify-between pt-1 border-t border-zinc-800">
                     {isInitial ? (
-                      <span className="text-[10px] font-medium text-slate-400">Day 0</span>
+                      <span className="text-[10px] font-medium text-zinc-400">Day 0</span>
                     ) : (
-                      <span className="inline-flex items-center text-[10px] font-bold text-[#0e6de4]">
+                      <span className="inline-flex items-center text-[10px] font-bold text-blue-400">
                         Send after {item.delayAmount} {item.delayUnit}
                       </span>
                     )}
                     {!isInitial && item.replyInThread && (
-                      <span className="text-[10px] font-semibold text-slate-400">Threaded</span>
+                      <span className="text-[10px] font-semibold text-zinc-400">Threaded</span>
                     )}
                   </div>
                 </div>
@@ -1255,12 +1255,12 @@ export default function CampaignEditorClient() {
             <button
               type="button"
               onClick={addFollowUp}
-              className="mt-1 w-full rounded-xl border border-dashed border-[#0e6de4]/50 bg-white px-3 py-2 text-center text-xs font-bold text-[#0e6de4] hover:bg-blue-50 hover:border-[#0e6de4] transition-all cursor-pointer"
+              className="mt-1 w-full rounded-xl border border-dashed border-[#0e6de4]/50 bg-zinc-950 px-3 py-2 text-center text-xs font-bold text-blue-400 hover:bg-blue-950 hover:border-[#0e6de4] transition-all cursor-pointer"
             >
               + Add Follow-up Message
             </button>
           ) : (
-            <div className="mt-1 rounded-xl bg-slate-100 p-2 text-center text-[11px] font-bold text-slate-500">
+            <div className="mt-1 rounded-xl bg-zinc-900 p-2 text-center text-[11px] font-bold text-zinc-400">
               Max 5 Follow-ups reached
             </div>
           )}
@@ -1269,33 +1269,33 @@ export default function CampaignEditorClient() {
       {activeTab === 'prospects' && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Add Prospects</h2>
-            <p className="text-sm text-slate-500">Choose how you want to add prospects to this campaign.</p>
+            <h2 className="text-xl font-bold text-zinc-100">Add Prospects</h2>
+            <p className="text-sm text-zinc-400">Choose how you want to add prospects to this campaign.</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <button
               type="button"
               onClick={() => { setUploadModalError(''); setUploadModalOpen(true); }}
-              className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xs transition hover:border-blue-300 cursor-pointer"
+              className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-center shadow-2xs transition hover:border-blue-800 cursor-pointer"
             >
-              <Upload className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-50 p-1.5 text-[#0e6de4]" />
-              <p className="font-bold text-slate-900">Upload CSV/XLSX</p>
+              <Upload className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-950 p-1.5 text-blue-400" />
+              <p className="font-bold text-zinc-100">Upload CSV/XLSX</p>
             </button>
             <button
               type="button"
               onClick={() => setManualModalOpen(true)}
-              className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xs transition hover:border-blue-300 cursor-pointer"
+              className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-center shadow-2xs transition hover:border-blue-800 cursor-pointer"
             >
-              <UserPlus className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-50 p-1.5 text-[#0e6de4]" />
-              <p className="font-bold text-slate-900">Enter Manually</p>
+              <UserPlus className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-950 p-1.5 text-blue-400" />
+              <p className="font-bold text-zinc-100">Enter Manually</p>
             </button>
             <button
               type="button"
               onClick={() => { setListsModalSelection(selectedListIds); setListsModalOpen(true); }}
-              className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-2xs transition hover:border-blue-300 cursor-pointer"
+              className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-center shadow-2xs transition hover:border-blue-800 cursor-pointer"
             >
-              <List className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-50 p-1.5 text-[#0e6de4]" />
-              <p className="font-bold text-slate-900">From Lists</p>
+              <List className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-950 p-1.5 text-blue-400" />
+              <p className="font-bold text-zinc-100">From Lists</p>
             </button>
           </div>
           <input
@@ -1311,13 +1311,13 @@ export default function CampaignEditorClient() {
 
       {/* CAMPAIGN PROSPECTS CONTAINER — ONLY RENDERED WHEN PROSPECTS ARE ADDED */}
       {activeTab === 'prospects' && (selectedLeads.length > 0 || selectedListIds.length > 0) && (
-        <section id="campaign-prospects-container" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-2xs sm:p-8 space-y-4">
+        <section id="campaign-prospects-container" className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xs sm:p-8 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <Users className="mt-1 h-5 w-5 text-blue-600" />
+              <Users className="mt-1 h-5 w-5 text-blue-400" />
               <div>
-                <h2 className="text-base font-bold text-slate-900">Campaign prospects</h2>
-                <p className="text-sm text-slate-500">
+                <h2 className="text-base font-bold text-zinc-100">Campaign prospects</h2>
+                <p className="text-sm text-zinc-400">
                   {selectedListIds.length} list{selectedListIds.length === 1 ? '' : 's'} selected · {selectedLeads.length} total prospects
                 </p>
               </div>
@@ -1328,7 +1328,7 @@ export default function CampaignEditorClient() {
                 placeholder="Search prospects..."
                 value={prospectSearchQuery}
                 onChange={(e) => setProspectSearchQuery(e.target.value)}
-                className="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 w-full sm:w-56"
+                className="rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-1.5 text-xs text-zinc-200 placeholder-slate-400 outline-none focus:border-blue-500 w-full sm:w-56"
               />
             )}
           </div>
@@ -1339,17 +1339,17 @@ export default function CampaignEditorClient() {
                 const list = leadLists.find((item) => item.id === id);
                 const count = leads.filter((l) => l.listId === id || l.listName === list?.name).length;
                 return list ? (
-                  <span key={id} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/50 px-3 py-1.5 text-xs font-semibold text-slate-900">
-                    <FileSpreadsheet className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span key={id} className="inline-flex items-center gap-2 rounded-xl border border-blue-900 bg-blue-950/50 px-3 py-1.5 text-xs font-semibold text-zinc-100">
+                    <FileSpreadsheet className="h-4 w-4 text-blue-400 shrink-0" />
                     <span>{list.name}</span>
-                    <span className="text-[11px] font-medium text-slate-500">({count} prospects)</span>
+                    <span className="text-[11px] font-medium text-zinc-400">({count} prospects)</span>
                     <button
                       type="button"
                       onClick={() => {
                         setListsModalSelection(selectedListIds);
                         setListsModalOpen(true);
                       }}
-                      className="ml-1.5 text-[11px] font-bold text-[#0e6de4] hover:underline cursor-pointer"
+                      className="ml-1.5 text-[11px] font-bold text-blue-400 hover:underline cursor-pointer"
                     >
                       View
                     </button>
@@ -1380,7 +1380,7 @@ export default function CampaignEditorClient() {
                           } catch (e) {}
                         }
                       }}
-                      className="ml-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                      className="ml-1 text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
                       title="Remove list from campaign"
                     >
                       <X className="h-3.5 w-3.5" />
@@ -1392,9 +1392,9 @@ export default function CampaignEditorClient() {
           )}
 
           {selectedLeads.length > 0 && (
-            <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
+            <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xs">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-slate-200 bg-slate-100/80 font-bold text-slate-700">
+                <thead className="border-b border-zinc-800 bg-zinc-900/80 font-bold text-zinc-300">
                   <tr>
                     <th className="px-4 py-3 w-12">#</th>
                     <th className="px-4 py-3">Website / Domain</th>
@@ -1404,16 +1404,16 @@ export default function CampaignEditorClient() {
                     <th className="px-4 py-3">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
+                <tbody className="divide-y divide-zinc-800 text-zinc-400 font-medium">
                   {filteredProspects.map((lead, idx) => (
-                    <tr key={lead.id || idx} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-2.5 font-bold text-slate-400">{idx + 1}</td>
-                      <td className="px-4 py-2.5 font-semibold text-slate-900 truncate max-w-[200px]">{lead.website || lead.domain || '—'}</td>
+                    <tr key={lead.id || idx} className="hover:bg-zinc-900 transition-colors">
+                      <td className="px-4 py-2.5 font-bold text-zinc-400">{idx + 1}</td>
+                      <td className="px-4 py-2.5 font-semibold text-zinc-100 truncate max-w-[200px]">{lead.website || lead.domain || '—'}</td>
                       <td className="px-4 py-2.5 truncate max-w-[160px]">{lead.companyName || (lead as any).company_name || (lead as any).company || '—'}</td>
                       <td className="px-4 py-2.5 truncate max-w-[150px]">{[lead.firstName, lead.lastName].filter(Boolean).join(' ') || '—'}</td>
-                      <td className="px-4 py-2.5 text-blue-600 truncate max-w-[180px]">{lead.email || '—'}</td>
+                      <td className="px-4 py-2.5 text-blue-400 truncate max-w-[180px]">{lead.email || '—'}</td>
                       <td className="px-4 py-2.5">
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                        <span className="inline-flex items-center rounded-full bg-emerald-950 px-2 py-0.5 text-[11px] font-bold text-emerald-300 border border-emerald-900">
                           {lead.status || 'UNCONTACTED'}
                         </span>
                       </td>
@@ -1422,7 +1422,7 @@ export default function CampaignEditorClient() {
                 </tbody>
               </table>
               {filteredProspects.length === 0 && (
-                <div className="p-6 text-center text-xs text-slate-500 font-medium">
+                <div className="p-6 text-center text-xs text-zinc-400 font-medium">
                   No prospects matching "{prospectSearchQuery}"
                 </div>
               )}
@@ -1432,7 +1432,7 @@ export default function CampaignEditorClient() {
       )}
 
       {(activeTab === 'message' || activeTab === 'settings') && (
-        <section id="campaign-lead-lists" className={`${activeTab === 'message' ? 'lg:ml-64' : ''} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8`}>
+        <section id="campaign-lead-lists" className={`${activeTab === 'message' ? 'lg:ml-64' : ''} rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm sm:p-8`}>
 
         {activeTab === 'message' && selectedMessageSequence && (
           <CampaignMessageEditor
@@ -1459,57 +1459,57 @@ export default function CampaignEditorClient() {
         {activeTab === 'settings' && (
           <div className="space-y-6">
             {/* Header + Reset to Defaults Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-800 pb-5">
               <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-1 h-6 w-6 text-emerald-600 shrink-0" />
+                <ShieldCheck className="mt-1 h-6 w-6 text-emerald-400 shrink-0" />
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Safety & Pacing</h2>
-                  <p className="text-sm text-slate-500">Control submission speed, concurrency, retries, and sending schedule.</p>
+                  <h2 className="text-lg font-bold text-zinc-100">Safety & Pacing</h2>
+                  <p className="text-sm text-zinc-400">Control submission speed, concurrency, retries, and sending schedule.</p>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setShowResetConfirmModal(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer shrink-0 self-start sm:self-center"
+                className="inline-flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-950 hover:bg-zinc-900 px-4 py-2 text-xs font-bold text-zinc-300 shadow-2xs transition-colors cursor-pointer shrink-0 self-start sm:self-center"
               >
-                <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+                <RotateCcw className="h-3.5 w-3.5 text-zinc-400" />
                 <span>Reset to Defaults</span>
               </button>
             </div>
 
             {/* Recommended Safety Helper Message */}
-            <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 text-xs font-medium text-blue-900 flex items-center gap-3">
-              <ShieldCheck className="h-5 w-5 text-blue-600 shrink-0" />
+            <div className="rounded-2xl border border-blue-900 bg-blue-950/70 p-4 text-xs font-medium text-blue-200 flex items-center gap-3">
+              <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0" />
               <span>Recommended safe settings are applied automatically. You can customize them anytime for this specific campaign.</span>
             </div>
 
             {/* Dry-run Protection */}
-            <label className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 cursor-pointer">
+            <label className="flex items-center justify-between rounded-2xl border border-emerald-900 bg-emerald-950/60 p-4 cursor-pointer">
               <div>
                 <p className="font-bold text-emerald-950">Dry-run protection</p>
-                <p className="text-sm text-emerald-700">Inspect and record the workflow without live submission.</p>
+                <p className="text-sm text-emerald-300">Inspect and record the workflow without live submission.</p>
               </div>
-              <input type="checkbox" checked={isDryRun} onChange={(event) => setIsDryRun(event.target.checked)} className="h-5 w-5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
+              <input type="checkbox" checked={isDryRun} onChange={(event) => setIsDryRun(event.target.checked)} className="h-5 w-5 rounded border-emerald-800 text-emerald-400 focus:ring-emerald-500 cursor-pointer" />
             </label>
 
             {/* Core Pacing Grid */}
             <div className="grid gap-5 sm:grid-cols-2">
-              <label className="text-sm font-semibold text-slate-700">
+              <label className="text-sm font-semibold text-zinc-300">
                 Rate limit per minute
-                <input type="number" min={1} max={120} value={rateLimitPerMinute} onChange={(event) => setRateLimitPerMinute(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none" />
+                <input type="number" min={1} max={120} value={rateLimitPerMinute} onChange={(event) => setRateLimitPerMinute(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 focus:border-blue-500 outline-none" />
               </label>
-              <label className="text-sm font-semibold text-slate-700">
+              <label className="text-sm font-semibold text-zinc-300">
                 Maximum concurrency
-                <input type="number" min={1} max={20} value={maxConcurrency} onChange={(event) => setMaxConcurrency(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none" />
+                <input type="number" min={1} max={20} value={maxConcurrency} onChange={(event) => setMaxConcurrency(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 focus:border-blue-500 outline-none" />
               </label>
-              <label className="text-sm font-semibold text-slate-700">
+              <label className="text-sm font-semibold text-zinc-300">
                 Delay between submissions (seconds)
-                <input type="number" min={0} max={3600} value={submissionDelaySeconds} onChange={(event) => setSubmissionDelaySeconds(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none" />
+                <input type="number" min={0} max={3600} value={submissionDelaySeconds} onChange={(event) => setSubmissionDelaySeconds(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 focus:border-blue-500 outline-none" />
               </label>
-              <label className="text-sm font-semibold text-slate-700">
+              <label className="text-sm font-semibold text-zinc-300">
                 Daily submission limit
-                <input type="number" min={1} value={dailySubmissionLimit} onChange={(event) => setDailySubmissionLimit(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none" />
+                <input type="number" min={1} value={dailySubmissionLimit} onChange={(event) => setDailySubmissionLimit(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 focus:border-blue-500 outline-none" />
               </label>
             </div>
 
@@ -1517,23 +1517,23 @@ export default function CampaignEditorClient() {
             <ContactReplySettings />
 
             {/* SENDING SCHEDULE SECTION */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 space-y-5">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-5">
               <div className="flex items-start gap-3">
-                <Calendar className="mt-0.5 h-5 w-5 text-blue-600 shrink-0" />
+                <Calendar className="mt-0.5 h-5 w-5 text-blue-400 shrink-0" />
                 <div>
-                  <h3 className="font-extrabold text-slate-900 uppercase tracking-wider text-xs">SENDING SCHEDULE</h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Control when ContactReachout is allowed to submit website contact-form messages.</p>
+                  <h3 className="font-extrabold text-zinc-100 uppercase tracking-wider text-xs">SENDING SCHEDULE</h3>
+                  <p className="text-xs text-zinc-400 font-medium mt-0.5">Control when ContactReachout is allowed to submit website contact-form messages.</p>
                 </div>
               </div>
 
               {/* Timezone Selector */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Timezone</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400">Timezone</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <select
                     value={timezoneMode}
                     onChange={(e) => setTimezoneMode(e.target.value as any)}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 focus:border-blue-500 outline-none cursor-pointer"
+                    className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-200 focus:border-blue-500 outline-none cursor-pointer"
                   >
                     <option value="account">My timezone</option>
                     <option value="prospect">Prospect's timezone</option>
@@ -1544,7 +1544,7 @@ export default function CampaignEditorClient() {
                     <select
                       value={customTimezone}
                       onChange={(e) => setCustomTimezone(e.target.value)}
-                      className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 focus:border-blue-500 outline-none cursor-pointer"
+                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-200 focus:border-blue-500 outline-none cursor-pointer"
                     >
                       <option value="America/New_York">America/New_York (US Eastern Time)</option>
                       <option value="America/Chicago">America/Chicago (US Central Time)</option>
@@ -1564,7 +1564,7 @@ export default function CampaignEditorClient() {
 
               {/* Sending Days */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Sending Days</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400">Sending Days</label>
                 <div className="flex flex-wrap gap-2">
                   {[
                     { key: 'monday', label: 'Mon' },
@@ -1589,7 +1589,7 @@ export default function CampaignEditorClient() {
                         className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                           isChecked
                             ? 'bg-[#0e6de4] text-white shadow-xs'
-                            : 'bg-white border border-slate-300 text-slate-500 hover:border-slate-400'
+                            : 'bg-zinc-950 border border-zinc-700 text-zinc-400 hover:border-zinc-600'
                         }`}
                       >
                         {isChecked ? `✓ ${day.label}` : day.label}
@@ -1602,180 +1602,180 @@ export default function CampaignEditorClient() {
               {/* Sending Hours */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Sending Hours</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400">Sending Hours</label>
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={sendingHours.enabled}
                       onChange={(e) => setSendingHours((prev) => ({ ...prev, enabled: e.target.checked }))}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="h-4 w-4 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer"
                     />
-                    <span className="text-xs font-bold text-slate-700">Limit submissions to specific hours</span>
+                    <span className="text-xs font-bold text-zinc-300">Limit submissions to specific hours</span>
                   </label>
                 </div>
 
                 {!sendingHours.enabled ? (
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-600 flex items-center justify-between">
+                  <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-400 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wide">Anytime (OFF)</span>
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-900 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wide">Anytime (OFF)</span>
                       <span>Submissions will run <strong>immediately</strong> without hour restrictions.</span>
                     </div>
-                    <span className="text-slate-400 text-[11px] hidden sm:inline">Check box to set custom hours</span>
+                    <span className="text-zinc-400 text-[11px] hidden sm:inline">Check box to set custom hours</span>
                   </div>
                 ) : (
-                  <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-100 space-y-2">
+                  <div className="p-3.5 rounded-xl bg-blue-950/50 border border-blue-900 space-y-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold text-slate-600">From</span>
+                      <span className="text-xs font-semibold text-zinc-400">From</span>
                       <input
                         type="time"
                         value={sendingHours.start}
                         onChange={(e) => setSendingHours((prev) => ({ ...prev, start: e.target.value }))}
-                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-500 outline-none shadow-2xs"
+                        className="rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs font-bold text-zinc-100 focus:border-blue-500 outline-none shadow-2xs"
                       />
-                      <span className="text-xs font-semibold text-slate-600">To</span>
+                      <span className="text-xs font-semibold text-zinc-400">To</span>
                       <input
                         type="time"
                         value={sendingHours.end}
                         onChange={(e) => setSendingHours((prev) => ({ ...prev, end: e.target.value }))}
-                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-500 outline-none shadow-2xs"
+                        className="rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs font-bold text-zinc-100 focus:border-blue-500 outline-none shadow-2xs"
                       />
                     </div>
-                    <p className="text-[11px] text-slate-500 font-medium">Submissions outside this window will wait for the next allowed sending hour.</p>
+                    <p className="text-[11px] text-zinc-400 font-medium">Submissions outside this window will wait for the next allowed sending hour.</p>
                   </div>
                 )}
               </div>
 
               {/* Randomize Submission Time */}
-              <label className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer select-none">
+              <label className="flex items-start gap-3 p-3.5 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={randomizeSubmissionTime}
                   onChange={(e) => setRandomizeSubmissionTime(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
+                  className="mt-0.5 h-4 w-4 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer shrink-0"
                 />
                 <div>
-                  <span className="block text-xs font-bold text-slate-900">Randomize submission time</span>
-                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">Add natural variation within the selected sending window.</p>
+                  <span className="block text-xs font-bold text-zinc-100">Randomize submission time</span>
+                  <p className="text-[11px] text-zinc-400 font-medium mt-0.5">Add natural variation within the selected sending window.</p>
                 </div>
               </label>
             </div>
 
             {/* Advanced Safety Settings */}
-            <div className="rounded-2xl border border-slate-200 p-5 space-y-4">
-              <h3 className="font-extrabold text-slate-900 uppercase tracking-wider text-xs">ADVANCED SAFETY SETTINGS</h3>
+            <div className="rounded-2xl border border-zinc-800 p-5 space-y-4">
+              <h3 className="font-extrabold text-zinc-100 uppercase tracking-wider text-xs">ADVANCED SAFETY SETTINGS</h3>
               <div className="space-y-4">
                 <label className="flex items-center justify-between gap-4 cursor-pointer">
                   <span>
-                    <span className="block font-semibold text-slate-800 text-xs">Prevent duplicate submissions</span>
-                    <span className="text-xs text-slate-500">Skip contacts already submitted in this campaign.</span>
+                    <span className="block font-semibold text-zinc-200 text-xs">Prevent duplicate submissions</span>
+                    <span className="text-xs text-zinc-400">Skip contacts already submitted in this campaign.</span>
                   </span>
-                  <input type="checkbox" checked={preventDuplicateSubmissions} onChange={(event) => setPreventDuplicateSubmissions(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                  <input type="checkbox" checked={preventDuplicateSubmissions} onChange={(event) => setPreventDuplicateSubmissions(event.target.checked)} className="h-5 w-5 rounded border-zinc-700 text-blue-400 cursor-pointer" />
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  <label className="text-xs font-semibold text-slate-700">
+                  <label className="text-xs font-semibold text-zinc-300">
                     Retry failed submissions
-                    <select value={retryFailedSubmissions} onChange={(event) => setRetryFailedSubmissions(Number(event.target.value))} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-blue-500">
+                    <select value={retryFailedSubmissions} onChange={(event) => setRetryFailedSubmissions(Number(event.target.value))} className="mt-1.5 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs font-bold text-zinc-200 outline-none focus:border-blue-500">
                       <option value={0}>No retry</option>
                       <option value={1}>1 retry</option>
                       <option value={2}>2 retries</option>
                       <option value={3}>3 retries</option>
                     </select>
                   </label>
-                  <label className="text-xs font-semibold text-slate-700">
+                  <label className="text-xs font-semibold text-zinc-300">
                     Pause after consecutive failures
-                    <input type="number" min={1} max={50} value={failureThreshold} onChange={(event) => setFailureThreshold(Number(event.target.value))} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-blue-500" />
+                    <input type="number" min={1} max={50} value={failureThreshold} onChange={(event) => setFailureThreshold(Number(event.target.value))} className="mt-1.5 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs font-bold text-zinc-200 outline-none focus:border-blue-500" />
                   </label>
                 </div>
 
                 <label className="flex items-center justify-between gap-4 cursor-pointer pt-2">
                   <span>
-                    <span className="block font-semibold text-slate-800 text-xs">Send uncertain forms to review</span>
-                    <span className="text-xs text-slate-500">Route uncertain mappings to manual review.</span>
+                    <span className="block font-semibold text-zinc-200 text-xs">Send uncertain forms to review</span>
+                    <span className="text-xs text-zinc-400">Route uncertain mappings to manual review.</span>
                   </span>
-                  <input type="checkbox" checked={humanReviewUncertainForms} onChange={(event) => setHumanReviewUncertainForms(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                  <input type="checkbox" checked={humanReviewUncertainForms} onChange={(event) => setHumanReviewUncertainForms(event.target.checked)} className="h-5 w-5 rounded border-zinc-700 text-blue-400 cursor-pointer" />
                 </label>
 
                 <label className="flex items-center justify-between gap-4 cursor-pointer">
                   <span>
-                    <span className="block font-semibold text-slate-800 text-xs">Stop on security challenge</span>
-                    <span className="text-xs text-slate-500">Stop on CAPTCHA, Cloudflare, or similar challenges.</span>
+                    <span className="block font-semibold text-zinc-200 text-xs">Stop on security challenge</span>
+                    <span className="text-xs text-zinc-400">Stop on CAPTCHA, Cloudflare, or similar challenges.</span>
                   </span>
-                  <input type="checkbox" checked={stopOnSecurityChallenge} onChange={(event) => setStopOnSecurityChallenge(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                  <input type="checkbox" checked={stopOnSecurityChallenge} onChange={(event) => setStopOnSecurityChallenge(event.target.checked)} className="h-5 w-5 rounded border-zinc-700 text-blue-400 cursor-pointer" />
                 </label>
               </div>
             </div>
 
             {/* REAL CAMPAIGN SCHEDULE SUMMARY CARD */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-100/70 p-5 space-y-3">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">CAMPAIGN SCHEDULE SUMMARY</h4>
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 space-y-3">
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-zinc-400">CAMPAIGN SCHEDULE SUMMARY</h4>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">Schedule</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="text-zinc-400 font-semibold block text-[11px]">Schedule</span>
+                  <span className="font-bold text-zinc-100">
                     {Object.entries(sendingDays).filter(([, v]) => v).map(([k]) => k.slice(0, 3).toUpperCase()).join(', ') || 'None selected'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">Hours</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="text-zinc-400 font-semibold block text-[11px]">Hours</span>
+                  <span className="font-bold text-zinc-100">
                     {sendingHours.enabled ? `${sendingHours.start} – ${sendingHours.end}` : 'Anytime (OFF)'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">Timezone</span>
-                  <span className="font-bold text-slate-900 truncate block">
+                  <span className="text-zinc-400 font-semibold block text-[11px]">Timezone</span>
+                  <span className="font-bold text-zinc-100 truncate block">
                     {timezoneMode === 'account' ? 'My timezone' : timezoneMode === 'prospect' ? "Prospect's timezone" : customTimezone}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">Daily Limit</span>
-                  <span className="font-bold text-slate-900">{dailySubmissionLimit} submissions</span>
+                  <span className="text-zinc-400 font-semibold block text-[11px]">Daily Limit</span>
+                  <span className="font-bold text-zinc-100">{dailySubmissionLimit} submissions</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">Randomization</span>
-                  <span className="font-bold text-emerald-700">{randomizeSubmissionTime ? 'ON' : 'OFF'}</span>
+                  <span className="text-zinc-400 font-semibold block text-[11px]">Randomization</span>
+                  <span className="font-bold text-emerald-300">{randomizeSubmissionTime ? 'ON' : 'OFF'}</span>
                 </div>
               </div>
             </div>
 
             {/* REAL CAMPAIGN CREDIT REQUIREMENTS & READINESS CARD */}
-            <div className="rounded-2xl border border-blue-100 bg-white p-5 space-y-3 shadow-2xs">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                  <Coins className="h-4 w-4 text-[#0e6de4]" />
+            <div className="rounded-2xl border border-blue-900 bg-zinc-950 p-5 space-y-3 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-blue-400" />
                   <span>CREDIT REQUIREMENTS & READINESS</span>
                 </h4>
-                <span className="text-xs font-mono font-bold text-slate-700">
-                  Available: <strong className="text-blue-600">{availableCredits}</strong>
+                <span className="text-xs font-mono font-bold text-zinc-300">
+                  Available: <strong className="text-blue-400">{availableCredits}</strong>
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-[11px] font-semibold text-slate-400 block">Available Credits</span>
-                  <span className="font-extrabold text-slate-900 text-sm">{availableCredits}</span>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                  <span className="text-[11px] font-semibold text-zinc-400 block">Available Credits</span>
+                  <span className="font-extrabold text-zinc-100 text-sm">{availableCredits}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-[11px] font-semibold text-slate-400 block">Campaign Prospects</span>
-                  <span className="font-extrabold text-slate-900 text-sm">{selectedLeads.length}</span>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                  <span className="text-[11px] font-semibold text-zinc-400 block">Campaign Prospects</span>
+                  <span className="font-extrabold text-zinc-100 text-sm">{selectedLeads.length}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-[11px] font-semibold text-slate-400 block">Max Required</span>
-                  <span className="font-extrabold text-slate-900 text-sm">{selectedLeads.length}</span>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                  <span className="text-[11px] font-semibold text-zinc-400 block">Max Required</span>
+                  <span className="font-extrabold text-zinc-100 text-sm">{selectedLeads.length}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-[11px] font-semibold text-slate-400 block">Capacity Status</span>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                  <span className="text-[11px] font-semibold text-zinc-400 block">Capacity Status</span>
                   {selectedLeads.length === 0 ? (
-                    <span className="font-extrabold text-amber-700 text-xs flex items-center gap-1">
+                    <span className="font-extrabold text-amber-300 text-xs flex items-center gap-1">
                       ✕ Not Ready
                     </span>
                   ) : selectedLeads.length <= availableCredits ? (
-                    <span className="font-extrabold text-emerald-700 text-xs flex items-center gap-1">
+                    <span className="font-extrabold text-emerald-300 text-xs flex items-center gap-1">
                       ✓ Sufficient
                     </span>
                   ) : (
-                    <span className="font-extrabold text-rose-600 text-xs flex items-center gap-1">
+                    <span className="font-extrabold text-rose-400 text-xs flex items-center gap-1">
                       ✕ Shortage
                     </span>
                   )}
@@ -1783,9 +1783,9 @@ export default function CampaignEditorClient() {
               </div>
 
               {selectedLeads.length === 0 ? (
-                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-3">
+                <div className="p-3.5 rounded-2xl bg-amber-950 border border-amber-900 text-xs text-amber-200 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                    <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
                     <span className="font-bold">Add at least 1 prospect before starting this campaign.</span>
                   </div>
                   <button
@@ -1797,11 +1797,11 @@ export default function CampaignEditorClient() {
                   </button>
                 </div>
               ) : selectedLeads.length <= availableCredits ? (
-                <p className="text-xs text-emerald-800 bg-emerald-50/80 p-3 rounded-xl border border-emerald-200 font-medium">
+                <p className="text-xs text-emerald-300 bg-emerald-950/80 p-3 rounded-xl border border-emerald-900 font-medium">
                   ✓ {selectedLeads.length} prospects can be processed with your current {availableCredits} available credits.
                 </p>
               ) : (
-                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-2">
+                <div className="p-3.5 rounded-2xl bg-rose-950 border border-rose-900 text-xs text-rose-200 space-y-2">
                   <p className="font-bold">
                     Not enough credits. Your current plan has {availableCredits} available credits, but this campaign contains {selectedLeads.length} prospects.
                   </p>
@@ -1817,7 +1817,7 @@ export default function CampaignEditorClient() {
                     <button
                       type="button"
                       onClick={() => setActiveTab('prospects')}
-                      className="rounded-xl border border-rose-300 bg-white hover:bg-rose-50 text-rose-800 px-4 py-2 text-xs font-bold shadow-xs cursor-pointer"
+                      className="rounded-xl border border-rose-800 bg-zinc-950 hover:bg-rose-950 text-rose-300 px-4 py-2 text-xs font-bold shadow-xs cursor-pointer"
                     >
                       Reduce Prospects
                     </button>
@@ -1833,23 +1833,23 @@ export default function CampaignEditorClient() {
 
     {/* RESET TO DEFAULTS CONFIRMATION MODAL */}
     {showResetConfirmModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 animate-in fade-in duration-150">
-        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-150">
+        <div className="w-full max-w-md rounded-2xl bg-zinc-950 p-6 shadow-2xl space-y-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+            <div className="h-10 w-10 rounded-2xl bg-blue-950 border border-blue-900 flex items-center justify-center text-blue-400 shrink-0">
               <RotateCcw className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Reset to Defaults?</h3>
-              <p className="text-xs text-slate-500 font-medium">This will restore the recommended ContactReachout campaign settings.</p>
+              <h3 className="text-lg font-bold text-zinc-100">Reset to Defaults?</h3>
+              <p className="text-xs text-zinc-400 font-medium">This will restore the recommended ContactReachout campaign settings.</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
             <button
               type="button"
               onClick={() => setShowResetConfirmModal(false)}
-              className="rounded-xl border border-slate-300 bg-white hover:bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-700 transition-all cursor-pointer"
+              className="rounded-xl border border-zinc-700 bg-zinc-950 hover:bg-zinc-900 px-5 py-2.5 text-xs font-bold text-zinc-300 transition-all cursor-pointer"
             >
               Cancel
             </button>
@@ -1888,26 +1888,26 @@ export default function CampaignEditorClient() {
 
     {/* START CAMPAIGN CONFIRMATION MODAL */}
     {showStartCampaignConfirmModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 animate-in fade-in duration-150">
-        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-150">
+        <div className="w-full max-w-md rounded-2xl bg-zinc-950 p-6 shadow-2xl space-y-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+            <div className="h-10 w-10 rounded-2xl bg-blue-950 border border-blue-900 flex items-center justify-center text-blue-400 shrink-0">
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Start this campaign?</h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
+              <h3 className="text-lg font-bold text-zinc-100">Start this campaign?</h3>
+              <p className="text-xs text-zinc-400 font-medium mt-0.5">
                 Your campaign will begin processing eligible prospects according to your saved schedule and safety settings.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
             <button
               type="button"
               disabled={isStarting}
               onClick={() => setShowStartCampaignConfirmModal(false)}
-              className="rounded-xl border border-slate-300 bg-white hover:bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-700 transition-all cursor-pointer"
+              className="rounded-xl border border-zinc-700 bg-zinc-950 hover:bg-zinc-900 px-5 py-2.5 text-xs font-bold text-zinc-300 transition-all cursor-pointer"
             >
               Cancel
             </button>
@@ -1939,34 +1939,34 @@ export default function CampaignEditorClient() {
 
     {/* CREDIT SHORTFALL & CAPACITY WARNING MODAL */}
     {showCreditShortfallModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 animate-in fade-in duration-150 font-sans">
-        <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-5 border border-slate-100">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-150 font-sans">
+        <div className="w-full max-w-md rounded-3xl bg-zinc-950 p-6 shadow-2xl space-y-5 border border-zinc-800">
           <div className="flex items-start gap-3.5">
-            <div className="h-11 w-11 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+            <div className="h-11 w-11 rounded-2xl bg-rose-950 border border-rose-900 flex items-center justify-center text-rose-400 shrink-0">
               <AlertCircle className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-extrabold text-zinc-100">
                 {creditShortfallData?.reason === 'AI_NOT_AVAILABLE_ON_FREE' ? 'AI Personalization Upgrade Required' : 'Not Enough Credits'}
               </h3>
-              <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+              <p className="text-xs text-zinc-400 font-medium mt-1 leading-relaxed">
                 {creditShortfallData?.message || 'Your account credit balance is insufficient to start processing this campaign.'}
               </p>
             </div>
           </div>
 
           {creditShortfallData && creditShortfallData.requiredCredits && (
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono space-y-1.5">
-              <div className="flex justify-between text-slate-600">
+            <div className="p-3.5 rounded-2xl bg-zinc-900 border border-zinc-800 text-xs font-mono space-y-1.5">
+              <div className="flex justify-between text-zinc-400">
                 <span>Available Credits:</span>
-                <strong className="text-slate-900">{creditShortfallData.availableCredits ?? availableCredits}</strong>
+                <strong className="text-zinc-100">{creditShortfallData.availableCredits ?? availableCredits}</strong>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-zinc-400">
                 <span>Campaign Prospects:</span>
-                <strong className="text-slate-900">{creditShortfallData.requiredCredits ?? selectedLeads.length}</strong>
+                <strong className="text-zinc-100">{creditShortfallData.requiredCredits ?? selectedLeads.length}</strong>
               </div>
               {creditShortfallData.shortfall > 0 && (
-                <div className="flex justify-between text-rose-700 font-bold border-t border-slate-200 pt-1.5">
+                <div className="flex justify-between text-rose-300 font-bold border-t border-zinc-800 pt-1.5">
                   <span>Credit Shortfall:</span>
                   <span>-{creditShortfallData.shortfall} credits</span>
                 </div>
@@ -1974,14 +1974,14 @@ export default function CampaignEditorClient() {
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
             <button
               type="button"
               onClick={() => {
                 setShowCreditShortfallModal(false);
                 setActiveTab('prospects');
               }}
-              className="rounded-xl border border-slate-300 bg-white hover:bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 transition-all cursor-pointer"
+              className="rounded-xl border border-zinc-700 bg-zinc-950 hover:bg-zinc-900 px-4 py-2.5 text-xs font-bold text-zinc-300 transition-all cursor-pointer"
             >
               Reduce Prospects
             </button>

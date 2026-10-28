@@ -131,7 +131,7 @@ const coreFeatures = [
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-[#f4f7ff] text-slate-950 flex flex-col justify-between">
+    <div className="min-h-screen bg-black text-white flex flex-col justify-between">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
@@ -141,15 +141,15 @@ export default function FeaturesPage() {
         <div className="mx-auto max-w-7xl space-y-20">
           {/* Section 1: Hero */}
           <section className="mx-auto max-w-4xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/90 bg-blue-50/80 px-4 py-1.5 text-xs font-bold text-[#0e6de4] shadow-2xs">
-              <Sparkles className="h-3.5 w-3.5 text-[#0e6de4]" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-900/90 bg-blue-950/80 px-4 py-1.5 text-xs font-bold text-blue-400 shadow-2xs">
+              <Sparkles className="h-3.5 w-3.5 text-blue-400" />
               <span>Platform Features</span>
             </div>
-            <h1 className="mt-6 text-4xl font-black leading-[1.08] tracking-[-0.03em] text-[#0f172a] sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 text-4xl font-black leading-[1.08] tracking-[-0.03em] text-zinc-100 sm:text-5xl lg:text-6xl">
               Everything You Need to Find <br className="hidden sm:inline" />
-              <span className="text-[#0e6de4]">Clients Through Website Contact Forms</span>
+              <span className="text-blue-400">Clients Through Website Contact Forms</span>
             </h1>
-            <p className="mt-6 max-w-3xl mx-auto text-base font-medium leading-relaxed text-[#64748b] sm:text-lg">
+            <p className="mt-6 max-w-3xl mx-auto text-base font-medium leading-relaxed text-zinc-400 sm:text-lg">
               ContactReachout provides a complete suite of tools to automate B2B contact form outreach from lead import to delivery verification.
             </p>
           </section>
@@ -159,27 +159,27 @@ export default function FeaturesPage() {
             {coreFeatures.map(({ icon: Icon, title, description }) => (
               <div
                 key={title}
-                className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:shadow-md transition"
+                className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-sm hover:shadow-md transition"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#0e6de4]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-950 text-blue-400">
                   <Icon className="h-6 w-6" />
                 </div>
-                <h3 className="mt-6 text-xl font-black text-slate-900">{title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-slate-600">{description}</p>
+                <h3 className="mt-6 text-xl font-black text-zinc-100">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-zinc-400">{description}</p>
               </div>
             ))}
           </section>
 
           {/* Section 3: How ContactReachout Works (5 Steps) */}
-          <section className="rounded-3xl border border-blue-100 bg-white p-8 sm:p-12 shadow-sm space-y-10">
+          <section className="rounded-3xl border border-blue-900 bg-zinc-950 p-8 sm:p-12 shadow-sm space-y-10">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0e6de4] bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950 px-3 py-1 rounded-full border border-blue-900">
                 Step-By-Step
               </span>
-              <h2 className="mt-3 text-3xl font-black text-slate-900 sm:text-4xl">
+              <h2 className="mt-3 text-3xl font-black text-zinc-100 sm:text-4xl">
                 How ContactReachout Works
               </h2>
-              <p className="mt-3 text-base text-slate-600 font-medium">
+              <p className="mt-3 text-base text-zinc-400 font-medium">
                 Move from a targeted prospect list to personalized website contact-form outreach through one controlled workflow.
               </p>
             </div>
@@ -219,17 +219,17 @@ export default function FeaturesPage() {
               ].map(({ step, icon: Icon, title, text }) => (
                 <div
                   key={title}
-                  className="rounded-2xl border border-slate-100 bg-[#fafafd] p-5 flex flex-col justify-between"
+                  className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5 flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#0e6de4]">
+                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-950 text-blue-400">
                         <Icon className="h-5 w-5" />
                       </span>
                       <span className="text-xs font-black text-blue-400">{step}</span>
                     </div>
-                    <h3 className="mt-4 font-black text-slate-900 text-base">{title}</h3>
-                    <p className="mt-2 text-xs leading-relaxed text-slate-600">{text}</p>
+                    <h3 className="mt-4 font-black text-zinc-100 text-base">{title}</h3>
+                    <p className="mt-2 text-xs leading-relaxed text-zinc-400">{text}</p>
                   </div>
                 </div>
               ))}
@@ -239,13 +239,13 @@ export default function FeaturesPage() {
           {/* Section 4: Built for Accountable Outreach (6 Points) */}
           <section className="space-y-8">
             <div className="text-center max-w-3xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0e6de4] bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950 px-3 py-1 rounded-full border border-blue-900">
                 Safeguards & Visibility
               </span>
-              <h2 className="mt-3 text-3xl font-black text-slate-900 sm:text-4xl">
+              <h2 className="mt-3 text-3xl font-black text-zinc-100 sm:text-4xl">
                 Built for Accountable Outreach
               </h2>
-              <p className="mt-2 text-base text-slate-600 font-medium">
+              <p className="mt-2 text-base text-zinc-400 font-medium">
                 ContactReachout gives you the controls and visibility needed to manage website contact-form outreach responsibly.
               </p>
             </div>
@@ -277,27 +277,27 @@ export default function FeaturesPage() {
                   text: 'Deduct campaign credits transparently for processed outreach targets.',
                 },
               ].map(({ title, text }) => (
-                <div key={title} className="rounded-3xl border border-slate-200 bg-white p-7 shadow-xs space-y-3">
+                <div key={title} className="rounded-3xl border border-zinc-800 bg-zinc-950 p-7 shadow-xs space-y-3">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-[#0e6de4] shrink-0" />
-                    <h3 className="font-black text-slate-900 text-base">{title}</h3>
+                    <CheckCircle2 className="h-5 w-5 text-blue-400 shrink-0" />
+                    <h3 className="font-black text-zinc-100 text-base">{title}</h3>
                   </div>
-                  <p className="text-xs leading-relaxed text-slate-600 font-medium pl-7">{text}</p>
+                  <p className="text-xs leading-relaxed text-zinc-400 font-medium pl-7">{text}</p>
                 </div>
               ))}
             </div>
           </section>
 
           {/* Section 5: From Lead List to Campaign Results (Visual Workflow) */}
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-12 shadow-sm space-y-8">
+          <section className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 sm:p-12 shadow-sm space-y-8">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0e6de4] bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950 px-3 py-1 rounded-full border border-blue-900">
                 End-To-End Architecture
               </span>
-              <h2 className="mt-3 text-3xl font-black text-slate-900 sm:text-4xl">
+              <h2 className="mt-3 text-3xl font-black text-zinc-100 sm:text-4xl">
                 From Lead List to Campaign Results
               </h2>
-              <p className="mt-2 text-base text-slate-600 font-medium">
+              <p className="mt-2 text-base text-zinc-400 font-medium">
                 Keep every stage of your outreach workflow connected in one workspace.
               </p>
             </div>
@@ -314,28 +314,28 @@ export default function FeaturesPage() {
               ].map(({ stage, title }) => (
                 <div
                   key={title}
-                  className="rounded-2xl border border-slate-200 bg-[#fafafd] p-4 text-center space-y-1 hover:border-blue-300 transition-colors"
+                  className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-center space-y-1 hover:border-blue-800 transition-colors"
                 >
-                  <span className="text-[10px] font-mono font-bold text-[#0e6de4] block">{stage}</span>
-                  <p className="text-xs font-extrabold text-slate-900">{title}</p>
+                  <span className="text-[10px] font-mono font-bold text-blue-400 block">{stage}</span>
+                  <p className="text-xs font-extrabold text-zinc-100">{title}</p>
                 </div>
               ))}
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-              <p className="text-xs font-semibold text-slate-600">
+            <div className="pt-4 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-4">
+              <p className="text-xs font-semibold text-zinc-400">
                 Want to learn more about how contact form outreach works?
               </p>
               <div className="flex flex-wrap gap-4 text-xs font-bold">
                 <Link
                   href="/contact-form-outreach"
-                  className="inline-flex items-center gap-1.5 text-[#0e6de4] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-blue-400 hover:underline"
                 >
                   Contact Form Outreach Strategy <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
                 <Link
                   href="/how-it-works"
-                  className="inline-flex items-center gap-1.5 text-[#0e6de4] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-blue-400 hover:underline"
                 >
                   How It Works <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
@@ -346,13 +346,13 @@ export default function FeaturesPage() {
           {/* Section 6: Who Is ContactReachout For? (Compact Audience Cards) */}
           <section className="space-y-8">
             <div className="text-center max-w-3xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0e6de4] bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950 px-3 py-1 rounded-full border border-blue-900">
                 Use Cases
               </span>
-              <h2 className="mt-3 text-3xl font-black text-slate-900 sm:text-4xl">
+              <h2 className="mt-3 text-3xl font-black text-zinc-100 sm:text-4xl">
                 Who Is ContactReachout For?
               </h2>
-              <p className="mt-2 text-base text-slate-600 font-medium">
+              <p className="mt-2 text-base text-zinc-400 font-medium">
                 Built for teams that want an additional, accountable channel for B2B outreach.
               </p>
             </div>
@@ -390,42 +390,42 @@ export default function FeaturesPage() {
                   text: 'Acquire client projects by reaching businesses actively monitoring website contact pages.',
                 },
               ].map(({ icon: Icon, title, text }) => (
-                <div key={title} className="rounded-3xl border border-slate-200 bg-white p-7 shadow-xs">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#0e6de4]">
+                <div key={title} className="rounded-3xl border border-zinc-800 bg-zinc-950 p-7 shadow-xs">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-950 text-blue-400">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-5 font-black text-slate-900 text-lg">{title}</h3>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-600">{text}</p>
+                  <h3 className="mt-5 font-black text-zinc-100 text-lg">{title}</h3>
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-400">{text}</p>
                 </div>
               ))}
             </div>
           </section>
 
           {/* Section 7: FAQ Section */}
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-12 shadow-sm space-y-8">
+          <section className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 sm:p-12 shadow-sm space-y-8">
             <div className="max-w-3xl">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0e6de4]">
-                <CircleHelp className="h-4 w-4 text-[#0e6de4]" />
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400">
+                <CircleHelp className="h-4 w-4 text-blue-400" />
                 <span>Frequently Asked Questions</span>
               </div>
-              <h2 className="mt-3 text-3xl font-black text-slate-900 sm:text-4xl">
+              <h2 className="mt-3 text-3xl font-black text-zinc-100 sm:text-4xl">
                 Questions About ContactReachout Features
               </h2>
-              <p className="mt-2 text-base text-slate-600 font-medium">
+              <p className="mt-2 text-base text-zinc-400 font-medium">
                 Learn more about how ContactReachout handles lead imports, form discovery, AI personalization, and reporting.
               </p>
             </div>
 
-            <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-[#fafafd] px-6">
+            <div className="divide-y divide-zinc-800 rounded-2xl border border-zinc-800 bg-zinc-950 px-6">
               {featuresFaqs.map((faq, index) => (
                 <details key={faq.question} className="group py-2" open={index === 0}>
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-base font-black text-slate-900">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-base font-black text-zinc-100">
                     <span>{faq.question}</span>
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-blue-200 bg-white text-sm text-[#0e6de4] transition group-open:rotate-45">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-blue-900 bg-zinc-950 text-sm text-blue-400 transition group-open:rotate-45">
                       +
                     </span>
                   </summary>
-                  <p className="pb-5 pr-6 text-sm leading-relaxed text-slate-600 font-medium">
+                  <p className="pb-5 pr-6 text-sm leading-relaxed text-zinc-400 font-medium">
                     {faq.answer}
                   </p>
                 </details>
@@ -442,7 +442,7 @@ export default function FeaturesPage() {
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-sm font-black text-[#0e6de4] shadow-lg hover:bg-blue-50 transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-8 py-4 text-sm font-black text-blue-400 shadow-lg hover:bg-blue-950 transition-colors"
               >
                 Start Your First Campaign <ArrowRight className="h-4 w-4" />
               </Link>

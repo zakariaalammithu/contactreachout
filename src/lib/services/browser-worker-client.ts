@@ -5,24 +5,12 @@ import type { SubmissionExecutionResult } from './form-submitter';
 const WORKER_TIMEOUT_MS = 25_000;
 const MAX_ATTEMPTS = 2;
 
-function configuredAllowedDomains(): string[] {
-  return (process.env.BROWSER_WORKER_ALLOWED_DOMAINS || '')
-    .split(',')
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-function targetAllowed(targetUrl: string): boolean {
-  const allowList = configuredAllowedDomains();
-  if (!allowList.length) return false;
-  try {
-    const host = new URL(targetUrl).hostname.toLowerCase();
-    return allowList.some((domain) => host === domain || host.endsWith(`.${domain}`));
-  } catch {
-    return false;
-  }
-}
-
+// NOTE: the app no longer gates submissions on BROWSER_WORKER_ALLOWED_DOMAINS.
+// The worker itself enforces authorization (its static allow-list, plus
+// dynamic campaign-lead verification via /api/worker/verify-domain), so a
+// target outside the static list still reaches the worker instead of
+// failing fast here. Removing this gate is what makes bulk outreach to new
+// domains work without an env edit or redeploy.
 function unavailable(message: string, fieldsFilledCount: number, startedAt: number): SubmissionExecutionResult {
   return {
     status: 'FAILED', isDryRun: false, isTestMode: false, httpStatus: null,
@@ -47,9 +35,6 @@ export async function submitWithBrowserWorker(input: {
 
   if (!workerUrl || !workerSecret) {
     return unavailable('BROWSER_RUNTIME_UNAVAILABLE: remote browser worker is not configured.', fields.length, startedAt);
-  }
-  if (!targetAllowed(input.contactPageUrl)) {
-    return unavailable('BROWSER_RUNTIME_UNAVAILABLE: target domain is not in the server-side worker allow-list.', fields.length, startedAt);
   }
 
   const idempotencyKey = createHash('sha256')
