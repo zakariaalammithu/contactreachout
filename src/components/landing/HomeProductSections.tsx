@@ -74,7 +74,7 @@ export function HomeProductSections() {
               <div className="grid grid-cols-6 gap-2 pt-8 sm:grid-cols-10 sm:gap-3">
                 {Array.from({ length: 40 }).map((_, index) => {
                   const profile = outreachProfiles.find((__, profileIndex) => [1, 4, 7, 10, 14, 19, 23, 28, 33, 37][profileIndex] === index);
-                  return <div key={index} className="aspect-square rounded-xl border border-blue-50 bg-zinc-950 p-1 shadow-xs">{profile ? <img src={profile.image} alt="Sample campaign profile" className="h-full w-full rounded-lg object-cover" /> : null}</div>;
+                  return profile ? <div key={index} className="aspect-square rounded-xl border border-blue-50 bg-zinc-950 p-1 shadow-xs"><img src={profile.image} alt="Sample campaign profile" className="h-full w-full rounded-lg object-cover" /></div> : <div key={index} aria-hidden="true" className="aspect-square rounded-xl border border-dashed border-white/10 bg-transparent p-1" />;
                 })}
               </div>
             </div>

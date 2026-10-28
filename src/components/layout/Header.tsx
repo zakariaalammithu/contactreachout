@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { MatchDataModal } from '@/components/leads/MatchDataModal';
 import { LogoutModal } from '@/components/ui/LogoutModal';
 import { readCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
@@ -261,6 +262,9 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
             </span>
           </div>
         )}
+
+        {/* Dark / light mode switch (dashboard header, applies site-wide) */}
+        <ThemeToggle />
 
         {/* User Profile / Account Switcher Controls */}
         <div className="flex items-center gap-2.5 relative" ref={userMenuRef}>

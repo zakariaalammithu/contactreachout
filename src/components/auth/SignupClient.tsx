@@ -7,8 +7,10 @@ import { Mail, Lock, User, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
+import { useTheme } from '@/components/theme/ThemeProvider';
 
 export default function SignupClient() {
+  const { theme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
   const referralCode = searchParams?.get('ref')?.trim().toUpperCase() || '';
@@ -93,7 +95,7 @@ export default function SignupClient() {
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center justify-center">
-            <img src="/brand/logo-full-dark.png" alt="ContactReachout logo" width="190" height="42" className="h-10 w-auto max-w-[200px] object-contain" />
+            <img src={theme === 'light' ? '/brand/logo-full.png' : '/brand/logo-full-dark.png'} alt="ContactReachout logo" width="190" height="42" className="h-10 w-auto max-w-[200px] object-contain" />
           </Link>
           <p className="text-xs text-zinc-400 font-mono">
             Create your ContactReachout account

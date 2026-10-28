@@ -323,6 +323,19 @@ body > div.min-h-screen.bg-black {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
 }
 
+/* First two sections (hero + trusted strip): no box — content sits directly
+   on the page background, pricing-page style. */
+.home-saas-main > section:first-child,
+.home-saas-main > section:nth-child(2) {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 /* Keep all Home Page accents on the ContactReachout brand blue. */
 .home-saas-main .text-blue-600,
 .home-saas-main .text-violet-600,
@@ -353,7 +366,7 @@ body > div.min-h-screen.bg-black {
 
 /* Hero product preview cards use a refined translucent surface treatment. */
 .home-saas-main > section:first-child .hero-glow-card {
-  box-shadow: 0 0 0 1px rgba(192, 132, 252, 0.28), 0 0 90px -20px rgba(239, 68, 68, 0.5), 0 0 90px -12px rgba(168, 85, 247, 0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
 .home-saas-main > section:first-child .rounded-3xl {
@@ -365,8 +378,8 @@ body > div.min-h-screen.bg-black {
 }
 
 .home-saas-main > section:nth-child(12) > div {
-  background: linear-gradient(135deg, var(--home-brand), #0758bd) !important;
-  box-shadow: 0 24px 70px rgba(14, 109, 228, 0.22) !important;
+  background: #09090b !important;
+  box-shadow: none !important;
 }
 
 .home-saas-main .border-violet-100,
@@ -599,7 +612,7 @@ body > div.min-h-screen.bg-black {
   .home-saas-main > section:first-child h1 span { white-space: normal; }
   .home-saas-main > section:first-child .grid { min-width: 0; }
   .home-saas-main > section:first-child .hero-glow-card {
-  box-shadow: 0 0 0 1px rgba(192, 132, 252, 0.28), 0 0 90px -20px rgba(239, 68, 68, 0.5), 0 0 90px -12px rgba(168, 85, 247, 0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
 .home-saas-main > section:first-child .rounded-3xl { max-width: 100%; }
@@ -672,3 +685,159 @@ body > div.min-h-screen.bg-black {
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
+
+
+/* ==========================================================================
+   LIGHT (WHITE) MODE
+   Dark is the default. When <html> carries the `light` class (toggled from
+   the dashboard header, persisted in localStorage), this layer flips every
+   dark surface to a light one. All rules are prefixed with html.light so the
+   dark design is untouched, and they are unlayered so they beat the Tailwind
+   utilities. Nothing here changes layout, text, or behavior.
+   ========================================================================== */
+html.light { color-scheme: light;
+  --background: 0 0% 100%; --foreground: 240 10% 4%;
+  --card: 0 0% 100%; --card-foreground: 240 10% 4%;
+  --popover: 0 0% 100%; --popover-foreground: 240 10% 4%;
+  --primary: 213 88% 47%; --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 96%; --secondary-foreground: 240 10% 4%;
+  --muted: 240 5% 96%; --muted-foreground: 240 4% 46%;
+  --accent: 213 88% 47%; --accent-foreground: 0 0% 100%;
+  --destructive: 350 89% 60%; --destructive-foreground: 0 0% 100%;
+  --border: 240 6% 90%; --input: 240 6% 90%; --ring: 213 88% 47%;
+  --sidebar-background: 0 0% 100%; --sidebar-foreground: 240 10% 4%;
+  --sidebar-primary: 213 88% 47%; --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 5% 96%; --sidebar-accent-foreground: 240 10% 4%;
+  --sidebar-border: 240 6% 90%; --sidebar-ring: 213 88% 47%;
+}
+html.light body {
+  background-color: #ffffff;
+  color: #09090b;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='rgba(0,0,0,0.08)' stroke-width='1'%3E%3Cpath d='M-50 -480c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 -320c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 -160c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 0c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 160c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 320c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 480c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3Cpath d='M-50 640c100 -12 200 12 300 107 100 -12 200 12 300 106 100 -12 200 12 300 107'/%3E%3C/g%3E%3C/svg%3E");
+}
+html.light .input { background: #ffffff; color: #09090b; border-color: #d4d4d8; }
+html.light .glass-panel, html.light .glass-panel-interactive { background: rgba(255, 255, 255, 0.92); border-color: #e4e4e7; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
+html.light .glass-panel-interactive:hover { background: #ffffff; }
+html.light ::-webkit-scrollbar-track { background: #f4f4f5; }
+html.light ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+html.light ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+html.light .bg-black { background-color: #ffffff; }
+html.light .bg-zinc-950 { background-color: #ffffff; }
+html.light .bg-zinc-950\/95 { background-color: rgba(255,255,255,0.95); }
+html.light .bg-zinc-950\/90 { background-color: rgba(255,255,255,0.90); }
+html.light .bg-zinc-950\/80 { background-color: rgba(255,255,255,0.80); }
+html.light .bg-zinc-950\/70 { background-color: rgba(255,255,255,0.70); }
+html.light .bg-zinc-950\/60 { background-color: rgba(255,255,255,0.60); }
+html.light .bg-zinc-950\/50 { background-color: rgba(255,255,255,0.50); }
+html.light .bg-zinc-950\/40 { background-color: rgba(255,255,255,0.40); }
+html.light .bg-zinc-900 { background-color: #f4f4f5; }
+html.light .bg-zinc-900\/95 { background-color: rgba(244,244,245,0.95); }
+html.light .bg-zinc-900\/80 { background-color: rgba(244,244,245,0.80); }
+html.light .bg-zinc-900\/70 { background-color: rgba(244,244,245,0.70); }
+html.light .bg-zinc-900\/60 { background-color: rgba(244,244,245,0.60); }
+html.light .bg-zinc-900\/50 { background-color: rgba(244,244,245,0.50); }
+html.light .bg-zinc-900\/40 { background-color: rgba(244,244,245,0.40); }
+html.light .bg-zinc-800 { background-color: #e4e4e7; }
+html.light .bg-zinc-800\/80 { background-color: rgba(228,228,231,0.80); }
+html.light .bg-zinc-800\/70 { background-color: rgba(228,228,231,0.70); }
+html.light .bg-zinc-800\/60 { background-color: rgba(228,228,231,0.60); }
+html.light .bg-zinc-800\/45 { background-color: rgba(228,228,231,0.45); }
+html.light .bg-zinc-800\/40 { background-color: rgba(228,228,231,0.40); }
+html.light .bg-zinc-800\/35 { background-color: rgba(228,228,231,0.35); }
+html.light .bg-zinc-700 { background-color: #d4d4d8; }
+html.light .bg-blue-950 { background-color: #dbeafe; }
+html.light .bg-blue-950\/80 { background-color: rgba(219,234,254,0.80); }
+html.light .bg-blue-950\/70 { background-color: rgba(219,234,254,0.70); }
+html.light .bg-blue-950\/60 { background-color: rgba(219,234,254,0.60); }
+html.light .bg-blue-950\/50 { background-color: rgba(219,234,254,0.50); }
+html.light .bg-blue-950\/40 { background-color: rgba(219,234,254,0.40); }
+html.light .bg-blue-950\/30 { background-color: rgba(219,234,254,0.30); }
+html.light .bg-blue-950\/20 { background-color: rgba(219,234,254,0.20); }
+html.light .bg-blue-900 { background-color: #bfdbfe; }
+html.light .bg-blue-900\/60 { background-color: rgba(191,219,254,0.60); }
+html.light .bg-emerald-950 { background-color: #ecfdf5; }
+html.light .bg-amber-950 { background-color: #fffbeb; }
+html.light .bg-purple-950 { background-color: #faf5ff; }
+html.light .bg-cyan-950 { background-color: #ecfeff; }
+html.light .bg-slate-950 { background-color: #f8fafc; }
+html.light .bg-rose-950 { background-color: #fff1f2; }
+html.light .text-white { color: #09090b; }
+html.light .text-zinc-100 { color: #18181b; }
+html.light .text-zinc-200 { color: #27272a; }
+html.light .text-zinc-300 { color: #3f3f46; }
+html.light .text-zinc-400 { color: #52525b; }
+html.light .text-zinc-500 { color: #71717a; }
+html.light .text-blue-400 { color: #0e6de4; }
+html.light .text-blue-300 { color: #0e6de4; }
+html.light .text-blue-200 { color: #0758bd; }
+html.light .text-blue-100 { color: #0758bd; }
+html.light .text-blue-100\/90 { color: rgba(7,88,189,0.90); }
+html.light .text-emerald-400 { color: #059669; }
+html.light .text-amber-400 { color: #d97706; }
+html.light .text-purple-400 { color: #9333ea; }
+html.light .text-cyan-400 { color: #0891b2; }
+html.light .text-rose-400 { color: #e11d48; }
+html.light .text-pink-400 { color: #db2777; }
+html.light .text-emerald-300 { color: #047857; }
+html.light .text-amber-300 { color: #b45309; }
+html.light .text-purple-300 { color: #7e22ce; }
+html.light .text-cyan-300 { color: #0e7490; }
+html.light .text-rose-300 { color: #be123c; }
+html.light .text-slate-300 { color: #475569; }
+html.light .bg-\[\#0e6de4\].text-white, html.light .bg-\[\#0e6de4\] .text-white, html.light .bg-\[\#0758bd\].text-white, html.light .bg-\[\#0758bd\] .text-white, html.light .bg-blue-600.text-white, html.light .bg-blue-600 .text-white, html.light .from-\[\#0e6de4\].text-white, html.light .from-\[\#0e6de4\] .text-white { color: #ffffff; }
+html.light .border-zinc-800 { border-color: #e4e4e7; }
+html.light .border-zinc-800\/80 { border-color: rgba(228,228,231,0.80); }
+html.light .border-zinc-800\/90 { border-color: rgba(228,228,231,0.90); }
+html.light .border-zinc-800\/60 { border-color: rgba(228,228,231,0.60); }
+html.light .border-zinc-800\/70 { border-color: rgba(228,228,231,0.70); }
+html.light .border-zinc-700 { border-color: #d4d4d8; }
+html.light .border-zinc-700\/60 { border-color: rgba(212,212,216,0.60); }
+html.light .border-zinc-700\/80 { border-color: rgba(212,212,216,0.80); }
+html.light .border-zinc-600 { border-color: #d4d4d8; }
+html.light .border-zinc-600\/40 { border-color: rgba(212,212,216,0.40); }
+html.light .border-zinc-900 { border-color: #e4e4e7; }
+html.light .border-blue-900 { border-color: #bfdbfe; }
+html.light .border-blue-900\/80 { border-color: rgba(191,219,254,0.80); }
+html.light .border-blue-900\/90 { border-color: rgba(191,219,254,0.90); }
+html.light .border-blue-900\/60 { border-color: rgba(191,219,254,0.60); }
+html.light .border-blue-800 { border-color: #93c5fd; }
+html.light .border-emerald-900 { border-color: #a7f3d0; }
+html.light .border-amber-900 { border-color: #fde68a; }
+html.light .border-purple-900 { border-color: #e9d5ff; }
+html.light .border-cyan-900 { border-color: #a5f3fc; }
+html.light .border-slate-900 { border-color: #e2e8f0; }
+html.light .border-rose-900 { border-color: #fecdd3; }
+html.light .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) { border-color: #e4e4e7; }
+html.light .divide-zinc-700 > :not([hidden]) ~ :not([hidden]) { border-color: #d4d4d8; }
+html.light .divide-zinc-700\/60 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(212,212,216,0.60); }
+html.light .hover\:bg-zinc-900:hover { background-color: #f4f4f5; }
+html.light .hover\:bg-zinc-800:hover { background-color: #e4e4e7; }
+html.light .hover\:bg-zinc-950:hover { background-color: #ffffff; }
+html.light .hover\:bg-blue-950:hover { background-color: #dbeafe; }
+html.light .hover\:text-white:hover { color: #09090b; }
+html.light .hover\:text-zinc-100:hover { color: #18181b; }
+html.light .hover\:border-zinc-700:hover { border-color: #d4d4d8; }
+html.light .hover\:border-zinc-800:hover { border-color: #e4e4e7; }
+html.light .home-saas-main { --home-canvas: #ffffff; background: radial-gradient(circle at 50% 0%, rgba(14, 109, 228, 0.06), transparent 24rem), #ffffff; }
+html.light .home-saas-main > section { background: #ffffff; border-color: #e4e4e7; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08); }
+html.light .home-saas-main > section:first-child { box-shadow: 0 28px 90px rgba(0, 0, 0, 0.10); }
+html.light .home-saas-main > section:nth-child(2), html.light .home-saas-main > section:nth-child(4), html.light .home-saas-main > section:nth-child(6), html.light .home-saas-main > section:nth-child(8), html.light .home-saas-main > section:nth-child(10) { background: linear-gradient(145deg, #ffffff 0%, #f4f4f5 100%); }
+html.light .home-saas-main > section:first-child, html.light .home-saas-main > section:nth-child(2) { background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+html.light .home-saas-main > section:nth-child(n + 5):nth-child(-n + 10) { background: transparent; border: 0; box-shadow: none; }
+html.light .home-saas-main > section:nth-child(n + 5):nth-child(-n + 10) > div { border-color: #e4e4e7 !important; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.10) !important; }
+html.light .home-saas-main > section:first-child .hero-glow-card { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12); }
+html.light .home-saas-main > section:first-child .rounded-3xl { background-color: rgba(244, 244, 245, 0.95) !important; }
+html.light .features-section, html.light .features-section > div { background: #ffffff !important; }
+html.light .features-section h2 { color: #09090b !important; }
+html.light .features-section > div > div:first-child > p:first-child { background: #dbeafe; border-color: #bfdbfe; color: #0758bd !important; }
+html.light .features-section > div > div:first-child > p:last-child { color: #52525b !important; }
+html.light .features-section article { background: #ffffff !important; border-color: #e4e4e7 !important; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06) !important; }
+html.light .features-section article:hover { border-color: #0e6de4 !important; box-shadow: 0 18px 38px rgba(14, 109, 228, 0.15) !important; }
+html.light .features-section article > svg { background: #dbeafe; }
+html.light .features-section article h3 { color: #09090b; }
+html.light .features-section article p { color: #52525b; }
+html.light .home-saas-main > section:nth-child(12) > div { background: #ffffff !important; box-shadow: none !important; }
+html.light .pricing-public-page .pricing-plan-card { background: #ffffff !important; border-color: #e4e4e7 !important; }
+html.light .pricing-public-page .pricing-plan-card h3, html.light .pricing-public-page .pricing-plan-card p, html.light .pricing-public-page .pricing-plan-card span { color: #09090b; }
+html.light .pricing-public-page .pricing-plan-card button, html.light .pricing-public-page .pricing-plan-card button span { color: #ffffff; }
+html.light .pricing-public-page .pricing-calculator input[type="number"] { border-color: #d4d4d8; background: #ffffff; color: #0e6de4; }

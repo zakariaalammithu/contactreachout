@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { WebsiteAnalyticsTracker } from '@/components/analytics/WebsiteAnalyticsTracker';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -13,12 +14,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <Suspense fallback={null}>
-          <WebsiteAnalyticsTracker />
-        </Suspense>
-        <DashboardShell>{children}</DashboardShell>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('cr-theme');if(t==='light'){document.documentElement.classList.add('light');}}catch(e){}})();`,
+          }}
+        />
+        <ThemeProvider>
+          <Suspense fallback={null}>
+            <WebsiteAnalyticsTracker />
+          </Suspense>
+          <DashboardShell>{children}</DashboardShell>
+        </ThemeProvider>
       </body>
     </html>
   );

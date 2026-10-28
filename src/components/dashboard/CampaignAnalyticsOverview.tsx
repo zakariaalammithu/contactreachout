@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, Pie, P
 type CampaignRecord = { id?: string; name?: string; updatedAt?: string; logs?: Array<Record<string, unknown>>; prospectsList?: unknown[]; totalLeads?: number; sentCount?: number; failedCount?: number; noFormCount?: number; captchaCount?: number; repliedCount?: number };
 type OutcomeCounts = { delivered: number; failed: number; review: number; noForm: number; other: number; processed: number };
 
-const BRAND = { green: '#1DBF73', charcoal: '#a1a1aa', lightGray: '#27272a', failed: '#E5484D', review: '#F59E0B', noForm: '#7C6EE6', other: '#94A3B8' };
+const BRAND = { green: '#1DBF73', charcoal: '#a1a1aa', lightGray: '#27272a', failed: '#fda4af', review: '#F59E0B', noForm: '#7C6EE6', other: '#94A3B8' };
 const tooltipStyle = { borderRadius: 14, border: '1px solid #27272a', boxShadow: '0 14px 35px rgba(0, 0, 0, 0.5)', backgroundColor: '#09090b', color: '#fafafa', fontSize: 12 };
 
 const dayKey = (value: unknown) => { const date = new Date(String(value || '')); return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10); };
