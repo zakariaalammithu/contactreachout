@@ -86,21 +86,21 @@ export default function ReferralPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans">
-      {/* Banner */}
-      <div className="rounded-3xl bg-[#0e6de4] p-7 text-white shadow-xl shadow-blue-900 sm:p-9">
+      {/* Banner (matching dark card, no big blue block) */}
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-7 shadow-xs sm:p-9">
         <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-white/15 p-3">
+          <div className="rounded-2xl bg-blue-950 p-3 text-blue-400">
             <Gift className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-white">Refer & Earn</p>
-            <h1 className="mt-1 text-3xl font-black">Grow together with ContactReachout</h1>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-400">Refer & Earn</p>
+            <h1 className="mt-1 text-3xl font-black text-zinc-100">Grow together with ContactReachout</h1>
           </div>
         </div>
-        <p className="mt-4 max-w-2xl text-base font-extrabold text-white leading-relaxed">
+        <p className="mt-4 max-w-2xl text-base font-extrabold text-zinc-100 leading-relaxed">
           Refer a friend → They get 50 bonus credits. You get 100 bonus credits after their email verification.
         </p>
-        <p className="mt-1.5 max-w-2xl text-xs text-white font-medium">
+        <p className="mt-1.5 max-w-2xl text-xs text-zinc-400 font-medium">
           Invite a new user and earn 100 bonus credits when they complete email verification. Your referred user also receives 50 bonus credits.
         </p>
       </div>
@@ -122,12 +122,12 @@ export default function ReferralPage() {
               <button
                 type="button"
                 onClick={() => copyValue('code', data.referralCode)}
-                className="rounded-xl bg-white/10 p-2.5 hover:bg-white/20 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                className="rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white p-2.5 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold"
                 aria-label="Copy referral code"
               >
                 {copied === 'code' ? (
                   <>
-                    <Check className="h-4 w-4 text-emerald-400" />
+                    <Check className="h-4 w-4" />
                     <span>Copied!</span>
                   </>
                 ) : (
@@ -169,8 +169,8 @@ export default function ReferralPage() {
 
         {/* 5 Real Metric Counters */}
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-2xs">
-            <div className="rounded-xl bg-blue-950 p-3 text-blue-400">
+          <div className="flex items-center gap-4 rounded-2xl border border-blue-900 bg-blue-950/40 p-4 shadow-2xs">
+            <div className="rounded-xl bg-blue-900 p-3 text-blue-400">
               <Users className="h-5 w-5" />
             </div>
             <div>
@@ -179,23 +179,23 @@ export default function ReferralPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-emerald-900 bg-emerald-950/40 p-4 shadow-2xs">
-            <div className="rounded-xl bg-emerald-900 p-3 text-emerald-300">
+          <div className="flex items-center gap-4 rounded-2xl border border-blue-900 bg-blue-950/40 p-4 shadow-2xs">
+            <div className="rounded-xl bg-blue-900 p-3 text-blue-400">
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-emerald-300 font-mono">{data.totals.successfulReferrals}</p>
-              <p className="text-xs font-bold text-emerald-300">Successful Referrals</p>
+              <p className="text-2xl font-black text-blue-400 font-mono">{data.totals.successfulReferrals}</p>
+              <p className="text-xs font-bold text-zinc-400">Successful Referrals</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-amber-900 bg-amber-950/40 p-4 shadow-2xs">
-            <div className="rounded-xl bg-amber-900 p-3 text-amber-300">
+          <div className="flex items-center gap-4 rounded-2xl border border-blue-900 bg-blue-950/40 p-4 shadow-2xs">
+            <div className="rounded-xl bg-blue-900 p-3 text-blue-400">
               <Clock className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-amber-300 font-mono">{data.totals.pendingReferrals}</p>
-              <p className="text-xs font-bold text-amber-300">Pending Referrals</p>
+              <p className="text-2xl font-black text-blue-400 font-mono">{data.totals.pendingReferrals}</p>
+              <p className="text-xs font-bold text-zinc-400">Pending Referrals</p>
             </div>
           </div>
 
@@ -266,8 +266,8 @@ export default function ReferralPage() {
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                           user.status === 'Successful'
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-900'
-                            : 'bg-amber-950 text-amber-300 border border-amber-900'
+                            ? 'bg-[#0e6de4]/15 text-blue-300 border border-[#0e6de4]/30'
+                            : 'bg-blue-950 text-blue-400 border border-blue-900'
                         }`}
                       >
                         {user.status}
