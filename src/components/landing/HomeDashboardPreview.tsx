@@ -33,7 +33,7 @@ type PreviewTab =
   | 'referral';
 
 const STATS = [
-  { label: 'Available Credits', value: '1,000,000', icon: Wallet },
+  { label: 'Available Credits', value: '5,250', icon: Wallet },
   { label: 'Active Campaigns', value: '3', icon: Activity },
   { label: 'Draft Campaigns', value: '2', icon: FileText },
   { label: 'Total Submissions', value: '128', icon: Send },
@@ -87,7 +87,7 @@ const THREADS = [
     time: '2h ago',
     unread: true,
     snippet: 'Thanks for reaching out — yes, let us schedule a call…',
-    body: 'Hi Zakaria, thanks for reaching out through our contact form. Your proposal looks relevant — could we schedule a brief call next week? Best, Sarah',
+    body: 'Hi James, thanks for reaching out through our contact form. Your proposal looks relevant — could we schedule a brief call next week? Best, Sarah',
   },
   {
     id: 2,
@@ -119,9 +119,9 @@ const USAGE_HISTORY = [
 ];
 
 const LEDGER = [
-  { date: '11 Oct 2026', description: 'Monthly Free 100 Credits Reset', change: '+100', balance: '1,000,000' },
-  { date: '23 Sep 2026', description: 'Account grant', change: '+100', balance: '1,000,000' },
-  { date: '23 Sep 2026', description: 'Initial grant', change: '+100', balance: '100' },
+  { date: '15 Oct 2026', description: 'Monthly free credits', change: '+100', balance: '5,250' },
+  { date: '02 Oct 2026', description: 'Credit purchase', change: '+5,000', balance: '5,150' },
+  { date: '28 Sep 2026', description: 'Welcome bonus', change: '+150', balance: '150' },
 ];
 
 function statusBadge(status: string) {
@@ -346,7 +346,7 @@ function InboxView() {
   const selected = THREADS.find((t) => t.id === selectedId) || THREADS[0];
   return (
     <div className="space-y-4">
-      <Card title="Inbox" subtitle="Forwarding replies to: mithusquare@gmail.com — only campaign replies appear here.">
+      <Card title="Inbox" subtitle="Forwarding replies to: james@millerconsulting.com — only campaign replies appear here.">
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-2">
             {THREADS.map((t) => (
@@ -392,10 +392,10 @@ function CrmView() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
-          ['Total Contacts', '22'],
-          ['Total Lists', '7'],
-          ['Delivered', '1'],
-          ['Pending', '17'],
+          ['Total Contacts', '148'],
+          ['Total Lists', '6'],
+          ['Delivered', '86'],
+          ['Pending', '42'],
         ].map(([label, value]) => (
           <div key={label} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
             <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">{label}</p>
@@ -501,14 +501,13 @@ function BillingView() {
       <Card title="Billing & Credits" subtitle="Your wallet, at a glance.">
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-xs font-black uppercase tracking-wider text-zinc-400">Total Available</p>
-          <span className="rounded-full bg-[#0e6de4] px-3 py-1 text-[10px] font-black text-white">SUPER ADMIN</span>
         </div>
-        <p className="mt-2 text-4xl font-black text-zinc-100">1,000,000</p>
+        <p className="mt-2 text-4xl font-black text-zinc-100">5,250</p>
         <div className="mt-4 grid grid-cols-3 gap-3 text-center">
           {[
             ['Free Monthly', '100 / 100'],
-            ['Paid', '0'],
-            ['Admin Testing', '999,900'],
+            ['Paid', '5,000'],
+            ['Bonus', '150'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl bg-zinc-900 p-3">
               <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">{label}</p>
@@ -543,11 +542,11 @@ function ProfileView() {
     <Card title="Profile" subtitle="Your sender identity — the name and reply address prospects see.">
       <div className="flex flex-wrap items-center gap-4">
         <span className="grid h-14 w-14 place-items-center rounded-full bg-[#0e6de4] text-base font-black text-white">
-          ZM
+          JM
         </span>
         <div>
-          <p className="text-lg font-black text-zinc-100">Zakaria Alam Mithu</p>
-          <p className="text-xs text-zinc-400">mithusquare@gmail.com</p>
+          <p className="text-lg font-black text-zinc-100">James Miller</p>
+          <p className="text-xs text-zinc-400">james@millerconsulting.com</p>
         </div>
         <span className="rounded-full border border-emerald-900 bg-emerald-950 px-3 py-1 text-[10px] font-black text-emerald-300">
           REPLY EMAIL VERIFIED
@@ -555,10 +554,10 @@ function ProfileView() {
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {[
-          ['Reply Email', 'mithusquare@gmail.com'],
-          ['Company', 'ContactReachout'],
-          ['Website', 'https://contactreachout.com'],
-          ['Account', 'Super Admin'],
+          ['Reply Email', 'james@millerconsulting.com'],
+          ['Company', 'Miller Consulting'],
+          ['Website', 'https://millerconsulting.com'],
+          ['Account', 'Growth Plan'],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl bg-zinc-900 p-3">
             <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">{label}</p>
