@@ -36,6 +36,7 @@ import {
   processImportRows,
 } from '@/lib/services/import-service';
 import { generateUniqueLeadListName } from '@/lib/services/lead-list-service';
+import { parseBulkWebsites, matchesLeadDetails, matchesBulkDomains } from '@/lib/services/lead-filter-utils';
 
 
 export default function LeadsPage() {
@@ -64,7 +65,15 @@ export default function LeadsPage() {
   const [leadLists, setLeadLists] = useState<any[]>([]);
   const [listSearch, setListSearch] = useState('');
   const [listFilter, setListFilter] = useState('ALL');
-  const [activeListId, setActiveListId] = useState<string>('');
+  const [activeListIds, setActiveListIds] = useState<string[]>([]);
+  const [jobTitleFilter, setJobTitleFilter] = useState('');
+  const [nameFilter, setNameFilter] = useState('');
+  const [companyFilter, setCompanyFilter] = useState('');
+  const [websiteFilter, setWebsiteFilter] = useState('');
+  const [countryFilter, setCountryFilter] = useState('');
+  const [bulkSearchInput, setBulkSearchInput] = useState('');
+  const [bulkSearchDomains, setBulkSearchDomains] = useState<string[]>([]);
+  const [bulkSearchTruncated, setBulkSearchTruncated] = useState(0);
   const [listsFilterOpen, setListsFilterOpen] = useState(true);
   const [listDropdownOpen, setListDropdownOpen] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -286,6 +295,7 @@ export default function LeadsPage() {
     const nextLists = leadLists.filter((item) => item.id !== list.id);
     const nextLeads = allLeads.filter((lead) => lead.listId !== list.id && lead.listId !== list.name && lead.listName !== list.name);
     setLeadLists(nextLists); setAllLeads(nextLeads);
+    setActiveListIds((prev) => prev.filter((id) => id !== list.id && id !== list.name));
     localStorage.setItem('user_lead_lists', JSON.stringify(nextLists));
     localStorage.setItem('user_imported_leads', JSON.stringify(nextLeads.filter((lead) => lead.isNewlyImported)));
   };
@@ -316,7 +326,7 @@ export default function LeadsPage() {
   // Reset pagination to page 1 whenever filters or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, campaignFilter, tagFilter, activeListId, pageSize]);
+  }, [searchTerm, statusFilter, campaignFilter, tagFilter, activeListIds, jobTitleFilter, nameFilter, companyFilter, websiteFilter, countryFilter, bulkSearchDomains, pageSize]);
 
   const clearImportedLeads = () => {
     if (confirm('Clear all your imported leads?')) {
@@ -355,10 +365,23 @@ export default function LeadsPage() {
       (lead.country || '').toLowerCase().includes(searchLower) ||
       leadFile.includes(searchLower);
 
-    const selectedList = activeListId ? leadLists.find((list) => list.id === activeListId || list.name === activeListId || list.fileName === activeListId) : null;
-    const listKeys = selectedList ? new Set([selectedList.id, selectedList.name, selectedList.fileName].filter(Boolean).map(String)) : null;
+    const selectedLists = activeListIds.length
+      ? leadLists.filter((list) => activeListIds.includes(list.id) || activeListIds.includes(list.name))
+      : [];
+    const listKeys = new Set<string>();
+    selectedLists.forEach((list) => {
+      [list.id, list.name, list.fileName].filter(Boolean).forEach((key) => listKeys.add(String(key)));
+    });
     const leadListKeys = [lead.listId, lead.listName, lead.sourceFileName, lead.source_file, lead.fileName, lead.file_name].filter(Boolean).map(String);
-    const matchesList = !listKeys || leadListKeys.some((key) => listKeys.has(key));
+    const matchesList = listKeys.size === 0 || leadListKeys.some((key) => listKeys.has(key));
+    const matchesDetails = matchesLeadDetails(lead, {
+      jobTitle: jobTitleFilter,
+      name: nameFilter,
+      company: companyFilter,
+      website: websiteFilter,
+      country: countryFilter,
+    });
+    const matchesBulk = matchesBulkDomains(lead, bulkSearchDomains);
     const selectedCampaign = campaignFilter === 'ALL' ? null : campaigns.find((campaign) => campaign.id === campaignFilter);
     const campaignLeads = selectedCampaign?.prospectsList || selectedCampaign?.prospects || [];
     const campaignLeadIds = selectedCampaign ? new Set(campaignLeads.map((item: any) => typeof item === 'string' ? item : item.id).filter(Boolean).map(String)) : null;
@@ -386,7 +409,7 @@ export default function LeadsPage() {
       }
     }
 
-    return matchesSearch && matchesStatus && matchesList && matchesCampaign && matchesTag;
+    return matchesSearch && matchesStatus && matchesList && matchesCampaign && matchesTag && matchesDetails && matchesBulk;
   });
 
   // Calculate Pagination Slices
@@ -536,14 +559,22 @@ export default function LeadsPage() {
             <Filter className="h-3.5 w-3.5 text-blue-400" />
             <span>Filters</span>
           </p>
-          {(activeListId || campaignFilter !== 'ALL' || statusFilter !== 'ALL') && (
+          {(activeListIds.length > 0 || campaignFilter !== 'ALL' || statusFilter !== 'ALL' || jobTitleFilter || nameFilter || companyFilter || websiteFilter || countryFilter || bulkSearchDomains.length > 0) && (
             <button
               type="button"
               onClick={() => {
-                setActiveListId('');
+                setActiveListIds([]);
                 setListSearch('');
                 setCampaignFilter('ALL');
                 setStatusFilter('ALL');
+                setJobTitleFilter('');
+                setNameFilter('');
+                setCompanyFilter('');
+                setWebsiteFilter('');
+                setCountryFilter('');
+                setBulkSearchInput('');
+                setBulkSearchDomains([]);
+                setBulkSearchTruncated(0);
               }}
               className="text-[11px] font-bold text-blue-400 hover:text-blue-300 underline cursor-pointer"
             >
@@ -581,12 +612,12 @@ export default function LeadsPage() {
           </details>
 
           {/* 2. Lists */}
-          <details className="group px-3 py-2.5" open={!!activeListId}>
+          <details className="group px-3 py-2.5" open={activeListIds.length > 0}>
             <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-zinc-300 hover:text-blue-400">
               <span className="flex items-center gap-2">
                 <span>Lists</span>
-                {activeListId && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-900 text-blue-300 text-[10px] font-mono">1 selected</span>
+                {activeListIds.length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-900 text-blue-300 text-[10px] font-mono">{activeListIds.length} selected</span>
                 )}
               </span>
               <span className="text-zinc-400 transition-transform group-open:rotate-180">⌄</span>
@@ -602,17 +633,17 @@ export default function LeadsPage() {
                     setListDropdownOpen(true);
                   }}
                   placeholder={
-                    activeListId
-                      ? leadLists.find((l) => l.id === activeListId || l.name === activeListId)?.name || 'Search lists'
+                    activeListIds.length > 0
+                      ? `${activeListIds.length} list${activeListIds.length > 1 ? 's' : ''} selected`
                       : 'Search lists'
                   }
                   className="w-full rounded-lg border border-zinc-700 py-1.5 pl-8 pr-7 text-xs text-zinc-200 outline-none focus:border-blue-500"
                 />
-                {activeListId && (
+                {activeListIds.length > 0 && (
                   <button
                     type="button"
                     onClick={() => {
-                      setActiveListId('');
+                      setActiveListIds([]);
                       setListSearch('');
                       setListDropdownOpen(false);
                     }}
@@ -626,29 +657,126 @@ export default function LeadsPage() {
                 <div className="max-h-48 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-1 shadow-md">
                   {visibleLists.length ? (
                     visibleLists.map((list) => {
-                      const selected = activeListId === list.id || activeListId === list.name;
+                      const listKey = list.id || list.name;
+                      const selected = activeListIds.includes(listKey);
                       return (
-                        <button
-                          type="button"
+                        <label
                           key={list.id || list.name}
-                          onClick={() => {
-                            setActiveListId(list.id || list.name);
-                            setListSearch('');
-                            setListDropdownOpen(false);
-                          }}
-                          className={`block w-full rounded-md px-2.5 py-1.5 text-left text-xs ${
+                          className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs ${
                             selected ? 'bg-blue-950 font-bold text-blue-300' : 'text-zinc-300 hover:bg-zinc-900'
                           }`}
                         >
-                          {list.name || list.fileName}
-                          <span className="ml-1 text-zinc-400">({listLeadCount(list)})</span>
-                        </button>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => {
+                              setActiveListIds((prev) =>
+                                selected ? prev.filter((id) => id !== listKey) : [...prev, listKey]
+                              );
+                            }}
+                            className="h-3.5 w-3.5 shrink-0 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer"
+                          />
+                          <span>
+                            {list.name || list.fileName}
+                            <span className="ml-1 text-zinc-400">({listLeadCount(list)})</span>
+                          </span>
+                        </label>
                       );
                     })
                   ) : (
                     <p className="px-2 py-2 text-xs text-zinc-400">No lists found</p>
                   )}
                 </div>
+              )}
+            </div>
+          </details>
+
+          {/* Lead details (Apollo-style field filters) */}
+          <details className="group px-3 py-2.5" open={!!(jobTitleFilter || nameFilter || companyFilter || websiteFilter || countryFilter)}>
+            <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-zinc-300 hover:text-blue-400">
+              <span className="flex items-center gap-2">
+                <span>Lead details</span>
+                {[jobTitleFilter, nameFilter, companyFilter, websiteFilter, countryFilter].filter(Boolean).length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-900 text-blue-300 text-[10px] font-mono">
+                    {[jobTitleFilter, nameFilter, companyFilter, websiteFilter, countryFilter].filter(Boolean).length} set
+                  </span>
+                )}
+              </span>
+              <span className="text-zinc-400 transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="mt-2 space-y-2 pt-1">
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-bold text-zinc-400">Job Title</span>
+                <input value={jobTitleFilter} onChange={(e) => setJobTitleFilter(e.target.value)} placeholder="Filter by job title..." className="w-full rounded-lg border border-zinc-700 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-blue-500" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-bold text-zinc-400">Name</span>
+                <input value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} placeholder="Filter by contact name..." className="w-full rounded-lg border border-zinc-700 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-blue-500" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-bold text-zinc-400">Company</span>
+                <input value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)} placeholder="Filter by company name..." className="w-full rounded-lg border border-zinc-700 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-blue-500" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-bold text-zinc-400">Website</span>
+                <input value={websiteFilter} onChange={(e) => setWebsiteFilter(e.target.value)} placeholder="Filter by website or domain..." className="w-full rounded-lg border border-zinc-700 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-blue-500" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-bold text-zinc-400">Country</span>
+                <input value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} placeholder="Filter by country..." className="w-full rounded-lg border border-zinc-700 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-blue-500" />
+              </label>
+            </div>
+          </details>
+
+          {/* Bulk website search (Apollo-style: paste websites, show only matching leads) */}
+          <details className="group px-3 py-2.5" open={bulkSearchDomains.length > 0}>
+            <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-zinc-300 hover:text-blue-400">
+              <span className="flex items-center gap-2">
+                <span>Bulk website search</span>
+                {bulkSearchDomains.length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-900 text-blue-300 text-[10px] font-mono">{bulkSearchDomains.length} websites</span>
+                )}
+              </span>
+              <span className="text-zinc-400 transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="mt-2 space-y-2 pt-1">
+              <textarea
+                value={bulkSearchInput}
+                onChange={(e) => setBulkSearchInput(e.target.value)}
+                placeholder={'Paste websites, one per line...\ncompany.com\nhttps://example.com'}
+                rows={4}
+                className="w-full rounded-lg border border-zinc-700 px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-blue-500"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const { domains, truncated } = parseBulkWebsites(bulkSearchInput);
+                    setBulkSearchDomains(domains);
+                    setBulkSearchTruncated(truncated);
+                  }}
+                  disabled={!bulkSearchInput.trim()}
+                  className="flex-1 rounded-lg bg-[#0e6de4] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50 cursor-pointer"
+                >
+                  Search websites
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkSearchInput('');
+                    setBulkSearchDomains([]);
+                    setBulkSearchTruncated(0);
+                  }}
+                  className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-bold text-zinc-300 cursor-pointer"
+                >
+                  Clear
+                </button>
+              </div>
+              {bulkSearchTruncated > 0 && (
+                <p className="text-[11px] text-amber-400">Only the first 100 websites are used ({bulkSearchTruncated} extra ignored).</p>
+              )}
+              {bulkSearchDomains.length > 0 && (
+                <p className="text-[11px] text-zinc-400">Showing leads from {bulkSearchDomains.length} website{bulkSearchDomains.length > 1 ? 's' : ''} only.</p>
               )}
             </div>
           </details>
@@ -821,6 +949,15 @@ export default function LeadsPage() {
             className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-2.5 pl-10 pr-4 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:outline-none shadow-2xs font-medium"
           />
         </div>
+        {filteredLeads.length > 0 && selectedLeadIds.length < filteredLeads.length && (
+          <button
+            type="button"
+            onClick={() => setSelectedLeadIds(filteredLeads.map((l) => l.id))}
+            className="shrink-0 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-200 hover:border-blue-500 cursor-pointer"
+          >
+            Select all {filteredLeads.length} filtered
+          </button>
+        )}
       </div>
 
       {/* Leads Table with Excel-Style Freeze Header (Sticky Top Header) */}
