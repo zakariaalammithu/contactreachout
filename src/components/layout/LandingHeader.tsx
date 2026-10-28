@@ -28,7 +28,7 @@ export function LandingHeader() {
       <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between gap-5 px-4 sm:px-5">
         <Link href="/" className="flex min-w-0 items-center gap-3">
           <img src="/brand/logo-icon-square.png" alt="ContactReachout logo" width="40" height="40" className="h-10 w-10 shrink-0 rounded-xl object-contain shadow-md" />
-          <div className="min-w-0"><p className="truncate text-lg font-black tracking-tight text-white"><span className="text-white">Contact</span><span className="text-blue-100">Reachout</span></p><p className="truncate text-[10px] font-bold text-zinc-400">Find Clients Through Website Contact Forms</p></div>
+          <div className="min-w-0"><p className="truncate text-lg font-black tracking-tight text-white"><span className="text-white">Contact</span><span className="text-blue-100">Reachout</span></p><p className="hidden truncate text-[10px] font-bold text-zinc-400 sm:block">Find Clients Through Website Contact Forms</p></div>
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">

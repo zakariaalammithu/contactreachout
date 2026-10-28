@@ -83,7 +83,7 @@ export default function HomePage() {
       <main className="home-saas-main">
         <section className="relative overflow-hidden bg-zinc-950 px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
 
-          <div className="relative mx-auto grid max-w-[1440px] items-center gap-10 lg:grid-cols-[0.88fr_1.12fr] xl:gap-14">
+          <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.88fr_1.12fr] xl:gap-14">
             {/* 1. LEFT COLUMN: Text, Badges, CTAs */}
             <div className="flex min-w-0 max-w-[610px] flex-col justify-center">
               {/* Top Badge */}
@@ -143,7 +143,7 @@ export default function HomePage() {
             {/* Right-Side Compact Product Visual (Footprint matching core product UI) */}
             <div className="relative grid min-w-0 items-center gap-3 md:grid-cols-[0.88fr_1.12fr] lg:gap-3.5">
               {/* Left sub-card: Lead List */}
-              <div className="relative z-10 rounded-2xl border border-zinc-800/90 bg-zinc-950 p-3.5 shadow-[0_12px_40px_rgba(14,109,228,0.07)] md:-mr-4 lg:-mr-3">
+              <div className="relative z-10 min-w-0 rounded-2xl border border-zinc-800/90 bg-zinc-950 p-3.5 shadow-[0_12px_40px_rgba(14,109,228,0.07)] md:-mr-4 lg:-mr-3">
                 <div className="flex items-center gap-3 border-b border-zinc-800 pb-2.5 text-[10px] font-bold text-zinc-400">
                   <span className="border-b-2 border-zinc-700 pb-2.5 font-black text-white">All</span>
                   <span>Campaigns</span>
@@ -181,7 +181,7 @@ export default function HomePage() {
               </div>
 
               {/* Right sub-card: Campaign Workflow Sequence */}
-              <div className="hero-glow-card relative rounded-2xl border border-zinc-800/90 bg-zinc-950 p-3.5 shadow-[0_14px_45px_rgba(14,109,228,0.08)]">
+              <div className="hero-glow-card relative min-w-0 rounded-2xl border border-zinc-800/90 bg-zinc-950 p-3.5 shadow-[0_14px_45px_rgba(14,109,228,0.08)]">
                 {/* Top Avatars Stack representing contact list */}
                 <div className="flex items-center justify-end -space-x-2 pb-2">
                   <img src="/client-reviews/austin-smith.png" alt="Austin Smith profile" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
@@ -197,7 +197,7 @@ export default function HomePage() {
                   <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-2.5 shadow-2xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
                           <UploadCloud className="h-4 w-4" />
                         </div>
                         <div>
@@ -205,7 +205,7 @@ export default function HomePage() {
                           <p className="text-[10px] font-bold text-zinc-400">website-list.xlsx</p>
                         </div>
                       </div>
-                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
+                      <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
                         ✓
                       </div>
                     </div>
@@ -222,7 +222,7 @@ export default function HomePage() {
                   <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-2.5 shadow-2xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
                           <Search className="h-4 w-4" />
                         </div>
                         <div>
@@ -230,7 +230,7 @@ export default function HomePage() {
                           <p className="text-[10px] font-bold text-blue-400">Scanning websites...</p>
                         </div>
                       </div>
-                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
+                      <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
                         ✓
                       </div>
                     </div>
@@ -247,12 +247,12 @@ export default function HomePage() {
                   <div className="rounded-xl border border-blue-900 bg-zinc-950 p-3 shadow-xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
                           <Sparkles className="h-4 w-4" />
                         </div>
                         <p className="text-xs font-black text-zinc-100">AI Personalization</p>
                       </div>
-                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
+                      <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
                         ✓
                       </div>
                     </div>
@@ -277,7 +277,7 @@ export default function HomePage() {
                   <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-2.5 shadow-2xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
                           <Send className="h-4 w-4" />
                         </div>
                         <div>
@@ -285,7 +285,7 @@ export default function HomePage() {
                           <p className="text-[10px] font-bold text-blue-400">Submitting forms...</p>
                         </div>
                       </div>
-                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
+                      <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
                         ✓
                       </div>
                     </div>
@@ -302,7 +302,7 @@ export default function HomePage() {
                   <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-2.5 shadow-2xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0e6de4] text-white shadow-xs">
                           <Gauge className="h-4 w-4" />
                         </div>
                         <div>
@@ -310,7 +310,7 @@ export default function HomePage() {
                           <p className="text-[10px] font-extrabold text-zinc-400">128 submitted • 32 in review</p>
                         </div>
                       </div>
-                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
+                      <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-black">
                         ✓
                       </div>
                     </div>

@@ -608,7 +608,7 @@ body > div.min-h-screen.bg-black {
 @media (max-width: 640px) {
   html, body { max-width: 100%; overflow-x: hidden; }
   .home-saas-main > section { max-width: calc(100vw - 1rem); }
-  .home-saas-main > section:first-child h1 { font-size: clamp(2rem, 10vw, 2.6rem); }
+  .home-saas-main > section:first-child h1 { font-size: clamp(1.9rem, 9vw, 2.4rem); }
   .home-saas-main > section:first-child h1 span { white-space: normal; }
   .home-saas-main > section:first-child .grid { min-width: 0; }
   .home-saas-main > section:first-child .hero-glow-card {
@@ -841,3 +841,8 @@ html.light .pricing-public-page .pricing-plan-card { background: #ffffff !import
 html.light .pricing-public-page .pricing-plan-card h3, html.light .pricing-public-page .pricing-plan-card p, html.light .pricing-public-page .pricing-plan-card span { color: #09090b; }
 html.light .pricing-public-page .pricing-plan-card button, html.light .pricing-public-page .pricing-plan-card button span { color: #ffffff; }
 html.light .pricing-public-page .pricing-calculator input[type="number"] { border-color: #d4d4d8; background: #ffffff; color: #0e6de4; }
+
+/* Page-level safety net: nothing may spill past the left or right edge on
+   any screen size. `clip` (unlike `hidden`) creates no scroll container, so
+   sticky headers keep working. */
+html, body { overflow-x: clip; }
