@@ -72,3 +72,36 @@ export function matchesBulkDomains(lead: any, domains: string[]): boolean {
   const domain = normalizeDomain(lead.domain || lead.website || '');
   return !!domain && domains.includes(domain);
 }
+
+// The keys that tie a lead to a list: the list's id, name and file
+// name, matched against every list/file field a lead may carry. This is
+// the same broad match the table's list filter uses, so a list's count
+// always agrees with the leads its filter shows.
+export function listLeadKeys(list: any): Set<string> {
+  return new Set([list.id, list.name, list.fileName].filter(Boolean).map(String));
+}
+
+export function countLeadsForList(leads: any[], list: any): number {
+  const keys = listLeadKeys(list);
+  if (keys.size === 0) return 0;
+  return leads.filter((lead) => {
+    const leadKeys = [
+      lead.listId,
+      lead.listName,
+      lead.sourceFileName,
+      lead.source_file,
+      lead.fileName,
+      lead.file_name,
+    ]
+      .filter(Boolean)
+      .map(String);
+    return leadKeys.some((key) => keys.has(key));
+  }).length;
+}
+
+// Drop every list that has no leads left. Used after lead deletion so
+// an emptied file disappears from the Lists filter instead of lingering
+// with a stale upload-time count.
+export function pruneEmptyLists(lists: any[], leads: any[]): any[] {
+  return lists.filter((list) => countLeadsForList(leads, list) > 0);
+}

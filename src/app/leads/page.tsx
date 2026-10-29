@@ -36,7 +36,7 @@ import {
   processImportRows,
 } from '@/lib/services/import-service';
 import { generateUniqueLeadListName } from '@/lib/services/lead-list-service';
-import { parseBulkWebsites, matchesLeadDetails, matchesBulkDomains } from '@/lib/services/lead-filter-utils';
+import { parseBulkWebsites, matchesLeadDetails, matchesBulkDomains, countLeadsForList, pruneEmptyLists } from '@/lib/services/lead-filter-utils';
 
 
 export default function LeadsPage() {
@@ -221,14 +221,12 @@ export default function LeadsPage() {
           }
         }
 
+        // Parsed here, pruned + applied after the leads load below, so
+        // files emptied by an earlier delete vanish on first load too.
+        let parsedLists: any[] = [];
         if (storedLists) {
-          const parsedLists = JSON.parse(storedLists);
-          if (Array.isArray(parsedLists)) {
-            const filteredLists = isAdmin
-              ? parsedLists
-              : parsedLists.filter((l: any) => !l.ownerEmail || l.ownerEmail.toLowerCase() === userEmail);
-            setLeadLists(filteredLists);
-          }
+          const parsed = JSON.parse(storedLists);
+          if (Array.isArray(parsed)) parsedLists = parsed;
         }
 
         let userLeads: any[] = [];
@@ -258,13 +256,28 @@ export default function LeadsPage() {
           }
         }
 
-        if (isAdmin) {
-          // Admin: include platform mockLeads alongside imported leads
-          const validMockLeads = mockLeads.filter((lead: any) => !deletedLeadIds.has(String(lead.id)));
-          setAllLeads([...userLeads, ...validMockLeads]);
-        } else {
-          // Normal User: ONLY load user's own leads (no mock leads leak)
-          setAllLeads(userLeads);
+        // Admin: include platform mockLeads alongside imported leads.
+        // Normal User: ONLY load user's own leads (no mock leads leak).
+        const visibleLeads = isAdmin
+          ? [...userLeads, ...mockLeads.filter((lead: any) => !deletedLeadIds.has(String(lead.id)))]
+          : userLeads;
+        setAllLeads(visibleLeads);
+
+        // Drop files with no leads left (e.g. emptied by a delete before
+        // this fix shipped) and persist the cleanup. Lists belonging to
+        // other accounts are never touched: only the viewer's own
+        // filtered lists are pruned, the rest pass through untouched.
+        const filteredLists = isAdmin
+          ? parsedLists
+          : parsedLists.filter((l: any) => !l.ownerEmail || l.ownerEmail.toLowerCase() === userEmail);
+        const prunedLists = pruneEmptyLists(filteredLists, visibleLeads);
+        setLeadLists(prunedLists);
+        if (prunedLists.length !== filteredLists.length) {
+          const kept = new Set(prunedLists);
+          localStorage.setItem(
+            'user_lead_lists',
+            JSON.stringify(parsedLists.filter((l) => !filteredLists.includes(l) || kept.has(l)))
+          );
         }
       } catch (err) {
         console.error('Error loading imported leads from localStorage:', err);
@@ -274,10 +287,9 @@ export default function LeadsPage() {
     loadSessionAndLeads();
   }, []);
 
-  const listLeadCount = (list: any) => allLeads.filter((lead) =>
-    (lead.listId && (lead.listId === list.id || lead.listId === list.name)) ||
-    (lead.listName && lead.listName === list.name)
-  ).length || Number(list.count || list.totalLeads || 0);
+  // Live count only: the old upload-time count fallback kept showing
+  // e.g. "(4)" for a file whose leads had all been deleted.
+  const listLeadCount = (list: any) => countLeadsForList(allLeads, list);
 
   const visibleLists = leadLists.filter((list) => {
     const name = String(list.name || list.fileName || '').toLowerCase();
@@ -447,6 +459,22 @@ export default function LeadsPage() {
       const updated = allLeads.filter((l) => !selectedLeadIds.includes(l.id));
       setAllLeads(updated);
       setSelectedLeadIds([]);
+      // A file whose leads are all deleted removes itself: drop every
+      // list left with zero leads (state + storage + active selection).
+      const nextLists = pruneEmptyLists(leadLists, updated);
+      if (nextLists.length !== leadLists.length) {
+        setLeadLists(nextLists);
+        const prunedKeys = new Set<string>();
+        leadLists.forEach((list) => {
+          if (!nextLists.includes(list)) {
+            [list.id, list.name, list.fileName].filter(Boolean).forEach((key) => prunedKeys.add(String(key)));
+          }
+        });
+        setActiveListIds((prev) => prev.filter((id) => !prunedKeys.has(id)));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user_lead_lists', JSON.stringify(nextLists));
+        }
+      }
 
       if (typeof window !== 'undefined') {
         const deleted = new Set<string>(JSON.parse(localStorage.getItem('user_deleted_lead_ids') || '[]'));

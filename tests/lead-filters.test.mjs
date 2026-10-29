@@ -4,6 +4,8 @@ import {
   parseBulkWebsites,
   matchesLeadDetails,
   matchesBulkDomains,
+  countLeadsForList,
+  pruneEmptyLists,
 } from '../src/lib/services/lead-filter-utils.ts';
 
 const lead = {
@@ -53,6 +55,28 @@ describe('matchesLeadDetails', () => {
     expect(matchesLeadDetails(lead, { ...empty, website: 'b2bgdc.com' })).toBe(true);
     expect(matchesLeadDetails(lead, { ...empty, website: 'other.com' })).toBe(false);
     expect(matchesLeadDetails(lead, { ...empty, country: 'bangla' })).toBe(true);
+  });
+});
+
+describe('countLeadsForList / pruneEmptyLists', () => {
+  const listA = { id: 'list-a', name: 'File A', fileName: 'a.xlsx' };
+  const listB = { id: 'list-b', name: 'File B', fileName: 'b.xlsx' };
+  const leads = [
+    { id: '1', listId: 'list-a' },
+    { id: '2', listName: 'File A' },
+    { id: '3', sourceFileName: 'b.xlsx' },
+  ];
+
+  it('counts leads by id, name, or file name (broad match)', () => {
+    expect(countLeadsForList(leads, listA)).toBe(2);
+    expect(countLeadsForList(leads, listB)).toBe(1);
+    expect(countLeadsForList(leads, { id: 'list-c', name: 'File C', fileName: 'c.xlsx' })).toBe(0);
+  });
+
+  it('drops only the lists left with zero leads', () => {
+    expect(pruneEmptyLists([listA, listB], leads)).toEqual([listA, listB]);
+    expect(pruneEmptyLists([listA, listB], leads.slice(0, 2))).toEqual([listA]);
+    expect(pruneEmptyLists([listA, listB], [])).toEqual([]);
   });
 });
 
