@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { interpolateTemplate } from '@/lib/services/template-engine';
+import { normalizeHexColor } from '@/lib/services/text-color';
 import type { CampaignSequenceStep, Lead } from '@/types';
 
 import { SavedTemplatesDropdown } from './SavedTemplatesDropdown';
@@ -118,8 +119,18 @@ export function CampaignMessageEditor({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLeadIndex, setPreviewLeadIndex] = useState(0);
   const [bodySourceMode, setBodySourceMode] = useState(false);
+  const [textColorOpen, setTextColorOpen] = useState(false);
+  const [lastTextColor, setLastTextColor] = useState('#0e6de4');
+  const [customHex, setCustomHex] = useState('#0e6de4');
+  const [customHexError, setCustomHexError] = useState<string | null>(null);
   const subjectInputRef = useRef<HTMLInputElement>(null);
   const bodyEditorRef = useRef<HTMLDivElement>(null);
+  // The preset swatches keep the editor selection alive with mousedown
+  // preventDefault, but typing a custom hex (or using the native color
+  // picker) must move focus into an input, which drops the selection. So the
+  // last editor selection is saved when the panel opens and when a custom
+  // input takes focus, then restored before foreColor runs.
+  const savedRangeRef = useRef<Range | null>(null);
   const sampleLead = selectedLeads[previewLeadIndex] || selectedLeads[0];
   const timingAmount = sequence.delayUnit === 'weeks' ? sequence.delayDays / 7 : sequence.delayDays;
 
@@ -235,6 +246,56 @@ export function CampaignMessageEditor({
     editor?.focus();
     document.execCommand(command, false, value);
     onSequenceChange((current) => ({ ...current, body: editor?.innerHTML || '' }));
+  };
+
+  // Text color uses the same execCommand path as bold/italic/underline, so it
+  // composes with existing formatting instead of replacing it: only the
+  // current selection is wrapped, and a collapsed caret colors text typed
+  // next. styleWithCSS makes the browser emit <span style="color: ...">
+  // instead of the deprecated <font color> element; rendering is identical
+  // and the preview sanitizer keeps spans + style attributes. The existing
+  // Clear button (removeFormat) still strips color along with other formats.
+  const saveEditorSelection = () => {
+    const editor = bodyEditorRef.current;
+    const selection = window.getSelection();
+    if (editor && selection && selection.rangeCount > 0 && editor.contains(selection.anchorNode)) {
+      savedRangeRef.current = selection.getRangeAt(0).cloneRange();
+    }
+  };
+
+  const applyTextColor = (color: string) => {
+    if (bodySourceMode) return;
+    const normalized = normalizeHexColor(color);
+    if (!normalized) return;
+    const editor = bodyEditorRef.current;
+    editor?.focus();
+    if (editor && savedRangeRef.current) {
+      const range = savedRangeRef.current;
+      const selection = window.getSelection();
+      // Only restore ranges still inside the editor; a stale range (content
+      // edited after the panel opened) is ignored instead of misapplied.
+      if (editor.contains(range.startContainer) && editor.contains(range.endContainer) && selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      savedRangeRef.current = null;
+    }
+    document.execCommand('styleWithCSS', false, 'true');
+    document.execCommand('foreColor', false, normalized);
+    setLastTextColor(normalized);
+    setCustomHex(normalized);
+    setCustomHexError(null);
+    setTextColorOpen(false);
+    onSequenceChange((current) => ({ ...current, body: editor?.innerHTML || '' }));
+  };
+
+  const applyCustomHex = () => {
+    const normalized = normalizeHexColor(customHex);
+    if (normalized) {
+      applyTextColor(normalized);
+    } else {
+      setCustomHexError('Use a hex color like #FF0000');
+    }
   };
 
   useEffect(() => {
@@ -547,6 +608,32 @@ export function CampaignMessageEditor({
                 <button type="button" onClick={() => executeFormat('bold')} aria-label="Bold" className="rounded-lg p-2 hover:bg-zinc-950"><Bold className="h-4 w-4 text-zinc-300" /></button>
                 <button type="button" onClick={() => executeFormat('italic')} aria-label="Italic" className="rounded-lg p-2 hover:bg-zinc-950"><Italic className="h-4 w-4 text-zinc-300" /></button>
                 <button type="button" onClick={() => executeFormat('underline')} aria-label="Underline" className="rounded-lg p-2 hover:bg-zinc-950"><Underline className="h-4 w-4 text-zinc-300" /></button>
+                <div className="relative">
+                  <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { if (!textColorOpen) saveEditorSelection(); setTextColorOpen((open) => !open); }} aria-label="Text color" title="Text color" className="flex flex-col items-center gap-0.5 rounded-lg p-2 hover:bg-zinc-950">
+                    <span className="text-sm font-black leading-none text-zinc-300">A</span>
+                    <span className="h-1 w-4 rounded-full" style={{ backgroundColor: lastTextColor }} />
+                  </button>
+                  {textColorOpen && (
+                    <div className="absolute left-0 top-full z-20 mt-1 w-60 rounded-xl border border-zinc-700 bg-zinc-950 p-3 shadow-2xl shadow-black/60">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Text color</p>
+                      <div className="mt-2 grid grid-cols-6 gap-1.5">
+                        {['#FFFFFF', '#D4D4D8', '#A1A1AA', '#0E6DE4', '#38BDF8', '#34D399', '#FBBF24', '#FB923C', '#FB7185', '#EF4444', '#A78BFA', '#C084FC'].map((color) => (
+                          <button key={color} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => applyTextColor(color)} aria-label={`Text color ${color}`} title={color} className="h-7 w-7 rounded-md border border-zinc-700 transition hover:scale-110" style={{ backgroundColor: color }} />
+                        ))}
+                      </div>
+                      <div className="mt-3 border-t border-zinc-800 pt-3">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Custom color</p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <input type="color" value={normalizeHexColor(customHex) ?? '#0e6de4'} onFocus={saveEditorSelection} onChange={(event) => { setCustomHex(event.target.value); setCustomHexError(null); }} aria-label="Pick a custom color" className="h-8 w-10 shrink-0 cursor-pointer rounded-md border border-zinc-700 bg-zinc-950 p-0.5" />
+                          <input value={customHex} onFocus={saveEditorSelection} onChange={(event) => { setCustomHex(event.target.value); setCustomHexError(null); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); applyCustomHex(); } }} placeholder="#FF0000" aria-label="Custom hex color" className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 font-mono text-xs text-zinc-100 outline-none focus:border-blue-500" />
+                          <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={applyCustomHex} className="shrink-0 rounded-lg bg-[#0e6de4] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0758bd]">Apply</button>
+                        </div>
+                        {customHexError && <p className="mt-1.5 text-[11px] font-semibold text-rose-400">{customHexError}</p>}
+                      </div>
+                      <p className="mt-2 text-[11px] leading-4 text-zinc-500">Only the selected text changes color. Use Clear to remove all formatting.</p>
+                    </div>
+                  )}
+                </div>
                 <span className="mx-1 h-5 w-px bg-zinc-700" />
                 <select onChange={(event) => executeFormat('formatBlock', event.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs font-semibold text-zinc-200" defaultValue="p"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="pre">Preformatted</option></select>
                 <button type="button" onClick={() => executeFormat('insertUnorderedList')} aria-label="Bullet list" className="rounded-lg p-2 hover:bg-zinc-950"><List className="h-4 w-4 text-zinc-300" /></button>
