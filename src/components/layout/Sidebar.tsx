@@ -232,9 +232,9 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
             </nav>
           ))}
 
-          {/* Credits Summary Card */}
+          {/* Credits Summary Card (content centered in the sidebar) */}
           <div className="mx-0.5 rounded-2xl border border-blue-900 bg-blue-950/70 p-2.5 overflow-hidden">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center gap-2.5">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-900 text-blue-400 font-bold text-xs">
                 ⚡
               </div>
@@ -247,12 +247,12 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
                 <p className="text-xs font-black text-white">{availableCredits.toLocaleString()} Available</p>
               </div>
             </div>
-            <div className="mt-2 transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block">
+            <div className="mt-2 text-center transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 hidden lg:group-hover/sidebar:block">
               <Link href="/pricing" onClick={onClose} className="inline-flex items-center gap-1 text-xs font-black text-blue-400">
                 Buy Credits <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="mt-2 lg:hidden">
+            <div className="mt-2 text-center lg:hidden">
               <Link href="/pricing" onClick={onClose} className="inline-flex items-center gap-1 text-xs font-black text-blue-400">
                 Buy Credits <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
@@ -260,8 +260,8 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
           </div>
         </div>
 
-        {/* User Footer */}
-        <div className="flex items-center justify-between border-t border-zinc-800 bg-zinc-900/50 p-2.5 overflow-hidden shrink-0">
+        {/* User Footer (avatar + name + logout centered as one group) */}
+        <div className="flex items-center justify-center gap-3 border-t border-zinc-800 bg-zinc-900/50 p-2.5 overflow-hidden shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 shrink-0 rounded-full bg-[#0e6de4] flex items-center justify-center text-[11px] font-bold text-white shadow-xs">
               {userInitials}
