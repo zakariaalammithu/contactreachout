@@ -54,7 +54,7 @@ export function SendingProgressCard({
           : `In ${estimate.calendarDays} days · ${estimate.finishDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`;
 
   return (
-    <section aria-label={`Sending progress for ${campaignName}`} className="rounded-2xl border border-blue-900/70 bg-gradient-to-br from-blue-950/70 via-zinc-950 to-zinc-950 p-5 shadow-xl shadow-black/40">
+    <section aria-label={`Sending progress for ${campaignName}`} className="sending-progress-card rounded-2xl border border-blue-900/70 bg-gradient-to-br from-blue-950/70 via-zinc-950 to-zinc-950 p-5 shadow-xl shadow-black/40">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <span className="relative mt-1 flex h-3 w-3 shrink-0">

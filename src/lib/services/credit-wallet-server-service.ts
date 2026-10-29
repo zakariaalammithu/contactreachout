@@ -65,7 +65,25 @@ export class CreditWalletServerService {
   public static async getWalletForServer(userId: string): Promise<CreditWallet> {
     const client = getSupabaseAdminClient();
     if (!client) return CreditWalletService.getWallet(userId);
-    const databaseUserId = await this.getDatabaseUserId(userId);
+    // Accounts that were created in the app but never provisioned in
+    // public.users have no database wallet. Failing their starts and
+    // submissions with CREDIT_DATABASE_USER_NOT_FOUND blocks all outreach
+    // for them, so fall back to the standard in-memory wallet (100 free
+    // monthly credits, plus the admin testing grant for admin accounts) —
+    // the same fallback already used when Supabase is not configured.
+    // Provisioning the missing users row is a separate, owner-approved
+    // data decision; until then this keeps every account able to send.
+    // Any other database failure still surfaces as an error.
+    let databaseUserId: string;
+    try {
+      databaseUserId = await this.getDatabaseUserId(userId);
+    } catch (err: any) {
+      const message = String(err?.message || '');
+      if (message.includes('CREDIT_DATABASE_USER_NOT_FOUND') || message.includes('CREDIT_DATABASE_NOT_CONFIGURED')) {
+        return CreditWalletService.getWallet(userId);
+      }
+      throw err;
+    }
     const { data, error } = await client.from('credit_wallets').select('*').eq('user_id', databaseUserId).maybeSingle();
     if (error) throw new Error(`CREDIT_DATABASE_READ_FAILED: ${error.message}`);
     if (data) return this.walletFromDatabase(data, userId);
@@ -146,6 +164,12 @@ export class CreditWalletServerService {
     } catch (error) {
       if (error instanceof Error && error.message.includes('INSUFFICIENT_CREDITS')) {
         return { success: false, cost, source: 'NONE', wallet: await this.getWalletForServer(userId) };
+      }
+      // Same unprovisioned-account fallback as getWalletForServer: a
+      // successful submission must still deduct from the standard
+      // in-memory wallet instead of failing the whole submission.
+      if (error instanceof Error && (error.message.includes('CREDIT_DATABASE_USER_NOT_FOUND') || error.message.includes('CREDIT_DATABASE_NOT_CONFIGURED'))) {
+        return CreditWalletService.deductCredits(resultType, campaignId, leadId, companyName, userId);
       }
       throw error;
     }

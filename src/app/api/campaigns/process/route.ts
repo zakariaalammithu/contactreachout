@@ -10,11 +10,16 @@ export async function POST(req: NextRequest) {
   try {
     const session = SessionManager.getSessionFromRequest(req);
     if (!session) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    // Same fix as validate-start: the session token is HMAC-signed and
+    // self-contained, so its email is the authenticated identity. Requiring
+    // an in-memory AuthStore record with a matching id 401'd every
+    // self-registered user on any serverless instance other than the one
+    // that created their account — after they had already passed
+    // validate-start. The registry is consulted only for suspension (and
+    // for the contact identity below, which already tolerates a missing
+    // account).
     const userAccount = AuthStore.getUserByEmail(session.email);
-    if (!userAccount || userAccount.id !== session.userId) {
-      return NextResponse.json({ error: 'Authenticated account could not be verified.' }, { status: 401 });
-    }
-    if (userAccount.isSuspended) return NextResponse.json({ error: 'Account is suspended.' }, { status: 403 });
+    if (userAccount?.isSuspended) return NextResponse.json({ error: 'Account is suspended.' }, { status: 403 });
     const userId = session.email;
 
     const body = await req.json();

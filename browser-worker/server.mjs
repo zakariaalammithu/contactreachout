@@ -33,14 +33,74 @@ http.createServer(async (req, res) => {
     const page = await browser.newPage();
     await page.goto(job.contactPageUrl, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
     const initial = await page.content();
-    if (blockedPattern.test(initial)) return send(res, 200, { status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: false });
-    for (const field of job.fields) { if (!safeSelector(field.selector)) return send(res, 400, { error: 'Unsafe selector' }); await page.locator(field.selector).fill(String(field.value), { timeout: 5_000 }); }
-    const form = page.locator(job.formSelector); await form.locator('button[type="submit"], input[type="submit"]').first().click({ timeout: 5_000 });
-    await page.waitForTimeout(700);
+    if (blockedPattern.test(initial)) {
+      // Nothing was submitted, so release the key: a retry must be allowed
+      // instead of hitting the duplicate gate for 24h.
+      idempotency.delete(job.idempotencyKey);
+      return send(res, 200, { status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: false });
+    }
+    for (const field of job.fields) {
+      if (!safeSelector(field.selector)) return send(res, 400, { error: 'Unsafe selector' });
+      const locator = page.locator(field.selector);
+      // Fill by element type: plain fill() throws on <select>, checkbox and
+      // radio inputs, so forms containing them failed every submission even
+      // though the app maps values for them. Detect the type at runtime
+      // (the job carries no type) and use the matching Playwright action.
+      const tag = await locator.evaluate((el) => el.tagName.toLowerCase(), undefined, { timeout: 5_000 }).catch(() => '');
+      if (tag === 'select') {
+        const value = String(field.value);
+        // Short timeouts are essential: without them a non-matching label
+        // or value makes selectOption wait its 30s default before throwing,
+        // twice over, which blows past the caller's 20s timeout — the caller
+        // then retries and hits the idempotency gate (409) while the first
+        // attempt is still running. A miss must fail fast.
+        const byLabel = await locator.selectOption({ label: value }, { timeout: 3_000 }).catch(() => false);
+        if (!byLabel) await locator.selectOption(value, { timeout: 3_000 }).catch(() => {});
+        // If neither matched, leave the default option and continue: failing
+        // the whole message over one dropdown is worse than submitting
+        // with the default, and verification below still judges the outcome.
+      } else if (tag === 'input') {
+        const type = await locator.evaluate((el) => (el.type || '').toLowerCase(), undefined, { timeout: 5_000 }).catch(() => '');
+        if (type === 'checkbox' || type === 'radio') {
+          if (String(field.value).toLowerCase() === 'true') await locator.check({ timeout: 5_000 }).catch(() => {});
+        } else {
+          await locator.fill(String(field.value), { timeout: 5_000 });
+        }
+      } else {
+        await locator.fill(String(field.value), { timeout: 5_000 });
+      }
+    }
+    const form = page.locator(job.formSelector);
+    // A plain <button> without a type attribute is a submit button in HTML,
+    // but the old selector only matched explicit submit buttons, so forms
+    // with a bare <button>Send</button> timed out here. Try explicit submit
+    // controls first, then bare buttons, then any button, then a native
+    // form submit as a last resort.
+    const submit = form.locator('button[type="submit"], input[type="submit"], button:not([type])');
+    if (await submit.count() > 0) {
+      await submit.first().click({ timeout: 5_000 });
+    } else {
+      const anyButton = form.locator('button');
+      if (await anyButton.count() > 0) {
+        await anyButton.first().click({ timeout: 5_000 });
+      } else {
+        await form.evaluate((el) => { if (el.requestSubmit) el.requestSubmit(); else el.submit(); }).catch(() => {});
+      }
+    }
+    // Slower thank-you pages/redirects need more than 700ms to render
+    // before verification, or genuine deliveries fail verification.
+    await page.waitForTimeout(2500);
     const evidence = await page.content();
     if (blockedPattern.test(evidence)) return send(res, 200, { status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: true });
     const match = evidence.match(successPattern);
     return send(res, 200, { status: match ? 'SUCCESS' : 'FAILED', diagnosticCode: match ? 'WORKER_SUCCESS_VERIFIED' : 'SUCCESS_VERIFICATION_FAILED', confirmationMessage: match?.[0], successVerified: Boolean(match), submitAttempted: true, fieldsFilledCount: job.fields.length });
-  } catch (error) { return send(res, 200, { status: 'FAILED', diagnosticCode: 'BROWSER_WORKER_FAILURE', errorMessage: error instanceof Error ? error.message : 'Worker failure', successVerified: false, submitAttempted: false });
+  } catch (error) {
+    // The job never reached submit (fill/click/timeout failure), so release
+    // the key: otherwise the caller's retry — and every retry for 24h —
+    // returns 409 DUPLICATE_SUBMISSION_BLOCKED for a message that never
+    // went out. Keys are kept only when submit was actually attempted, so
+    // a real delivery can never be sent twice.
+    idempotency.delete(job.idempotencyKey);
+    return send(res, 200, { status: 'FAILED', diagnosticCode: 'BROWSER_WORKER_FAILURE', errorMessage: error instanceof Error ? error.message : 'Worker failure', successVerified: false, submitAttempted: false });
   } finally { await browser?.close().catch(() => {}); }
 }).listen(port, () => console.log(`Browser worker listening on ${port}`));
