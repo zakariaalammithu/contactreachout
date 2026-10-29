@@ -878,7 +878,6 @@ export default function CampaignsPage() {
               }
             }
           } else if (leads.length > 0) {
-          } else if (leads.length > 0) {
             const allDone = leads.every((l: any) => isLeadProcessed(l));
             if (allDone && (rawCamp.status === 'running' || rawCamp.status === 'active')) {
               rawCamp.status = 'paused';
