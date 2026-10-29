@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { UserMessageTemplate } from '@/lib/services/message-template-service';
+import { convertHtmlToEditableText, convertPlainTextToHtml } from '@/lib/services/template-engine';
 
 interface EditTemplateModalProps {
   isOpen: boolean;
@@ -28,7 +29,12 @@ export function EditTemplateModal({
     if (isOpen && template) {
       setName(template.name || '');
       setSubject(template.subject || '');
-      setBody(template.body || '');
+      // The textarea holds plain text, never raw editor HTML: an HTML body is
+      // converted for display (blank lines and signature lines intact, in the
+      // exact shape the user typed), and the submit handler converts it back.
+      // Storing the textarea value raw was the bug: loading it as innerHTML
+      // collapsed every newline and joined the message to its signature.
+      setBody(convertHtmlToEditableText(template.body || ''));
       setCategory(template.category || 'general');
       setError('');
     }
@@ -51,7 +57,7 @@ export function EditTemplateModal({
     onSave(template.id, {
       name: name.trim(),
       subject: subject.trim(),
-      body: body,
+      body: convertPlainTextToHtml(body),
       category,
     });
     onClose();
@@ -131,7 +137,7 @@ export function EditTemplateModal({
 
           <div>
             <label className="block text-xs font-bold text-zinc-200">
-              Message HTML / Content <span className="text-red-400">*</span>
+              Message Content <span className="text-red-400">*</span>
             </label>
             <textarea
               rows={5}

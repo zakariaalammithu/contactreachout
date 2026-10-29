@@ -217,6 +217,101 @@ export function convertHtmlToPlainText(html: string): string {
 }
 
 /**
+ * Reports whether a stored template body is already editor HTML (block or
+ * inline tags) rather than plain text. Template bodies exist in both shapes:
+ * the rich editor saves HTML, while the template edit textarea used to store
+ * its raw text. Plain text must be converted before it is assigned to
+ * innerHTML, because HTML rendering collapses newlines into spaces and would
+ * otherwise join the main message to its signature.
+ */
+export function looksLikeHtml(value: string): boolean {
+  if (!value) return false;
+  return /<(p|div|br|ul|ol|li|h[1-6]|span|b|i|u|a|font|strong|em|blockquote|pre)[\s/>]/i.test(value);
+}
+
+/**
+ * Converts plain text (from the template edit textarea, or a template stored
+ * as plain text by an earlier edit) to the HTML the rich editor renders.
+ * Blank lines become empty paragraphs so the gap between the main message
+ * and the signature survives; single newlines become <br> so each signature
+ * line stays on its own line. Text is HTML-escaped first, so a signature
+ * containing "&" or "<" can never be mistaken for markup. Runs of spaces
+ * that HTML would collapse are kept with non-breaking spaces, which
+ * convertHtmlToPlainText decodes back to plain spaces on the submission
+ * path. This is the exact inverse of convertHtmlToPlainText for ordinary
+ * message text: plain -> html -> plain returns the original text.
+ */
+export function convertPlainTextToHtml(text: string): string {
+  if (!text || !text.trim()) return '';
+  const normalized = text.replace(/\r\n?/g, '\n');
+  const preserveSpaces = (line: string) => {
+    const escaped = line
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    return escaped
+      .replace(/\t/g, '    ')
+      .replace(/ {2,}/g, (run) => '&nbsp;'.repeat(run.length - 1) + ' ')
+      .replace(/^ /, '&nbsp;');
+  };
+  const blocks: string[] = [];
+  let current: string[] = [];
+  const flush = () => {
+    if (current.length > 0) {
+      blocks.push(`<p>${current.join('<br>')}</p>`);
+      current = [];
+    }
+  };
+  for (const line of normalized.split('\n')) {
+    if (line.trim() === '') {
+      flush();
+      blocks.push('<p><br></p>');
+    } else {
+      current.push(preserveSpaces(line));
+    }
+  }
+  flush();
+  return blocks.join('');
+}
+
+/**
+ * Converts editor HTML to the plain text shown in the template edit
+ * textarea. Unlike convertHtmlToPlainText (which feeds submission and turns
+ * every paragraph end into a blank line), this keeps the text shape the user
+ * typed: block ends become single line breaks, and only genuinely empty
+ * blocks become blank lines. So editing a template and saving it back
+ * renders exactly as before: the blank line between message and signature
+ * survives, and signature lines stay tight lines instead of gaining a blank
+ * line between each pair. FOR THE EDIT TEXTAREA ONLY — never for
+ * submission. Limitation, inherent to plain-text editing: link hrefs cannot
+ * be represented, so only the link text is kept.
+ */
+export function convertHtmlToEditableText(html: string): string {
+  if (!html) return '';
+  let str = html.replace(/<!--[\s\S]*?-->/g, '');
+  // Empty blocks are the blank lines: reduce each to one newline here; the
+  // block ends around it supply the second, giving exactly one blank line.
+  str = str.replace(/<(p|div)[^>]*>\s*<br\s*\/?>\s*<\/(p|div)>/gi, '\n');
+  str = str.replace(/<br\s*\/?>/gi, '\n');
+  str = str.replace(/<a\s+[^>]*>(.*?)<\/a>/gi, (_, text) => String(text).replace(/<[^>]+>/g, ''));
+  str = str.replace(/<\/(p|div|h[1-6]|blockquote|section|article|li|tr)>/gi, '\n');
+  str = str.replace(/<li[^>]*>/gi, '');
+  str = str.replace(/<[^>]+>/g, '');
+  str = str
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'");
+  str = str.replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)));
+  str = str.replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  return str.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/**
  * Produces the exact plain-text representation that is sent to a website
  * contact-form field. This deliberately normalizes line endings only; it does
  * not collapse whitespace across lines, which would merge paragraphs or a

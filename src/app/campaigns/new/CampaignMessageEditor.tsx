@@ -7,7 +7,7 @@ import {
   Italic, Link as LinkIcon, List, ListOrdered, Loader2, Save, Sparkles, Underline, Undo2, Redo2, Lock, ArrowUpRight, CheckCircle2, ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { interpolateTemplate } from '@/lib/services/template-engine';
+import { convertPlainTextToHtml, interpolateTemplate, looksLikeHtml } from '@/lib/services/template-engine';
 import { normalizeHexColor } from '@/lib/services/text-color';
 import type { CampaignSequenceStep, Lead } from '@/types';
 
@@ -171,14 +171,23 @@ export function CampaignMessageEditor({
   const handleUseTemplate = (template: UserMessageTemplate) => {
     recordTemplateUsage(template.id, currentUserEmail);
 
+    // Templates stored as plain text (by an earlier edit) must be converted
+    // before they reach innerHTML: assigning raw text collapses every
+    // newline, joining the message to its signature and dropping the blank
+    // line. This also repairs already-broken templates on load, with no
+    // re-save needed. HTML bodies pass through untouched.
+    const bodyHtml = looksLikeHtml(template.body || '')
+      ? template.body || ''
+      : convertPlainTextToHtml(template.body || '');
+
     onSequenceChange((current) => ({
       ...current,
       subject: template.subject !== undefined && template.subject !== null ? template.subject : current.subject,
-      body: template.body || '',
+      body: bodyHtml,
     }));
 
     if (bodyEditorRef.current) {
-      bodyEditorRef.current.innerHTML = template.body || '';
+      bodyEditorRef.current.innerHTML = bodyHtml;
     }
     refreshTemplates();
   };
