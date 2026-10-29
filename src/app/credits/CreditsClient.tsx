@@ -324,7 +324,7 @@ export default function CreditsClient() {
           </span>
         </div>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 overflow-hidden shadow-2xs text-xs">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 overflow-x-auto shadow-2xs text-xs">
           <table className="w-full text-left border-collapse">
             <thead className="bg-zinc-900 border-b border-zinc-800 text-zinc-300 font-mono text-[10px] uppercase">
               <tr>

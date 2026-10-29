@@ -24,8 +24,8 @@ export function LandingHeader() {
   }, []);
 
   return (
-    <header className={`sticky top-3 z-50 mx-auto w-[min(1280px,calc(100%-2rem))] rounded-full border border-zinc-800 bg-zinc-950/95 text-white shadow-xl shadow-black/40 backdrop-blur-xl transition-all ${isScrolled ? 'shadow-2xl shadow-black/50' : ''}`}>
-      <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between gap-5 px-4 sm:px-5">
+    <header className={`header-glow sticky top-3 z-50 mx-auto w-[min(1280px,calc(100%-2rem))] rounded-full border border-zinc-800 bg-zinc-950/95 text-white shadow-xl shadow-black/40 backdrop-blur-xl transition-all ${isScrolled ? 'shadow-2xl shadow-black/50' : ''}`}>
+      <div className="relative z-10 mx-auto flex h-[68px] max-w-7xl items-center justify-between gap-5 px-4 sm:px-5">
         <Link href="/" className="flex min-w-0 items-center gap-3">
           <img src="/brand/logo-icon-square.png" alt="ContactReachout logo" width="40" height="40" className="h-10 w-10 shrink-0 rounded-xl object-contain shadow-md" />
           <div className="min-w-0"><p className="truncate text-lg font-black tracking-tight text-white"><span className="text-white">Contact</span><span className="text-blue-100">Reachout</span></p><p className="hidden truncate text-[10px] font-bold text-zinc-400 sm:block">Find Clients Through Website Contact Forms</p></div>
@@ -46,7 +46,7 @@ export function LandingHeader() {
       </div>
 
       {mobileMenuOpen && (
-        <div className="mx-4 mb-3 rounded-3xl border border-zinc-800 bg-zinc-950 px-4 py-4 shadow-xl shadow-black/40 lg:hidden">
+        <div className="relative z-10 mx-4 mb-3 rounded-3xl border border-zinc-800 bg-zinc-950 px-4 py-4 shadow-xl shadow-black/40 lg:hidden">
           <nav className="mx-auto flex max-w-7xl flex-col gap-1" aria-label="Mobile navigation">
             {navigation.map((item) => <Link key={item.label} href={item.href} onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-bold text-zinc-300 hover:bg-white/10 hover:text-white">{item.label}</Link>)}
             <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-800 pt-4 sm:hidden">

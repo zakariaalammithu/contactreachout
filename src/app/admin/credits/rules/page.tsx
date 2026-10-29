@@ -166,7 +166,7 @@ export default function AdminCreditRulesPage() {
 
       {/* Rules Table Card */}
       <Card className="p-6 space-y-4 border-zinc-800">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 overflow-hidden text-xs">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 overflow-x-auto text-xs">
           <table className="w-full text-left">
             <thead className="bg-zinc-900 border-b border-zinc-800 text-zinc-400 font-mono text-[10px] uppercase">
               <tr>

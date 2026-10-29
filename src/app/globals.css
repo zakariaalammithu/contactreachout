@@ -559,6 +559,18 @@ html.light .home-saas-main > section.preview-spotlight {
   color: #fafafa !important;
 }
 
+/* App + admin shell ambient wash: the same blue/violet family as the landing
+   middle sections, but even lighter (0.08 / 0.05) so tables, forms and dense
+   dashboard content stay fully readable. It paints on the scroll container's
+   own box, so it stays at the top of the app viewport while content scrolls
+   over it. No layout, stacking or component change. */
+.app-dashboard-shell main,
+.admin-app-shell main {
+  background-image:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(37, 99, 235, 0.08), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 90% 0%, rgba(124, 58, 246, 0.05), transparent 70%);
+}
+
 .app-dashboard-shell main [class*="bg-slate-900"] .text-white:not(button):not(a),
 .app-dashboard-shell main [class*="bg-slate-950"] .text-white:not(button):not(a),
 .admin-app-shell main [class*="bg-slate-900"] .text-white:not(button):not(a),
@@ -741,6 +753,24 @@ html.light body {
 html.light .input { background: #ffffff; color: #09090b; border-color: #d4d4d8; }
 html.light .glass-panel, html.light .glass-panel-interactive { background: rgba(255, 255, 255, 0.92); border-color: #e4e4e7; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
 html.light .glass-panel-interactive:hover { background: #ffffff; }
+/* App + admin shells stay dark by design (sidebar, header and main have no
+   light theme), so glass panels inside them must stay dark too. Without this
+   override, light mode turned StatCards white while their zinc-100 values
+   stayed near-white — invisible text. Higher specificity keeps this winning
+   over the generic light glass rule above. */
+html.light .app-dashboard-shell main .glass-panel,
+html.light .app-dashboard-shell main .glass-panel-interactive,
+html.light .admin-app-shell main .glass-panel,
+html.light .admin-app-shell main .glass-panel-interactive {
+  background: rgba(9, 9, 11, 0.94);
+  border-color: rgba(63, 63, 70, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+html.light .app-dashboard-shell main .glass-panel-interactive:hover,
+html.light .admin-app-shell main .glass-panel-interactive:hover {
+  background: #09090b;
+  border-color: rgba(14, 109, 228, 0.4);
+}
 html.light ::-webkit-scrollbar-track { background: #f4f4f5; }
 html.light ::-webkit-scrollbar-thumb { background: #d4d4d8; }
 html.light ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
@@ -878,9 +908,11 @@ html.light .contact-field:not(.border-rose-400) { background-color: #ffffff; }
 html.light .contact-soft-box { background-color: #ffffff; border-color: #e4e4e7; }
 
 /* Shared footer: Aimfox-style light rising from the very bottom of the page.
-   A soft violet/blue wash anchored at the bottom edge, fading upward into
-   the sections above the footer. pointer-events none so it never blocks
-   clicks; the footer panel sits above it via its own relative position. */
+   A soft blue/white/violet wash anchored at the bottom edge, fading upward
+   into the sections above the footer. pointer-events none so it never blocks
+   clicks; the footer panel sits above it via its own relative position.
+   The wash is deliberately tall (76rem) and wide so it spreads up and around
+   the footer instead of sitting only underneath it. */
 .footer-glow { position: relative; }
 .footer-glow::before {
   content: "";
@@ -888,10 +920,65 @@ html.light .contact-soft-box { background-color: #ffffff; border-color: #e4e4e7;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 48rem;
+  height: 76rem;
   background:
-    radial-gradient(ellipse 80% 65% at 50% 100%, rgba(124, 58, 246, 0.55), transparent 80%),
-    radial-gradient(ellipse 60% 55% at 82% 100%, rgba(37, 99, 235, 0.45), transparent 80%),
-    radial-gradient(ellipse 55% 50% at 15% 100%, rgba(168, 85, 247, 0.40), transparent 80%);
+    radial-gradient(ellipse 105% 75% at 50% 100%, rgba(124, 58, 246, 0.62), transparent 80%),
+    radial-gradient(ellipse 78% 65% at 82% 100%, rgba(37, 99, 235, 0.52), transparent 80%),
+    radial-gradient(ellipse 72% 60% at 15% 100%, rgba(168, 85, 247, 0.48), transparent 80%),
+    radial-gradient(ellipse 45% 40% at 50% 100%, rgba(255, 255, 255, 0.10), transparent 75%);
   pointer-events: none;
 }
+
+/* Shared header: the footer glow mirrored at the top of the page. Same
+   blue/white/violet palette, anchored at the top edge and fading downward,
+   so the sticky pill header and the footer read as one design system.
+   The header's content rows carry relative z-10 so text and buttons always
+   sit above the glow; pointer-events none so it never blocks clicks. */
+.header-glow::before {
+  content: "";
+  position: absolute;
+  /* Full viewport width, centered on the pill: the glow covers the whole
+     background behind the header (edge to edge, like the footer glow),
+     not just the pill's own width. Safe: html/body already clip overflow-x. */
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  top: 0;
+  height: 40rem;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(124, 58, 246, 0.58), transparent 78%),
+    radial-gradient(ellipse 70% 55% at 85% 0%, rgba(37, 99, 235, 0.50), transparent 78%),
+    radial-gradient(ellipse 65% 50% at 12% 0%, rgba(168, 85, 247, 0.44), transparent 78%),
+    radial-gradient(ellipse 50% 36% at 50% 0%, rgba(255, 255, 255, 0.10), transparent 72%);
+  pointer-events: none;
+}
+
+/* Hero background wash: the same palette spread softly across the hero so
+   the blue glow reads as one continuous field behind the heading, buttons
+   and preview. The soft violet orb echoes the reference hero ambience;
+   alphas stay moderate on purpose so text and buttons stay crisp. */
+.hero-glow {
+  background:
+    radial-gradient(ellipse 45% 55% at 50% 32%, rgba(168, 85, 247, 0.20), transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(37, 99, 235, 0.30), transparent 72%),
+    radial-gradient(ellipse 55% 45% at 85% 0%, rgba(124, 58, 246, 0.22), transparent 72%),
+    radial-gradient(ellipse 45% 34% at 50% 0%, rgba(255, 255, 255, 0.08), transparent 70%);
+}
+
+/* Middle sections: one continuous light ambient glow from header to footer.
+   Deliberately LIGHTER than the header/footer glows (blue 0.12, violet 0.08)
+   so black backgrounds, white text and opaque cards stay fully readable.
+   Background-image layers sit under all content by definition, so no layout,
+   stacking or positioning change is needed anywhere. The hero is excluded
+   (it has its own stronger .hero-glow wash). */
+.home-saas-main > section:not(:first-child) {
+  background-image:
+    radial-gradient(ellipse 60% 70% at 50% 0%, rgba(37, 99, 235, 0.12), transparent 70%),
+    radial-gradient(ellipse 45% 55% at 90% 15%, rgba(124, 58, 246, 0.08), transparent 70%);
+}
+
+/* Shared card border glow: one soft blue shadow for the primary landing
+   cards (services, how-it-works steps, platform features) so every card
+   group follows the same border-glow system. Borders themselves stay
+   blue-900; this only unifies the glow. */
+.landing-card-glow { box-shadow: 0 18px 50px rgba(37, 99, 235, 0.10); }

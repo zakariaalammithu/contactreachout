@@ -28,7 +28,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     : 'ADMIN CONSOLE';
 
   return (
-    <div className="admin-app-shell flex min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-blue-500/20 selection:text-white">
+    <div className="admin-app-shell flex min-h-screen bg-black text-zinc-100 font-sans selection:bg-blue-500/20 selection:text-white">
       {/* Single Admin Sidebar */}
       <AdminSidebar />
 
