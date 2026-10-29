@@ -307,6 +307,15 @@ export class ContactPageFinder {
       };
     }
 
+    // Serverless runtimes (Vercel) have no Playwright package and no
+    // browser binary: attempting the import there always fails and the
+    // failure used to mask the real outcome. Skip the browser entirely on
+    // Vercel and go straight to fetch probing; JS-rendered pages are
+    // handled later by worker-based detection in the orchestrator.
+    if (process.env.VERCEL === '1') {
+      return httpFallbackDiscovery(websiteUrl, domain, normalizedUrl, startTime);
+    }
+
     // Dynamic Playwright importing for production browser execution
     try {
       const moduleName = 'playwright';
@@ -575,25 +584,24 @@ async function httpFallbackDiscovery(
     }
   }
 
+  // Honest outcome: fetch probing simply found no static form markers.
+  // Reporting the browser error here used to mislead every downstream
+  // report into claiming a Playwright failure, when the truth was that a
+  // client-rendered page cannot be verified by fetching raw HTML. The
+  // orchestrator decides what to do next (worker-based detection when a
+  // worker is configured, otherwise an honest no-form result).
   return {
     targetWebsite: websiteUrl,
     targetDomain: domain,
     contactPageUrl: null,
     discoveryMethod: 'none',
     confidenceScore: 0,
-    status: browserError ? 'ERROR' : 'NOT_FOUND',
+    status: 'NOT_FOUND',
     httpStatus: null,
-    errorCode: browserError
-      ? isBrowserRuntimeUnavailable(browserError)
-        ? 'BROWSER_RUNTIME_UNAVAILABLE'
-        : 'BROWSER_LAUNCH_FAILED'
-      : 'CONTACT_PAGE_FAILED',
-    errorMessage: browserError || 'No reachable public contact page was verified.',
+    errorCode: 'STATIC_PROBE_NO_FORM',
+    errorMessage: 'No contact page with a static form was verified via fetch probing (the page may be client-rendered).',
     discoveredAt: new Date().toISOString(),
     durationMs: Date.now() - startTime,
   };
 }
 
-function isBrowserRuntimeUnavailable(error: string): boolean {
-  return /cannot find package ['"]playwright|browserType\.launch|executable doesn't exist|playwright.*(missing|unavailable)/i.test(error);
-}

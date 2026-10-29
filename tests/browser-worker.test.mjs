@@ -52,6 +52,18 @@ describe('browser worker submission safety', () => {
     expect(rejected).toMatchObject({ status: 'FAILED', successVerified: false, submitAttempted: false });
   });
 
+  it('maps a worker 409 duplicate to REVIEW, never FAILED and never a resend', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-worker-secret';
+    process.env.BROWSER_WORKER_ALLOWED_DOMAINS = 'example.test';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'FAILED', diagnosticCode: 'DUPLICATE_SUBMISSION_BLOCKED', successVerified: false, submitAttempted: false }), { status: 409 })));
+    const result = await submitWithBrowserWorker(input);
+    // A 409 means the first attempt may already have delivered: reporting
+    // FAILED would invite a blind resend, and SUCCESS would be a lie.
+    // REVIEW holds the lead for a human instead.
+    expect(result).toMatchObject({ status: 'REVIEW_REQUIRED', diagnosticCode: 'DUPLICATE_SUBMISSION_BLOCKED', successVerified: false, submitAttempted: false });
+  });
+
   it('retries a network failure with the same deterministic key', async () => {
     process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
     process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';

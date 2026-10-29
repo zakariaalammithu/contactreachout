@@ -47,6 +47,7 @@ import { generateCampaignPDFReport } from '@/lib/services/pdf-report-service';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 import { SendingProgressCard } from './SendingProgressCard';
 import { sendingDaysToWeekdays } from '@/lib/services/sending-estimate';
+import { resolveSubmissionDelayMs, resolveDailySubmissionLimit, countDeliveredToday, nextDayMidnightISO, isDelayElapsed } from '@/lib/services/campaign-runner-policy';
 import { createUniqueCampaignId, formatStoragePressureMessage, persistCampaignDraft, readCampaignDrafts, removeCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -598,23 +599,25 @@ export default function CampaignsPage() {
 
   // Real Active Campaign Pacing Execution (Server Validated with Live UI Sync)
   const inFlightLeadKeysRef = React.useRef(new Set<string>());
+  const isBusyRef = React.useRef(false);
+  const lastSubmissionAtRef = React.useRef(new Map<string, number>());
+  const consecutiveRunnerFailuresRef = React.useRef(new Map<string, number>());
 
   useEffect(() => {
-    let isBusy = false;
     const inFlightLeadKeys = inFlightLeadKeysRef.current;
+    const lastSubmissionAtByCampaign = lastSubmissionAtRef.current;
+    const consecutiveRunnerFailures = consecutiveRunnerFailuresRef.current;
 
     const processActiveCampaigns = async () => {
-      if (isBusy || typeof window === 'undefined') return;
-      isBusy = true;
+      if (isBusyRef.current || typeof window === 'undefined') return;
+      isBusyRef.current = true;
 
       try {
         const userCamps = readCampaignDrafts(localStorage);
         if (!Array.isArray(userCamps) || userCamps.length === 0) {
-          isBusy = false;
+          isBusyRef.current = false;
           return;
         }
-
-        let hasMoreWork = false;
 
         for (const rawCamp of userCamps) {
           if (!rawCamp || typeof rawCamp !== 'object') continue;
@@ -684,20 +687,59 @@ export default function CampaignsPage() {
             return inFlightLeadKeys.has(key);
           };
 
-          // Find next batch of uncontacted leads up to maxConcurrency limit
-          const maxConc = Math.min(Math.max(1, Number(rawCamp.maxConcurrency) || 5), 5);
-          const uncontactedLeads = leads.filter((l: any) => !isLeadProcessed(l) && !isLeadDeferred(l) && !isLeadInFlight(l)).slice(0, maxConc);
+          // SEQUENTIAL EXECUTION — one prospect at a time, enforced here.
+          // This loop IS the execution engine (there is no server-side
+          // queue), so a single awaited fetch per lead is what makes
+          // processing sequential. The stored maxConcurrency setting is
+          // deliberately ignored: parallel batches violated pacing and
+          // made per-lead outcomes hard to attribute.
+          const uncontactedLeads = leads.filter((l: any) => !isLeadProcessed(l) && !isLeadDeferred(l) && !isLeadInFlight(l));
+          const deliveredToday = countDeliveredToday(logs);
+          const dailyLimit = resolveDailySubmissionLimit(rawCamp);
+          const delayMs = resolveSubmissionDelayMs(rawCamp);
 
           if (uncontactedLeads.length > 0) {
-            hasMoreWork = true;
-            const template = {
-              id: 'tpl-default',
-              subjectTemplate: rawCamp.sequences?.[0]?.subject || 'Partnership Inquiry',
-              bodyTemplate: rawCamp.sequences?.[0]?.body || 'Hello {{first_name}}, reaching out to {{company_name}}.',
-            };
+            if (deliveredToday >= dailyLimit) {
+              // Daily limit reached: defer every remaining lead to
+              // tomorrow 00:00 (SCHEDULED logs are non-terminal, so the
+              // leads resume automatically and are not lost).
+              const retryAt = nextDayMidnightISO();
+              const freshCamps = readCampaignDrafts(localStorage);
+              const campToDefer = freshCamps.find((c: any) => c && c.id === rawCamp.id);
+              if (campToDefer) {
+                const existingLogs: any[] = Array.isArray(campToDefer.logs) ? campToDefer.logs : [];
+                const remainingIds = new Set(uncontactedLeads.map((l: any) => String(l.id)));
+                const kept = existingLogs.filter((log: any) => !(log?.leadId && remainingIds.has(String(log.leadId)) && String(log?.status || '').toUpperCase() === 'SCHEDULED'));
+                const deferLogs = uncontactedLeads.map((l: any) => ({
+                  leadId: l.id,
+                  domain: resolveLeadWebsite(l) || 'N/A',
+                  status: 'SCHEDULED',
+                  code: 'SCHEDULED_DAILY_LIMIT - Daily submission limit reached; resumes tomorrow.',
+                  retryAt,
+                  time: safeFormatTime(new Date()),
+                  timestamp: new Date().toISOString(),
+                }));
+                campToDefer.logs = [...deferLogs, ...kept];
+                writeCampaignDrafts(localStorage, freshCamps);
+                window.dispatchEvent(new CustomEvent('campaigns_updated'));
+                syncCampaignsFromStorage();
+              }
+            } else if (!isDelayElapsed(lastSubmissionAtByCampaign.get(rawCamp.id), delayMs)) {
+              // Configured delay has not elapsed since this campaign's
+              // last attempt; the 2s watchdog retries this pass later.
+            } else {
+              // Fresh pause check: a pause clicked mid-pass must stop
+              // the very next lead, not just the next pass.
+              const freshCamps = readCampaignDrafts(localStorage);
+              const freshCamp = freshCamps.find((c: any) => c && c.id === rawCamp.id);
+              if (freshCamp && freshCamp.status !== 'running' && freshCamp.status !== 'active') continue;
 
-            // Process each lead and immediately update UI state as each lead completes
-            const batchPromises = uncontactedLeads.map(async (nextLead: any) => {
+              const nextLead: any = uncontactedLeads[0];
+              const template = {
+                id: 'tpl-default',
+                subjectTemplate: rawCamp.sequences?.[0]?.subject || 'Partnership Inquiry',
+                bodyTemplate: rawCamp.sequences?.[0]?.body || 'Hello {{first_name}}, reaching out to {{company_name}}.',
+              };
               const leadKey = rawCamp.id + ':' + (nextLead.id ? String(nextLead.id).trim() : normalizeCanonicalDomain(resolveLeadWebsite(nextLead)));
               if (leadKey) inFlightLeadKeys.add(leadKey);
 
@@ -727,7 +769,7 @@ export default function CampaignsPage() {
                   }),
                 });
 
-                // Immediately stream individual lead result into client state & UI
+                // Immediately stream the individual lead result into client state & UI
                 const currentCamps = readCampaignDrafts(localStorage);
                 if (currentCamps.length) {
                   const campToUpdate = currentCamps.find((c: any) => c && c.id === rawCamp.id);
@@ -792,14 +834,50 @@ export default function CampaignsPage() {
                     syncCampaignsFromStorage();
                   }
                 }
+                consecutiveRunnerFailures.set(rawCamp.id, 0);
               } catch (err) {
+                // The runner call failed before a result arrived (network
+                // error, or the serverless function was cut off). The
+                // submission MAY already have started, so this lead must
+                // NOT be silently retried — that risks a duplicate send.
+                // It is held for human review (a terminal state), and if
+                // the runner keeps failing, the campaign pauses instead
+                // of spinning forever.
                 console.error(`Error processing lead ${nextLead?.id}:`, err);
+                const failures = (consecutiveRunnerFailures.get(rawCamp.id) || 0) + 1;
+                consecutiveRunnerFailures.set(rawCamp.id, failures);
+                const currentCamps = readCampaignDrafts(localStorage);
+                const campToUpdate = currentCamps.find((c: any) => c && c.id === rawCamp.id);
+                if (campToUpdate) {
+                  campToUpdate.logs = [{
+                    leadId: nextLead.id,
+                    domain: resolveLeadWebsite(nextLead) || 'N/A',
+                    status: 'REVIEW',
+                    code: 'PROCESS_OUTCOME_UNCERTAIN - Runner request failed before a result arrived; submission may have started, so this lead is held for review instead of being auto-retried.',
+                    time: safeFormatTime(new Date()),
+                    timestamp: new Date().toISOString(),
+                  }, ...(campToUpdate.logs || [])];
+                  if (failures >= 3) campToUpdate.status = 'paused';
+                  updateCampaignCanonicalMetrics(campToUpdate);
+                  writeCampaignDrafts(localStorage, currentCamps);
+                  window.dispatchEvent(new CustomEvent('campaigns_updated'));
+                  syncCampaignsFromStorage();
+                }
               } finally {
                 if (leadKey) inFlightLeadKeys.delete(leadKey);
+                lastSubmissionAtByCampaign.set(rawCamp.id, Date.now());
               }
-            });
 
-            await Promise.allSettled(batchPromises);
+              // Fast path only when no delay is configured: keep the
+              // previous immediate-continuation behavior. With a delay,
+              // the 2s watchdog plus the delay gate paces the next lead.
+              if (delayMs <= 0) {
+                setTimeout(() => {
+                  void processActiveCampaigns();
+                }, 50);
+              }
+            }
+          } else if (leads.length > 0) {
           } else if (leads.length > 0) {
             const allDone = leads.every((l: any) => isLeadProcessed(l));
             if (allDone && (rawCamp.status === 'running' || rawCamp.status === 'active')) {
@@ -810,17 +888,10 @@ export default function CampaignsPage() {
             }
           }
         }
-
-        // If active campaign has more uncontacted leads, immediately trigger next batch
-        if (hasMoreWork) {
-          setTimeout(() => {
-            void processActiveCampaigns();
-          }, 50);
-        }
       } catch (err) {
         console.error('Real campaign processing error:', err);
       } finally {
-        isBusy = false;
+        isBusyRef.current = false;
       }
     };
 

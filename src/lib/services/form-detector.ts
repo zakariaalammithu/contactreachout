@@ -652,6 +652,147 @@ export class FormDetector {
   }
 }
 
+/**
+ * Parse real <form> elements (and only real ones) out of fetched HTML.
+ * This is the honest fetch-based detector: it returns a form ONLY when the
+ * HTML actually contains one with at least one mappable field, and every
+ * field selector/name/type comes from the markup itself — never generic
+ * guesses. Pages without a <form> (typically client-rendered JS pages)
+ * return null so callers can escalate to worker-based detection instead
+ * of pretending a form was found.
+ */
+export interface ParsedFetchForm {
+  formSelector: string;
+  action?: string;
+  method: string;
+  fields: DetectedFormField[];
+  score: number;
+}
+
+function parseAttr(tagText: string, attr: string): string | null {
+  const dq = tagText.match(new RegExp(`\\b${attr}\\s*=\\s*"([^"]*)"`, 'i'));
+  if (dq) return dq[1];
+  const sq = tagText.match(new RegExp(`\\b${attr}\\s*=\\s*'([^']*)'`, 'i'));
+  return sq ? sq[1] : null;
+}
+
+export function classifyFetchField(tag: string, typeAttr: string, name: string, label: string): NormalizedFieldType {
+  const hay = `${name} ${label}`.toLowerCase();
+  if (tag === 'select') return 'select';
+  if (typeAttr === 'checkbox') return 'checkbox';
+  if (typeAttr === 'radio') return 'radio';
+  if (typeAttr === 'email' || hay.includes('email') || hay.includes('e-mail')) return 'email';
+  if (typeAttr === 'tel' || /\bphone\b|\btel\b|mobile/.test(hay)) return 'phone';
+  if (/company|organisation|organization/.test(hay)) return 'company';
+  if (/website|url|site/.test(hay)) return 'website';
+  if (/\bmessage\b|comment|inquiry|enquiry|\bbody\b|details/.test(hay) || tag === 'textarea') return 'message';
+  if (/subject|topic/.test(hay)) return 'subject';
+  if (/country/.test(hay)) return 'country';
+  if (/\bstate\b|province/.test(hay)) return 'state';
+  if (/\bcity\b|\btown\b/.test(hay)) return 'city';
+  if (/job|title|position/.test(hay)) return 'job_title';
+  if (/first.?name|fname|given/.test(hay)) return 'first_name';
+  if (/last.?name|lname|surname|family/.test(hay)) return 'last_name';
+  if (/\bname\b|full.?name|your.?name|contact.?name/.test(hay)) return 'full_name';
+  if (/whatsapp/.test(hay)) return 'whatsApp';
+  return 'unknown';
+}
+
+export function parseContactFormsFromHtml(html: string, pageUrl: string): ParsedFetchForm | null {
+  const formRe = /<form\b([^>]*)>([\s\S]*?)<\/form\s*>/gi;
+  const candidates: ParsedFetchForm[] = [];
+  let formMatch: RegExpExecArray | null;
+  let formIndex = 0;
+  while ((formMatch = formRe.exec(html)) !== null) {
+    const openTag = formMatch[1] || '';
+    const inner = formMatch[2] || '';
+    const formId = parseAttr(`<form ${openTag}>`, 'id');
+    const rawAction = parseAttr(`<form ${openTag}>`, 'action');
+    let action: string | undefined;
+    if (rawAction) {
+      try { action = new URL(rawAction, pageUrl).href; } catch { action = rawAction; }
+    }
+    const method = (parseAttr(`<form ${openTag}>`, 'method') || 'post').toLowerCase();
+    const fields: DetectedFormField[] = [];
+    const fieldRe = /<(input|textarea|select)\b([^>]*)>/gi;
+    let fieldMatch: RegExpExecArray | null;
+    while ((fieldMatch = fieldRe.exec(inner)) !== null) {
+      const tag = fieldMatch[1].toLowerCase() as 'input' | 'textarea' | 'select';
+      const attrs = fieldMatch[2] || '';
+      const typeAttr = tag === 'textarea' ? 'textarea' : tag === 'select' ? 'select-one' : (parseAttr(`<x ${attrs}>`, 'type') || 'text').toLowerCase();
+      if (typeAttr === 'submit' || typeAttr === 'button' || typeAttr === 'hidden') continue;
+      const name = parseAttr(`<x ${attrs}>`, 'name') || '';
+      const id = parseAttr(`<x ${attrs}>`, 'id') || '';
+      const label = parseAttr(`<x ${attrs}>`, 'aria-label') || parseAttr(`<x ${attrs}>`, 'placeholder') || '';
+      const normalizedType = classifyFetchField(tag, typeAttr, name, label);
+      const selector = id ? `#${id}` : name ? `[name="${name.replace(/"/g, '\\"')}"]` : `${tag}[type="${typeAttr}"]`;
+      const field: DetectedFormField = {
+        id: id || undefined,
+        name: name || undefined,
+        selector,
+        tag,
+        htmlType: typeAttr,
+        label: label || undefined,
+        normalizedType,
+        confidence: normalizedType === 'unknown' ? 0.3 : 0.9,
+        isRequired: /\brequired\b/i.test(attrs),
+        isHoneypot: false,
+      };
+      if (tag === 'select') {
+        const options: string[] = [];
+        const optRe = /<option\b[^>]*>([^<]*)<\/option\s*>/gi;
+        let optMatch: RegExpExecArray | null;
+        while ((optMatch = optRe.exec(inner)) !== null) {
+          const text = (optMatch[1] || '').trim();
+          if (text) options.push(text);
+        }
+        if (options.length > 0) field.options = options;
+      }
+      fields.push(field);
+    }
+    // A form only counts when at least one field is mappable. A form of
+    // only unknown fields cannot be filled safely, so it must not be
+    // reported as a usable contact form (an empty submission would be a
+    // false success).
+    const mappable = fields.filter((f) => f.normalizedType !== 'unknown');
+    if (mappable.length === 0) { formIndex += 1; continue; }
+    const hay = `${formId || ''} ${rawAction || ''} ${openTag}`.toLowerCase();
+    let score = 0;
+    for (const f of mappable) {
+      if (f.normalizedType === 'message') score += 4;
+      else if (f.normalizedType === 'email' || f.normalizedType === 'full_name') score += 3;
+      else score += 2;
+    }
+    if (/login|signin|sign-in|auth/.test(hay)) score -= 100;
+    if (/search/.test(hay)) score -= 100;
+    if (/subscribe|newsletter/.test(hay)) score -= 100;
+    candidates.push({
+      // Selector is finalized after the loop (single-form pages can use
+      // plain 'form'; multi-form pages need an id or :nth-match index).
+      formSelector: formId ? `#${formId}` : `__PENDING_${formIndex}__`,
+      action,
+      method,
+      fields,
+      score,
+    });
+    formIndex += 1;
+  }
+  if (candidates.length === 0) return null;
+  // Finalize selectors now that the total form count is known.
+  const totalForms = formIndex;
+  for (const c of candidates) {
+    if (c.formSelector.startsWith('__PENDING_')) {
+      const idx = Number(c.formSelector.slice('__PENDING_'.length, -2));
+      c.formSelector = totalForms === 1 ? 'form' : `:nth-match(form, ${idx + 1})`;
+    }
+  }
+  candidates.sort((a, b) => b.score - a.score);
+  const best = candidates[0];
+  // A login/search/newsletter form alone is not a contact form.
+  if (best.score < 0) return null;
+  return best;
+}
+
 async function httpFallbackFormDetection(url: string, browserError?: string): Promise<FormDetectionResult> {
   try {
     const res = await fetch(url, {
@@ -665,86 +806,44 @@ async function httpFallbackFormDetection(url: string, browserError?: string): Pr
 
     if (res.ok) {
       const html = await res.text();
-      const lowerHtml = html.toLowerCase();
-
-      const formTagMatch = html.match(/<form\b[^>]*>/i);
-      const formTag = formTagMatch?.[0] || '';
-      const actionMatch = formTag.match(/\baction\s*=\s*["']([^"']*)["']/i);
-      const methodMatch = formTag.match(/\bmethod\s*=\s*["']([^"']*)["']/i);
-
-      // Extract form field signatures via regex
-      const mockFields: DetectedFormField[] = [];
-
-      if (/name|first_name|full_name/i.test(lowerHtml)) {
-        mockFields.push({
-          selector: 'input[name*="name"]',
-          tag: 'input',
-          htmlType: 'text',
-          normalizedType: 'full_name',
-          confidence: 0.95,
-          isRequired: true,
-          isHoneypot: false,
-        });
+      const parsed = parseContactFormsFromHtml(html, url);
+      if (parsed) {
+        return {
+          targetUrl: url,
+          hasContactForm: true,
+          selectedForm: {
+            formSelector: parsed.formSelector,
+            action: parsed.action,
+            method: parsed.method,
+            formScore: 90,
+            isContactForm: true,
+            isLoginOrAuthForm: false,
+            isSearchForm: false,
+            isNewsletterForm: false,
+            hasCaptcha: /captcha|recaptcha|turnstile|hcaptcha/i.test(html),
+            hasFileRequired: false,
+            detectedFields: parsed.fields,
+          },
+          allFormsCount: 1,
+          status: 'DETECTED',
+          confidenceScore: 90,
+          detectedAt: new Date().toISOString(),
+        };
       }
-
-      if (/email/i.test(lowerHtml)) {
-        mockFields.push({
-          selector: 'input[type="email"], input[name*="email"]',
-          tag: 'input',
-          htmlType: 'email',
-          normalizedType: 'email',
-          confidence: 0.98,
-          isRequired: true,
-          isHoneypot: false,
-        });
-      }
-
-      if (/message|comment|body|text/i.test(lowerHtml) || html.includes('<textarea')) {
-        mockFields.push({
-          selector: 'textarea',
-          tag: 'textarea',
-          htmlType: 'textarea',
-          normalizedType: 'message',
-          confidence: 0.95,
-          isRequired: true,
-          isHoneypot: false,
-        });
-      }
-
-      mockFields.push({
-        selector: 'button[type="submit"], input[type="submit"]',
-        tag: 'button',
-        htmlType: 'submit',
-        normalizedType: 'submit',
-        confidence: 0.9,
-        isRequired: false,
-        isHoneypot: false,
-      });
-
       return {
         targetUrl: url,
-        hasContactForm: true,
-        selectedForm: {
-          formSelector: 'form',
-          action: actionMatch?.[1] || undefined,
-          method: (methodMatch?.[1] || 'post').toLowerCase(),
-          formScore: 90,
-          isContactForm: true,
-          isLoginOrAuthForm: false,
-          isSearchForm: false,
-          isNewsletterForm: false,
-          hasCaptcha: false,
-          hasFileRequired: false,
-          detectedFields: mockFields,
-        },
-        allFormsCount: 1,
-        status: 'DETECTED',
-        confidenceScore: 90,
+        hasContactForm: false,
+        selectedForm: null,
+        allFormsCount: 0,
+        status: 'NO_FORM_FOUND',
+        confidenceScore: 0,
         detectedAt: new Date().toISOString(),
+        errorCode: 'FETCH_NO_FORM',
+        errorMessage: 'No <form> with mappable fields found in fetched HTML (page may be client-rendered; browser inspection required).',
       };
     }
   } catch (e) {
-    // Fallback default
+    // Fallback default below
   }
 
   return {
@@ -766,6 +865,16 @@ async function httpFallbackFormDetection(url: string, browserError?: string): Pr
 
 export function detectFormsInHtml(html: string, url: string = ''): Promise<FormDetectionResult> {
   return FormDetector.detectForms(url || 'https://example.com');
+}
+
+/**
+ * Fetch-only detection (no browser import). Used on serverless runtimes
+ * where Playwright is unavailable, and as the fallback when worker-based
+ * detection cannot be reached. Honest: returns a form only when the
+ * fetched HTML actually contains one with mappable fields.
+ */
+export function detectFormsViaFetch(url: string): Promise<FormDetectionResult> {
+  return httpFallbackFormDetection(url);
 }
 
 /**

@@ -20,6 +20,87 @@ function unavailable(message: string, fieldsFilledCount: number, startedAt: numb
   };
 }
 
+export interface WorkerDetectionField {
+  selector: string;
+  name: string;
+  tag: string;
+  type: string;
+  required: boolean;
+  label: string;
+  options?: Array<{ label: string; value: string }>;
+}
+
+export interface WorkerDetectionForm {
+  selector: string;
+  action: string;
+  method: string;
+  fields: WorkerDetectionField[];
+}
+
+export type WorkerDetectionOutcome =
+  | { available: true; status: 'DETECTED' | 'NOT_FOUND' | 'CAPTCHA_DETECTED' | 'NAVIGATION_FAILED'; forms: WorkerDetectionForm[]; errorMessage?: string }
+  | { available: false; reason: string };
+
+export function isBrowserWorkerConfigured(): boolean {
+  return Boolean(process.env.BROWSER_WORKER_URL && process.env.BROWSER_WORKER_AUTH_SECRET);
+}
+
+function workerDetectUrl(): string | null {
+  const base = (process.env.BROWSER_WORKER_URL || '').replace(/\/submit\/?$/, '');
+  return base ? `${base}/detect` : null;
+}
+
+/**
+ * Ask the remote worker (which has a real Chromium) to render a page and
+ * report its forms. This is the only detection path that works for
+ * client-rendered (JS) pages; the app's fetch-based detection cannot see
+ * them. Returns available:false when the worker is not configured or
+ * cannot be reached, so callers can fall back to fetch detection.
+ */
+export async function detectWithBrowserWorker(input: {
+  url: string;
+  timeoutMs?: number;
+}): Promise<WorkerDetectionOutcome> {
+  const workerUrl = process.env.BROWSER_WORKER_URL;
+  const workerSecret = process.env.BROWSER_WORKER_AUTH_SECRET;
+  const detectUrl = workerDetectUrl();
+  if (!workerUrl || !workerSecret || !detectUrl) {
+    return { available: false, reason: 'BROWSER_WORKER_NOT_CONFIGURED: remote browser worker URL/secret is not set.' };
+  }
+  try {
+    const response = await fetch(detectUrl, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${workerSecret}`,
+      },
+      body: JSON.stringify({ url: input.url, timeoutMs: Math.min(Math.max(input.timeoutMs || 15000, 1000), 25000) }),
+      signal: AbortSignal.timeout(26000),
+    });
+    if (!response.ok) {
+      return { available: false, reason: `BROWSER_WORKER_DETECT_UNAVAILABLE: worker returned HTTP ${response.status}.` };
+    }
+    const result = (await response.json()) as {
+      status?: string;
+      hasForm?: boolean;
+      forms?: WorkerDetectionForm[];
+      errorMessage?: string;
+    };
+    if (result.status === 'CAPTCHA_DETECTED') {
+      return { available: true, status: 'CAPTCHA_DETECTED', forms: [] };
+    }
+    if (result.status === 'NAVIGATION_FAILED') {
+      return { available: true, status: 'NAVIGATION_FAILED', forms: [], errorMessage: result.errorMessage };
+    }
+    if (result.status === 'DETECTED' && Array.isArray(result.forms) && result.forms.length > 0) {
+      return { available: true, status: 'DETECTED', forms: result.forms };
+    }
+    return { available: true, status: 'NOT_FOUND', forms: [] };
+  } catch (error) {
+    return { available: false, reason: `BROWSER_WORKER_DETECT_UNAVAILABLE: worker could not be reached (${error instanceof Error ? error.message : 'unknown error'}).` };
+  }
+}
+
 export async function submitWithBrowserWorker(input: {
   contactPageUrl: string;
   formSelector: string;
@@ -62,6 +143,21 @@ export async function submitWithBrowserWorker(input: {
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(payload.timeoutMs),
       });
+      if (response.status === 409) {
+        // The worker refused this exact payload as a duplicate of an
+        // attempt made within the last 24h. That first attempt may already
+        // have delivered, so this must NOT be reported as FAILED (which
+        // would invite a blind resend) and must NOT be auto-retried. It is
+        // held for human review instead; no credit is deducted (deduction
+        // only happens on DELIVERED).
+        return {
+          status: 'REVIEW_REQUIRED', isDryRun: false, isTestMode: false, httpStatus: 409,
+          fieldsFilledCount: fields.length, honeypotsNeutralizedCount: 0, successVerified: false, submitAttempted: false,
+          errorMessage: 'A submission for this exact form was already attempted within 24h; the first attempt may have delivered, so this lead is held for review instead of being sent again.',
+          diagnosticCode: 'DUPLICATE_SUBMISSION_BLOCKED',
+          executionDurationMs: Date.now() - startedAt, submittedAt: new Date().toISOString(),
+        };
+      }
       if (!response.ok) {
         return unavailable(`BROWSER_RUNTIME_UNAVAILABLE: worker returned HTTP ${response.status}.`, fields.length, startedAt);
       }

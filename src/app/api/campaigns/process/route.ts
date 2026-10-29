@@ -170,7 +170,13 @@ export async function POST(req: NextRequest) {
       result.finalStatus === 'BLOCKED_SUPPRESSED'
     ) {
       campaignStatus = 'REVIEW';
-      diagnosticMessage = 'Anti-bot protection, CAPTCHA, or uncertain field mapping detected';
+      // Preserve the specific reason when the pipeline recorded one
+      // (e.g. a duplicate-submission hold), so the report does not hide
+      // an uncertain outcome behind a generic anti-bot message.
+      diagnosticMessage =
+        result.submission?.errorMessage ||
+        result.detection?.errorMessage ||
+        'Anti-bot protection, CAPTCHA, or uncertain field mapping detected';
     } else {
       campaignStatus = 'FAILED';
       diagnosticMessage =

@@ -18,6 +18,92 @@ http.createServer(async (req, res) => {
     const healthy = isHealthy({ secret, staticDomains: allowedDomains, appUrl });
     return send(res, healthy ? 200 : 503, { status: healthy ? 'ok' : 'misconfigured' });
   }
+  if (req.method === 'POST' && req.url === '/detect') {
+    if (!secret || req.headers.authorization !== `Bearer ${secret}`) return send(res, 401, { error: 'Unauthorized' });
+    let raw = ''; for await (const chunk of req) { raw += chunk; if (raw.length > 250_000) return send(res, 413, { error: 'Payload too large' }); }
+    let job; try { job = JSON.parse(raw); } catch { return send(res, 400, { error: 'Invalid JSON' }); }
+    const targetAllowed = await isTargetAllowed({ staticDomains: allowedDomains, appUrl, secret, url: job.url });
+    if (!targetAllowed || typeof job.url !== 'string') return send(res, 400, { error: 'Invalid or disallowed target' });
+    const timeoutMs = Math.min(Math.max(Number(job.timeoutMs) || 15_000, 1_000), 25_000);
+    let browser;
+    try {
+      browser = await chromium.launch({ headless: true });
+      const page = await browser.newPage();
+      const gotoResponse = await page.goto(job.url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+      // A missing path (404) cannot host a form: return at once instead
+      // of waiting out the hydration window for every dead candidate.
+      if (gotoResponse && gotoResponse.status() >= 400) {
+        return send(res, 200, { status: 'NOT_FOUND', hasForm: false, forms: [] });
+      }
+      // Let client-rendered (JS) forms hydrate before extracting: static
+      // HTML alone cannot see them, which is exactly why this endpoint
+      // exists (the app's fetch-based detection cannot).
+      await page.waitForSelector('form', { timeout: 3_000 }).catch(() => {});
+      await page.waitForTimeout(1200);
+      const content = await page.content();
+      if (blockedPattern.test(content)) return send(res, 200, { status: 'CAPTCHA_DETECTED', hasForm: false, forms: [] });
+      const forms = await page.evaluate(() => {
+        const cssPath = (el) => {
+          const parts = [];
+          let node = el;
+          while (node && node.nodeType === 1 && parts.length < 6) {
+            let part = node.tagName.toLowerCase();
+            if (node.id) { parts.unshift(`#${CSS.escape(node.id)}`); break; }
+            const parent = node.parentElement;
+            if (parent) {
+              const siblings = Array.from(parent.children).filter((s) => s.tagName === node.tagName);
+              if (siblings.length > 1) part += `:nth-of-type(${siblings.indexOf(node) + 1})`;
+            }
+            parts.unshift(part);
+            node = parent;
+          }
+          return parts.join(' > ');
+        };
+        const labelText = (el) => {
+          if (el.id) {
+            const lab = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+            if (lab) return (lab.textContent || '').trim();
+          }
+          const wrap = el.closest('label');
+          if (wrap) return (wrap.textContent || '').trim();
+          return el.getAttribute('aria-label') || el.getAttribute('placeholder') || '';
+        };
+        return Array.from(document.querySelectorAll('form')).map((form, formIndex) => {
+          const fields = [];
+          Array.from(form.elements || []).forEach((el) => {
+            const tag = (el.tagName || '').toLowerCase();
+            if (tag !== 'input' && tag !== 'textarea' && tag !== 'select') return;
+            const type = (el.getAttribute('type') || (tag === 'textarea' ? 'textarea' : tag === 'select' ? 'select-one' : 'text')).toLowerCase();
+            if (type === 'submit' || type === 'button' || type === 'hidden') return;
+            const name = el.getAttribute('name') || '';
+            const id = el.getAttribute('id') || '';
+            let selector;
+            if (id) selector = `#${CSS.escape(id)}`;
+            else if (name) selector = `[name="${name.replace(/"/g, '\\"')}"]`;
+            else selector = cssPath(el);
+            const field = { selector, name, tag, type, required: Boolean(el.required), label: labelText(el) };
+            if (tag === 'select') {
+              field.options = Array.from(el.options || []).map((o) => ({ label: (o.textContent || '').trim(), value: o.value }));
+            }
+            fields.push(field);
+          });
+          const rawAction = form.getAttribute('action') || '';
+          let action = rawAction;
+          try { action = rawAction ? new URL(rawAction, window.location.href).href : ''; } catch { action = rawAction; }
+          return {
+            selector: form.id ? `#${CSS.escape(form.id)}` : (document.querySelectorAll('form').length === 1 ? 'form' : `:nth-match(form, ${formIndex + 1})`),
+            action,
+            method: (form.getAttribute('method') || 'post').toLowerCase(),
+            fields,
+          };
+        });
+      });
+      const withFields = forms.filter((f) => f.fields.length > 0);
+      return send(res, 200, { status: withFields.length > 0 ? 'DETECTED' : 'NOT_FOUND', hasForm: withFields.length > 0, forms: withFields });
+    } catch (error) {
+      return send(res, 200, { status: 'NAVIGATION_FAILED', hasForm: false, forms: [], errorMessage: error instanceof Error ? error.message : 'Worker failure' });
+    } finally { await browser?.close().catch(() => {}); }
+  }
   if (req.method !== 'POST' || req.url !== '/submit') return send(res, 404, { error: 'Not found' });
   if (!secret || req.headers.authorization !== `Bearer ${secret}`) return send(res, 401, { error: 'Unauthorized' });
   let raw = ''; for await (const chunk of req) { raw += chunk; if (raw.length > 250_000) return send(res, 413, { error: 'Payload too large' }); }
