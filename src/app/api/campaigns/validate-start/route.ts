@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from '@/lib/auth/session';
 import { AuthStore } from '@/lib/auth/auth-store';
-import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
+import { CreditWalletServerService } from '@/lib/services/credit-wallet-server-service';
+import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,11 +14,21 @@ export async function POST(req: NextRequest) {
   try {
     const session = SessionManager.getSessionFromRequest(req);
     if (!session) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    // The session token is HMAC-signed and self-contained, so its email IS
+    // the authenticated identity. The previous check additionally required
+    // the user to exist in the in-memory AuthStore with a matching id — but
+    // AuthStore lives only in serverless instance memory, so every
+    // self-registered user failed here with 401 on any instance other than
+    // the one that created their account, and the client displayed that
+    // failure as a numberless "Not Enough Credits" modal. The id adds no
+    // security (a forged token would need SESSION_SECRET, and the wallet
+    // below is keyed by the signed email), so the registry is now consulted
+    // only for suspension and plan — never as a gate for existence. Note:
+    // no durable user store exists to check suspension for users absent
+    // from the registry; the signed session plus the credit gate below
+    // remain the enforcement for them.
     const authenticatedUser = AuthStore.getUserByEmail(session.email);
-    if (!authenticatedUser || authenticatedUser.id !== session.userId) {
-      return NextResponse.json({ error: 'Authenticated account could not be verified.' }, { status: 401 });
-    }
-    if (authenticatedUser.isSuspended) return NextResponse.json({ error: 'Account is suspended.' }, { status: 403 });
+    if (authenticatedUser?.isSuspended) return NextResponse.json({ error: 'Account is suspended.' }, { status: 403 });
     const userId = session.email.toLowerCase().trim();
     const body = await req.json();
     const { prospectsCount = 0, aiPersonalizationEnabled = false } = body;
@@ -33,9 +44,9 @@ export async function POST(req: NextRequest) {
 
     // 1. AI Personalization Access Control Check
     if (aiPersonalizationEnabled) {
-      const user = AuthStore.getUserByEmail(userId);
+      const user = authenticatedUser;
       const isFreeUser = !user?.plan || user.plan.toLowerCase() === 'free';
-      const isAdmin = user?.role === 'SUPER_ADMIN';
+      const isAdmin = user?.role === 'SUPER_ADMIN' || session.role === 'SUPER_ADMIN';
 
       if (isFreeUser && !isAdmin) {
         return NextResponse.json(
@@ -50,7 +61,23 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Credit Wallet Capacity & Unreserved Balance Validation
-    const wallet = await CreditWalletService.getWalletForServer(userId);
+    // Self-registered accounts have no Supabase users row yet, so the
+    // database wallet lookup throws USER_NOT_FOUND for them. Fall back to
+    // the standard in-memory wallet (100 free monthly credits, plus the
+    // admin testing grant for admin accounts) instead of failing the start
+    // with a 500 the client shows as a credit error. Any other database
+    // failure still surfaces as a 500.
+    let wallet;
+    try {
+      wallet = await CreditWalletServerService.getWalletForServer(userId);
+    } catch (err: any) {
+      const message = String(err?.message || '');
+      if (message.includes('CREDIT_DATABASE_USER_NOT_FOUND') || message.includes('CREDIT_DATABASE_NOT_CONFIGURED')) {
+        wallet = CreditWalletService.getWallet(userId);
+      } else {
+        throw err;
+      }
+    }
     const validation = {
       allowed: wallet.totalCreditsAvailable >= count,
       reason: wallet.totalCreditsAvailable <= 0 ? 'NO_CREDITS_REMAINING' as const : wallet.totalCreditsAvailable < count ? 'INSUFFICIENT_CREDITS' as const : undefined,

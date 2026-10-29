@@ -45,6 +45,8 @@ import { Button } from '@/components/ui/Button';
 import { generateNextUniqueCampaignName } from '@/lib/utils';
 import { generateCampaignPDFReport } from '@/lib/services/pdf-report-service';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { SendingProgressCard } from './SendingProgressCard';
+import { sendingDaysToWeekdays } from '@/lib/services/sending-estimate';
 import { createUniqueCampaignId, formatStoragePressureMessage, persistCampaignDraft, readCampaignDrafts, removeCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -70,9 +72,37 @@ interface CampaignItem {
   interested?: number;
   opportunities?: number;
   last24h?: number;
+  // Raw fields carried through for the live sending card (not shown in rows).
+  dailySubmissionLimit?: number;
+  schedule?: any;
+  prospectsList?: any[];
+  logs?: any[];
+  isDryRun?: boolean;
 }
 
 const initialCampaignsList: CampaignItem[] = [];
+
+// Log statuses after which a prospect is done (shared by the sender loop
+// and the live sending card's "up next" derivation, so both agree).
+const TERMINAL_LOG_STATUSES = new Set([
+  'DELIVERED',
+  'DRY_RUN_COMPLETED',
+  'FAILED',
+  'SUBMIT_FAILED',
+  'NO-FORM',
+  'NO_FORM',
+  'NO_CONTACT_PAGE',
+  'REVIEW',
+  'REVIEW_REQUIRED',
+  'CAPTCHA_REVIEW',
+  'CAPTCHA_DETECTED',
+  'CAPTCHA_BLOCKED',
+  'EXECUTION_ERROR',
+  'UNREACHABLE',
+  'BLOCKED',
+  'BLOCKED_NO_CREDITS',
+  'BLOCKED_SUPPRESSED',
+]);
 
 
 export default function CampaignsPage() {
@@ -91,6 +121,23 @@ export default function CampaignsPage() {
   }, [router]);
 
   const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
+  const [availableCredits, setAvailableCredits] = useState<number | null>(null);
+
+  // Live card credit balance (best effort: the card hides the remainder when unknown).
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/credits')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.wallet && typeof data.wallet.totalCreditsAvailable === 'number') {
+          setAvailableCredits(data.wallet.totalCreditsAvailable);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [folderFilter, setFolderFilter] = useState('All Folders');
   const [tagFilter, setTagFilter] = useState('All Tags');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
@@ -472,6 +519,11 @@ export default function CampaignsPage() {
                 captchaBlocked: counts.captcha,
                 reachedPercent: counts.reachedPercent,
                 replied: counts.replied,
+                dailySubmissionLimit: typeof c.dailySubmissionLimit === 'number' ? c.dailySubmissionLimit : undefined,
+                schedule: c.schedule,
+                prospectsList: Array.isArray(c.prospectsList) ? c.prospectsList : [],
+                logs: Array.isArray(c.logs) ? c.logs : [],
+                isDryRun: Boolean(c.isDryRun),
               };
             });
         }
@@ -592,25 +644,7 @@ export default function CampaignsPage() {
             }
             return '';
           };
-          const terminalStatuses = new Set([
-            'DELIVERED',
-            'DRY_RUN_COMPLETED',
-            'FAILED',
-            'SUBMIT_FAILED',
-            'NO-FORM',
-            'NO_FORM',
-            'NO_CONTACT_PAGE',
-            'REVIEW',
-            'REVIEW_REQUIRED',
-            'CAPTCHA_REVIEW',
-            'CAPTCHA_DETECTED',
-            'CAPTCHA_BLOCKED',
-            'EXECUTION_ERROR',
-            'UNREACHABLE',
-            'BLOCKED',
-            'BLOCKED_NO_CREDITS',
-            'BLOCKED_SUPPRESSED',
-          ]);
+          const terminalStatuses = TERMINAL_LOG_STATUSES;
 
           const processedLeadIds = new Set<string>();
           const processedLeadWebsites = new Set<string>();
@@ -1710,6 +1744,61 @@ export default function CampaignsPage() {
             <span>ACTIONS</span>
           </div>
         </div>
+
+        {/* Live Sending Progress: appears the moment a started campaign lands
+            on this page (the sender loop runs here), one card per running
+            campaign, updating live on every campaign update event. */}
+        {(() => {
+          const running = campaigns.filter((c) => c.status === 'active');
+          if (running.length === 0) return null;
+          const resolveWebsite = (lead: any): string => {
+            if (!lead || typeof lead !== 'object') return '';
+            const raw = lead.website || lead.websiteUrl || lead.website_url || lead.domain || lead.url || '';
+            return normalizeCanonicalDomain(String(raw || ''));
+          };
+          const upNextFor = (camp: CampaignItem): string => {
+            const processedIds = new Set<string>();
+            const processedWebs = new Set<string>();
+            (camp.logs || []).forEach((l: any) => {
+              if (!l || typeof l !== 'object') return;
+              const st = String(l.status || l.finalStatus || '').toUpperCase();
+              const code = String(l.code || l.diagnostic || '').toUpperCase();
+              if (TERMINAL_LOG_STATUSES.has(st) || code.includes('BLOCKED')) {
+                if (l.leadId) processedIds.add(String(l.leadId).trim());
+                if (l.id) processedIds.add(String(l.id).trim());
+                const web = normalizeCanonicalDomain(l.domain || l.url || l.website || '');
+                if (web && web !== 'n/a') processedWebs.add(web);
+              }
+            });
+            const next = (camp.prospectsList || []).find((lead: any) => {
+              if (!lead || typeof lead !== 'object') return false;
+              if (lead.id && processedIds.has(String(lead.id).trim())) return false;
+              const web = resolveWebsite(lead);
+              if (web && processedWebs.has(web)) return false;
+              return true;
+            });
+            return next ? resolveWebsite(next) : '';
+          };
+          return (
+            <div className="space-y-3">
+              {running.map((camp) => (
+                <SendingProgressCard
+                  key={camp.id}
+                  campaignName={camp.name}
+                  isDryRun={Boolean(camp.isDryRun)}
+                  total={camp.prospects}
+                  sent={camp.reached}
+                  failed={camp.failed || 0}
+                  upNext={upNextFor(camp)}
+                  dailyLimit={typeof camp.dailySubmissionLimit === 'number' ? camp.dailySubmissionLimit : 100}
+                  sendingWeekdays={sendingDaysToWeekdays(camp.schedule?.sendingDays)}
+                  availableCredits={availableCredits}
+                  onPause={(e) => toggleCampaignStatus(camp.id, e)}
+                />
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Campaign Rows */}
         <div className="space-y-2.5">
