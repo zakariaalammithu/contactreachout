@@ -929,29 +929,9 @@ html.light .contact-soft-box { background-color: #ffffff; border-color: #e4e4e7;
   pointer-events: none;
 }
 
-/* Shared header: the footer glow mirrored at the top of the page. Same
-   blue/white/violet palette, anchored at the top edge and fading downward,
-   so the sticky pill header and the footer read as one design system.
-   The header's content rows carry relative z-10 so text and buttons always
-   sit above the glow; pointer-events none so it never blocks clicks. */
-.header-glow::before {
-  content: "";
-  position: absolute;
-  /* Full viewport width, centered on the pill: the glow covers the whole
-     background behind the header (edge to edge, like the footer glow),
-     not just the pill's own width. Safe: html/body already clip overflow-x. */
-  left: 50%;
-  width: 100vw;
-  transform: translateX(-50%);
-  top: 0;
-  height: 40rem;
-  background:
-    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(124, 58, 246, 0.58), transparent 78%),
-    radial-gradient(ellipse 70% 55% at 85% 0%, rgba(37, 99, 235, 0.50), transparent 78%),
-    radial-gradient(ellipse 65% 50% at 12% 0%, rgba(168, 85, 247, 0.44), transparent 78%),
-    radial-gradient(ellipse 50% 36% at 50% 0%, rgba(255, 255, 255, 0.10), transparent 72%);
-  pointer-events: none;
-}
+/* Header background is intentionally clean and dark: no glow behind the
+   sticky pill. The blue/violet glow lives ONLY inside the hero section
+   below it (.hero-glow), so the two backgrounds stay visually separated. */
 
 /* Hero background wash: the same palette spread softly across the hero so
    the blue glow reads as one continuous field behind the heading, buttons
