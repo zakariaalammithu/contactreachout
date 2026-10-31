@@ -68,6 +68,7 @@ export interface WorkerDiagnosticEvidence {
   posts?: WorkerDiagnosticPost[];
   requestsSent?: number;
   attempts?: number;
+  pageErrors?: string[];
   fieldsStuck?: string;
   clearedFieldSelectors?: string[];
   pageSnippet?: string;

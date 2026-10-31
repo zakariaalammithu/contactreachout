@@ -37,6 +37,16 @@ export function renderWorkerDiagnosticEvidence(evidence: unknown): string {
   if (typeof ev.attempts === 'number' && ev.attempts > 1) {
     parts.push(`attempts: ${ev.attempts}`);
   }
+  // Page JS errors: a throwing handler submits nothing and shows no
+  // validation error, so without this the row looks inexplicable.
+  if (Array.isArray(ev.pageErrors) && ev.pageErrors.length > 0) {
+    const rendered = ev.pageErrors
+      .filter((m) => typeof m === 'string' && m)
+      .map((m) => m.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .join('; ');
+    if (rendered) parts.push(`page errors: ${rendered}`);
+  }
   if (typeof ev.fieldsStuck === 'string' && ev.fieldsStuck) {
     let fields = `fields stuck ${ev.fieldsStuck}`;
     if (Array.isArray(ev.clearedFieldSelectors) && ev.clearedFieldSelectors.length > 0) {

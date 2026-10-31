@@ -121,6 +121,25 @@ http.createServer(async (req, res) => {
   try {
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
+    // Page JS errors, captured from page creation (not just from the
+    // click): a form whose handler throws — or whose setup script fails
+    // during load — submits nothing and shows no validation error, the
+    // exact silent block the last retest could not explain. Messages
+    // only, capped and truncated; never stacks (they can carry paths).
+    const pageErrors = [];
+    const recordPageError = (text) => {
+      if (pageErrors.length < 3 && typeof text === 'string' && text) {
+        const trimmed = text.slice(0, 200);
+        // Chromium logs failed network responses as console errors; the
+        // posts evidence already reports backend statuses, so that noise
+        // is skipped. Identical messages (e.g. the same handler throwing
+        // on both attempts) are recorded once.
+        if (trimmed.startsWith('Failed to load resource')) return;
+        if (!pageErrors.includes(trimmed)) pageErrors.push(trimmed);
+      }
+    };
+    page.on('pageerror', (err) => { try { recordPageError(String(err?.message || err)); } catch { /* ignore */ } });
+    page.on('console', (msg) => { try { if (msg.type() === 'error') recordPageError(String(msg.text())); } catch { /* ignore */ } });
     await page.goto(job.contactPageUrl, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
     const initial = await page.content();
     if (blockedPattern.test(initial)) {
@@ -144,9 +163,12 @@ http.createServer(async (req, res) => {
     // Settle delay: hydration executes after load/network quiet, and on
     // a heavy page under a throttled CPU it can lag seconds behind.
     // Filling only after this delay gives hydration its best chance to
-    // finish first. Caps keep the worst case bounded; pathological
+    // finish first. Raised from 1.5s after the 31-5 retest proved the
+    // real contact page hydrates around ~7s (its retry click at ~7s
+    // still raced hydration): this moves attempt 1 to ~6.5s and the
+    // retry to ~9s. Caps keep the worst case bounded; pathological
     // slowness degrades to a client-timeout REVIEW, never a false success.
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3500);
     // Fill by element type, extracted so the hydration guard below can
     // re-fill exactly the same way: plain fill() throws on <select>,
     // checkbox and radio inputs, so forms containing them failed every
@@ -180,14 +202,43 @@ http.createServer(async (req, res) => {
         await locator.fill(String(field.value), { timeout: 5_000 });
       }
     };
+    // Visibility gate: fields on later wizard steps or behind a
+    // conditional reveal (e.g. a sub-field shown only after a topic
+    // select) exist in the DOM but are hidden at fill time. Filling a
+    // hidden element times out and used to abort the whole submission;
+    // instead, skip hidden fields here and retry them below as they are
+    // revealed. isVisible with no timeout returns immediately.
+    const isFieldVisible = async (field) => {
+      try { return await page.locator(field.selector).isVisible(); } catch { return false; }
+    };
+    const skippedFields = [];
     for (const field of job.fields) {
       try {
+        if (!(await isFieldVisible(field))) { skippedFields.push(field); continue; }
         await fillOne(field);
       } catch (error) {
         // Preserve the old behavior: an unsafe selector is a 400, any
         // other fill failure aborts into the outer catch (key released).
         if (error instanceof Error && error.message === 'Unsafe selector') return send(res, 400, { error: 'Unsafe selector' });
         throw error;
+      }
+    }
+    // Conditional reveal pass: a select/radio change above may have
+    // revealed fields that were hidden at fill time (topic → sub-topic,
+    // country → state). Fill them as they appear, up to a shared 3s
+    // deadline. Fields still hidden stay skipped — they are not part of
+    // the submittable form, and must not abort it.
+    if (skippedFields.length > 0) {
+      const deadline = Date.now() + 3000;
+      let remaining = [...skippedFields];
+      while (remaining.length > 0 && Date.now() < deadline) {
+        const stillHidden = [];
+        for (const field of remaining) {
+          if (await isFieldVisible(field)) await fillOne(field).catch(() => {});
+          else stillHidden.push(field);
+        }
+        remaining = stillHidden;
+        if (remaining.length > 0) await page.waitForTimeout(300);
       }
     }
     // Hydration guard: React/Next.js pages re-render after load with
@@ -223,10 +274,17 @@ http.createServer(async (req, res) => {
       if (current === 'true' || current === 'false') return current === want;
       return true;
     };
+    // Guard only the fields visible at guard time: a hidden field's
+    // value is not part of the submittable form, and re-filling it
+    // would burn a 5s fill timeout per guard round for nothing.
+    const guardFields = [];
+    for (const field of job.fields) {
+      if (await isFieldVisible(field)) guardFields.push(field);
+    }
     for (let round = 0; round < 3; round++) {
       await page.waitForTimeout(round === 0 ? 800 : 1000);
       const cleared = [];
-      for (const field of job.fields) {
+      for (const field of guardFields) {
         if (!(await valueStuck(field))) cleared.push(field);
       }
       // Require TWO consecutive clean reads: a single clean read right
@@ -287,17 +345,11 @@ http.createServer(async (req, res) => {
     // every field immediately before the click gives the values their
     // best chance to land post-hydration; the click follows at once so
     // no re-render can intervene. Best-effort per field: a failed
-    // re-fill must not abort a submit that might still work.
+    // re-fill must not abort a submit that might still work. Visible
+    // fields only — a hidden field's fill would burn a 5s timeout.
     for (const field of job.fields) {
+      if (!(await isFieldVisible(field))) continue;
       await fillOne(field).catch(() => {});
-    }
-    // Submit-time truth for diagnostics: re-read every field immediately
-    // before the click (after the re-fill, so the evidence reports what
-    // the submit actually saw). Reassigned after a retry click, below.
-    let finalFields = [];
-    for (const field of job.fields) {
-      const stuck = await valueStuck(field).catch(() => false);
-      finalFields.push({ selector: field.selector, stuck });
     }
     // Requests sent (vs responses received): the retry below is safe
     // ONLY when no request left the browser. A response listener fires
@@ -325,17 +377,44 @@ http.createServer(async (req, res) => {
     // Submit-button fallback chain (extracted so a safe retry can click
     // exactly the same way): explicit submit controls first, then bare
     // buttons, then any button, then a native form submit.
+    // Multi-step forms (wizards): only the current step is visible, with
+    // a Next/Continue button and no visible submit button. Clicking Next
+    // reveals the next step; re-fill newly visible mapped fields, then
+    // repeat (max 3 steps) until a submit button appears. A hidden submit
+    // button must not be clicked (the old code timed out on it); only a
+    // VISIBLE submit button ends the walk. If no Next button exists,
+    // fall back to the old chain (any button / native submit), whose
+    // click is catch-guarded so a dead fallback still yields a FAILED
+    // with evidence instead of a bare error.
     const clickSubmit = async () => {
-      const submit = form.locator('button[type="submit"], input[type="submit"], button:not([type])');
-      if (await submit.count() > 0) {
-        await submit.first().click({ timeout: 5_000 });
-      } else {
-        const anyButton = form.locator('button');
-        if (await anyButton.count() > 0) {
-          await anyButton.first().click({ timeout: 5_000 });
-        } else {
-          await form.evaluate((el) => { if (el.requestSubmit) el.requestSubmit(); else el.submit(); }).catch(() => {});
+      for (let step = 0; step < 3; step++) {
+        const submit = form.locator('button[type="submit"], input[type="submit"], button:not([type])');
+        for (let i = 0; i < await submit.count(); i++) {
+          if (await submit.nth(i).isVisible().catch(() => false)) {
+            await submit.nth(i).click({ timeout: 5_000 });
+            return;
+          }
         }
+        const nextButtons = form.locator('button').filter({ hasText: /next|continue/i });
+        let clickedNext = false;
+        for (let i = 0; i < await nextButtons.count(); i++) {
+          if (await nextButtons.nth(i).isVisible().catch(() => false)) {
+            await nextButtons.nth(i).click({ timeout: 5_000 });
+            clickedNext = true;
+            break;
+          }
+        }
+        if (!clickedNext) break;
+        await page.waitForTimeout(1000);
+        for (const field of job.fields) {
+          if (await isFieldVisible(field)) await fillOne(field).catch(() => {});
+        }
+      }
+      const anyButton = form.locator('button');
+      if (await anyButton.count() > 0) {
+        await anyButton.first().click({ timeout: 5_000 }).catch(() => {});
+      } else {
+        await form.evaluate((el) => { if (el.requestSubmit) el.requestSubmit(); else el.submit(); }).catch(() => {});
       }
     };
     const verified = (confirmationMessage) => send(res, 200, { status: 'SUCCESS', diagnosticCode: 'WORKER_SUCCESS_VERIFIED', confirmationMessage, successVerified: true, submitAttempted: true, fieldsFilledCount: job.fields.length });
@@ -365,6 +444,15 @@ http.createServer(async (req, res) => {
     };
     // Attempt 1.
     await clickSubmit();
+    // Submit-time truth for diagnostics: after wizard steps, only the
+    // fields visible at the actual submit count (earlier steps' fields
+    // are hidden now). Reassigned after a retry click, below.
+    let finalFields = [];
+    for (const field of job.fields) {
+      if (!(await isFieldVisible(field))) continue;
+      const stuck = await valueStuck(field).catch(() => false);
+      finalFields.push({ selector: field.selector, stuck });
+    }
     // Mini-poll: fast successes and captchas return at once instead of
     // waiting out a fixed delay.
     for (let waited = 0; waited <= 2000; waited += 500) {
@@ -383,11 +471,13 @@ http.createServer(async (req, res) => {
     if (submissionRequests.length === 0) {
       attempts = 2;
       for (const field of job.fields) {
+        if (!(await isFieldVisible(field))) continue;
         await fillOne(field).catch(() => {});
       }
       await clickSubmit();
       finalFields = [];
       for (const field of job.fields) {
+        if (!(await isFieldVisible(field))) continue;
         const stuck = await valueStuck(field).catch(() => false);
         finalFields.push({ selector: field.selector, stuck });
       }
@@ -395,11 +485,13 @@ http.createServer(async (req, res) => {
     // Full poll for a success signal: slow backends (serverless cold
     // start + email round-trip) can take seconds after the click, and a
     // single early check would misreport those genuine deliveries as
-    // FAILED. Fast forms return on an early poll. The combined budget
+    // FAILED. Fast forms return on an early poll. Trimmed from 10s to 8s
+    // to fund the longer settle delay above; 8s still covers the slow
+    // backends seen live (4s API, ~6.5s cold start). The combined budget
     // (settle + fill + guard + mini-poll + possible retry + this poll)
     // stays inside the caller's 20s timeout in normal cases; pathological
     // slowness degrades to a client-timeout REVIEW, never a false success.
-    for (let waited = 0; waited <= 10000; waited += 500) {
+    for (let waited = 0; waited <= 8000; waited += 500) {
       if (waited > 0) await page.waitForTimeout(500);
       const check = await checkVerification();
       if (check.kind === 'CAPTCHA') { stopListening(); return captchaResult(); }
@@ -430,7 +522,8 @@ http.createServer(async (req, res) => {
         posts: submissionPosts,
         requestsSent: submissionRequests.length,
         attempts,
-        fieldsStuck: `${stuckCount}/${job.fields.length}`,
+        pageErrors,
+        fieldsStuck: `${stuckCount}/${finalFields.length}`,
         clearedFieldSelectors: finalFields.filter((f) => !f.stuck).map((f) => f.selector),
         pageSnippet,
       },

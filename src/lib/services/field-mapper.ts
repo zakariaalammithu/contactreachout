@@ -323,11 +323,27 @@ export function mapLeadToFormFields(
         }
         break;
 
-      case 'subject':
-        valueToFill = convertHtmlToPlainText(message.subject || fallbackSubject || 'Partnership Inquiry & Growth Solution').trim();
-        strategy = 'direct_subject';
+      case 'subject': {
+        const renderedSubject = convertHtmlToPlainText(message.subject || fallbackSubject || 'Partnership Inquiry & Growth Solution').trim();
+        if (field.options && field.options.length > 0) {
+          // Subject DROPDOWN: the site offers fixed options, so the
+          // campaign's subject text is only submittable if it matches
+          // one of them. Sending it raw makes the worker's selectOption
+          // fail silently, leaving a placeholder (or nothing) selected
+          // — and a required subject then blocks the submission. Match
+          // against the site's own options instead: exact/partial match
+          // on the campaign subject first, then the same keyword and
+          // first-valid fallbacks the generic select case uses, so the
+          // website's subject requirement is always satisfied.
+          valueToFill = matchSelectOption(field.options, renderedSubject) || renderedSubject;
+          strategy = 'select_matching_option';
+        } else {
+          valueToFill = renderedSubject;
+          strategy = 'direct_subject';
+        }
         sourceLeadField = 'rendered_message.subject';
         break;
+      }
 
       case 'message':
         let msgText = convertHtmlToPlainText(message.body || '').trim();
