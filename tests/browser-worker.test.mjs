@@ -74,4 +74,34 @@ describe('browser worker submission safety', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[0][1].headers['idempotency-key']).toBe(fetchMock.mock.calls[1][1].headers['idempotency-key']);
   });
+
+  it('appends worker diagnostic evidence to an unverified failure message', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';
+    process.env.BROWSER_WORKER_ALLOWED_DOMAINS = 'example.test';
+    const evidence = {
+      posts: [{ method: 'POST', status: 503, path: '/api/contact' }],
+      fieldsStuck: '1/1',
+      clearedFieldSelectors: [],
+      pageSnippet: 'Please fill all fields',
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', successVerified: false, submitAttempted: true, fieldsFilledCount: 1, diagnosticEvidence: evidence }), { status: 200 })));
+    const result = await submitWithBrowserWorker(input);
+    expect(result.status).toBe('FAILED');
+    expect(result.errorMessage).toContain('Worker did not provide verified success evidence.');
+    expect(result.errorMessage).toContain('POST /api/contact -> 503');
+    expect(result.errorMessage).toContain('fields stuck 1/1');
+    expect(result.errorMessage).toContain('Please fill all fields');
+    expect(result.diagnosticEvidence).toEqual(evidence);
+  });
+
+  it('leaves the generic message untouched when the worker sends no evidence', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';
+    process.env.BROWSER_WORKER_ALLOWED_DOMAINS = 'example.test';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', successVerified: false, submitAttempted: true, fieldsFilledCount: 1 }), { status: 200 })));
+    const result = await submitWithBrowserWorker(input);
+    expect(result.errorMessage).toBe('Worker did not provide verified success evidence.');
+    expect(result.errorMessage).not.toContain('worker evidence');
+  });
 });

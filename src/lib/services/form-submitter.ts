@@ -47,6 +47,28 @@ export interface SubmissionExecutionResult {
   submitAttempted: boolean;
   executionDurationMs: number;
   submittedAt: string;
+  // Evidence the browser worker attaches to an unverified FAILED result:
+  // which form POSTs fired (paths only, never query strings), whether
+  // filled values were still present at submit time, and what the page
+  // showed afterwards. Rendered into errorMessage by the worker client
+  // so it surfaces in the campaign report diagnostics.
+  diagnosticEvidence?: WorkerDiagnosticEvidence;
+}
+
+// One form-submission POST observed by the browser worker. Bodies are
+// never included: the path + status is what distinguishes "no POST
+// fired" from "backend answered 503".
+export interface WorkerDiagnosticPost {
+  method?: string;
+  status?: number;
+  path?: string;
+}
+
+export interface WorkerDiagnosticEvidence {
+  posts?: WorkerDiagnosticPost[];
+  fieldsStuck?: string;
+  clearedFieldSelectors?: string[];
+  pageSnippet?: string;
 }
 
 // Success feedback signatures commonly found on contact forms

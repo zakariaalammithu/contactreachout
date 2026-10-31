@@ -1,9 +1,47 @@
 import { createHash } from 'node:crypto';
 import type { FieldMappingAssignment } from './field-mapper';
-import type { SubmissionExecutionResult } from './form-submitter';
+import type { SubmissionExecutionResult, WorkerDiagnosticEvidence } from './form-submitter';
 
 const WORKER_TIMEOUT_MS = 25_000;
 const MAX_ATTEMPTS = 2;
+
+// Renders worker diagnostic evidence as a single line appended to the
+// generic unverified-submission message, so the campaign report can say
+// whether the form posted at all (and what the backend answered), whether
+// filled values survived to submit time, and what the page showed after.
+// Defensive: malformed or absent evidence renders as '' (no suffix).
+export function renderWorkerDiagnosticEvidence(evidence: unknown): string {
+  if (!evidence || typeof evidence !== 'object') return '';
+  const ev = evidence as WorkerDiagnosticEvidence;
+  const parts: string[] = [];
+  if (Array.isArray(ev.posts)) {
+    if (ev.posts.length === 0) {
+      parts.push('posts: none');
+    } else {
+      const rendered = ev.posts
+        .map((p) => {
+          const method = typeof p?.method === 'string' ? p.method : 'POST';
+          const path = typeof p?.path === 'string' ? p.path : '';
+          const status = typeof p?.status === 'number' ? p.status : '';
+          return `${method} ${path} -> ${status}`.trim();
+        })
+        .join(', ');
+      if (rendered) parts.push(`posts: ${rendered}`);
+    }
+  }
+  if (typeof ev.fieldsStuck === 'string' && ev.fieldsStuck) {
+    let fields = `fields stuck ${ev.fieldsStuck}`;
+    if (Array.isArray(ev.clearedFieldSelectors) && ev.clearedFieldSelectors.length > 0) {
+      fields += ` (cleared: ${ev.clearedFieldSelectors.filter((s) => typeof s === 'string').join(', ')})`;
+    }
+    parts.push(fields);
+  }
+  if (typeof ev.pageSnippet === 'string' && ev.pageSnippet.trim()) {
+    parts.push(`page: "${ev.pageSnippet.replace(/\s+/g, ' ').trim().slice(0, 200)}"`);
+  }
+  if (parts.length === 0) return '';
+  return ` [worker evidence: ${parts.join('; ')}]`;
+}
 
 // NOTE: the app no longer gates submissions on BROWSER_WORKER_ALLOWED_DOMAINS.
 // The worker itself enforces authorization (its static allow-list, plus
@@ -163,14 +201,17 @@ export async function submitWithBrowserWorker(input: {
       }
       const result = await response.json() as Partial<SubmissionExecutionResult>;
       // Worker output is not trusted as delivery proof unless it supplies explicit verification.
+      const workerFailed = result.successVerified !== true;
+      const baseError = workerFailed ? result.errorMessage || 'Worker did not provide verified success evidence.' : undefined;
       return {
         status: result.status === 'SUCCESS' && result.successVerified === true ? 'SUCCESS' : 'FAILED',
         isDryRun: false, isTestMode: false, httpStatus: result.httpStatus ?? null,
         fieldsFilledCount: result.fieldsFilledCount ?? fields.length,
         honeypotsNeutralizedCount: result.honeypotsNeutralizedCount ?? 0,
         confirmationMessage: result.successVerified === true ? result.confirmationMessage : undefined,
-        errorMessage: result.successVerified === true ? undefined : result.errorMessage || 'Worker did not provide verified success evidence.',
+        errorMessage: workerFailed ? `${baseError}${renderWorkerDiagnosticEvidence(result.diagnosticEvidence)}` : undefined,
         diagnosticCode: result.successVerified === true ? result.diagnosticCode : result.diagnosticCode || 'SUCCESS_VERIFICATION_FAILED',
+        diagnosticEvidence: result.diagnosticEvidence,
         successVerified: result.successVerified === true,
         submitAttempted: result.submitAttempted === true,
         executionDurationMs: Date.now() - startedAt,

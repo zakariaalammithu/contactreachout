@@ -248,6 +248,11 @@ http.createServer(async (req, res) => {
     const pageOrigin = (() => { try { return new URL(page.url()).origin; } catch { return ''; } })();
     const actionUrl = (() => { try { return job.formAction ? new URL(job.formAction, page.url()).href : ''; } catch { return ''; } })();
     const submissionResponses = [];
+    // Diagnostic evidence: every qualifying form POST (any status), so a
+    // FAILED result can say whether the form posted at all and what the
+    // backend answered. Paths only, never query strings (they can carry
+    // tokens); bodies stay out of this list entirely.
+    const submissionPosts = [];
     const onResponse = async (response) => {
       try {
         const method = (response.request().method() || '').toUpperCase();
@@ -257,6 +262,11 @@ http.createServer(async (req, res) => {
         try { sameOrigin = new URL(url).origin === pageOrigin; } catch { /* ignore */ }
         if (!sameOrigin && !(actionUrl && url === actionUrl)) return;
         const status = response.status();
+        if (submissionPosts.length < 5) {
+          let path = url;
+          try { path = new URL(url).pathname; } catch { /* keep raw url */ }
+          submissionPosts.push({ method, status, path });
+        }
         if (status < 200 || status >= 300) return;
         let body = '';
         try { body = (await response.text()).slice(0, 50_000); } catch { /* body unavailable */ }
@@ -264,6 +274,15 @@ http.createServer(async (req, res) => {
       } catch { /* evidence collection must never break the submission */ }
     };
     page.on('response', onResponse);
+    // Submit-time truth for diagnostics: re-read every field immediately
+    // before the click. A value that looks stuck in the guard can still be
+    // cleared by a late hydration re-render, and the FAILED evidence must
+    // report what was actually true at submit time, not guard time.
+    const finalFields = [];
+    for (const field of job.fields) {
+      const stuck = await valueStuck(field).catch(() => false);
+      finalFields.push({ selector: field.selector, stuck });
+    }
     const submit = form.locator('button[type="submit"], input[type="submit"], button:not([type])');
     if (await submit.count() > 0) {
       await submit.first().click({ timeout: 5_000 });
@@ -309,7 +328,26 @@ http.createServer(async (req, res) => {
       if (visibleMatch) { page.off('response', onResponse); return verified(visibleMatch[0]); }
     }
     page.off('response', onResponse);
-    return send(res, 200, { status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', confirmationMessage: undefined, successVerified: false, submitAttempted: true, fieldsFilledCount: job.fields.length });
+    // Diagnostic evidence for the next campaign report: without it a
+    // FAILED row cannot distinguish "no POST fired" (fill/validation
+    // problem) from "backend answered 503" (site problem) — the exact
+    // distinction the last retest could not make. Visible text only
+    // (never scripts), whitespace-collapsed, truncated.
+    let pageSnippet = '';
+    try {
+      const text = await page.evaluate(() => (document.body ? document.body.innerText : '') || '');
+      pageSnippet = text.replace(/\s+/g, ' ').trim().slice(0, 300);
+    } catch { /* ignore */ }
+    const stuckCount = finalFields.filter((f) => f.stuck).length;
+    return send(res, 200, {
+      status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', confirmationMessage: undefined, successVerified: false, submitAttempted: true, fieldsFilledCount: job.fields.length,
+      diagnosticEvidence: {
+        posts: submissionPosts,
+        fieldsStuck: `${stuckCount}/${job.fields.length}`,
+        clearedFieldSelectors: finalFields.filter((f) => !f.stuck).map((f) => f.selector),
+        pageSnippet,
+      },
+    });
   } catch (error) {
     // The job never reached submit (fill/click/timeout failure), so release
     // the key: otherwise the caller's retry — and every retry for 24h —
