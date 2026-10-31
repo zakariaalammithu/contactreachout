@@ -129,13 +129,26 @@ http.createServer(async (req, res) => {
       idempotency.delete(job.idempotencyKey);
       return send(res, 200, { status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: false });
     }
-    for (const field of job.fields) {
-      if (!safeSelector(field.selector)) return send(res, 400, { error: 'Unsafe selector' });
+    // Let a late-rendered form appear before filling (catch-guarded: if
+    // it never becomes visible, filling below still tries as before).
+    await page.locator(job.formSelector).waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
+    // Hydration window: React/Next.js hydration runs right after the
+    // page's scripts arrive, so network quiet is a lagging indicator that
+    // hydration has (usually) completed. Filling before hydration loses
+    // the input events (React state stays empty) even though the DOM
+    // looks filled — the guard below then cannot see the problem. Best
+    // effort with a cap: a page that never goes quiet must not stall
+    // the submission.
+    await page.waitForLoadState('networkidle', { timeout: 3_000 }).catch(() => {});
+    // Fill by element type, extracted so the hydration guard below can
+    // re-fill exactly the same way: plain fill() throws on <select>,
+    // checkbox and radio inputs, so forms containing them failed every
+    // submission even though the app maps values for them. Detect the
+    // type at runtime (the job carries no type) and use the matching
+    // Playwright action.
+    const fillOne = async (field) => {
+      if (!safeSelector(field.selector)) throw new Error('Unsafe selector');
       const locator = page.locator(field.selector);
-      // Fill by element type: plain fill() throws on <select>, checkbox and
-      // radio inputs, so forms containing them failed every submission even
-      // though the app maps values for them. Detect the type at runtime
-      // (the job carries no type) and use the matching Playwright action.
       const tag = await locator.evaluate((el) => el.tagName.toLowerCase(), undefined, { timeout: 5_000 }).catch(() => '');
       if (tag === 'select') {
         const value = String(field.value);
@@ -158,6 +171,64 @@ http.createServer(async (req, res) => {
         }
       } else {
         await locator.fill(String(field.value), { timeout: 5_000 });
+      }
+    };
+    for (const field of job.fields) {
+      try {
+        await fillOne(field);
+      } catch (error) {
+        // Preserve the old behavior: an unsafe selector is a 400, any
+        // other fill failure aborts into the outer catch (key released).
+        if (error instanceof Error && error.message === 'Unsafe selector') return send(res, 400, { error: 'Unsafe selector' });
+        throw error;
+      }
+    }
+    // Hydration guard: React/Next.js pages re-render after load with
+    // their initial (empty) state, which can clear just-filled inputs
+    // before submit — the form then fails client validation and never
+    // posts, while the worker reports a verification failure. Read the
+    // values back; if hydration cleared any, re-fill. Re-fills are
+    // best-effort: a failed re-fill must not abort a submit that might
+    // still work, so verification below remains the judge.
+    const readValue = async (field) => {
+      try {
+        const locator = page.locator(field.selector);
+        const tag = await locator.evaluate((el) => el.tagName.toLowerCase(), undefined, { timeout: 2_000 }).catch(() => '');
+        if (tag === 'input') {
+          const type = await locator.evaluate((el) => (el.type || '').toLowerCase(), undefined, { timeout: 2_000 }).catch(() => '');
+          if (type === 'checkbox' || type === 'radio') {
+            const checked = await locator.isChecked({ timeout: 2_000 }).catch(() => false);
+            return checked ? 'true' : 'false';
+          }
+        }
+        return await locator.inputValue({ timeout: 2_000 }).catch(() => null);
+      } catch { return null; }
+    };
+    // A value counts as stuck when present. Text inputs count when
+    // non-empty (a page formatter may trim without clearing);
+    // checkbox/radio must match exactly. Selects report the option value
+    // while the job may carry the label, so any non-empty selection
+    // counts as stuck.
+    const valueStuck = async (field) => {
+      const current = await readValue(field);
+      if (current === null || current === undefined || current === '') return false;
+      const want = String(field.value).toLowerCase();
+      if (current === 'true' || current === 'false') return current === want;
+      return true;
+    };
+    for (let round = 0; round < 3; round++) {
+      await page.waitForTimeout(round === 0 ? 800 : 1000);
+      const cleared = [];
+      for (const field of job.fields) {
+        if (!(await valueStuck(field))) cleared.push(field);
+      }
+      // Require TWO consecutive clean reads: a single clean read right
+      // after filling cannot catch input events lost before hydration
+      // (DOM filled, React state empty), because the clearing re-render
+      // may not have run yet. The second read, a second later, catches it.
+      if (cleared.length === 0 && round >= 1) break;
+      for (const field of cleared) {
+        await fillOne(field).catch(() => {});
       }
     }
     const form = page.locator(job.formSelector);
@@ -204,29 +275,40 @@ http.createServer(async (req, res) => {
         await form.evaluate((el) => { if (el.requestSubmit) el.requestSubmit(); else el.submit(); }).catch(() => {});
       }
     }
-    // Slower thank-you pages/redirects need more than 700ms to render
-    // before verification, or genuine deliveries fail verification.
-    await page.waitForTimeout(2500);
-    page.off('response', onResponse);
-    const evidence = await page.content();
-    if (blockedPattern.test(evidence)) return send(res, 200, { status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: true });
+    // Poll for a success signal instead of a single fixed wait: slow
+    // backends (serverless cold start + email round-trip) can take longer
+    // than 2.5s after the click, and a single early check would misreport
+    // those genuine deliveries as FAILED. Fast forms still return on an
+    // early poll. Total budget 10s fits inside the caller's 20s timeout
+    // (goto + fill are normally a few seconds).
     const verified = (confirmationMessage) => send(res, 200, { status: 'SUCCESS', diagnosticCode: 'WORKER_SUCCESS_VERIFIED', confirmationMessage, successVerified: true, submitAttempted: true, fieldsFilledCount: job.fields.length });
-    // 1. Network evidence: the site's own backend accepted the submission.
-    for (const body of submissionResponses) {
-      let jsonSuccess = false;
-      try { const parsed = JSON.parse(body); jsonSuccess = parsed && parsed.success === true; } catch { /* not JSON */ }
-      if (jsonSuccess) return verified('JSON success:true in form submission response');
-      const bodyMatch = body.match(successPattern);
-      if (bodyMatch) return verified(bodyMatch[0]);
+    for (let waited = 0; waited <= 10000; waited += 500) {
+      if (waited > 0) await page.waitForTimeout(500);
+      const evidence = await page.content().catch(() => '');
+      if (blockedPattern.test(evidence)) {
+        page.off('response', onResponse);
+        return send(res, 200, { status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: true });
+      }
+      // 1. Network evidence: the site's own backend accepted the submission.
+      let networkHit = null;
+      for (const body of submissionResponses) {
+        let jsonSuccess = false;
+        try { const parsed = JSON.parse(body); jsonSuccess = parsed && parsed.success === true; } catch { /* not JSON */ }
+        if (jsonSuccess) { networkHit = 'JSON success:true in form submission response'; break; }
+        const bodyMatch = body.match(successPattern);
+        if (bodyMatch) { networkHit = bodyMatch[0]; break; }
+      }
+      if (networkHit) { page.off('response', onResponse); return verified(networkHit); }
+      // 2. Page-text evidence (unchanged behavior).
+      const match = evidence.match(successPattern);
+      if (match) { page.off('response', onResponse); return verified(match[0]); }
+      // 3. Visible-text evidence (new phrases, visible text only).
+      let visibleText = '';
+      try { visibleText = await page.evaluate(() => (document.body ? document.body.innerText : '') || ''); } catch { /* ignore */ }
+      const visibleMatch = visibleText.match(visibleSuccessPattern);
+      if (visibleMatch) { page.off('response', onResponse); return verified(visibleMatch[0]); }
     }
-    // 2. Page-text evidence (unchanged behavior).
-    const match = evidence.match(successPattern);
-    if (match) return verified(match[0]);
-    // 3. Visible-text evidence (new phrases, visible text only).
-    let visibleText = '';
-    try { visibleText = await page.evaluate(() => (document.body ? document.body.innerText : '') || ''); } catch { /* ignore */ }
-    const visibleMatch = visibleText.match(visibleSuccessPattern);
-    if (visibleMatch) return verified(visibleMatch[0]);
+    page.off('response', onResponse);
     return send(res, 200, { status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', confirmationMessage: undefined, successVerified: false, submitAttempted: true, fieldsFilledCount: job.fields.length });
   } catch (error) {
     // The job never reached submit (fill/click/timeout failure), so release
