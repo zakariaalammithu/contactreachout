@@ -139,7 +139,14 @@ http.createServer(async (req, res) => {
     // looks filled — the guard below then cannot see the problem. Best
     // effort with a cap: a page that never goes quiet must not stall
     // the submission.
+    await page.waitForLoadState('load', { timeout: 5_000 }).catch(() => {});
     await page.waitForLoadState('networkidle', { timeout: 3_000 }).catch(() => {});
+    // Settle delay: hydration executes after load/network quiet, and on
+    // a heavy page under a throttled CPU it can lag seconds behind.
+    // Filling only after this delay gives hydration its best chance to
+    // finish first. Caps keep the worst case bounded; pathological
+    // slowness degrades to a client-timeout REVIEW, never a false success.
+    await page.waitForTimeout(1500);
     // Fill by element type, extracted so the hydration guard below can
     // re-fill exactly the same way: plain fill() throws on <select>,
     // checkbox and radio inputs, so forms containing them failed every
@@ -274,68 +281,146 @@ http.createServer(async (req, res) => {
       } catch { /* evidence collection must never break the submission */ }
     };
     page.on('response', onResponse);
+    // Last-mile re-fill: the guard's reads cannot catch input events
+    // lost before hydration (DOM filled, React state empty), and
+    // hydration may complete after the guard's last read. Re-filling
+    // every field immediately before the click gives the values their
+    // best chance to land post-hydration; the click follows at once so
+    // no re-render can intervene. Best-effort per field: a failed
+    // re-fill must not abort a submit that might still work.
+    for (const field of job.fields) {
+      await fillOne(field).catch(() => {});
+    }
     // Submit-time truth for diagnostics: re-read every field immediately
-    // before the click. A value that looks stuck in the guard can still be
-    // cleared by a late hydration re-render, and the FAILED evidence must
-    // report what was actually true at submit time, not guard time.
-    const finalFields = [];
+    // before the click (after the re-fill, so the evidence reports what
+    // the submit actually saw). Reassigned after a retry click, below.
+    let finalFields = [];
     for (const field of job.fields) {
       const stuck = await valueStuck(field).catch(() => false);
       finalFields.push({ selector: field.selector, stuck });
     }
-    const submit = form.locator('button[type="submit"], input[type="submit"], button:not([type])');
-    if (await submit.count() > 0) {
-      await submit.first().click({ timeout: 5_000 });
-    } else {
-      const anyButton = form.locator('button');
-      if (await anyButton.count() > 0) {
-        await anyButton.first().click({ timeout: 5_000 });
+    // Requests sent (vs responses received): the retry below is safe
+    // ONLY when no request left the browser. A response listener fires
+    // when the response arrives, so a slow backend would look like
+    // "nothing sent" and a second click would double-send. Requests are
+    // recorded the moment they are sent, whatever the backend does.
+    const submissionRequests = [];
+    const onRequest = (request) => {
+      try {
+        const method = (request.method() || '').toUpperCase();
+        if (method !== 'POST' && method !== 'PUT' && method !== 'PATCH') return;
+        const url = request.url();
+        let sameOrigin = false;
+        try { sameOrigin = new URL(url).origin === pageOrigin; } catch { /* ignore */ }
+        if (!sameOrigin && !(actionUrl && url === actionUrl)) return;
+        if (submissionRequests.length < 5) {
+          let path = url;
+          try { path = new URL(url).pathname; } catch { /* keep raw url */ }
+          submissionRequests.push({ method, path });
+        }
+      } catch { /* evidence collection must never break the submission */ }
+    };
+    page.on('request', onRequest);
+    const stopListening = () => { page.off('response', onResponse); page.off('request', onRequest); };
+    // Submit-button fallback chain (extracted so a safe retry can click
+    // exactly the same way): explicit submit controls first, then bare
+    // buttons, then any button, then a native form submit.
+    const clickSubmit = async () => {
+      const submit = form.locator('button[type="submit"], input[type="submit"], button:not([type])');
+      if (await submit.count() > 0) {
+        await submit.first().click({ timeout: 5_000 });
       } else {
-        await form.evaluate((el) => { if (el.requestSubmit) el.requestSubmit(); else el.submit(); }).catch(() => {});
+        const anyButton = form.locator('button');
+        if (await anyButton.count() > 0) {
+          await anyButton.first().click({ timeout: 5_000 });
+        } else {
+          await form.evaluate((el) => { if (el.requestSubmit) el.requestSubmit(); else el.submit(); }).catch(() => {});
+        }
       }
-    }
-    // Poll for a success signal instead of a single fixed wait: slow
-    // backends (serverless cold start + email round-trip) can take longer
-    // than 2.5s after the click, and a single early check would misreport
-    // those genuine deliveries as FAILED. Fast forms still return on an
-    // early poll. Total budget 10s fits inside the caller's 20s timeout
-    // (goto + fill are normally a few seconds).
+    };
     const verified = (confirmationMessage) => send(res, 200, { status: 'SUCCESS', diagnosticCode: 'WORKER_SUCCESS_VERIFIED', confirmationMessage, successVerified: true, submitAttempted: true, fieldsFilledCount: job.fields.length });
-    for (let waited = 0; waited <= 10000; waited += 500) {
-      if (waited > 0) await page.waitForTimeout(500);
+    const captchaResult = () => send(res, 200, { status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: true });
+    // One verification check across all three signal kinds. Returns
+    // CAPTCHA (fail-closed, first), a success confirmation, or NONE.
+    const checkVerification = async () => {
       const evidence = await page.content().catch(() => '');
-      if (blockedPattern.test(evidence)) {
-        page.off('response', onResponse);
-        return send(res, 200, { status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: true });
-      }
+      if (blockedPattern.test(evidence)) return { kind: 'CAPTCHA' };
       // 1. Network evidence: the site's own backend accepted the submission.
-      let networkHit = null;
       for (const body of submissionResponses) {
         let jsonSuccess = false;
         try { const parsed = JSON.parse(body); jsonSuccess = parsed && parsed.success === true; } catch { /* not JSON */ }
-        if (jsonSuccess) { networkHit = 'JSON success:true in form submission response'; break; }
+        if (jsonSuccess) return { kind: 'SUCCESS', confirmation: 'JSON success:true in form submission response' };
         const bodyMatch = body.match(successPattern);
-        if (bodyMatch) { networkHit = bodyMatch[0]; break; }
+        if (bodyMatch) return { kind: 'SUCCESS', confirmation: bodyMatch[0] };
       }
-      if (networkHit) { page.off('response', onResponse); return verified(networkHit); }
       // 2. Page-text evidence (unchanged behavior).
       const match = evidence.match(successPattern);
-      if (match) { page.off('response', onResponse); return verified(match[0]); }
-      // 3. Visible-text evidence (new phrases, visible text only).
+      if (match) return { kind: 'SUCCESS', confirmation: match[0] };
+      // 3. Visible-text evidence (phrases, visible text only).
       let visibleText = '';
       try { visibleText = await page.evaluate(() => (document.body ? document.body.innerText : '') || ''); } catch { /* ignore */ }
       const visibleMatch = visibleText.match(visibleSuccessPattern);
-      if (visibleMatch) { page.off('response', onResponse); return verified(visibleMatch[0]); }
+      if (visibleMatch) return { kind: 'SUCCESS', confirmation: visibleMatch[0] };
+      return { kind: 'NONE' };
+    };
+    // Attempt 1.
+    await clickSubmit();
+    // Mini-poll: fast successes and captchas return at once instead of
+    // waiting out a fixed delay.
+    for (let waited = 0; waited <= 2000; waited += 500) {
+      if (waited > 0) await page.waitForTimeout(500);
+      const check = await checkVerification();
+      if (check.kind === 'CAPTCHA') { stopListening(); return captchaResult(); }
+      if (check.kind === 'SUCCESS') { stopListening(); return verified(check.confirmation); }
     }
-    page.off('response', onResponse);
+    // Self-correcting retry: if NO request left the browser, the first
+    // click died in client validation (the classic pre-hydration case:
+    // DOM filled, React state empty). By now hydration has completed,
+    // so a fresh fill + immediate click lands on a live form. If ANY
+    // request was sent, never retry: it may still deliver, and a second
+    // click would double-send. One retry only, bounded by the poll below.
+    let attempts = 1;
+    if (submissionRequests.length === 0) {
+      attempts = 2;
+      for (const field of job.fields) {
+        await fillOne(field).catch(() => {});
+      }
+      await clickSubmit();
+      finalFields = [];
+      for (const field of job.fields) {
+        const stuck = await valueStuck(field).catch(() => false);
+        finalFields.push({ selector: field.selector, stuck });
+      }
+    }
+    // Full poll for a success signal: slow backends (serverless cold
+    // start + email round-trip) can take seconds after the click, and a
+    // single early check would misreport those genuine deliveries as
+    // FAILED. Fast forms return on an early poll. The combined budget
+    // (settle + fill + guard + mini-poll + possible retry + this poll)
+    // stays inside the caller's 20s timeout in normal cases; pathological
+    // slowness degrades to a client-timeout REVIEW, never a false success.
+    for (let waited = 0; waited <= 10000; waited += 500) {
+      if (waited > 0) await page.waitForTimeout(500);
+      const check = await checkVerification();
+      if (check.kind === 'CAPTCHA') { stopListening(); return captchaResult(); }
+      if (check.kind === 'SUCCESS') { stopListening(); return verified(check.confirmation); }
+    }
+    stopListening();
     // Diagnostic evidence for the next campaign report: without it a
     // FAILED row cannot distinguish "no POST fired" (fill/validation
     // problem) from "backend answered 503" (site problem) — the exact
-    // distinction the last retest could not make. Visible text only
-    // (never scripts), whitespace-collapsed, truncated.
+    // distinction the last retest could not make. Prefer the FORM's own
+    // visible text (inline validation errors render inside/near the
+    // form); fall back to the page body. Visible text only (never
+    // scripts), whitespace-collapsed, truncated.
     let pageSnippet = '';
     try {
-      const text = await page.evaluate(() => (document.body ? document.body.innerText : '') || '');
+      const text = await page.evaluate((formSelector) => {
+        let formEl = null;
+        try { formEl = document.querySelector(formSelector); } catch { /* Playwright-only selectors (e.g. :nth-match) are not valid here */ }
+        const target = formEl || document.body;
+        return (target ? target.innerText : '') || '';
+      }, job.formSelector);
       pageSnippet = text.replace(/\s+/g, ' ').trim().slice(0, 300);
     } catch { /* ignore */ }
     const stuckCount = finalFields.filter((f) => f.stuck).length;
@@ -343,6 +428,8 @@ http.createServer(async (req, res) => {
       status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', confirmationMessage: undefined, successVerified: false, submitAttempted: true, fieldsFilledCount: job.fields.length,
       diagnosticEvidence: {
         posts: submissionPosts,
+        requestsSent: submissionRequests.length,
+        attempts,
         fieldsStuck: `${stuckCount}/${job.fields.length}`,
         clearedFieldSelectors: finalFields.filter((f) => !f.stuck).map((f) => f.selector),
         pageSnippet,

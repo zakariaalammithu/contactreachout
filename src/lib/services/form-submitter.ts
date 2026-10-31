@@ -66,6 +66,8 @@ export interface WorkerDiagnosticPost {
 
 export interface WorkerDiagnosticEvidence {
   posts?: WorkerDiagnosticPost[];
+  requestsSent?: number;
+  attempts?: number;
   fieldsStuck?: string;
   clearedFieldSelectors?: string[];
   pageSnippet?: string;

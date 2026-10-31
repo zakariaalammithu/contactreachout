@@ -29,6 +29,14 @@ export function renderWorkerDiagnosticEvidence(evidence: unknown): string {
       if (rendered) parts.push(`posts: ${rendered}`);
     }
   }
+  // Requests sent but no response yet: the form posted, the backend is
+  // just slow — different from "nothing left the browser".
+  if (Array.isArray(ev.posts) && ev.posts.length === 0 && typeof ev.requestsSent === 'number' && ev.requestsSent > 0) {
+    parts.push(`requests sent: ${ev.requestsSent} (no response yet)`);
+  }
+  if (typeof ev.attempts === 'number' && ev.attempts > 1) {
+    parts.push(`attempts: ${ev.attempts}`);
+  }
   if (typeof ev.fieldsStuck === 'string' && ev.fieldsStuck) {
     let fields = `fields stuck ${ev.fieldsStuck}`;
     if (Array.isArray(ev.clearedFieldSelectors) && ev.clearedFieldSelectors.length > 0) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from '@/lib/auth/session';
 import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 import { OutreachPipelineOrchestrator } from '@/lib/services/outreach-orchestrator';
+import { isVerifiedFormSubmission } from '@/lib/services/submission-verification';
 import { validateSendingSchedule } from '@/lib/services/processing-controls-service';
 
 import { AuthStore } from '@/lib/auth/auth-store';
@@ -122,14 +123,14 @@ export async function POST(req: NextRequest) {
           /ERR_(NETWORK_ACCESS_DENIED|NAME_NOT_RESOLVED|CONNECTION|INTERNET_DISCONNECTED|TIMED_OUT)|ENOTFOUND|ECONNREFUSED|EAI_AGAIN/i.test(discoveryError)));
 
     if (result.finalStatus === 'SUCCESS') {
-      const isVerifiedFormSubmission =
-        result.discovery?.status === 'FOUND' &&
-        Boolean(result.detection?.hasContactForm) &&
-        (result.mapping?.status === 'READY_FOR_SUBMISSION' || (result.mapping?.status as string) === 'MAPPED') &&
-        result.submission?.status === 'SUCCESS' &&
-        result.submission?.successVerified === true;
+      const verifiedFormSubmission = isVerifiedFormSubmission({
+        discovery: result.discovery,
+        detection: result.detection,
+        mapping: result.mapping,
+        submission: result.submission,
+      });
 
-      if (isVerifiedFormSubmission) {
+      if (verifiedFormSubmission) {
         campaignStatus = 'DELIVERED';
         diagnosticMessage = result.submission?.confirmationMessage || 'HTTP 200 - Form Submitted Successfully';
       } else {

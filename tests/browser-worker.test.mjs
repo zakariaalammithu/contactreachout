@@ -104,4 +104,23 @@ describe('browser worker submission safety', () => {
     expect(result.errorMessage).toBe('Worker did not provide verified success evidence.');
     expect(result.errorMessage).not.toContain('worker evidence');
   });
+
+  it('renders requests-sent and retry attempts from worker evidence', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';
+    process.env.BROWSER_WORKER_ALLOWED_DOMAINS = 'example.test';
+    const evidence = {
+      posts: [],
+      requestsSent: 1,
+      attempts: 2,
+      fieldsStuck: '1/1',
+      clearedFieldSelectors: [],
+      pageSnippet: 'Send',
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', successVerified: false, submitAttempted: true, fieldsFilledCount: 1, diagnosticEvidence: evidence }), { status: 200 })));
+    const result = await submitWithBrowserWorker(input);
+    expect(result.errorMessage).toContain('posts: none');
+    expect(result.errorMessage).toContain('requests sent: 1 (no response yet)');
+    expect(result.errorMessage).toContain('attempts: 2');
+  });
 });
