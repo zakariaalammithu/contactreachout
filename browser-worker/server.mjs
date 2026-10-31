@@ -8,6 +8,10 @@ const allowedDomains = parseAllowedDomains(process.env.BROWSER_WORKER_ALLOWED_DO
 const appUrl = (process.env.CONTACTREACHOUT_APP_URL || '').trim();
 const idempotency = new Map();
 const successPattern = /thank\s*you|message\s*(has been )?(sent|received|submitted)|inquiry\s*submitted|successfully\s*(sent|submitted)/i;
+// Visible-text-only phrases, matched against innerText (never page HTML),
+// so a matching string inside a <script> cannot verify a submission.
+// Mirrors the app's SUCCESS_SIGNATURES, minus bare "thanks".
+const visibleSuccessPattern = /thanks for (reaching out|contacting|getting in touch)|we('ll| will) be in touch|submission received|inquiry received|request received|successfully received|we have received your message|thank you for contacting us/i;
 const blockedPattern = /captcha|recaptcha|turnstile|hcaptcha|security check|verify you are human|access denied/i;
 
 function send(res, status, payload) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(payload)); }
@@ -162,6 +166,33 @@ http.createServer(async (req, res) => {
     // with a bare <button>Send</button> timed out here. Try explicit submit
     // controls first, then bare buttons, then any button, then a native
     // form submit as a last resort.
+    // Capture form-submission responses BEFORE the click: a fetch/XHR form
+    // may be accepted by the backend (2xx + success body) without ever
+    // rendering a thank-you string into the page, which the page-text
+    // check below would then misreport as FAILED. Only same-origin or
+    // form-action POST/PUT/PATCH responses qualify, so unrelated
+    // third-party beacons (which often return {success:true}) cannot
+    // verify a submission. Bodies are read eagerly: after a navigation
+    // they may no longer be available.
+    const pageOrigin = (() => { try { return new URL(page.url()).origin; } catch { return ''; } })();
+    const actionUrl = (() => { try { return job.formAction ? new URL(job.formAction, page.url()).href : ''; } catch { return ''; } })();
+    const submissionResponses = [];
+    const onResponse = async (response) => {
+      try {
+        const method = (response.request().method() || '').toUpperCase();
+        if (method !== 'POST' && method !== 'PUT' && method !== 'PATCH') return;
+        const url = response.url();
+        let sameOrigin = false;
+        try { sameOrigin = new URL(url).origin === pageOrigin; } catch { /* ignore */ }
+        if (!sameOrigin && !(actionUrl && url === actionUrl)) return;
+        const status = response.status();
+        if (status < 200 || status >= 300) return;
+        let body = '';
+        try { body = (await response.text()).slice(0, 50_000); } catch { /* body unavailable */ }
+        submissionResponses.push(body);
+      } catch { /* evidence collection must never break the submission */ }
+    };
+    page.on('response', onResponse);
     const submit = form.locator('button[type="submit"], input[type="submit"], button:not([type])');
     if (await submit.count() > 0) {
       await submit.first().click({ timeout: 5_000 });
@@ -176,10 +207,27 @@ http.createServer(async (req, res) => {
     // Slower thank-you pages/redirects need more than 700ms to render
     // before verification, or genuine deliveries fail verification.
     await page.waitForTimeout(2500);
+    page.off('response', onResponse);
     const evidence = await page.content();
     if (blockedPattern.test(evidence)) return send(res, 200, { status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: true });
+    const verified = (confirmationMessage) => send(res, 200, { status: 'SUCCESS', diagnosticCode: 'WORKER_SUCCESS_VERIFIED', confirmationMessage, successVerified: true, submitAttempted: true, fieldsFilledCount: job.fields.length });
+    // 1. Network evidence: the site's own backend accepted the submission.
+    for (const body of submissionResponses) {
+      let jsonSuccess = false;
+      try { const parsed = JSON.parse(body); jsonSuccess = parsed && parsed.success === true; } catch { /* not JSON */ }
+      if (jsonSuccess) return verified('JSON success:true in form submission response');
+      const bodyMatch = body.match(successPattern);
+      if (bodyMatch) return verified(bodyMatch[0]);
+    }
+    // 2. Page-text evidence (unchanged behavior).
     const match = evidence.match(successPattern);
-    return send(res, 200, { status: match ? 'SUCCESS' : 'FAILED', diagnosticCode: match ? 'WORKER_SUCCESS_VERIFIED' : 'SUCCESS_VERIFICATION_FAILED', confirmationMessage: match?.[0], successVerified: Boolean(match), submitAttempted: true, fieldsFilledCount: job.fields.length });
+    if (match) return verified(match[0]);
+    // 3. Visible-text evidence (new phrases, visible text only).
+    let visibleText = '';
+    try { visibleText = await page.evaluate(() => (document.body ? document.body.innerText : '') || ''); } catch { /* ignore */ }
+    const visibleMatch = visibleText.match(visibleSuccessPattern);
+    if (visibleMatch) return verified(visibleMatch[0]);
+    return send(res, 200, { status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', confirmationMessage: undefined, successVerified: false, submitAttempted: true, fieldsFilledCount: job.fields.length });
   } catch (error) {
     // The job never reached submit (fill/click/timeout failure), so release
     // the key: otherwise the caller's retry — and every retry for 24h —

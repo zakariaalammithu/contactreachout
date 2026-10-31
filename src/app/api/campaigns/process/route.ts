@@ -134,7 +134,20 @@ export async function POST(req: NextRequest) {
         diagnosticMessage = result.submission?.confirmationMessage || 'HTTP 200 - Form Submitted Successfully';
       } else {
         campaignStatus = 'FAILED';
-        diagnosticMessage = result.submission?.errorMessage || 'Form verification failed — missing mandatory form fields or submission confirmation.';
+        // The old fallback blamed missing fields for every unverified
+        // submission, but verification can fail AFTER a real submit (the
+        // site accepted the message yet showed no matching confirmation).
+        // Only blame fields when mapping itself was not ready; otherwise
+        // say plainly that verification failed and the message may still
+        // have been received.
+        if (result.submission?.errorMessage) {
+          diagnosticMessage = result.submission.errorMessage;
+        } else if (result.mapping?.status !== 'READY_FOR_SUBMISSION' && (result.mapping?.status as string) !== 'MAPPED') {
+          diagnosticMessage = 'Form verification failed — missing mandatory form fields or submission confirmation.';
+        } else {
+          const code = (result.submission as { diagnosticCode?: string } | undefined)?.diagnosticCode;
+          diagnosticMessage = `Form was submitted but delivery could not be verified from the confirmation page${code ? ` (${code})` : ''} — the message may still have been received; check the site's inbox.`;
+        }
       }
     } else if (result.finalStatus === 'DRY_RUN_COMPLETED') {
       campaignStatus = 'DRY_RUN_COMPLETED';
