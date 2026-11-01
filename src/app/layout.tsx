@@ -18,7 +18,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('cr-theme');if(t==='light'){document.documentElement.classList.add('light');}}catch(e){}})();`,
+            // Split-theme no-flash rule (mirrors ThemeProvider + theme-sections):
+            // public routes are always dark; app routes are light unless the
+            // stored dashboard preference is 'dark' (white is the default).
+            // Self-contained: this runs before any module loads, so the
+            // public-route list is inlined here — keep it in sync with
+            // src/components/theme/theme-sections.ts.
+            __html: `(function(){try{var pub=['/','/features','/how-it-works','/pricing','/contact-form-outreach','/website-contact-form-automation','/ai-outreach','/b2b-lead-generation','/benefits','/about','/contact','/help','/terms','/privacy','/login','/signup'];if(pub.indexOf(window.location.pathname)===-1){var t=localStorage.getItem('cr-theme');if(t!=='dark'){document.documentElement.classList.add('light');}}}catch(e){}})();`,
           }}
         />
         <ThemeProvider>

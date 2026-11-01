@@ -263,7 +263,8 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
           </div>
         )}
 
-        {/* Dark / light mode switch (dashboard header, applies site-wide) */}
+        {/* Dark / light mode switch (dashboard header: flips the dashboard,
+            admin and campaign theme; the public site always stays dark) */}
         <ThemeToggle />
 
         {/* User Profile / Account Switcher Controls */}

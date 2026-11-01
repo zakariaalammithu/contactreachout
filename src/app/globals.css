@@ -801,6 +801,16 @@ html.light .bg-blue-950\/30 { background-color: rgba(219,234,254,0.30); }
 html.light .bg-blue-950\/20 { background-color: rgba(219,234,254,0.20); }
 html.light .bg-blue-900 { background-color: #bfdbfe; }
 html.light .bg-blue-900\/60 { background-color: rgba(191,219,254,0.60); }
+html.light .bg-blue-900\/80 { background-color: rgba(191,219,254,0.80); }
+/* Pricing calculator panel: the dark-mode block below forces this panel to
+   near-black with !important, so the generic bg-blue-950/40 flip cannot
+   reach it — in white mode it stayed black while all its text flipped
+   dark. Mirror that rule here with a pale-blue panel (and light border)
+   so the panel matches the rest of the light pricing page. The calculator
+   button keeps its white text (brand-blue background is not flipped). */
+html.light .pricing-public-page .pricing-calculator > div:nth-child(2) > div:nth-child(2),
+html.light .pricing-public-page .pricing-calculator [class*="bg-[#0F132C]"] { border-color: #bfdbfe !important; background: rgba(219, 234, 254, 0.4) !important; }
+html.light .pricing-public-page .pricing-calculator { color: #09090b; }
 html.light .bg-emerald-950 { background-color: #ecfdf5; }
 html.light .bg-amber-950 { background-color: #fffbeb; }
 html.light .bg-purple-950 { background-color: #faf5ff; }
@@ -831,6 +841,10 @@ html.light .text-cyan-300 { color: #0e7490; }
 html.light .text-rose-300 { color: #be123c; }
 html.light .text-slate-300 { color: #475569; }
 html.light .bg-\[\#0e6de4\].text-white, html.light .bg-\[\#0e6de4\] .text-white, html.light .bg-\[\#0758bd\].text-white, html.light .bg-\[\#0758bd\] .text-white, html.light .bg-blue-600.text-white, html.light .bg-blue-600 .text-white, html.light .from-\[\#0e6de4\].text-white, html.light .from-\[\#0e6de4\] .text-white { color: #ffffff; }
+/* Same preservation for pale-blue supporting text on saturated blue
+   surfaces (e.g. the pricing bottom-CTA subtext): the generic rule flips
+   text-blue-100 to dark blue, which is unreadable on brand blue. */
+html.light .bg-\[\#0e6de4\] .text-blue-100, html.light .bg-blue-600 .text-blue-100 { color: #dbeafe; }
 html.light .border-zinc-800 { border-color: #e4e4e7; }
 html.light .border-zinc-800\/80 { border-color: rgba(228,228,231,0.80); }
 html.light .border-zinc-800\/90 { border-color: rgba(228,228,231,0.90); }
@@ -991,6 +1005,28 @@ html.light .pricing-public-page .pricing-plan-card { background: #ffffff !import
 html.light .pricing-public-page .pricing-plan-card h3, html.light .pricing-public-page .pricing-plan-card p, html.light .pricing-public-page .pricing-plan-card span { color: #09090b; }
 html.light .pricing-public-page .pricing-plan-card button, html.light .pricing-public-page .pricing-plan-card button span { color: #ffffff; }
 html.light .pricing-public-page .pricing-calculator input[type="number"] { border-color: #d4d4d8; background: #ffffff; color: #0e6de4; }
+
+/* Theme split 2026-11-01: dark gradient stops never flipped in light mode,
+   so gradient surfaces stayed dark while their text flipped dark — the
+   homepage service cards, the workspace preview panel and the pricing
+   banner were unreadable in white mode. (A white background-color cannot
+   cover a background-image gradient, which is why the earlier article
+   rule did not fix the service cards.) Flipping the stops to light tints
+   fixes every surface that uses them, on any page. Saturated brand-blue
+   gradients (from-[#0e6de4], from-[#0758bd]) are deliberately untouched:
+   their white text is preserved by the exception above. Tailwind v3
+   builds gradients from these --tw-gradient-* variables, so overriding
+   them here is enough; the from-* rules also reset --tw-gradient-stops
+   because the via-* form hardcodes its color into the stop list. */
+html.light .from-blue-950 { --tw-gradient-from: #dbeafe var(--tw-gradient-from-position); --tw-gradient-to: rgb(219 234 254 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+html.light .from-blue-950\/50 { --tw-gradient-from: rgb(219 234 254 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(219 234 254 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+html.light .from-blue-950\/90 { --tw-gradient-from: rgb(219 234 254 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(219 234 254 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+html.light .from-zinc-900 { --tw-gradient-from: #f4f4f5 var(--tw-gradient-from-position); --tw-gradient-to: rgb(244 244 245 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+html.light .via-zinc-950 { --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #ffffff var(--tw-gradient-via-position), var(--tw-gradient-to); }
+html.light .to-zinc-900 { --tw-gradient-to: #f4f4f5 var(--tw-gradient-to-position); }
+html.light .to-zinc-950 { --tw-gradient-to: #ffffff var(--tw-gradient-to-position); }
+html.light .to-blue-950\/50 { --tw-gradient-to: rgb(219 234 254 / 0.5) var(--tw-gradient-to-position); }
+html.light .to-blue-950\/30 { --tw-gradient-to: rgb(219 234 254 / 0.3) var(--tw-gradient-to-position); }
 
 /* Page-level safety net: nothing may spill past the left or right edge on
    any screen size. `clip` (unlike `hidden`) creates no scroll container, so

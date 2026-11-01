@@ -5,30 +5,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { ChatbotWidget } from '@/components/layout/ChatbotWidget';
+import { PUBLIC_ROUTES } from '@/components/theme/theme-sections';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const publicRoutes = [
-    '/',
-    '/features',
-    '/how-it-works',
-    '/pricing',
-    '/contact-form-outreach',
-    '/website-contact-form-automation',
-    '/ai-outreach',
-    '/b2b-lead-generation',
-    '/benefits',
-    '/about',
-    '/contact',
-    '/help',
-    '/terms',
-    '/privacy',
-    '/login',
-    '/signup',
-  ];
+  const publicRoutes = PUBLIC_ROUTES;
   const isPublicRoute = publicRoutes.includes(pathname);
   const isAdminRoute = pathname.startsWith('/admin');
 
