@@ -71,6 +71,7 @@ export default function InboxPage() {
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
@@ -119,6 +120,34 @@ export default function InboxPage() {
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+    }
+  };
+
+  const handleSyncNow = async () => {
+    // Manual Gmail sync: the inbox auto-refresh only re-lists stored mail,
+    // and Pub/Sub pushes are the only automatic trigger. This pulls any new
+    // replies now and renews the expiring Pub/Sub watch.
+    setIsSyncing(true);
+    try {
+      const listRes = await fetch('/api/gmail/mailboxes');
+      const listData = await listRes.json();
+      const mailbox = (listData.mailboxes || []).find((m: any) => m.connection_status === 'ACTIVE') || (listData.mailboxes || [])[0];
+      if (!mailbox?.id) {
+        setToastMessage('No connected Gmail mailbox found. Reconnect Gmail first.');
+        return;
+      }
+      const res = await fetch(`/api/gmail/mailboxes/${encodeURIComponent(mailbox.id)}/sync`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setToastMessage(data.error || 'Gmail sync failed.');
+        return;
+      }
+      setToastMessage(`Gmail synced: ${data.imported || 0} new, ${data.duplicates || 0} duplicates, ${data.filtered || 0} filtered.${data.watchError ? ` Push notifications could not be renewed (${data.watchError}) — replies will arrive on manual sync.` : ''}`);
+      await fetchInboxData(false);
+    } catch {
+      setToastMessage('Gmail sync failed.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -409,6 +438,18 @@ export default function InboxPage() {
             title="Refresh Inbox"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-blue-400' : ''}`} />
+          </button>
+
+          {/* Sync Now Button: pulls new Gmail replies + renews the watch */}
+          <button
+            type="button"
+            onClick={handleSyncNow}
+            disabled={isSyncing || isRefreshing}
+            className="flex h-8 items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 text-xs font-medium text-zinc-400 hover:bg-zinc-900 transition-colors disabled:opacity-50"
+            title="Sync now from Gmail"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-blue-400' : ''}`} />
+            <span>Sync now</span>
           </button>
         </div>
       </header>

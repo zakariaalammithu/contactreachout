@@ -6,6 +6,8 @@ import { isVerifiedFormSubmission } from '@/lib/services/submission-verification
 import { validateSendingSchedule } from '@/lib/services/processing-controls-service';
 
 import { AuthStore } from '@/lib/auth/auth-store';
+import { resolvePersistenceContext } from '@/lib/persistence/identity';
+import { ensureCampaignReplyLink } from '@/lib/services/campaign-reply-link';
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest) {
     const userId = session.email;
 
     const body = await req.json();
-    const { campaignId, lead, template, options = {} } = body;
+    const { campaignId, campaignName, lead, template, options = {} } = body;
 
     if (!lead || !lead.website || !lead.company_name) {
       return NextResponse.json(
@@ -108,6 +110,23 @@ export async function POST(req: NextRequest) {
         runtimeMode,
       },
     });
+
+    // Best-effort durable reply link (never throws, never delays the result):
+    // the inbox filter matches replies against Supabase campaign leads, so a
+    // live-processed prospect must be registered there or its reply can never
+    // match. Dry runs register nothing (nothing was sent).
+    if (!isDryRun) {
+      try {
+        const persistenceContext = await resolvePersistenceContext(req);
+        await ensureCampaignReplyLink(persistenceContext, {
+          clientCampaignId: campaignId,
+          campaignName: typeof campaignName === 'string' ? campaignName : undefined,
+          lead,
+        });
+      } catch {
+        // Outreach result stands on its own; a later run can register.
+      }
+    }
 
     const completedAt = result.completedAt || new Date().toISOString();
     const totalDurationMs = result.totalDurationMs || (Date.now() - startTime);

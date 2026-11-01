@@ -18,10 +18,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (!(await getConnectedMailboxForOwner(context, params.id))) return NextResponse.json({ error: 'Mailbox was not found.' }, { status: 404 });
     const result = await synchronizeGmailMailbox(params.id);
     let watchExpirationAt: string | null = null;
+    let watchError: string | null = null;
     try {
       watchExpirationAt = (await registerGmailWatch(params.id)).expirationAt;
-    } catch { /* Pub/Sub may not be configured; the sync above still counts. */ }
-    return NextResponse.json({ success: true, imported: result.imported, duplicates: result.duplicates, filtered: result.filtered, cursorRecovered: result.cursorRecovered, watchExpirationAt });
+    } catch (error) {
+      // Surfaced (not swallowed) so the UI can warn that push delivery is
+      // off and replies will only arrive on manual sync.
+      watchError = error instanceof Error ? error.message : 'WATCH_FAILED';
+    }
+    return NextResponse.json({ success: true, imported: result.imported, duplicates: result.duplicates, filtered: result.filtered, cursorRecovered: result.cursorRecovered, watchExpirationAt, watchError });
   } catch (error) {
     if (error instanceof PersistenceAuthorizationError) return NextResponse.json({ error: 'Authentication is required.' }, { status: 401 });
     const code = error instanceof Error ? error.message : '';

@@ -750,6 +750,7 @@ export default function CampaignsPage() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     campaignId: rawCamp.id,
+                    campaignName: rawCamp.name || '',
                     lead: {
                       id: nextLead.id,
                       company_name: nextLead.companyName || nextLead.company_name || '',
