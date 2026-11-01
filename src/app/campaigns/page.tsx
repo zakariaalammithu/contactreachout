@@ -48,6 +48,7 @@ import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 import { SendingProgressCard } from './SendingProgressCard';
 import { sendingDaysToWeekdays } from '@/lib/services/sending-estimate';
 import { resolveSubmissionDelayMs, resolveDailySubmissionLimit, countDeliveredToday, nextDayMidnightISO, isDelayElapsed } from '@/lib/services/campaign-runner-policy';
+import { classifyFailure } from '@/lib/services/failure-reason';
 import { createUniqueCampaignId, formatStoragePressureMessage, persistCampaignDraft, readCampaignDrafts, removeCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -1128,10 +1129,13 @@ export default function CampaignsPage() {
       'Diagnostic Code',
       'Diagnostic Details',
       'Timestamp',
+      'Failure Reason',
+      'Failure Stage',
+      'Suggested Action',
     ];
 
     const tableRows = auditLogs.length > 0
-      ? auditLogs.map((log: any) => [
+      ? auditLogs.map((log: any) => { const failure = classifyFailure({ finalStatus: log.finalStatus ?? log.status, submissionStatus: log.submissionStatus, successVerification: log.successVerification, code: log.code, details: log.details }); return [
           `"${campNameSafe.replace(/"/g, '""')}"`,
           `"${campIdSafe}"`,
           `"${campDateSafe}"`,
@@ -1158,7 +1162,10 @@ export default function CampaignsPage() {
           `"${safeString(log.code).replace(/"/g, '""')}"`,
           `"${safeString(log.details).replace(/"/g, '""')}"`,
           `"${safeString(log.time).replace(/"/g, '""')}"`,
-        ])
+          `"${failure.reason.replace(/"/g, '""')}"`,
+          `"${failure.stage.replace(/"/g, '""')}"`,
+          `"${failure.action.replace(/"/g, '""')}"`,
+        ]; })
       : [[
           `"${campNameSafe.replace(/"/g, '""')}"`,
           `"${campIdSafe}"`,
@@ -1185,6 +1192,9 @@ export default function CampaignsPage() {
           '"N/A"',
           '"NO_RECORDS"',
           '"No website audit records found for this campaign"',
+          '"N/A"',
+          '"N/A"',
+          '"N/A"',
           '"N/A"',
         ]];
 
@@ -2875,6 +2885,9 @@ export default function CampaignsPage() {
                   <div><span className="text-zinc-400">Success Verification:</span> <strong className="text-emerald-300 font-mono">{selectedProspectDetail.successVerification}</strong></div>
                   <div><span className="text-zinc-400">Diagnostic Code:</span> <code className="bg-zinc-800 px-1 py-0.5 rounded text-zinc-200 font-mono">{selectedProspectDetail.code}</code></div>
                   <div><span className="text-zinc-400">Diagnostic Details:</span> <p className="mt-0.5 p-2 rounded bg-zinc-950 border border-zinc-800 text-zinc-200 font-mono text-[10px] leading-relaxed">{selectedProspectDetail.details}</p></div>
+                  <div><span className="text-zinc-400">Failure Reason:</span> <strong className="text-zinc-100 font-mono">{classifyFailure({ finalStatus: selectedProspectDetail.finalStatus ?? selectedProspectDetail.status, submissionStatus: selectedProspectDetail.submissionStatus, successVerification: selectedProspectDetail.successVerification, code: selectedProspectDetail.code, details: selectedProspectDetail.details }).reason}</strong></div>
+                  <div><span className="text-zinc-400">Failure Stage:</span> <strong className="text-zinc-100 font-mono">{classifyFailure({ finalStatus: selectedProspectDetail.finalStatus ?? selectedProspectDetail.status, submissionStatus: selectedProspectDetail.submissionStatus, successVerification: selectedProspectDetail.successVerification, code: selectedProspectDetail.code, details: selectedProspectDetail.details }).stage}</strong></div>
+                  <div><span className="text-zinc-400">Suggested Action:</span> <span className="text-zinc-200">{classifyFailure({ finalStatus: selectedProspectDetail.finalStatus ?? selectedProspectDetail.status, submissionStatus: selectedProspectDetail.submissionStatus, successVerification: selectedProspectDetail.successVerification, code: selectedProspectDetail.code, details: selectedProspectDetail.details }).action}</span></div>
                   <div className="pt-1 flex justify-between text-zinc-400 font-mono text-[10px]">
                     <span>Timestamp: {selectedProspectDetail.time}</span>
                     <span>Mode: {selectedProspectDetail.isDryRun ? 'Dry Run' : 'Live Submission'}</span>

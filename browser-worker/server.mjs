@@ -85,7 +85,7 @@ http.createServer(async (req, res) => {
             if (id) selector = `#${CSS.escape(id)}`;
             else if (name) selector = `[name="${name.replace(/"/g, '\\"')}"]`;
             else selector = cssPath(el);
-            const field = { selector, name, tag, type, required: Boolean(el.required), label: labelText(el) };
+            const field = { selector, name, tag, type, required: Boolean(el.required || el.getAttribute('aria-required') === 'true'), label: labelText(el) };
             if (tag === 'select') {
               field.options = Array.from(el.options || []).map((o) => ({ label: (o.textContent || '').trim(), value: o.value }));
             }

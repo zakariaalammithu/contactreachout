@@ -30,6 +30,26 @@ function subjectValue(result) {
   return assignment ? assignment.valueToFill : undefined;
 }
 
+describe('required-field mapping', () => {
+  it('reports FIELD_MAPPING_REQUIRED when a required phone field has no lead phone (m.b2bgdc WhatsApp case)', () => {
+    // The test lead carries no phone number, so a required WhatsApp/phone
+    // field cannot be filled. The pipeline must hold this lead for review
+    // instead of submitting a form the site will silently reject.
+    const fields = [
+      { selector: '#name', name: 'name', id: 'name', label: 'Name', tag: 'input', htmlType: 'text', normalizedType: 'name', isRequired: true, isHoneypot: false },
+      { selector: '#email', name: 'email', id: 'email', label: 'Email', tag: 'input', htmlType: 'email', normalizedType: 'email', isRequired: true, isHoneypot: false },
+      { selector: '#whatsapp', name: 'whatsapp', id: 'whatsapp', label: 'WhatsApp Number', tag: 'input', htmlType: 'text', normalizedType: 'phone', isRequired: true, isHoneypot: false },
+      { selector: '#message', name: 'message', id: 'message', label: 'Message', tag: 'textarea', htmlType: 'textarea', normalizedType: 'message', isRequired: true, isHoneypot: false },
+    ];
+    const result = mapLeadToFormFields(fields, lead, {
+      subject: 'hello TestCo team',
+      body: 'Hello TestCo, reaching out regarding a potential partnership. Best regards',
+    });
+    expect(result.status).toBe('FIELD_MAPPING_REQUIRED');
+    expect(result.unmappedRequiredCount).toBe(1);
+    expect(result.reason).toMatch(/lack matching data/);
+  });
+});
 describe('subject dropdown mapping', () => {
   it('keeps the campaign subject verbatim for a plain text subject field', () => {
     const result = mapLeadToFormFields(

@@ -189,6 +189,7 @@ export async function POST(req: NextRequest) {
       // an uncertain outcome behind a generic anti-bot message.
       diagnosticMessage =
         result.submission?.errorMessage ||
+        result.mapping?.reason ||
         result.detection?.errorMessage ||
         'Anti-bot protection, CAPTCHA, or uncertain field mapping detected';
     } else {

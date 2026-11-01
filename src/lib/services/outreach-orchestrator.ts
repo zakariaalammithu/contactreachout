@@ -451,7 +451,7 @@ export class OutreachPipelineOrchestrator {
       { minConfidenceThreshold }
     );
 
-    if (mapping.status === 'REVIEW_REQUIRED' || mapping.status === 'MISSING_MANDATORY_FIELDS') {
+    if (mapping.status === 'REVIEW_REQUIRED' || mapping.status === 'MISSING_MANDATORY_FIELDS' || mapping.status === 'FIELD_MAPPING_REQUIRED') {
       addLog('FIELD_MAPPING', `Mapping requires review: ${mapping.reason}`);
       return {
         leadId: lead.id,
