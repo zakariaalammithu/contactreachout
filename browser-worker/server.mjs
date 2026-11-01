@@ -160,15 +160,24 @@ http.createServer(async (req, res) => {
     // the submission.
     await page.waitForLoadState('load', { timeout: 5_000 }).catch(() => {});
     await page.waitForLoadState('networkidle', { timeout: 3_000 }).catch(() => {});
-    // Settle delay: hydration executes after load/network quiet, and on
-    // a heavy page under a throttled CPU it can lag seconds behind.
-    // Filling only after this delay gives hydration its best chance to
-    // finish first. Raised from 1.5s after the 31-5 retest proved the
-    // real contact page hydrates around ~7s (its retry click at ~7s
-    // still raced hydration): this moves attempt 1 to ~6.5s and the
-    // retry to ~9s. Caps keep the worst case bounded; pathological
-    // slowness degrades to a client-timeout REVIEW, never a false success.
-    await page.waitForTimeout(3500);
+    // Hydration-quiet wait: React/Next.js hydration re-renders the page
+    // (a burst of DOM mutations) and only then is the form's state live.
+    // A fixed delay cannot adapt — too short for a slow page, wasteful
+    // for a fast one — so wait until the DOM has been quiet for 1.5s
+    // continuously, capped at 8s. Fast pages resolve in ~1.5s (faster
+    // than the old fixed 3.5s); a page hydrating at ~10-12s is still
+    // caught, because the first fill now happens AFTER hydration instead
+    // of racing it. Best effort: a page that never quiets still proceeds
+    // to the guard + retry below, which remain the backstop.
+    await page.evaluate(() => new Promise((resolve) => {
+      let quietTimer = setTimeout(() => { observer.disconnect(); resolve(); }, 1500);
+      const observer = new MutationObserver(() => {
+        clearTimeout(quietTimer);
+        quietTimer = setTimeout(() => { observer.disconnect(); resolve(); }, 1500);
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
+      setTimeout(() => { observer.disconnect(); resolve(); }, 8000);
+    })).catch(() => {});
     // Fill by element type, extracted so the hydration guard below can
     // re-fill exactly the same way: plain fill() throws on <select>,
     // checkbox and radio inputs, so forms containing them failed every
@@ -442,55 +451,60 @@ http.createServer(async (req, res) => {
       if (visibleMatch) return { kind: 'SUCCESS', confirmation: visibleMatch[0] };
       return { kind: 'NONE' };
     };
-    // Attempt 1.
-    await clickSubmit();
-    // Submit-time truth for diagnostics: after wizard steps, only the
-    // fields visible at the actual submit count (earlier steps' fields
-    // are hidden now). Reassigned after a retry click, below.
+    // Attempt loop (max 3): hydration time is unknowable from outside
+    // — a quiet DOM does not prove hydration is done (a bundle still
+    // downloading mutates nothing), and a fixed delay cannot cover an
+    // arbitrarily slow page. So instead of predicting hydration, space
+    // attempts ~3s apart: attempt 1 lands early, later attempts land
+    // after progressively more load time, and whichever attempt lands
+    // post-hydration succeeds. The loop stops the moment any request
+    // leaves the browser (it may still deliver — never click twice on
+    // an in-flight submission), and the full poll below judges it.
+    // One attempt's click dying in client validation is the classic
+    // pre-hydration case (DOM filled, React state empty); by a later
+    // attempt hydration has completed, so a fresh fill + immediate
+    // click lands on a live form.
+    let attemptsMade = 0;
     let finalFields = [];
-    for (const field of job.fields) {
-      if (!(await isFieldVisible(field))) continue;
-      const stuck = await valueStuck(field).catch(() => false);
-      finalFields.push({ selector: field.selector, stuck });
-    }
-    // Mini-poll: fast successes and captchas return at once instead of
-    // waiting out a fixed delay.
-    for (let waited = 0; waited <= 2000; waited += 500) {
-      if (waited > 0) await page.waitForTimeout(500);
-      const check = await checkVerification();
-      if (check.kind === 'CAPTCHA') { stopListening(); return captchaResult(); }
-      if (check.kind === 'SUCCESS') { stopListening(); return verified(check.confirmation); }
-    }
-    // Self-correcting retry: if NO request left the browser, the first
-    // click died in client validation (the classic pre-hydration case:
-    // DOM filled, React state empty). By now hydration has completed,
-    // so a fresh fill + immediate click lands on a live form. If ANY
-    // request was sent, never retry: it may still deliver, and a second
-    // click would double-send. One retry only, bounded by the poll below.
-    let attempts = 1;
-    if (submissionRequests.length === 0) {
-      attempts = 2;
-      for (const field of job.fields) {
-        if (!(await isFieldVisible(field))) continue;
-        await fillOne(field).catch(() => {});
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await page.waitForTimeout(1000);
+        for (const field of job.fields) {
+          if (!(await isFieldVisible(field))) continue;
+          await fillOne(field).catch(() => {});
+        }
       }
+      attemptsMade = attempt + 1;
       await clickSubmit();
+      // Submit-time truth for diagnostics: after wizard steps, only the
+      // fields visible at the actual submit count (earlier steps'
+      // fields are hidden now). Reassigned after each attempt's click.
       finalFields = [];
       for (const field of job.fields) {
         if (!(await isFieldVisible(field))) continue;
         const stuck = await valueStuck(field).catch(() => false);
         finalFields.push({ selector: field.selector, stuck });
       }
+      // Mini-poll: fast successes and captchas return at once instead
+      // of waiting out a fixed delay.
+      for (let waited = 0; waited <= 2000; waited += 500) {
+        if (waited > 0) await page.waitForTimeout(500);
+        const check = await checkVerification();
+        if (check.kind === 'CAPTCHA') { stopListening(); return captchaResult(); }
+        if (check.kind === 'SUCCESS') { stopListening(); return verified(check.confirmation); }
+      }
+      if (submissionRequests.length > 0) break;
     }
+    const attempts = attemptsMade;
     // Full poll for a success signal: slow backends (serverless cold
     // start + email round-trip) can take seconds after the click, and a
     // single early check would misreport those genuine deliveries as
-    // FAILED. Fast forms return on an early poll. Trimmed from 10s to 8s
-    // to fund the longer settle delay above; 8s still covers the slow
-    // backends seen live (4s API, ~6.5s cold start). The combined budget
-    // (settle + fill + guard + mini-poll + possible retry + this poll)
-    // stays inside the caller's 20s timeout in normal cases; pathological
-    // slowness degrades to a client-timeout REVIEW, never a false success.
+    // FAILED. Fast forms return on an early poll. 8s still covers the
+    // slow backends seen live (4s API, ~6.5s cold start). With the
+    // quiet wait above, attempt 1 now lands post-hydration, so the
+    // common case succeeds on an early poll and the combined budget
+    // stays inside the caller's timeout; pathological slowness degrades
+    // to a client-timeout REVIEW, never a false success.
     for (let waited = 0; waited <= 8000; waited += 500) {
       if (waited > 0) await page.waitForTimeout(500);
       const check = await checkVerification();
@@ -516,9 +530,30 @@ http.createServer(async (req, res) => {
       pageSnippet = text.replace(/\s+/g, ' ').trim().slice(0, 300);
     } catch { /* ignore */ }
     const stuckCount = finalFields.filter((f) => f.stuck).length;
+    // Plain-words "why" for the campaign report: raw evidence alone
+    // (posts/attempts/fields) does not say why a send failed, and the
+    // report must. One sentence, chosen from the evidence in order of
+    // informativeness — never a guess beyond what was observed.
+    let diagnosticSummary;
+    const failedPost = submissionPosts.find((p) => p.status >= 500);
+    const anyPost = submissionPosts[0];
+    if (failedPost) {
+      diagnosticSummary = `The form posted but the site's backend answered ${failedPost.status} — a site-side error, not a form problem.`;
+    } else if (anyPost) {
+      diagnosticSummary = `The form posted (status ${anyPost.status}) but no success confirmation was seen — the message may still have been received; check the site's inbox.`;
+    } else if (submissionRequests.length > 0) {
+      diagnosticSummary = 'The form posted but the backend never answered within the wait — delivery unconfirmed.';
+    } else if (pageErrors.length > 0) {
+      diagnosticSummary = `Page JavaScript errors were seen (first: "${pageErrors[0]}") — the form's handler may have failed before posting.`;
+    } else if (/must be at least|is required|please fill|invalid/i.test(pageSnippet)) {
+      diagnosticSummary = "The site's own validation rejected the submission — the form read its fields as empty.";
+    } else {
+      diagnosticSummary = 'No form request left the browser — the submit click did not reach the site\'s handler.';
+    }
     return send(res, 200, {
       status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', confirmationMessage: undefined, successVerified: false, submitAttempted: true, fieldsFilledCount: job.fields.length,
       diagnosticEvidence: {
+        diagnosticSummary,
         posts: submissionPosts,
         requestsSent: submissionRequests.length,
         attempts,

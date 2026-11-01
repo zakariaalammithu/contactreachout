@@ -14,6 +14,11 @@ export function renderWorkerDiagnosticEvidence(evidence: unknown): string {
   if (!evidence || typeof evidence !== 'object') return '';
   const ev = evidence as WorkerDiagnosticEvidence;
   const parts: string[] = [];
+  // Plain-words "why" first: the report must say why a send failed,
+  // not just show raw evidence. Defensive: absent/blank renders nothing.
+  if (typeof ev.diagnosticSummary === 'string' && ev.diagnosticSummary.trim()) {
+    parts.push(`why: ${ev.diagnosticSummary.replace(/\s+/g, ' ').trim().slice(0, 300)}`);
+  }
   if (Array.isArray(ev.posts)) {
     if (ev.posts.length === 0) {
       parts.push('posts: none');

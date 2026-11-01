@@ -141,4 +141,40 @@ describe('browser worker submission safety', () => {
     const result = await submitWithBrowserWorker(input);
     expect(result.errorMessage).toContain('page errors: form handler boom');
   });
+
+  it('renders the plain-words why first when the worker supplies a summary', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';
+    process.env.BROWSER_WORKER_ALLOWED_DOMAINS = 'example.test';
+    const evidence = {
+      diagnosticSummary: "The site's own validation rejected the submission — the form read its fields as empty.",
+      posts: [],
+      requestsSent: 0,
+      attempts: 2,
+      fieldsStuck: '1/1',
+      clearedFieldSelectors: [],
+      pageSnippet: 'Full Name must be at least 2 characters',
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', successVerified: false, submitAttempted: true, fieldsFilledCount: 1, diagnosticEvidence: evidence }), { status: 200 })));
+    const result = await submitWithBrowserWorker(input);
+    expect(result.errorMessage).toContain("why: The site's own validation rejected the submission");
+    expect(result.errorMessage.indexOf('why:')).toBeLessThan(result.errorMessage.indexOf('posts:'));
+  });
+
+  it('renders no why part when the worker supplies no summary', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';
+    process.env.BROWSER_WORKER_ALLOWED_DOMAINS = 'example.test';
+    const evidence = {
+      posts: [],
+      requestsSent: 0,
+      attempts: 1,
+      fieldsStuck: '1/1',
+      clearedFieldSelectors: [],
+      pageSnippet: 'Send',
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', successVerified: false, submitAttempted: true, fieldsFilledCount: 1, diagnosticEvidence: evidence }), { status: 200 })));
+    const result = await submitWithBrowserWorker(input);
+    expect(result.errorMessage).not.toContain('why:');
+  });
 });

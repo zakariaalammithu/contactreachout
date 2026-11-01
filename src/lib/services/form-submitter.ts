@@ -65,6 +65,10 @@ export interface WorkerDiagnosticPost {
 }
 
 export interface WorkerDiagnosticEvidence {
+  // Plain-words "why" for the campaign report, computed by the worker
+  // from the evidence below (never a guess beyond what was observed).
+  // Rendered first by the worker client so the report row says why.
+  diagnosticSummary?: string;
   posts?: WorkerDiagnosticPost[];
   requestsSent?: number;
   attempts?: number;
