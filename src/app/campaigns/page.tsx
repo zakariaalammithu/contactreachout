@@ -978,8 +978,13 @@ export default function CampaignsPage() {
                   successVerification = 'VERIFIED_HTTP_200';
                 } else if (finalStatus === 'FAILED' || finalStatus === 'SUBMIT_FAILED') {
                   successVerification = 'FAILED';
-                } else if (finalStatus === 'CAPTCHA_REVIEW' || finalStatus === 'REVIEW') {
+                } else if (finalStatus === 'CAPTCHA_REVIEW') {
                   successVerification = 'CAPTCHA_BLOCKED';
+                } else if (finalStatus === 'REVIEW') {
+                  // REVIEW is not a captcha: duplicates (409) and other
+                  // held-for-review leads used to render as
+                  // CAPTCHA_BLOCKED here, which misreported the reason.
+                  successVerification = 'REVIEW';
                 } else if (finalStatus === 'NO_CONTACT_PAGE' || finalStatus === 'NO-FORM') {
                   formStatus = 'NOT_DETECTED';
                   fieldsDetected = 'N/A';

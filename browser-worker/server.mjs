@@ -205,9 +205,22 @@ http.createServer(async (req, res) => {
         if (type === 'checkbox' || type === 'radio') {
           if (String(field.value).toLowerCase() === 'true') await locator.check({ timeout: 5_000 }).catch(() => {});
         } else {
+          // Clear-then-fill (React value-tracker trap): a controlled
+          // input's onChange fires only when React sees the value
+          // CHANGE. A pre-hydration fill sets the DOM value, hydration
+          // then snapshots that filled value as "current", and every
+          // later same-value fill changes nothing — so onChange never
+          // fires, state stays empty, and client validation fails no
+          // matter how many attempts run (the contactreachout failure:
+          // DOM 5/5 filled, state empty, attempts 3). Clearing first
+          // forces a real change (filled -> empty -> value), so React
+          // registers the value. On an already-empty input the clear
+          // is a harmless no-op.
+          await locator.fill('', { timeout: 5_000 }).catch(() => {});
           await locator.fill(String(field.value), { timeout: 5_000 });
         }
       } else {
+        await locator.fill('', { timeout: 5_000 }).catch(() => {});
         await locator.fill(String(field.value), { timeout: 5_000 });
       }
     };
@@ -321,21 +334,63 @@ http.createServer(async (req, res) => {
     // they may no longer be available.
     const pageOrigin = (() => { try { return new URL(page.url()).origin; } catch { return ''; } })();
     const actionUrl = (() => { try { return job.formAction ? new URL(job.formAction, page.url()).href : ''; } catch { return ''; } })();
+    // Form-post discriminator: a POST is the form's submission only if
+    // its body carries a submitted field value, or it targets the
+    // form's action URL exactly (native submits). Origin alone is NOT
+    // enough: a site's own tracking beacons are same-origin, so they
+    // used to (a) stop the retry loop (a request "left the browser"),
+    // (b) pollute the posts evidence, and (c) — if their body ever
+    // contained {success:true} — FALSELY verify delivery. Bodies may
+    // be URL-encoded (form posts) or JSON; check raw, encoded and
+    // space-as-plus variants. Values shorter than 8 chars are too
+    // generic to match on ('true', '1') and are skipped. This also
+    // lets genuine cross-origin form backends count (their POSTs carry
+    // the values), which the old origin filter wrongly excluded.
+    const matchValues = job.fields.map((f) => String(f.value ?? '')).filter((v) => v.length >= 8);
+    const bodyCarriesFieldValue = (body) => {
+      if (typeof body !== 'string' || !body) return false;
+      return matchValues.some((v) => {
+        if (body.includes(v)) return true;
+        try { if (body.includes(encodeURIComponent(v))) return true; } catch { /* ignore */ }
+        if (body.includes(v.replace(/ /g, '+'))) return true;
+        return false;
+      });
+    };
+    const isFormPost = (request) => {
+      try {
+        if (actionUrl && request.url() === actionUrl) return true;
+        let postData = null;
+        try { postData = request.postData(); } catch { /* ignore */ }
+        return bodyCarriesFieldValue(postData);
+      } catch { return false; }
+    };
+    const isSameOriginOrAction = (url) => {
+      try { if (new URL(url).origin === pageOrigin) return true; } catch { /* ignore */ }
+      return Boolean(actionUrl && url === actionUrl);
+    };
     const submissionResponses = [];
-    // Diagnostic evidence: every qualifying form POST (any status), so a
-    // FAILED result can say whether the form posted at all and what the
-    // backend answered. Paths only, never query strings (they can carry
-    // tokens); bodies stay out of this list entirely.
+    // Diagnostic evidence: every FORM post (any status), so a FAILED
+    // result can say whether the form posted at all and what the
+    // backend answered. Paths only, never query strings (they can
+    // carry tokens); bodies stay out of this list entirely.
     const submissionPosts = [];
+    // Same-origin non-form posts (tracking beacons): recorded
+    // separately so the report can tell them apart from form posts.
+    const otherPosts = [];
     const onResponse = async (response) => {
       try {
         const method = (response.request().method() || '').toUpperCase();
         if (method !== 'POST' && method !== 'PUT' && method !== 'PATCH') return;
         const url = response.url();
-        let sameOrigin = false;
-        try { sameOrigin = new URL(url).origin === pageOrigin; } catch { /* ignore */ }
-        if (!sameOrigin && !(actionUrl && url === actionUrl)) return;
         const status = response.status();
+        if (!isFormPost(response.request())) {
+          if (isSameOriginOrAction(url) && otherPosts.length < 3) {
+            let path = url;
+            try { path = new URL(url).pathname; } catch { /* keep raw url */ }
+            otherPosts.push({ method, status, path });
+          }
+          return;
+        }
         if (submissionPosts.length < 5) {
           let path = url;
           try { path = new URL(url).pathname; } catch { /* keep raw url */ }
@@ -360,23 +415,27 @@ http.createServer(async (req, res) => {
       if (!(await isFieldVisible(field))) continue;
       await fillOne(field).catch(() => {});
     }
-    // Requests sent (vs responses received): the retry below is safe
-    // ONLY when no request left the browser. A response listener fires
-    // when the response arrives, so a slow backend would look like
-    // "nothing sent" and a second click would double-send. Requests are
-    // recorded the moment they are sent, whatever the backend does.
+    // Requests sent (vs responses received): the retry loop below is
+    // safe ONLY when no FORM request left the browser. A response
+    // listener fires when the response arrives, so a slow backend would
+    // look like "nothing sent" and a second click would double-send.
+    // Requests are recorded the moment they are sent, whatever the
+    // backend does. Only FORM posts (value-matching, see above) count
+    // here: a tracking beacon must not stop retries, or a form that
+    // would post on a later attempt is never given the chance. The
+    // residual double-send corner — a form that posts with fully
+    // transformed values (unrecognizable) AND renders no success signal
+    // AND does not navigate — is mitigated by the mini-poll success
+    // checks, which stop the loop the moment any confirmation appears.
     const submissionRequests = [];
     const onRequest = (request) => {
       try {
         const method = (request.method() || '').toUpperCase();
         if (method !== 'POST' && method !== 'PUT' && method !== 'PATCH') return;
-        const url = request.url();
-        let sameOrigin = false;
-        try { sameOrigin = new URL(url).origin === pageOrigin; } catch { /* ignore */ }
-        if (!sameOrigin && !(actionUrl && url === actionUrl)) return;
+        if (!isFormPost(request)) return;
         if (submissionRequests.length < 5) {
-          let path = url;
-          try { path = new URL(url).pathname; } catch { /* keep raw url */ }
+          let path = request.url();
+          try { path = new URL(request.url()).pathname; } catch { /* keep raw url */ }
           submissionRequests.push({ method, path });
         }
       } catch { /* evidence collection must never break the submission */ }
@@ -457,9 +516,10 @@ http.createServer(async (req, res) => {
     // arbitrarily slow page. So instead of predicting hydration, space
     // attempts ~3s apart: attempt 1 lands early, later attempts land
     // after progressively more load time, and whichever attempt lands
-    // post-hydration succeeds. The loop stops the moment any request
-    // leaves the browser (it may still deliver — never click twice on
-    // an in-flight submission), and the full poll below judges it.
+    // post-hydration succeeds. The loop stops the moment any FORM
+    // request leaves the browser (it may still deliver — never click
+    // twice on an in-flight submission), and the full poll below
+    // judges it.
     // One attempt's click dying in client validation is the classic
     // pre-hydration case (DOM filled, React state empty); by a later
     // attempt hydration has completed, so a fresh fill + immediate
@@ -543,6 +603,8 @@ http.createServer(async (req, res) => {
       diagnosticSummary = `The form posted (status ${anyPost.status}) but no success confirmation was seen — the message may still have been received; check the site's inbox.`;
     } else if (submissionRequests.length > 0) {
       diagnosticSummary = 'The form posted but the backend never answered within the wait — delivery unconfirmed.';
+    } else if (otherPosts.length > 0) {
+      diagnosticSummary = 'No form submission was seen — only unrelated requests (e.g. tracking) left the browser.';
     } else if (pageErrors.length > 0) {
       diagnosticSummary = `Page JavaScript errors were seen (first: "${pageErrors[0]}") — the form's handler may have failed before posting.`;
     } else if (/must be at least|is required|please fill|invalid/i.test(pageSnippet)) {
@@ -555,6 +617,7 @@ http.createServer(async (req, res) => {
       diagnosticEvidence: {
         diagnosticSummary,
         posts: submissionPosts,
+        otherPosts,
         requestsSent: submissionRequests.length,
         attempts,
         pageErrors,

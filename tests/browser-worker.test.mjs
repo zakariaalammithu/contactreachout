@@ -177,4 +177,24 @@ describe('browser worker submission safety', () => {
     const result = await submitWithBrowserWorker(input);
     expect(result.errorMessage).not.toContain('why:');
   });
+
+  it('renders same-origin non-form posts apart from form posts', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';
+    process.env.BROWSER_WORKER_ALLOWED_DOMAINS = 'example.test';
+    const evidence = {
+      diagnosticSummary: 'No form submission was seen — only unrelated requests (e.g. tracking) left the browser.',
+      posts: [],
+      otherPosts: [{ method: 'POST', status: 202, path: '/__l5e/trackevents' }],
+      requestsSent: 0,
+      attempts: 3,
+      fieldsStuck: '1/1',
+      clearedFieldSelectors: [],
+      pageSnippet: 'Send',
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'FAILED', diagnosticCode: 'SUCCESS_VERIFICATION_FAILED', successVerified: false, submitAttempted: true, fieldsFilledCount: 1, diagnosticEvidence: evidence }), { status: 200 })));
+    const result = await submitWithBrowserWorker(input);
+    expect(result.errorMessage).toContain('other posts: POST /__l5e/trackevents -> 202');
+    expect(result.errorMessage).toContain('posts: none');
+  });
 });

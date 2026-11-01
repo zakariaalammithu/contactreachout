@@ -70,6 +70,9 @@ export interface WorkerDiagnosticEvidence {
   // Rendered first by the worker client so the report row says why.
   diagnosticSummary?: string;
   posts?: WorkerDiagnosticPost[];
+  // Same-origin non-form posts (tracking beacons), kept apart from
+  // form posts so the report never mistakes a beacon for a submission.
+  otherPosts?: WorkerDiagnosticPost[];
   requestsSent?: number;
   attempts?: number;
   pageErrors?: string[];

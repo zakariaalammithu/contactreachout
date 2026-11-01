@@ -39,6 +39,19 @@ export function renderWorkerDiagnosticEvidence(evidence: unknown): string {
   if (Array.isArray(ev.posts) && ev.posts.length === 0 && typeof ev.requestsSent === 'number' && ev.requestsSent > 0) {
     parts.push(`requests sent: ${ev.requestsSent} (no response yet)`);
   }
+  // Same-origin non-form posts (tracking beacons): shown apart from
+  // form posts so a beacon is never mistaken for a submission.
+  if (Array.isArray(ev.otherPosts) && ev.otherPosts.length > 0) {
+    const rendered = ev.otherPosts
+      .map((p) => {
+        const method = typeof p?.method === 'string' ? p.method : 'POST';
+        const path = typeof p?.path === 'string' ? p.path : '';
+        const status = typeof p?.status === 'number' ? p.status : '';
+        return `${method} ${path} -> ${status}`.trim();
+      })
+      .join(', ');
+    if (rendered) parts.push(`other posts: ${rendered}`);
+  }
   if (typeof ev.attempts === 'number' && ev.attempts > 1) {
     parts.push(`attempts: ${ev.attempts}`);
   }
