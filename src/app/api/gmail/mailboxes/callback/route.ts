@@ -5,8 +5,10 @@ import { registerGmailWatch, synchronizeGmailMailbox } from '@/lib/services/gmai
 
 export const dynamic = 'force-dynamic';
 
-function redirectWithStatus(request: NextRequest, status: 'connected' | 'failed') {
-  const response = NextResponse.redirect(new URL(`/inbox?gmail=${status}`, request.url));
+function redirectWithStatus(request: NextRequest, status: 'connected' | 'failed', reason?: string) {
+  const url = new URL(`/inbox?gmail=${status}`, request.url);
+  if (reason) url.searchParams.set('reason', reason);
+  const response = NextResponse.redirect(url);
   response.cookies.set('gmail_mailbox_oauth_state', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/api/gmail/mailboxes', expires: new Date(0) });
   return response;
 }
@@ -15,7 +17,15 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
   const state = request.nextUrl.searchParams.get('state');
   const expectedState = request.cookies.get('gmail_mailbox_oauth_state')?.value;
-  if (!code || !safeStateMatches(expectedState, state)) return redirectWithStatus(request, 'failed');
+  // Google's testing-mode denial (Error 403: access_denied) means the Google
+  // account is not a developer-approved test user yet. Pass that specific
+  // reason through so the inbox can explain it, instead of a generic
+  // failure that leaves the user guessing.
+  const deniedReason =
+    request.nextUrl.searchParams.get('error') === 'access_denied' && safeStateMatches(expectedState, state)
+      ? 'access_denied'
+      : undefined;
+  if (!code || !safeStateMatches(expectedState, state)) return redirectWithStatus(request, 'failed', deniedReason);
 
   try {
     const context = await resolvePersistenceContext(request);

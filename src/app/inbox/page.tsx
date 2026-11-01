@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Inbox as InboxIcon,
   Search,
@@ -29,6 +29,7 @@ import {
   X,
 } from 'lucide-react';
 import { getInboxReplyError, isAcceptedInboxReply } from '@/lib/services/inbox-reply-response';
+import { ACTIVE_MAILBOX_STORAGE_KEY, resolveActiveMailboxId, resolveSyncTargets } from '@/lib/services/mailbox-selection';
 import { Button } from '@/components/ui/Button';
 
 export interface LeadReply {
@@ -72,6 +73,9 @@ export default function InboxPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [mailboxes, setMailboxes] = useState<{ id: string; email_normalized: string; connection_status: string }[]>([]);
+  const [activeMailboxId, setActiveMailboxId] = useState<string | null>(null);
+  const activeMailboxIdRef = useRef<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
@@ -92,12 +96,13 @@ export default function InboxPage() {
     'Thanks for reaching out via our website contact form! We would like to learn more about ContactReachout.'
   );
 
-  const fetchInboxData = async (showRefreshSpinner = false) => {
+  const fetchInboxData = async (showRefreshSpinner = false, mailboxId?: string | null) => {
     if (showRefreshSpinner) setIsRefreshing(true);
     else setIsLoading(true);
 
     try {
-      const res = await fetch('/api/inbox');
+      const effectiveMailboxId = mailboxId !== undefined ? mailboxId : activeMailboxIdRef.current;
+      const res = await fetch(effectiveMailboxId ? `/api/inbox?mailboxId=${encodeURIComponent(effectiveMailboxId)}` : '/api/inbox');
       const data = await res.json();
       if (res.ok) {
         const msgList: LeadReply[] = data.durable ? (data.conversations || []).map((conversation: any) => {
@@ -124,25 +129,51 @@ export default function InboxPage() {
   };
 
   const handleSyncNow = async () => {
-    // Manual Gmail sync: the inbox auto-refresh only re-lists stored mail,
-    // and Pub/Sub pushes are the only automatic trigger. This pulls any new
-    // replies now and renews the expiring Pub/Sub watch.
+    // Manual Gmail sync, across the active account (or every ACTIVE account
+    // when "All accounts" is selected). The inbox auto-refresh only re-lists
+    // stored mail, and Pub/Sub pushes are the only automatic trigger, so
+    // this is how new replies are pulled on demand. Each target sync also
+    // renews that mailbox's expiring Pub/Sub watch.
     setIsSyncing(true);
     try {
-      const listRes = await fetch('/api/gmail/mailboxes');
-      const listData = await listRes.json();
-      const mailbox = (listData.mailboxes || []).find((m: any) => m.connection_status === 'ACTIVE') || (listData.mailboxes || [])[0];
-      if (!mailbox?.id) {
-        setToastMessage('No connected Gmail mailbox found. Reconnect Gmail first.');
+      let list = mailboxes;
+      if (!list.length) {
+        try {
+          const listRes = await fetch('/api/gmail/mailboxes', { cache: 'no-store' });
+          const listData = await listRes.json();
+          list = (listData.mailboxes || []) as typeof mailboxes;
+          setMailboxes(list);
+        } catch {
+          list = [];
+        }
+      }
+      const targets = resolveSyncTargets(list, activeMailboxIdRef.current);
+      if (!targets.length) {
+        setToastMessage(activeMailboxIdRef.current ? 'Selected mailbox is not connected. Reconnect Gmail first.' : 'No connected Gmail mailbox found. Reconnect Gmail first.');
         return;
       }
-      const res = await fetch(`/api/gmail/mailboxes/${encodeURIComponent(mailbox.id)}/sync`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) {
-        setToastMessage(data.error || 'Gmail sync failed.');
-        return;
+      let imported = 0;
+      let duplicates = 0;
+      let filtered = 0;
+      let failed = 0;
+      const watchErrors: string[] = [];
+      for (const target of targets) {
+        try {
+          const res = await fetch(`/api/gmail/mailboxes/${encodeURIComponent(target.id)}/sync`, { method: 'POST' });
+          const data = await res.json();
+          if (!res.ok) {
+            failed += 1;
+            continue;
+          }
+          imported += data.imported || 0;
+          duplicates += data.duplicates || 0;
+          filtered += data.filtered || 0;
+          if (data.watchError) watchErrors.push(data.watchError);
+        } catch {
+          failed += 1;
+        }
       }
-      setToastMessage(`Gmail synced: ${data.imported || 0} new, ${data.duplicates || 0} duplicates, ${data.filtered || 0} filtered.${data.watchError ? ` Push notifications could not be renewed (${data.watchError}) — replies will arrive on manual sync.` : ''}`);
+      setToastMessage(`Gmail synced (${targets.length} account(s)): ${imported} new, ${duplicates} duplicates, ${filtered} filtered.${failed ? ` ${failed} sync(s) failed.` : ''}${watchErrors.length ? ` Push notifications could not be renewed (${watchErrors[0]}) — replies will arrive on manual sync.` : ''}`);
       await fetchInboxData(false);
     } catch {
       setToastMessage('Gmail sync failed.');
@@ -153,10 +184,57 @@ export default function InboxPage() {
 
   useEffect(() => {
     fetchInboxData();
+    // Surface the Gmail connect result (the callback redirects here). A
+    // testing-mode access_denied means the Google account is not a
+    // developer-approved test user yet — say so plainly, with the fix.
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const gmailStatus = params.get('gmail');
+      if (gmailStatus === 'connected') {
+        setToastMessage('Gmail connected.');
+      } else if (gmailStatus === 'failed') {
+        setToastMessage(
+          params.get('reason') === 'access_denied'
+            ? 'Google blocked this account: the app is in testing mode and this Google account is not a test user yet. Add it in Google Cloud Console → OAuth consent screen → Test users, then connect again.'
+            : 'Gmail connection failed. Please try again.',
+        );
+      }
+      if (gmailStatus) window.history.replaceState(null, '', window.location.pathname);
+    } catch {
+      // Connect-result notice is best-effort only.
+    }
     // Auto-refresh interval every 12 seconds for background sync
     const interval = setInterval(() => fetchInboxData(false), 12000);
     return () => clearInterval(interval);
   }, []);
+
+  // Connected mailboxes + the stored active-account choice. The ref keeps
+  // the auto-refresh interval and every existing fetchInboxData caller on
+  // the current selection without re-subscribing.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/gmail/mailboxes', { cache: 'no-store' });
+        const data = await res.json();
+        const list = (data.mailboxes || []) as typeof mailboxes;
+        setMailboxes(list);
+        let stored: string | null = null;
+        try {
+          stored = localStorage.getItem(ACTIVE_MAILBOX_STORAGE_KEY);
+        } catch {
+          stored = null;
+        }
+        setActiveMailboxId(resolveActiveMailboxId(stored, list));
+      } catch {
+        // Inbox listing still works without the selector.
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    activeMailboxIdRef.current = activeMailboxId;
+    if (activeMailboxId) void fetchInboxData(false);
+  }, [activeMailboxId]);
 
   // Filtered Conversations Computation
   const filteredReplies = useMemo(() => {
@@ -439,6 +517,31 @@ export default function InboxPage() {
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-blue-400' : ''}`} />
           </button>
+
+          {/* Active Account Selector: which mailbox the inbox shows + syncs.
+              Replies still send from the mailbox that received the thread. */}
+          <select
+            value={activeMailboxId || ''}
+            onChange={(e) => {
+              const id = e.target.value || null;
+              setActiveMailboxId(id);
+              try {
+                if (id) localStorage.setItem(ACTIVE_MAILBOX_STORAGE_KEY, id);
+                else localStorage.removeItem(ACTIVE_MAILBOX_STORAGE_KEY);
+              } catch {
+                // Selection still applies for this session.
+              }
+            }}
+            className="h-8 rounded-lg border border-zinc-800 bg-zinc-950 px-2 text-xs font-medium text-zinc-300"
+            title="Active Gmail account"
+          >
+            <option value="">All accounts</option>
+            {mailboxes.map((mailbox) => (
+              <option key={mailbox.id} value={mailbox.id}>
+                {mailbox.email_normalized}{mailbox.connection_status !== 'ACTIVE' ? ` (${mailbox.connection_status})` : ''}
+              </option>
+            ))}
+          </select>
 
           {/* Sync Now Button: pulls new Gmail replies + renews the watch */}
           <button
