@@ -31,8 +31,10 @@ export type AdminActionRecord = {
 };
 
 function isMissingTableError(error: any): boolean {
+  const code = (error as any)?.code;
+  if (code === 'PGRST205' || code === '42P01') return true;
   const message = error instanceof Error ? error.message : String(error || '');
-  return message.includes('admin_action_logs') && /does not exist|42P01|PGRST205/.test(message);
+  return message.includes('admin_action_logs') && /does not exist|could not find the table|schema cache/i.test(message);
 }
 
 /** True when an action with this requestId was already recorded. */

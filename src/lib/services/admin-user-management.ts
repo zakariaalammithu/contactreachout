@@ -77,8 +77,10 @@ export function targetGuard(actorRole: string, target: ResolvedTarget): Manageme
 }
 
 function isMissingTableError(error: any): boolean {
+  const code = (error as any)?.code;
+  if (code === 'PGRST205' || code === '42P01') return true;
   const message = error instanceof Error ? error.message : String(error || '');
-  return message.includes('user_subscriptions') && /does not exist|42P01|PGRST205/.test(message);
+  return message.includes('user_subscriptions') && /does not exist|could not find the table|schema cache/i.test(message);
 }
 
 function periodEndFor(period: string, nowMs: number): string | null {

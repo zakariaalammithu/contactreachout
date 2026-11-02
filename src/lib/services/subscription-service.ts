@@ -78,8 +78,16 @@ function rowToSubscription(row: any): UserSubscription {
 
 /** True when the error is just "table does not exist yet" (migration unapplied). */
 function isMissingTableError(error: any): boolean {
+  // PostgREST reports a missing table with code PGRST205 and the message
+  // "Could not find the table 'public.<table>' in the schema cache" —
+  // NOT "does not exist". The old matcher only recognised the latter
+  // phrasing, so the live message slipped through and threw (campaign
+  // 2-1, 2026-11-02: all 5 leads FAILED before discovery). Match the code
+  // first, then the real message phrasings.
+  const code = (error as any)?.code;
+  if (code === 'PGRST205' || code === '42P01') return true;
   const message = error instanceof Error ? error.message : String(error || '');
-  return message.includes('user_subscriptions') && /does not exist|42P01|PGRST205/.test(message);
+  return message.includes('user_subscriptions') && /does not exist|could not find the table|schema cache/i.test(message);
 }
 
 function warnMissingTable(operation: string, error: any): void {
