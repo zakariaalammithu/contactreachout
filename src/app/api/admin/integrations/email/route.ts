@@ -44,29 +44,14 @@ export async function POST(req: NextRequest) {
     const { apiKey, fromEmail, fromName, replyToEmail, testEmailRecipient, action } = body;
     const currentSender = getEmailSenderConfig();
 
-    // 0. Action: Clear Override
+    // 0. Action: Clear Override — DISABLED under environment-only mode
+    // (2026-11-02): dashboard key editing is removed; keys come only
+    // from server environment.
     if (action === 'clear_override') {
-      SecretManager.deleteSecret('RESEND_API_KEY');
-      const info = SecretManager.getSecretInfo('RESEND_API_KEY');
-      const sender = getEmailSenderConfig();
-      AuditLogService.log({
-        userId: session.userId,
-        userEmail: session.email,
-        action: 'resend_override_cleared',
-        resourceType: 'integration_email',
-        metadata: { provider: 'Resend' },
-      });
-      return NextResponse.json({
-        success: true,
-        message: 'Custom encrypted vault override cleared. System reverted to Server Environment configuration.',
-        maskedApiKey: info.maskedPreview,
-        source: info.source,
-        sourceText: info.sourceText,
-        isOverrideActive: info.isOverrideActive,
-        fromEmail: sender.fromEmail,
-        fromName: sender.fromName,
-        replyToEmail: sender.replyToEmail,
-      });
+      return NextResponse.json(
+        { error: 'API keys are managed via server environment only. Set or remove this value in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+        { status: 410 },
+      );
     }
 
     // 1. Action: Test Connection
@@ -170,66 +155,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. Action: Save Resend Configuration
-    if (fromEmail && !EMAIL_REGEX.test(fromEmail.trim())) {
-      return NextResponse.json(
-        { error: 'Invalid From Email format. Please provide a valid email address (e.g. auth@contactreachout.com).' },
-        { status: 400 }
-      );
-    }
-
-    if (replyToEmail && replyToEmail.trim().length > 0 && !EMAIL_REGEX.test(replyToEmail.trim())) {
-      return NextResponse.json(
-        { error: 'Invalid Reply-To Email format. Please provide a valid email address.' },
-        { status: 400 }
-      );
-    }
-
-    // Securely update API Key only if user provided a non-blank string
-    if (apiKey && apiKey.trim().length > 0) {
-      const cleanKey = apiKey.trim();
-      if (cleanKey.length < 5) {
-        return NextResponse.json(
-          { error: 'Invalid Resend API Key: Key length is too short.' },
-          { status: 400 }
-        );
-      }
-      SecretManager.setSecret('RESEND_API_KEY', cleanKey, null, 'Global Resend API Key');
-    }
-
-    // Save sender settings securely in SecretManager
-    if (fromEmail && fromEmail.trim().length > 0) {
-      SecretManager.setSecret('RESEND_FROM_EMAIL', fromEmail.trim(), null, 'Default From Email');
-    }
-    if (fromName && fromName.trim().length > 0) {
-      SecretManager.setSecret('RESEND_FROM_NAME', fromName.trim(), null, 'Default From Name');
-    }
-    if (typeof replyToEmail === 'string') {
-      SecretManager.setSecret('RESEND_REPLY_TO', replyToEmail.trim(), null, 'Default Reply-To Email');
-    }
-
-    const updatedSender = getEmailSenderConfig();
-    const updatedInfo = SecretManager.getSecretInfo('RESEND_API_KEY');
-
-    AuditLogService.log({
-      userId: session.userId,
-      userEmail: session.email,
-      action: 'resend_configuration_saved',
-      resourceType: 'integration_email',
-      metadata: { fromEmail: updatedSender.fromEmail, fromName: updatedSender.fromName },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Resend email configuration saved and encrypted successfully.',
-      maskedApiKey: updatedInfo.maskedPreview,
-      source: updatedInfo.source,
-      sourceText: updatedInfo.sourceText,
-      isOverrideActive: updatedInfo.isOverrideActive,
-      fromEmail: updatedSender.fromEmail,
-      fromName: updatedSender.fromName,
-      replyToEmail: updatedSender.replyToEmail,
-    });
+    // 3. Action: Save Resend Configuration — DISABLED under
+    // environment-only mode (2026-11-02). RESEND_API_KEY and the sender
+    // identity (RESEND_FROM_EMAIL / RESEND_FROM_NAME / RESEND_REPLY_TO)
+    // come only from server environment now; dashboard writes used to
+    // land in per-instance memory and vanish on recycle.
+    return NextResponse.json(
+      { error: 'API keys are managed via server environment only. Set RESEND_API_KEY and sender values in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+      { status: 410 },
+    );
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || 'Failed to update Resend integration settings.' },

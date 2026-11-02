@@ -25,7 +25,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
 export default function ResendEmailSettingsPage() {
-  const [apiKeyInput, setApiKeyInput] = useState('');
   const [maskedApiKey, setMaskedApiKey] = useState('NOT_CONFIGURED');
   const [credentialSource, setCredentialSource] = useState<'env' | 'global' | 'user' | 'none'>('env');
   const [sourceText, setSourceText] = useState('Managed via Server Environment');
@@ -36,8 +35,6 @@ export default function ResendEmailSettingsPage() {
   const [testRecipient, setTestRecipient] = useState('');
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isClearingOverride, setIsClearingOverride] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
 
@@ -73,83 +70,6 @@ export default function ResendEmailSettingsPage() {
   useEffect(() => {
     fetchConfig();
   }, []);
-
-  const handleSaveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setSaveSuccess(null);
-    setSaveError(null);
-
-    try {
-      const res = await fetch('/api/admin/integrations/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          apiKey: apiKeyInput || undefined,
-          fromEmail,
-          fromName,
-          replyToEmail,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to save Resend configuration.');
-      }
-
-      if (data.maskedApiKey) setMaskedApiKey(data.maskedApiKey);
-      if (data.source) setCredentialSource(data.source);
-      if (data.sourceText) setSourceText(data.sourceText);
-      setIsOverrideActive(Boolean(data.isOverrideActive));
-      if (data.fromEmail) setFromEmail(data.fromEmail);
-      if (data.fromName) setFromName(data.fromName);
-      if (data.replyToEmail) setReplyToEmail(data.replyToEmail);
-
-      setApiKeyInput('');
-      setSaveSuccess(data.message || 'Resend email configuration saved successfully.');
-      setTimeout(() => setSaveSuccess(null), 4000);
-    } catch (err: any) {
-      setSaveError(err.message || 'Failed to save configuration.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleClearOverride = async () => {
-    if (!confirm('Are you sure you want to remove the custom encrypted vault override and revert to the Vercel server environment key?')) {
-      return;
-    }
-
-    setIsClearingOverride(true);
-    setSaveSuccess(null);
-    setSaveError(null);
-
-    try {
-      const res = await fetch('/api/admin/integrations/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'clear_override' }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to clear custom override.');
-      }
-
-      if (data.maskedApiKey) setMaskedApiKey(data.maskedApiKey);
-      if (data.source) setCredentialSource(data.source);
-      if (data.sourceText) setSourceText(data.sourceText);
-      setIsOverrideActive(Boolean(data.isOverrideActive));
-
-      setSaveSuccess('Custom encrypted vault override cleared. System reverted to Server Environment key.');
-      setTimeout(() => setSaveSuccess(null), 4000);
-    } catch (err: any) {
-      setSaveError(err.message || 'Failed to clear override.');
-    } finally {
-      setIsClearingOverride(false);
-    }
-  };
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -311,27 +231,9 @@ export default function ResendEmailSettingsPage() {
             <p className="text-amber-300 leading-relaxed pl-6">
               This overrides the Vercel server environment key with a custom database-vault encrypted key (Preview: <code className="font-mono bg-amber-900 px-1.5 py-0.5 rounded text-amber-950 font-bold">{maskedApiKey}</code>).
             </p>
-            <div className="pl-6 pt-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearOverride}
-                disabled={isClearingOverride}
-                className="text-xs font-bold border-amber-800 text-amber-200 hover:bg-amber-900 hover:text-amber-950"
-              >
-                {isClearingOverride ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    Clearing Override...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5 text-amber-300" />
-                    Clear Custom Vault Override (Revert to Server Environment)
-                  </>
-                )}
-              </Button>
-            </div>
+            <p className="text-amber-300 leading-relaxed pl-6">
+              Dashboard key editing is disabled under environment-only mode. This temporary override lapses when the instance recycles — the lasting value must be set in server environment.
+            </p>
           </div>
         ) : (
           <div className="p-4 rounded-xl border border-blue-900 bg-blue-950/60 text-zinc-300 text-xs space-y-1.5">
@@ -340,7 +242,7 @@ export default function ResendEmailSettingsPage() {
               <span>Resend is currently using the secure server environment configuration.</span>
             </div>
             <p className="text-zinc-400 leading-relaxed pl-6">
-              An API key does not need to be entered here unless you intentionally want to create a runtime encrypted override.
+              API keys and sender identity come from server environment only. Dashboard key editing is disabled under environment-only mode.
             </p>
             <div className="pl-6 flex items-center gap-2 pt-1 text-[11px] font-mono text-zinc-400">
               <span>Active Environment Credential:</span>
@@ -355,90 +257,31 @@ export default function ResendEmailSettingsPage() {
       {/* Main Settings Form Card */}
       <Card className="p-6 space-y-6 border-zinc-800 bg-zinc-950 shadow-xs">
         <div>
-          <h3 className="font-extrabold text-zinc-100 text-sm">Sender Configuration & Optional Override</h3>
+          <h3 className="font-extrabold text-zinc-100 text-sm">Sender Configuration (read-only)</h3>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Manage Default Sender identity or optionally store an encrypted key override.
+            Sender identity from server environment. Dashboard editing is disabled.
           </p>
         </div>
 
-        <form onSubmit={handleSaveConfig} className="space-y-4">
+        <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-zinc-300">Default From Email</label>
-              <input
-                type="email"
-                required
-                placeholder="auth@contactreachout.com"
-                value={fromEmail}
-                onChange={(e) => setFromEmail(e.target.value)}
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
-              />
+              <p className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-xs text-zinc-100 font-mono">{fromEmail}</p>
             </div>
-
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-zinc-300">Default Sender Name</label>
-              <input
-                type="text"
-                required
-                placeholder="ContactReachout"
-                value={fromName}
-                onChange={(e) => setFromName(e.target.value)}
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
-              />
+              <p className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-xs text-zinc-100">{fromName}</p>
             </div>
           </div>
-
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-zinc-300">Reply-To Email</label>
-            <input
-              type="email"
-              placeholder="hello@contactreachout.com"
-              value={replyToEmail}
-              onChange={(e) => setReplyToEmail(e.target.value)}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
-            />
+            <p className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-xs text-zinc-100 font-mono">{replyToEmail}</p>
           </div>
-
-          {/* Optional Runtime Override Section */}
-          <div className="pt-3 border-t border-zinc-800 space-y-1.5">
-            <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-              <KeyRound className="h-3.5 w-3.5 text-blue-400" />
-              Custom Encrypted Vault API Key (Optional Override)
-            </label>
-            <input
-              type="password"
-              placeholder="re_••••••••••••••••••••••••"
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
-            />
-            <p className="text-[11px] text-zinc-400 font-mono">
-              Leave blank to keep server environment configuration active.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
-            <Button
-              variant="primary"
-              size="md"
-              type="submit"
-              disabled={isSaving}
-              className="font-bold bg-[#0e6de4] hover:bg-[#0c5bc2] text-white disabled:opacity-50"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-1.5" />
-                  Save Sender Settings
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+          <p className="text-[11px] text-zinc-400 leading-relaxed">
+            Sender identity is read from server environment only (RESEND_FROM_EMAIL / RESEND_FROM_NAME / RESEND_REPLY_TO). Dashboard editing is disabled under environment-only mode — update Vercel Environment Variables and redeploy to change these values.
+          </p>
+        </div>
       </Card>
 
       {/* Diagnostics & Test Email Dispatcher Card */}

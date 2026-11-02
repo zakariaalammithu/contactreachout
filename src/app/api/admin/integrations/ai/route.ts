@@ -58,41 +58,14 @@ export async function POST(req: NextRequest) {
       'none'
     ).toLowerCase().trim();
 
-    // 0. Action: Clear Override
+    // 0. Action: Clear Override — DISABLED under environment-only mode
+    // (2026-11-02): dashboard key editing is removed. Keys come only
+    // from server environment; there is no vault override left to clear.
     if (action === 'clear_override' && clearKey) {
-      if (clearKey === 'OPENAI_API_KEY' || clearKey === 'ANTHROPIC_API_KEY') {
-        SecretManager.deleteSecret(clearKey);
-        AIService.resetCache();
-        AuditLogService.log({
-          userId: session.userId,
-          userEmail: session.email,
-          action: 'ai_override_cleared',
-          resourceType: 'integration_ai',
-          metadata: { key: clearKey },
-        });
-      }
-      const openaiInfo = SecretManager.getSecretInfo('OPENAI_API_KEY');
-      const anthropicInfo = SecretManager.getSecretInfo('ANTHROPIC_API_KEY');
-
-      return NextResponse.json({
-        success: true,
-        message: `Custom override for ${clearKey} cleared. Reverted to Server Environment credential.`,
-        currentProvider: activeProvider,
-        openai: {
-          configured: openaiInfo.configured,
-          statusText: openaiInfo.sourceText,
-          source: openaiInfo.source,
-          isOverrideActive: openaiInfo.isOverrideActive,
-          maskedApiKey: openaiInfo.maskedPreview,
-        },
-        anthropic: {
-          configured: anthropicInfo.configured,
-          statusText: anthropicInfo.sourceText,
-          source: anthropicInfo.source,
-          isOverrideActive: anthropicInfo.isOverrideActive,
-          maskedApiKey: anthropicInfo.maskedPreview,
-        },
-      });
+      return NextResponse.json(
+        { error: 'API keys are managed via server environment only. Set or remove this value in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+        { status: 410 },
+      );
     }
 
     // 1. Action: Test AI Message Generation
@@ -128,65 +101,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Action: Save AI Settings
-    if (provider) {
-      SecretManager.setSecret('AI_PROVIDER', provider.toLowerCase().trim(), null, 'Active AI Provider');
-    }
-
-    if (openaiKey && openaiKey.trim().length > 0) {
-      const cleanOpenAI = openaiKey.trim();
-      if (cleanOpenAI.length < 8) {
-        return NextResponse.json(
-          { error: 'Invalid OpenAI API Key format: Key length is too short.' },
-          { status: 400 }
-        );
-      }
-      SecretManager.setSecret('OPENAI_API_KEY', cleanOpenAI, null, 'Global OpenAI API Key');
-    }
-
-    if (anthropicKey && anthropicKey.trim().length > 0) {
-      const cleanAnthropic = anthropicKey.trim();
-      if (cleanAnthropic.length < 8) {
-        return NextResponse.json(
-          { error: 'Invalid Anthropic API Key format: Key length is too short.' },
-          { status: 400 }
-        );
-      }
-      SecretManager.setSecret('ANTHROPIC_API_KEY', cleanAnthropic, null, 'Global Anthropic API Key');
-    }
-
-    AIService.resetCache();
-
-    const openaiInfo = SecretManager.getSecretInfo('OPENAI_API_KEY');
-    const anthropicInfo = SecretManager.getSecretInfo('ANTHROPIC_API_KEY');
-
-    AuditLogService.log({
-      userId: session.userId,
-      userEmail: session.email,
-      action: 'ai_providers_updated',
-      resourceType: 'integration_ai',
-      metadata: { activeProvider: provider || activeProvider, model },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'AI Provider configuration saved and encrypted successfully.',
-      currentProvider: provider || activeProvider,
-      openai: {
-        configured: openaiInfo.configured,
-        statusText: openaiInfo.sourceText,
-        source: openaiInfo.source,
-        isOverrideActive: openaiInfo.isOverrideActive,
-        maskedApiKey: openaiInfo.maskedPreview,
-      },
-      anthropic: {
-        configured: anthropicInfo.configured,
-        statusText: anthropicInfo.sourceText,
-        source: anthropicInfo.source,
-        isOverrideActive: anthropicInfo.isOverrideActive,
-        maskedApiKey: anthropicInfo.maskedPreview,
-      },
-    });
+    // 2. Action: Save AI Settings — DISABLED under environment-only mode
+    // (2026-11-02): provider and keys come only from server environment
+    // (AI_PROVIDER, OPENAI_API_KEY, ANTHROPIC_API_KEY). Dashboard writes
+    // used to land in per-instance memory and vanish on recycle.
+    return NextResponse.json(
+      { error: 'API keys are managed via server environment only. Set AI_PROVIDER, OPENAI_API_KEY and ANTHROPIC_API_KEY in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+      { status: 410 },
+    );
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || 'Failed to update AI provider settings.' },

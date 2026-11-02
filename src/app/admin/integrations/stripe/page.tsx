@@ -18,14 +18,11 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
 export default function StripeIntegrationPage() {
-  const [apiKey, setApiKey] = useState('');
   const [masked, setMasked] = useState('NOT_CONFIGURED');
   const [source, setSource] = useState<'env' | 'global' | 'user' | 'none'>('none');
   const [sourceText, setSourceText] = useState('Managed via Server Environment');
   const [isOverrideActive, setIsOverrideActive] = useState(false);
-  const [webhookSecret, setWebhookSecret] = useState('');
   const [webhookConfigured, setWebhookConfigured] = useState(false);
-  const [priceIds, setPriceIds] = useState<Record<number, string>>({ 5000: '', 10000: '', 100000: '', 300000: '' });
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -46,14 +43,14 @@ export default function StripeIntegrationPage() {
     fetchConfig();
   }, []);
 
-  const run = async (action: 'save' | 'test' | 'save_settings' | 'clear_override') => {
+  const run = async (action: 'test') => {
     setBusy(true);
     setStatus(null);
     try {
       const res = await fetch('/api/admin/integrations/stripe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, apiKey, webhookSecret, priceIds }),
+        body: JSON.stringify({ action }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Request failed.');
@@ -62,16 +59,6 @@ export default function StripeIntegrationPage() {
       if (data.source) setSource(data.source);
       if (data.sourceText) setSourceText(data.sourceText);
       setIsOverrideActive(Boolean(data.isOverrideActive));
-
-      if (action === 'save') {
-        setApiKey('');
-      }
-
-      if (action === 'save_settings') {
-        setWebhookSecret('');
-        setPriceIds({ 5000: '', 10000: '', 100000: '', 300000: '' });
-        setWebhookConfigured(true);
-      }
 
       setStatus({ type: 'success', message: data.message });
     } catch (error) {
@@ -140,18 +127,9 @@ export default function StripeIntegrationPage() {
             <p className="text-amber-300 leading-relaxed pl-6">
               This overrides the server environment key with a custom database-vault key (Preview: <code className="font-mono bg-amber-900 px-1 rounded font-bold">{masked}</code>).
             </p>
-            <div className="pl-6 pt-1">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={busy}
-                onClick={() => run('clear_override')}
-                className="text-xs font-bold border-amber-800 text-amber-200 hover:bg-amber-900"
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5 text-amber-300" />
-                Clear Custom Override (Revert to Server Environment)
-              </Button>
-            </div>
+            <p className="text-amber-300 leading-relaxed pl-6">
+              Dashboard key editing is disabled under environment-only mode. This temporary override lapses when the instance recycles — the lasting value must be set in server environment.
+            </p>
           </div>
         ) : (
           <div className="p-3.5 rounded-xl border border-blue-900 bg-blue-950/60 text-zinc-300 text-xs flex items-start gap-2.5">
@@ -159,37 +137,21 @@ export default function StripeIntegrationPage() {
             <div className="space-y-1">
               <p className="font-bold text-zinc-100">Stripe is currently using the secure server environment configuration.</p>
               <p className="text-zinc-400 text-[11px] leading-relaxed">
-                An API key does not need to be entered here unless you intentionally want to create a runtime encrypted override. (Preview: <code className="font-mono font-bold text-zinc-200">{masked}</code>)
+                API keys come from server environment only. Dashboard editing is disabled under environment-only mode. (Preview: <code className="font-mono font-bold text-zinc-200">{masked}</code>)
               </p>
             </div>
           </div>
         )}
 
-        {/* Key Form */}
+        {/* Key Status (read-only, from server environment) */}
         <div className="space-y-3 pt-2">
-          <label className="block space-y-1.5 text-xs font-bold text-zinc-300">
-            <span>Custom Encrypted API Key (Optional Override)</span>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk_live_••••••••••••••••••••••••"
-              autoComplete="off"
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 font-mono placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
-            />
-          </label>
-          <p className="text-[11px] text-zinc-400 font-mono">
-            Leave blank to keep server environment configuration active.
+          <p className="text-[11px] text-zinc-400 leading-relaxed">
+            The Stripe secret key is read from server environment only (STRIPE_SECRET_KEY). Dashboard editing is disabled under environment-only mode — update Vercel Environment Variables and redeploy to change it.
           </p>
-
           <div className="flex flex-wrap justify-end gap-3 pt-2">
             <Button variant="outline" size="sm" disabled={busy} onClick={() => run('test')} className="font-bold border-zinc-700 text-zinc-300 hover:bg-zinc-900">
               <TestTube2 className="mr-1.5 h-4 w-4 text-blue-400" />
               Test Connection
-            </Button>
-            <Button variant="primary" size="sm" disabled={busy || !apiKey} onClick={() => run('save')} className="font-bold bg-[#0e6de4] text-white hover:bg-[#0c5bc2]">
-              <Save className="mr-1.5 h-4 w-4" />
-              Save Key Override
             </Button>
           </div>
         </div>
@@ -203,33 +165,9 @@ export default function StripeIntegrationPage() {
             </p>
           </div>
 
-          <label className="block space-y-1.5 text-xs font-bold text-zinc-300">
-            <span>Webhook Signing Secret</span>
-            <input
-              type="password"
-              value={webhookSecret}
-              onChange={(e) => setWebhookSecret(e.target.value)}
-              placeholder="whsec_••••••••••••••••••••••••"
-              autoComplete="off"
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 font-mono placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
-            />
-          </label>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[5000, 10000, 100000, 300000].map((credits) => (
-              <label key={credits} className="block space-y-1.5 text-xs font-bold text-zinc-300">
-                <span>{credits.toLocaleString()} Credits Price ID</span>
-                <input
-                  type="password"
-                  value={priceIds[credits]}
-                  onChange={(e) => setPriceIds((current) => ({ ...current, [credits]: e.target.value }))}
-                  placeholder="price_••••••••••••••••"
-                  autoComplete="off"
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 font-mono placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none"
-                />
-              </label>
-            ))}
-          </div>
+          <p className="text-[11px] text-zinc-400 leading-relaxed">
+            The webhook signing secret is read from server environment only (STRIPE_WEBHOOK_SECRET). Dashboard editing is disabled under environment-only mode. Price IDs are no longer used — checkout builds prices from the server pricing table.
+          </p>
         </div>
 
         {status && (
@@ -244,19 +182,6 @@ export default function StripeIntegrationPage() {
             <span>{status.message}</span>
           </div>
         )}
-
-        <div className="flex justify-end pt-2 border-t border-zinc-800">
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={busy || (!webhookSecret && !Object.values(priceIds).some(Boolean))}
-            onClick={() => run('save_settings')}
-            className="font-bold bg-[#0e6de4] text-white hover:bg-[#0c5bc2]"
-          >
-            <Save className="mr-1.5 h-4 w-4" />
-            Save Checkout Settings
-          </Button>
-        </div>
       </Card>
     </div>
   );

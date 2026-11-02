@@ -84,6 +84,11 @@ export function ContactReplySettings() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
+  // Placeholder follows the selected country, so the example never shows
+  // another country's format (previously it always showed a BD example).
+  const placeholderFor = (dial: string) =>
+    dial === '1' ? '(555) 234-5678 / wa.me/...' : `+${dial}... / wa.me/...`;
+
   const handleSaveContactIdentity = async () => {
     setSaving(true);
     setError(null);
@@ -357,7 +362,7 @@ export function ContactReplySettings() {
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="017... / +880... / wa.me/..."
+                  placeholder={placeholderFor(phoneCountry)}
                   className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
@@ -383,7 +388,7 @@ export function ContactReplySettings() {
                   type="text"
                   value={whatsApp}
                   onChange={(e) => setWhatsApp(e.target.value)}
-                  placeholder="017... / +880... / wa.me/..."
+                  placeholder={placeholderFor(whatsAppCountry)}
                   className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>

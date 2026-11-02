@@ -12,23 +12,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { apiKey } = body;
-
-    if (!apiKey || !apiKey.startsWith('re_')) {
-      return NextResponse.json({ error: 'Invalid Resend API Key. Valid keys start with "re_".' }, { status: 400 });
-    }
-
-    SecretManager.setSecret('RESEND_API_KEY', apiKey.trim());
-    process.env.RESEND_API_KEY = apiKey.trim();
-
-    return NextResponse.json({
-      success: true,
-      message: 'Resend API Key updated and activated for live email delivery.',
-      maskedPreview: SecretManager.maskSecret(apiKey.trim()),
-    });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed to update Resend API Key' }, { status: 500 });
-  }
+  // DISABLED under environment-only mode (2026-11-02): RESEND_API_KEY
+  // comes only from server environment. This endpoint used to write the
+  // key into per-instance memory, where it vanished on recycle.
+  return NextResponse.json(
+    { error: 'API keys are managed via server environment only. Set RESEND_API_KEY in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+    { status: 410 },
+  );
 }

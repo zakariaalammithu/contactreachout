@@ -36,55 +36,24 @@ export async function POST(req: NextRequest) {
     const submittedKey = typeof apiKey === 'string' ? apiKey.trim() : '';
 
     if (action === 'clear_override') {
-      SecretManager.deleteSecret('STRIPE_SECRET_KEY');
-      const info = SecretManager.getSecretInfo('STRIPE_SECRET_KEY');
-      AuditLogService.log({
-        userId: session.userId,
-        userEmail: session.email,
-        action: 'stripe_override_cleared',
-        resourceType: 'integration_stripe',
-        metadata: {},
-      });
-      return NextResponse.json({
-        success: true,
-        message: 'Stripe vault override cleared. System reverted to Server Environment key.',
-        maskedApiKey: info.maskedPreview,
-        source: info.source,
-        sourceText: info.sourceText,
-        isOverrideActive: info.isOverrideActive,
-      });
+      return NextResponse.json(
+        { error: 'API keys are managed via server environment only. Set or remove this value in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+        { status: 410 },
+      );
     }
 
     if (action === 'save') {
-      if (!submittedKey.startsWith('sk_') || submittedKey.length < 20) return NextResponse.json({ error: 'Enter a valid Stripe secret key.' }, { status: 400 });
-      SecretManager.setSecret('STRIPE_SECRET_KEY', submittedKey, null, 'Global Stripe Secret Key');
-      const info = SecretManager.getSecretInfo('STRIPE_SECRET_KEY');
-      AuditLogService.log({ userId: session.userId, userEmail: session.email, action: 'stripe_key_updated', resourceType: 'integration_stripe', metadata: {} });
-      return NextResponse.json({
-        success: true,
-        maskedApiKey: info.maskedPreview,
-        source: info.source,
-        sourceText: info.sourceText,
-        isOverrideActive: info.isOverrideActive,
-        message: 'Stripe key saved in encrypted vault override.',
-      });
+      return NextResponse.json(
+        { error: 'API keys are managed via server environment only. Set STRIPE_SECRET_KEY in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+        { status: 410 },
+      );
     }
 
     if (action === 'save_settings') {
-      if (typeof webhookSecret === 'string' && webhookSecret.trim()) {
-        if (!webhookSecret.trim().startsWith('whsec_')) return NextResponse.json({ error: 'Enter a valid Stripe webhook signing secret.' }, { status: 400 });
-        SecretManager.setSecret('STRIPE_WEBHOOK_SECRET', webhookSecret.trim(), null, 'Stripe webhook signing secret');
-      }
-      for (const credits of [5000, 10000, 100000, 300000]) for (const period of ['MONTHLY', 'YEARLY']) {
-        const submitted = priceIds?.[`${credits}_${period}`] ?? (period === 'MONTHLY' ? priceIds?.[credits] : '');
-        const priceId = typeof submitted === 'string' ? submitted.trim() : '';
-        if (priceId) {
-          if (!priceId.startsWith('price_')) return NextResponse.json({ error: `Invalid Stripe ${period.toLowerCase()} Price ID for ${credits.toLocaleString()} credits.` }, { status: 400 });
-          SecretManager.setSecret(`STRIPE_PRICE_ID_${credits}_${period}`, priceId, null, `Stripe ${period.toLowerCase()} Price ID for ${credits} credits`);
-        }
-      }
-      AuditLogService.log({ userId: session.userId, userEmail: session.email, action: 'stripe_checkout_settings_updated', resourceType: 'integration_stripe', metadata: {} });
-      return NextResponse.json({ success: true, message: 'Stripe checkout settings saved securely.' });
+      return NextResponse.json(
+        { error: 'API keys are managed via server environment only. Set STRIPE_WEBHOOK_SECRET in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+        { status: 410 },
+      );
     }
 
     if (action === 'test') {

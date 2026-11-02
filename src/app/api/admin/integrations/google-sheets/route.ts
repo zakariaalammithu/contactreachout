@@ -59,99 +59,21 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { clientId, clientSecret, redirectUri, enabled, action } = body;
 
-    // 0. Action: Clear Override
+    // 0. Action: Clear Override — DISABLED under environment-only mode
+    // (2026-11-02): dashboard key editing is removed; OAuth values
+    // come only from server environment.
     if (action === 'clear_override') {
-      SecretManager.deleteSecret('GOOGLE_CLIENT_ID');
-      SecretManager.deleteSecret('GOOGLE_CLIENT_SECRET');
-      SecretManager.deleteSecret('GOOGLE_REDIRECT_URI');
-      const clientIdInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_ID');
-      const secretInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_SECRET');
-      AuditLogService.log({
-        userId: session.userId,
-        userEmail: session.email,
-        action: 'google_oauth_override_cleared',
-        resourceType: 'integration_google_sheets',
-        metadata: {},
-      });
-      return NextResponse.json({
-        success: true,
-        message: 'Google OAuth vault overrides cleared. Reverted to Server Environment settings.',
-        statusText: clientIdInfo.sourceText,
-        source: clientIdInfo.source,
-        isOverrideActive: clientIdInfo.isOverrideActive || secretInfo.isOverrideActive,
-        maskedClientId: clientIdInfo.maskedPreview,
-        maskedClientSecret: secretInfo.maskedPreview,
-      });
+      return NextResponse.json(
+        { error: 'API keys are managed via server environment only. Set or remove GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_REDIRECT_URI in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+        { status: 410 },
+      );
     }
 
-    // Server-side validation: Client ID format check
-    if (clientId && clientId.trim().length > 0) {
-      const cleanClientId = clientId.trim();
-      if (cleanClientId.includes('@')) {
-        return NextResponse.json(
-          {
-            error:
-              'Invalid Google OAuth Client ID: Email addresses (e.g., user@gmail.com) cannot be used as Client IDs. Client ID typically ends with "*.apps.googleusercontent.com".',
-          },
-          { status: 400 }
-        );
-      }
-      if (cleanClientId.length < 8) {
-        return NextResponse.json(
-          { error: 'Invalid Google OAuth Client ID: Format is too short.' },
-          { status: 400 }
-        );
-      }
-      SecretManager.setSecret('GOOGLE_CLIENT_ID', cleanClientId, null, 'Google OAuth Client ID');
-    }
-
-    // Preserve existing secret if new secret input is blank
-    if (clientSecret && clientSecret.trim().length > 0) {
-      const cleanSecret = clientSecret.trim();
-      if (cleanSecret.length < 5) {
-        return NextResponse.json(
-          { error: 'Invalid Google OAuth Client Secret: Secret format is too short.' },
-          { status: 400 }
-        );
-      }
-      SecretManager.setSecret('GOOGLE_CLIENT_SECRET', cleanSecret, null, 'Google OAuth Client Secret');
-    }
-
-    // Validate Redirect URI if provided
-    if (redirectUri && redirectUri.trim().length > 0) {
-      const cleanUri = redirectUri.trim();
-      try {
-        new URL(cleanUri);
-        SecretManager.setSecret('GOOGLE_REDIRECT_URI', cleanUri, null, 'Google OAuth Redirect URI');
-      } catch {
-        return NextResponse.json(
-          { error: 'Invalid Authorized Redirect URI: Must be a valid HTTP or HTTPS URL.' },
-          { status: 400 }
-        );
-      }
-    }
-
-    const clientIdInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_ID');
-    const secretInfo = SecretManager.getSecretInfo('GOOGLE_CLIENT_SECRET');
-
-    AuditLogService.log({
-      userId: session.userId,
-      userEmail: session.email,
-      action: 'google_sheets_oauth_updated',
-      resourceType: 'integration_google_sheets',
-      metadata: { enabled: Boolean(enabled), redirectUri },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Google Sheets OAuth configuration saved securely.',
-      isConfigured: clientIdInfo.configured && secretInfo.configured,
-      statusText: clientIdInfo.sourceText,
-      source: clientIdInfo.source,
-      isOverrideActive: clientIdInfo.isOverrideActive || secretInfo.isOverrideActive,
-      maskedClientId: clientIdInfo.maskedPreview,
-      maskedClientSecret: secretInfo.maskedPreview,
-    });
+    // Save — DISABLED under environment-only mode (2026-11-02).
+    return NextResponse.json(
+      { error: 'API keys are managed via server environment only. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_REDIRECT_URI in Vercel Environment Variables and redeploy; dashboard key editing is disabled.' },
+      { status: 410 },
+    );
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || 'Failed to update Google Sheets settings.' },

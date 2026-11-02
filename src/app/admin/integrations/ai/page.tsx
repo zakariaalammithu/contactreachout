@@ -27,8 +27,6 @@ import { Card } from '@/components/ui/Card';
 
 export default function AIProvidersSettingsPage() {
   const [activeProvider, setActiveProvider] = useState('none');
-  const [openaiKey, setOpenaiKey] = useState('');
-  const [anthropicKey, setAnthropicKey] = useState('');
 
   const [openaiConfigured, setOpenaiConfigured] = useState(false);
   const [openaiStatusText, setOpenaiStatusText] = useState('Not Configured');
@@ -43,11 +41,8 @@ export default function AIProvidersSettingsPage() {
   const [anthropicMasked, setAnthropicMasked] = useState('NOT_CONFIGURED');
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
 
-  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<any | null>(null);
 
   const fetchConfig = async () => {
@@ -83,86 +78,7 @@ export default function AIProvidersSettingsPage() {
     fetchConfig();
   }, []);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setSaveSuccess(null);
-    setSaveError(null);
-
-    try {
-      const res = await fetch('/api/admin/integrations/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider: activeProvider,
-          openaiKey: openaiKey || undefined,
-          anthropicKey: anthropicKey || undefined,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to save AI provider settings.');
-      }
-
-      if (data.currentProvider) setActiveProvider(data.currentProvider);
-      if (data.openai) {
-        setOpenaiConfigured(Boolean(data.openai.configured));
-        setOpenaiStatusText(data.openai.statusText || 'Not Configured');
-        setOpenaiSource(data.openai.source || 'none');
-        setOpenaiIsOverride(Boolean(data.openai.isOverrideActive));
-        setOpenaiMasked(data.openai.maskedApiKey || 'NOT_CONFIGURED');
-      }
-      if (data.anthropic) {
-        setAnthropicConfigured(Boolean(data.anthropic.configured));
-        setAnthropicStatusText(data.anthropic.statusText || 'Not Configured');
-        setAnthropicSource(data.anthropic.source || 'none');
-        setAnthropicIsOverride(Boolean(data.anthropic.isOverrideActive));
-        setAnthropicMasked(data.anthropic.maskedApiKey || 'NOT_CONFIGURED');
-      }
-
-      setOpenaiKey('');
-      setAnthropicKey('');
-      setSaveSuccess(data.message || 'AI Provider settings saved successfully.');
-      setTimeout(() => setSaveSuccess(null), 4000);
-    } catch (err: any) {
-      setSaveError(err.message || 'Failed to save settings.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleClearOverride = async (keyName: string) => {
-    try {
-      const res = await fetch('/api/admin/integrations/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'clear_override', clearKey: keyName }),
-      });
-      const data = await res.json();
-      if (data.openai) {
-        setOpenaiConfigured(Boolean(data.openai.configured));
-        setOpenaiStatusText(data.openai.statusText);
-        setOpenaiSource(data.openai.source);
-        setOpenaiIsOverride(Boolean(data.openai.isOverrideActive));
-        setOpenaiMasked(data.openai.maskedApiKey);
-      }
-      if (data.anthropic) {
-        setAnthropicConfigured(Boolean(data.anthropic.configured));
-        setAnthropicStatusText(data.anthropic.statusText);
-        setAnthropicSource(data.anthropic.source);
-        setAnthropicIsOverride(Boolean(data.anthropic.isOverrideActive));
-        setAnthropicMasked(data.anthropic.maskedApiKey);
-      }
-      setSaveSuccess(`Vault override for ${keyName} cleared.`);
-      setTimeout(() => setSaveSuccess(null), 4000);
-    } catch (err: any) {
-      setSaveError(err.message || 'Failed to clear override.');
-    }
-  };
-
-  const handleTestAI = async () => {
+    const handleTestAI = async () => {
     setIsTesting(true);
     setTestResult(null);
 
@@ -212,22 +128,6 @@ export default function AIProvidersSettingsPage() {
         </div>
       </div>
 
-      {/* Save Success Alert */}
-      {saveSuccess && (
-        <div className="p-3.5 rounded-xl border border-emerald-900 bg-emerald-950 text-xs font-bold text-emerald-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-          <span>{saveSuccess}</span>
-        </div>
-      )}
-
-      {/* Save Error Alert */}
-      {saveError && (
-        <div className="p-3.5 rounded-xl border border-red-900 bg-red-950 text-xs font-bold text-red-300 flex items-center gap-2 shadow-xs animate-in fade-in duration-200">
-          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-          <span>{saveError}</span>
-        </div>
-      )}
-
       {/* Main Settings Card */}
       <Card className="p-6 space-y-6 border-zinc-800 bg-zinc-950 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
@@ -241,39 +141,11 @@ export default function AIProvidersSettingsPage() {
           </span>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-5">
-          {/* Provider Selection Cards */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {[
-              { id: 'none', title: 'None (Deterministic)', desc: 'Spintax & standard templates without AI API calls.' },
-              { id: 'openai', title: 'OpenAI', desc: 'GPT-4o Mini & GPT-4o high-speed generation.' },
-              { id: 'anthropic', title: 'Anthropic Claude', desc: 'Claude 3.5 Sonnet nuanced synthesis.' },
-            ].map((p) => (
-              <label
-                key={p.id}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                  activeProvider === p.id
-                    ? 'border-[#0e6de4] bg-blue-950/40 shadow-xs'
-                    : 'border-zinc-800 bg-zinc-950 hover:bg-zinc-900'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="aiProvider"
-                  value={p.id}
-                  checked={activeProvider === p.id}
-                  onChange={(e) => setActiveProvider(e.target.value)}
-                  className="sr-only"
-                />
-                <div className="flex items-center justify-between">
-                  <p className={`font-bold text-xs ${activeProvider === p.id ? 'text-blue-400' : 'text-zinc-100'}`}>
-                    {p.title}
-                  </p>
-                  {activeProvider === p.id && <CheckCircle2 className="h-4 w-4 text-blue-400" />}
-                </div>
-                <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">{p.desc}</p>
-              </label>
-            ))}
+        <div className="space-y-5">
+          {/* Provider (read-only, from server environment) */}
+          <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 text-xs text-zinc-300 leading-relaxed">
+            <p className="font-bold text-zinc-100">Active provider is read from server environment (AI_PROVIDER).</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Dashboard key editing is disabled under environment-only mode: set AI_PROVIDER, OPENAI_API_KEY and ANTHROPIC_API_KEY in Vercel Environment Variables and redeploy to change the provider or keys.</p>
           </div>
 
           {/* OpenAI Configuration Box */}
@@ -304,29 +176,7 @@ export default function AIProvidersSettingsPage() {
               </div>
             </div>
 
-            {openaiIsOverride && (
-              <div className="flex items-center justify-between bg-amber-950 p-2.5 rounded-lg border border-amber-900 text-xs text-amber-200">
-                <span>An encrypted vault override is currently overriding the server environment key.</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleClearOverride('OPENAI_API_KEY')}
-                  className="h-7 text-[11px] font-bold border-amber-800 text-amber-200 hover:bg-amber-900"
-                >
-                  <Trash2 className="h-3 w-3 mr-1 text-amber-300" />
-                  Clear Override
-                </Button>
-              </div>
-            )}
-
-            <input
-              type="password"
-              placeholder="sk-proj-•••••••••••••••••••••••• (Leave blank to keep server environment key)"
-              value={openaiKey}
-              onChange={(e) => setOpenaiKey(e.target.value)}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
-            />
+            <p className="text-[11px] text-zinc-400">Key entry is disabled — this key comes from server environment only.</p>
           </div>
 
           {/* Anthropic Configuration Box */}
@@ -357,29 +207,7 @@ export default function AIProvidersSettingsPage() {
               </div>
             </div>
 
-            {anthropicIsOverride && (
-              <div className="flex items-center justify-between bg-amber-950 p-2.5 rounded-lg border border-amber-900 text-xs text-amber-200">
-                <span>An encrypted vault override is currently overriding the server environment key.</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleClearOverride('ANTHROPIC_API_KEY')}
-                  className="h-7 text-[11px] font-bold border-amber-800 text-amber-200 hover:bg-amber-900"
-                >
-                  <Trash2 className="h-3 w-3 mr-1 text-amber-300" />
-                  Clear Override
-                </Button>
-              </div>
-            )}
-
-            <input
-              type="password"
-              placeholder="sk-ant-•••••••••••••••••••••••• (Leave blank to keep server environment key)"
-              value={anthropicKey}
-              onChange={(e) => setAnthropicKey(e.target.value)}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs text-zinc-100 placeholder-slate-400 focus:border-[#0e6de4] focus:ring-2 focus:ring-[#0e6de4]/20 focus:outline-none font-mono"
-            />
+            <p className="text-[11px] text-zinc-400">Key entry is disabled — this key comes from server environment only.</p>
           </div>
 
           {/* Paid User BYOK Architecture Note */}
@@ -393,28 +221,7 @@ export default function AIProvidersSettingsPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end pt-3 border-t border-zinc-800">
-            <Button
-              variant="primary"
-              size="md"
-              type="submit"
-              disabled={isSaving}
-              className="font-bold bg-[#0e6de4] hover:bg-[#0c5bc2] text-white disabled:opacity-50"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-1.5" />
-                  Save AI Settings
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+        </div>
       </Card>
 
       {/* AI Test Connection Card */}
