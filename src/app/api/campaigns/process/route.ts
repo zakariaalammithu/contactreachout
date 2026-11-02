@@ -142,6 +142,32 @@ export async function POST(req: NextRequest) {
           }
         : undefined;
 
+    // 2b. Start-time durable lead registration (BEFORE the pipeline).
+    // The worker's dynamic allow-list verifies targets against Supabase
+    // app_campaign_leads/app_leads — but editor-uploaded leads live only
+    // in the browser until now, so every new domain failed verification
+    // with 400 (or WORKER_UNAVAILABLE at the detect stage) on its FIRST
+    // run. Registering here, awaited before any worker call, makes the
+    // first run pass verification. This also preserves the reply-link
+    // guarantee (a live-processed prospect must be registered or its
+    // reply can never match). Best-effort and never throwing: if
+    // Supabase is unavailable the pipeline still runs and fails honestly.
+    // Dry runs register too: dry-run detection still calls the worker,
+    // so previews need the same authorization, and an unsent lead can
+    // never attract a reply (the link is idempotent, so a later live
+    // run to the same domain reuses it).
+    try {
+      const persistenceContext = await resolvePersistenceContext(req);
+      await ensureCampaignReplyLink(persistenceContext, {
+        clientCampaignId: campaignId,
+        campaignName: typeof campaignName === 'string' ? campaignName : undefined,
+        lead,
+      });
+    } catch {
+      // Outreach result stands on its own; the worker may still refuse
+      // the target, and that failure surfaces honestly downstream.
+    }
+
     // 3. Execute Real Lead Outreach Pipeline
     const startTime = Date.now();
     const result = await OutreachPipelineOrchestrator.processLead({
@@ -155,22 +181,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Best-effort durable reply link (never throws, never delays the result):
-    // the inbox filter matches replies against Supabase campaign leads, so a
-    // live-processed prospect must be registered there or its reply can never
-    // match. Dry runs register nothing (nothing was sent).
-    if (!isDryRun) {
-      try {
-        const persistenceContext = await resolvePersistenceContext(req);
-        await ensureCampaignReplyLink(persistenceContext, {
-          clientCampaignId: campaignId,
-          campaignName: typeof campaignName === 'string' ? campaignName : undefined,
-          lead,
-        });
-      } catch {
-        // Outreach result stands on its own; a later run can register.
-      }
-    }
+    // (No post-pipeline registration anymore: the start-time block above
+    // already registered this lead before any worker call.)
 
     const completedAt = result.completedAt || new Date().toISOString();
     const totalDurationMs = result.totalDurationMs || (Date.now() - startTime);
@@ -217,12 +229,15 @@ export async function POST(req: NextRequest) {
       campaignStatus = 'DRY_RUN_COMPLETED';
       diagnosticMessage = result.submission?.confirmationMessage || '[DRY RUN] Submission safely simulated';
     } else if (result.finalStatus === 'WORKER_UNAVAILABLE') {
-      // Terminal infrastructure outage, NOT a missing form: the worker
-      // was configured but unreachable for every candidate page. Kept
-      // out of NO-FORM so the report never blames the prospect's site,
-      // and terminal so the client runner does not retry it forever.
+      // Terminal, NOT a missing form: the worker was configured but
+      // could not check any candidate page. That includes genuine
+      // outages AND allow-list refusals at the detect stage (any failed
+      // worker detect counts as unavailable), so the text must not
+      // claim an outage definitively. Kept out of NO-FORM so the report
+      // never blames the prospect's site, and terminal so the client
+      // runner does not retry it forever.
       campaignStatus = 'WORKER_UNAVAILABLE';
-      diagnosticMessage = 'WORKER_UNAVAILABLE: The configured browser worker was unreachable for every candidate page, so no form could be checked. This is an infrastructure outage, not a missing form on the target site.';
+      diagnosticMessage = 'WORKER_UNAVAILABLE: The configured browser worker could not check any candidate page — it was unreachable, or it refused the target (allow-list). This is not a missing form on the target site.';
     } else if (isNavigationFailure) {
       // A browser/DNS navigation failure happens before a contact page or form can
       // be inspected. It must never be reported as a form or submission failure.

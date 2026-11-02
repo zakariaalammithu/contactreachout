@@ -13,7 +13,8 @@ export type CampaignReplyLeadInput = {
 };
 
 /**
- * Best-effort durable reply link (2026-11-01 fix for "replies never arrive").
+ * Best-effort durable campaign-lead registration (2026-11-01 fix for "replies never arrive";
+ * 2026-11-02 moved to start-time for worker authorization).
  *
  * Root cause, proven by counts: the inbox filter matches replies against
  * Supabase campaign leads (app_campaign_leads), but campaigns run from the
@@ -24,10 +25,17 @@ export type CampaignReplyLeadInput = {
  * repositories' legacy-import reconciliation), is what lets a later reply
  * from that prospect's domain match at all.
  *
+ * Second purpose (2026-11-02): the worker's dynamic allow-list verifies
+ * targets against these same rows, so the registration MUST happen before
+ * any worker call — the process route calls this before the pipeline, for
+ * live and dry runs alike (dry-run detection still calls the worker, and
+ * an unsent lead can never attract a reply, so registering it is harmless).
+ * A caller that registers only after the pipeline reintroduces the
+ * first-run 400 failure for every new domain; do not move this back.
+ *
  * Never throws into the outreach path: a durable-identity or Supabase
- * failure simply means this lead's replies keep being filtered until a
- * later run registers it. Dry runs never register (nothing was sent, so no
- * reply can come) — the caller gates on that.
+ * failure simply means this lead's replies keep being filtered (and the
+ * worker may still refuse the target) until a later run registers it.
  */
 export async function ensureCampaignReplyLink(
   context: PersistenceContext,
