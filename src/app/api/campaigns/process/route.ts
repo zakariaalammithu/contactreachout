@@ -8,6 +8,7 @@ import { validateSendingSchedule } from '@/lib/services/processing-controls-serv
 import { AuthStore } from '@/lib/auth/auth-store';
 import { resolvePersistenceContext } from '@/lib/persistence/identity';
 import { ensureCampaignReplyLink } from '@/lib/services/campaign-reply-link';
+import { getSendingAccess } from '@/lib/services/subscription-service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -75,6 +76,21 @@ export async function POST(req: NextRequest) {
 
     // 2. Server-Side Credit Pre-Check for Live Mode Submissions
     if (!isDryRun) {
+      // Subscription-expiry gate (owner decision 2026-11-02): a user whose
+      // paid subscription expired with no active subscription left cannot
+      // send live. Free users (no row) and one-time buyers (no row) pass.
+      // Dry runs are previews — no delivery, no credits — so they pass.
+      const access = await getSendingAccess(userId);
+      if (access.blocked) {
+        return NextResponse.json(
+          {
+            error: access.reason,
+            blocked: true,
+            status: 'BLOCKED_SUBSCRIPTION_EXPIRED',
+          },
+          { status: 402 },
+        );
+      }
       const wallet = await CreditWalletService.getWalletForServer(userId);
       if (wallet.totalCreditsAvailable < 1) {
         return NextResponse.json(

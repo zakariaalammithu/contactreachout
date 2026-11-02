@@ -3,6 +3,11 @@ import { StripeService } from '@/lib/services/stripe-service';
 import { PaymentStore } from '@/lib/services/payment-store';
 import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 import {
+  upsertSubscriptionFromStripe,
+  recordRenewal,
+  syncSubscriptionStatus,
+} from '@/lib/services/subscription-service';
+import {
   normalizePurchaseType,
   isRenewalGrantable,
   computeRefundCredits,
@@ -82,6 +87,25 @@ export async function POST(request: NextRequest) {
           purchaseType,
         });
       }
+      // Subscription row sync (subscription checkouts only): the Stripe
+      // subscription object is the period/expiry source of truth. A fetch
+      // failure here throws → 5xx → Stripe retries (crediting above is
+      // idempotent, so the retry is safe). A missing table only logs —
+      // the row is backfilled later, never a retry loop.
+      if (purchaseType === 'subscription' && typeof checkout.subscription === 'string' && checkout.subscription) {
+        const subscription = await StripeService.request(
+          `subscriptions/${encodeURIComponent(checkout.subscription)}`,
+        );
+        await upsertSubscriptionFromStripe({
+          stripeSubscription: subscription,
+          userEmail: String(checkout.metadata?.user_email || checkout.customer_details?.email || ''),
+          planName: purchase.planName,
+          creditsPerPeriod: purchase.credits,
+          amountCents: purchase.amountCents,
+          period: purchase.period,
+          purchaseDate: new Date().toISOString(),
+        });
+      }
     } else if (type === 'invoice.payment_succeeded') {
       const invoice = obj;
       if (isRenewalGrantable(invoice)) {
@@ -108,20 +132,33 @@ export async function POST(request: NextRequest) {
             stripeCustomerId: typeof invoice.customer === 'string' ? invoice.customer : undefined,
             purchaseType: 'subscription',
           });
+          // Renewal also moves the subscription's period end forward.
+          await recordRenewal({
+            stripeSubscriptionId: String(invoice.subscription),
+            periodEndIso:
+              typeof subscription.current_period_end === 'number'
+                ? new Date(subscription.current_period_end * 1000).toISOString()
+                : null,
+          });
         }
       }
       // subscription_create invoices are the already-credited first payment;
       // update/manual invoices are prorations, not new grants. Both are
       // acknowledged without credit movement.
+    } else if (type === 'customer.subscription.updated' || type === 'customer.subscription.deleted') {
+      // The event object IS the subscription — no extra fetch needed.
+      // Deleted maps to cancelled via the normalizer; no credit movement.
+      await syncSubscriptionStatus(obj);
+      if (type === 'customer.subscription.deleted') {
+        console.warn('[billing-webhook] subscription cancelled (no credits moved; future renewals stop automatically).', {
+          subscription: obj?.id,
+          customer: obj?.customer,
+        });
+      }
     } else if (type === 'invoice.payment_failed') {
       console.warn('[billing-webhook] subscription invoice payment failed (no credits moved).', {
         invoiceId: obj?.id,
         subscription: obj?.subscription,
-      });
-    } else if (type === 'customer.subscription.deleted') {
-      console.warn('[billing-webhook] subscription cancelled (no credits moved; future renewals stop automatically).', {
-        subscription: obj?.id,
-        customer: obj?.customer,
       });
     } else if (type === 'charge.refunded') {
       const charge = obj;
