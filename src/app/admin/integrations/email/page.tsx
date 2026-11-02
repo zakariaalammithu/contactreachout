@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { recordIntegrationTest } from '@/lib/integration-test-record';
 
 export default function ResendEmailSettingsPage() {
   const [maskedApiKey, setMaskedApiKey] = useState('NOT_CONFIGURED');
@@ -84,12 +85,15 @@ export default function ResendEmailSettingsPage() {
       });
 
       const data = await res.json();
-      setTestIsSuccess(res.ok && data.connected === true && data.success === true);
+      const ok = res.ok && data.connected === true && data.success === true;
+      setTestIsSuccess(ok);
+      recordIntegrationTest('resend', ok);
       setTestStatusMessage(
         data.message || (data.connected ? 'Resend API connection test successful!' : 'Connection test failed.')
       );
     } catch (err: any) {
       setTestIsSuccess(false);
+      recordIntegrationTest('resend', false);
       setTestStatusMessage(`Connection error: ${err.message || 'Unable to connect to Resend.'}`);
     } finally {
       setIsTestingConnection(false);

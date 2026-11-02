@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AdminAuthGuard } from '@/lib/auth/admin-auth-guard';
 import { SecretManager } from '@/lib/security/secret-manager';
+import { getLastVerified } from '@/lib/services/integration-verification-service';
 
 export async function GET(req: NextRequest) {
   const { session, errorResponse } = await AdminAuthGuard.requireAdmin(req);
@@ -51,10 +52,16 @@ export async function GET(req: NextRequest) {
     );
     const queueStatus = hasQueue ? 'CONNECTED' : 'NOT_CONFIGURED';
 
+    const lastVerified = await getLastVerified();
     return NextResponse.json({
       success: true,
       hasRuntimeOnlySecrets,
       vaultActive: true,
+      // Last-verified times from dashboard test runs (null = never
+      // tested). Durable only when the admin_settings table exists;
+      // otherwise these are per-instance memory values.
+      lastVerified: lastVerified.records,
+      lastVerifiedDurable: lastVerified.durable,
       integrations: {
         stripe: {
           name: 'Stripe Payments',

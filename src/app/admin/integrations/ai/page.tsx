@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { recordIntegrationTest } from '@/lib/integration-test-record';
 
 export default function AIProvidersSettingsPage() {
   const [activeProvider, setActiveProvider] = useState('none');
@@ -96,10 +97,12 @@ export default function AIProvidersSettingsPage() {
       }
 
       setTestResult(data);
+      recordIntegrationTest('ai', true);
     } catch (err: any) {
       setTestResult({
         error: err.message || 'Failed to run test generation.',
       });
+      recordIntegrationTest('ai', false);
     } finally {
       setIsTesting(false);
     }

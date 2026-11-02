@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { recordIntegrationTest } from '@/lib/integration-test-record';
 
 export default function StripeIntegrationPage() {
   const [masked, setMasked] = useState('NOT_CONFIGURED');
@@ -61,8 +62,10 @@ export default function StripeIntegrationPage() {
       setIsOverrideActive(Boolean(data.isOverrideActive));
 
       setStatus({ type: 'success', message: data.message });
+      recordIntegrationTest('stripe', true);
     } catch (error) {
       setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Request failed.' });
+      recordIntegrationTest('stripe', false);
     } finally {
       setBusy(false);
     }

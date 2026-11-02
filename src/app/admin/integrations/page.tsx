@@ -23,6 +23,8 @@ import { Card } from '@/components/ui/Card';
 
 export default function AdminIntegrationsPage() {
   const [integrations, setIntegrations] = useState<any>(null);
+  const [lastVerified, setLastVerified] = useState<Record<string, { at: string; ok: boolean } | null> | null>(null);
+  const [lastVerifiedDurable, setLastVerifiedDurable] = useState(true);
   const [hasRuntimeOnlySecrets, setHasRuntimeOnlySecrets] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -33,6 +35,8 @@ export default function AdminIntegrationsPage() {
       if (res.ok) {
         const data = await res.json();
         setIntegrations(data.integrations);
+        if (data.lastVerified !== undefined) setLastVerified(data.lastVerified);
+        if (data.lastVerifiedDurable !== undefined) setLastVerifiedDurable(data.lastVerifiedDurable);
         if (data.hasRuntimeOnlySecrets !== undefined) {
           setHasRuntimeOnlySecrets(data.hasRuntimeOnlySecrets);
         }
@@ -63,6 +67,7 @@ export default function AdminIntegrationsPage() {
       href: '/admin/integrations/stripe',
       status: isLoading ? 'CHECKING' : integrations?.stripe?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.stripe?.maskedKey || 'NOT_CONFIGURED',
+      verifyKey: 'stripe',
     },
     {
       id: 'email',
@@ -72,6 +77,7 @@ export default function AdminIntegrationsPage() {
       href: '/admin/integrations/email',
       status: isLoading ? 'CHECKING' : integrations?.resend?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.resend?.maskedKey || 'NOT_CONFIGURED',
+      verifyKey: 'resend',
     },
     {
       id: 'googleSheets',
@@ -81,6 +87,7 @@ export default function AdminIntegrationsPage() {
       href: '/admin/integrations/google-sheets',
       status: isLoading ? 'CHECKING' : integrations?.googleSheets?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.googleSheets?.maskedKey || 'NOT_CONFIGURED',
+      verifyKey: null,
     },
     {
       id: 'ai',
@@ -90,6 +97,7 @@ export default function AdminIntegrationsPage() {
       href: '/admin/integrations/ai',
       status: isLoading ? 'CHECKING' : integrations?.ai?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.ai?.maskedKey || 'NOT_CONFIGURED',
+      verifyKey: 'ai',
     },
     {
       id: 'supabase',
@@ -99,6 +107,7 @@ export default function AdminIntegrationsPage() {
       href: '/admin/system/health',
       status: isLoading ? 'CHECKING' : integrations?.supabase?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.supabase?.maskedKey || 'NOT_CONFIGURED',
+      verifyKey: null,
     },
     {
       id: 'redis',
@@ -108,6 +117,7 @@ export default function AdminIntegrationsPage() {
       href: '/admin/system/queue',
       status: isLoading ? 'CHECKING' : integrations?.redis?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.redis?.maskedKey || 'NOT_CONFIGURED',
+      verifyKey: null,
     },
   ];
 
@@ -165,6 +175,16 @@ export default function AdminIntegrationsPage() {
         </div>
       )}
 
+      {/* Test-time durability note */}
+      {!isLoading && !lastVerifiedDurable && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-900 bg-amber-950 p-3.5 text-xs text-amber-200 leading-relaxed shadow-xs">
+          <TriangleAlert className="mt-0.5 h-4 w-4 text-amber-400 shrink-0" />
+          <p>
+            <strong className="font-bold">Test times are not durable yet:</strong> the admin_settings table is missing (migration 20261102000005 not applied), so last-test times below are kept in memory on this instance and reset on redeploy. Apply the migration to keep them permanently.
+          </p>
+        </div>
+      )}
+
       {/* Integration Cards Grid */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => {
@@ -209,6 +229,21 @@ export default function AdminIntegrationsPage() {
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-zinc-400 text-[11px]">Vault Key:</span>
                   <span className="text-zinc-200 font-bold">{card.maskedKey}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-400 text-[11px]">Last test:</span>
+                  <span className="text-zinc-200 font-bold">
+                    {isLoading
+                      ? 'Checking…'
+                      : card.verifyKey === null
+                        ? 'No test available'
+                        : (() => {
+                            const record = lastVerified?.[card.verifyKey];
+                            if (!record) return 'Never tested';
+                            return `${new Date(record.at).toLocaleString()} (${record.ok ? 'Passed' : 'Failed'})`;
+                          })()}
+                  </span>
                 </div>
 
                 <Link href={card.href} className="block">
