@@ -48,6 +48,7 @@ import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 import { SendingProgressCard } from './SendingProgressCard';
 import { sendingDaysToWeekdays } from '@/lib/services/sending-estimate';
 import { resolveSubmissionDelayMs, resolveDailySubmissionLimit, countDeliveredToday, nextDayMidnightISO, isDelayElapsed } from '@/lib/services/campaign-runner-policy';
+import { countDeliveredLast24h } from '@/lib/services/campaign-24h';
 import { classifyFailure } from '@/lib/services/failure-reason';
 import { createUniqueCampaignId, formatStoragePressureMessage, persistCampaignDraft, readCampaignDrafts, removeCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -555,6 +556,15 @@ export default function CampaignsPage() {
       console.error('Error syncing campaigns from storage:', err);
     }
   }, [currentUser]);
+
+  // 24H column clock: re-render once a minute so the rolling 24-hour window
+  // slides without a manual refresh. Display-only; it fetches nothing and
+  // never touches sending, scheduling, or campaign data.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Load custom campaigns from session & localStorage with strict user isolation
   useEffect(() => {
@@ -1574,8 +1584,9 @@ export default function CampaignsPage() {
     const totalCaptcha = filtered.reduce((acc, c) => acc + (c.captchaBlocked || 0), 0);
     const totalPending = filtered.reduce((acc, c) => acc + Math.max(0, c.prospects - (c.reached || 0) - (c.dryRunCompleted || 0) - (c.failed || 0) - (c.noContactPage || 0) - (c.captchaBlocked || 0)), 0);
     const totalReplied = filtered.reduce((acc, c) => acc + (c.replied || 0), 0);
-    return { totalProspects, totalDelivered, totalDryRun, totalFailed, totalNoForm, totalCaptcha, totalPending, totalReplied };
-  }, [filtered]);
+    const total24h = filtered.reduce((acc, c) => acc + countDeliveredLast24h(c.logs, nowTick), 0);
+    return { totalProspects, totalDelivered, totalDryRun, totalFailed, totalNoForm, totalCaptcha, totalPending, totalReplied, total24h };
+  }, [filtered, nowTick]);
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-16 font-sans">
@@ -1787,7 +1798,7 @@ export default function CampaignsPage() {
       <div className="overflow-x-auto rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-1">
         <div className="min-w-[900px] lg:min-w-0 space-y-3">
           {/* Frozen / Sticky Table Header Columns */}
-        <div className="sticky top-0 z-20 grid grid-cols-12 items-center px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono bg-zinc-900/95 backdrop-blur-md border-y border-zinc-800/90 shadow-2xs rounded-xl">
+        <div className="sticky top-0 z-20 grid grid-cols-[repeat(13,minmax(0,1fr))] items-center px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono bg-zinc-900/95 backdrop-blur-md border-y border-zinc-800/90 shadow-2xs rounded-xl">
           <div className="col-span-3 flex items-center gap-3">
             <input
               type="checkbox"
@@ -1824,6 +1835,10 @@ export default function CampaignsPage() {
 
           <div className="col-span-1 text-center font-bold text-indigo-300">
             <span>REPLIED</span>
+          </div>
+
+          <div className="col-span-1 text-center font-bold text-cyan-300">
+            <span>24H</span>
           </div>
 
           <div className="col-span-2 text-center font-bold text-zinc-400">
@@ -1904,11 +1919,12 @@ export default function CampaignsPage() {
             paginatedCampaigns.map((camp) => {
               const pendingCount = Math.max(0, camp.prospects - camp.reached - (camp.dryRunCompleted || 0) - (camp.failed || 0) - (camp.noContactPage || 0) - (camp.captchaBlocked || 0));
               const processedCount = Math.min(camp.prospects, camp.reached + (camp.dryRunCompleted || 0) + (camp.failed || 0) + (camp.noContactPage || 0) + (camp.captchaBlocked || 0));
+              const delivered24h = countDeliveredLast24h(camp.logs, nowTick);
               return (
                 <div
                   key={camp.id}
                   onClick={() => setSelectedReportCamp(camp)}
-                  className={`grid grid-cols-12 items-center px-6 py-3.5 rounded-2xl border transition-all cursor-pointer group shadow-2xs ${
+                  className={`grid grid-cols-[repeat(13,minmax(0,1fr))] items-center px-6 py-3.5 rounded-2xl border transition-all cursor-pointer group shadow-2xs ${
                     selectedIds.includes(camp.id)
                       ? 'border-blue-400 bg-blue-950/30'
                       : 'border-zinc-800/90 bg-zinc-950 hover:border-blue-400 hover:shadow-md'
@@ -2031,7 +2047,14 @@ export default function CampaignsPage() {
                     </span>
                   </div>
 
-                  {/* Col 9: ACTIONS (Toggle Switch + Edit + Analytics + Vertical Three-Dot Action Menu) */}
+                  {/* Col 9: 24H (verified delivered in the last 24 hours) */}
+                  <div className="col-span-1 text-center">
+                    <span className={`text-xs font-semibold font-mono ${delivered24h ? 'text-cyan-400 font-bold' : 'text-zinc-400'}`} title="Verified delivered in the last 24 hours">
+                      {delivered24h}
+                    </span>
+                  </div>
+
+                  {/* Col 10: ACTIONS (Toggle Switch + Edit + Analytics + Vertical Three-Dot Action Menu) */}
                   <div className="col-span-2 flex items-center justify-center gap-1.5 relative" onClick={(e) => e.stopPropagation()}>
                     {/* Active / Paused Toggle Switch */}
                     <button
@@ -2219,7 +2242,7 @@ export default function CampaignsPage() {
         </div>
 
         {/* 3. Bottom Summary Row (Aggregating all 8 Contact Form Outreach Metrics) */}
-        <div className="grid grid-cols-12 items-center px-6 py-4 rounded-2xl border border-zinc-800 bg-zinc-950 text-xs font-bold text-zinc-300 shadow-2xs">
+        <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] items-center px-6 py-4 rounded-2xl border border-zinc-800 bg-zinc-950 text-xs font-bold text-zinc-300 shadow-2xs">
           <div className="col-span-3 text-zinc-400 font-sans">
             Showing {filtered.length} campaigns
           </div>
@@ -2250,6 +2273,10 @@ export default function CampaignsPage() {
 
           <div className="col-span-1 text-center font-mono font-bold text-indigo-400">
             {totals.totalReplied}
+          </div>
+
+          <div className="col-span-1 text-center font-mono font-bold text-cyan-400">
+            {totals.total24h}
           </div>
 
           <div className="col-span-2 text-center text-[10px] text-zinc-400 font-mono">
