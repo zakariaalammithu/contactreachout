@@ -474,7 +474,7 @@ export default function PricingPage() {
                     type="button"
                     className="w-full py-3.5 rounded-xl bg-[#0e6de4] hover:bg-[#0758bd] text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center justify-center text-center uppercase tracking-wider"
                   >
-                    Proceed with {customCredits.toLocaleString()} Credits (${isYearly ? `${(customPriceInfo.price * 12).toLocaleString()}/year` : `${customPriceInfo.price}/month`})
+                    Proceed with {customCredits.toLocaleString()} Credits (${isYearly ? `${(Math.round(customPriceInfo.price * 0.8) * 12).toLocaleString()}/year` : `${customPriceInfo.price}/month`})
                   </button>
                 </Link>
               </div>

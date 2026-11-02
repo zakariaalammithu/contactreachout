@@ -1,61 +1,14 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
-import { Camera, Save, UserCircle, Bot, User } from 'lucide-react';
+import { useState } from 'react';
+import { Bot, User } from 'lucide-react';
 import { AIPersonalizationSettings } from '@/components/profile/AIPersonalizationSettings';
 import { ContactReplySettings } from '@/components/profile/ContactReplySettings';
 import { GmailMailboxSettings } from '@/components/settings/GmailMailboxSettings';
 
 
-type Profile = { name: string; email: string; phone: string; avatarUrl: string; replyEmail?: string; createdAt?: string };
-
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'ai'>('profile');
-  const [profile, setProfile] = useState<Profile>({ name: '', email: '', phone: '', avatarUrl: '' });
-  const [message, setMessage] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/profile', { cache: 'no-store' })
-      .then(async (response) => {
-        const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error);
-        setProfile(payload.user);
-      })
-      .catch((error) => setMessage(error.message || 'Unable to load profile.'));
-  }, []);
-
-  const choosePhoto = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/') || file.size > 1024 * 1024) {
-      setMessage('Choose an image smaller than 1 MB.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setProfile((current) => ({ ...current, avatarUrl: String(reader.result || '') }));
-    reader.readAsDataURL(file);
-  };
-
-  const save = async (event: FormEvent) => {
-    event.preventDefault();
-    setSaving(true);
-    setMessage('');
-    const response = await fetch('/api/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(profile),
-    });
-    const payload = await response.json();
-    setMessage(response.ok ? 'Profile updated successfully.' : payload.error || 'Unable to update profile.');
-    if (response.ok) {
-      localStorage.setItem(
-        'user_sender_profile',
-        JSON.stringify({ ...JSON.parse(localStorage.getItem('user_sender_profile') || '{}'), ...payload.user })
-      );
-    }
-    setSaving(false);
-  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -106,26 +59,3 @@ export default function ProfilePage() {
   );
 }
 
-function ProfileField({
-  label,
-  value,
-  disabled,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  disabled?: boolean;
-  onChange?: (value: string) => void;
-}) {
-  return (
-    <label className="text-sm font-bold text-zinc-300">
-      {label}
-      <input
-        value={value}
-        disabled={disabled}
-        onChange={(event) => onChange?.(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-[#0e6de4] disabled:bg-zinc-900 disabled:text-zinc-400 font-medium"
-      />
-    </label>
-  );
-}

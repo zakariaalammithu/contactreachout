@@ -10,6 +10,7 @@ import { resolvePersistenceContext } from '@/lib/persistence/identity';
 import { ensureCampaignReplyLink } from '@/lib/services/campaign-reply-link';
 import { getSendingAccess } from '@/lib/services/subscription-service';
 import { resolveSenderContact } from '@/lib/services/profile-contact-service';
+import { isSendingPaused } from '@/lib/services/killswitch';
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,6 +53,30 @@ export async function POST(req: NextRequest) {
     const campaignDryRun = hasExplicitDryRun ? options.dryRun : dryRunDefault;
     const isDryRun = envMode === 'disabled' ? true : campaignDryRun;
     const runtimeMode: 'live' | 'test' | 'disabled' = envMode === 'disabled' ? 'disabled' : (isDryRun ? 'test' : 'live');
+
+    // 0. Emergency killswitch (live mode only): when an admin has paused
+    // sending, defer the lead like an out-of-window schedule instead of
+    // failing it — the client runner treats SCHEDULED as non-terminal
+    // and retries later. Dry-run previews do not send, so they pass.
+    if (!isDryRun && isSendingPaused()) {
+      return NextResponse.json({
+        success: true,
+        status: 'SCHEDULED',
+        isSendingPaused: true,
+        reason: 'Sending paused by admin (emergency killswitch)',
+        telemetry: {
+          leadId: lead.id,
+          companyName: lead.company_name,
+          domain: lead.website.replace(/^https?:\/\//, '').split('/')[0],
+          url: lead.website,
+          status: 'SCHEDULED',
+          code: 'SENDING_PAUSED',
+          time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          retryAt: new Date(Date.now() + 60_000).toISOString(),
+          isDryRun,
+        },
+      });
+    }
 
     // 1. Server-Side Sending Schedule Enforcement
     const scheduleCheck = validateSendingSchedule(options.schedule, lead.location || lead.country || lead.city);
@@ -151,7 +176,7 @@ export async function POST(req: NextRequest) {
     const totalDurationMs = result.totalDurationMs || (Date.now() - startTime);
 
     // 3. Map pipeline finalStatus to standardized ContactReachout Statuses
-    let campaignStatus: 'DELIVERED' | 'FAILED' | 'NO-FORM' | 'REVIEW' | 'DRY_RUN_COMPLETED' | 'UNREACHABLE' = 'FAILED';
+    let campaignStatus: 'DELIVERED' | 'FAILED' | 'NO-FORM' | 'REVIEW' | 'DRY_RUN_COMPLETED' | 'UNREACHABLE' | 'WORKER_UNAVAILABLE' = 'FAILED';
     let diagnosticMessage = 'Form submission attempted';
     const discoveryError = result.discovery?.errorMessage || '';
     const isNavigationFailure =
@@ -191,6 +216,13 @@ export async function POST(req: NextRequest) {
     } else if (result.finalStatus === 'DRY_RUN_COMPLETED') {
       campaignStatus = 'DRY_RUN_COMPLETED';
       diagnosticMessage = result.submission?.confirmationMessage || '[DRY RUN] Submission safely simulated';
+    } else if (result.finalStatus === 'WORKER_UNAVAILABLE') {
+      // Terminal infrastructure outage, NOT a missing form: the worker
+      // was configured but unreachable for every candidate page. Kept
+      // out of NO-FORM so the report never blames the prospect's site,
+      // and terminal so the client runner does not retry it forever.
+      campaignStatus = 'WORKER_UNAVAILABLE';
+      diagnosticMessage = 'WORKER_UNAVAILABLE: The configured browser worker was unreachable for every candidate page, so no form could be checked. This is an infrastructure outage, not a missing form on the target site.';
     } else if (isNavigationFailure) {
       // A browser/DNS navigation failure happens before a contact page or form can
       // be inspected. It must never be reported as a form or submission failure.
@@ -241,6 +273,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Perform Server-Side Credit Deduction ONLY on Successful Live Submission
     let creditDeduction = { success: true, cost: 0, source: 'NONE' };
+    let creditDeductionFailed = false;
     let updatedWallet = await CreditWalletService.getWalletForServer(userId);
 
     if (campaignStatus === 'DELIVERED' && !isDryRun) {
@@ -270,6 +303,7 @@ export async function POST(req: NextRequest) {
           leadId: lead.id,
           userId,
         });
+        creditDeductionFailed = true;
       }
     }
 
@@ -291,7 +325,12 @@ export async function POST(req: NextRequest) {
       domainAge: 'N/A',
       lastUpdated: 'N/A',
       status: campaignStatus,
-      code: diagnosticMessage,
+      // Surface a failed credit deduction in the visible telemetry code
+      // (item 27): previously only a server console.warn recorded it, so
+      // a DELIVERED lead looked fully settled while no credit was taken.
+      code: creditDeductionFailed ? `${diagnosticMessage} [CREDIT_DEDUCTION_FAILED]` : diagnosticMessage,
+      workerDown: campaignStatus === 'WORKER_UNAVAILABLE' ? true : undefined,
+      creditDeductionFailed: creditDeductionFailed ? true : undefined,
       time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
       startedAt: new Date(startTime).toISOString(),
       completedAt,

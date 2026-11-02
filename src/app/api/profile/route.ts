@@ -47,7 +47,7 @@ const profileSchema = z.object({
   whatsApp: z.string().trim().max(50).optional().default(''),
   phoneCountry: z.string().trim().max(10).optional().default(''),
   whatsAppCountry: z.string().trim().max(10).optional().default(''),
-  avatarUrl: z.string().max(1_500_000).optional().default(''),
+  avatarUrl: z.string().max(1_500_000).optional(),
 });
 
 export async function PATCH(request: NextRequest) {
@@ -72,7 +72,9 @@ export async function PATCH(request: NextRequest) {
     name: parsed.data.name,
     phone: normalizedPhone,
     whatsApp: normalizedWhatsApp,
-    avatarUrl: parsed.data.avatarUrl,
+    // Preserve the stored avatar: ContactReply saves never send avatarUrl,
+    // and the old zod default ('') used to wipe it on every contact save.
+    ...(parsed.data.avatarUrl !== undefined ? { avatarUrl: parsed.data.avatarUrl } : {}),
   });
   const contactDurable = await writeDurableContact(user.id, session.email, normalizedPhone, normalizedWhatsApp);
   const activeReplyEmail = user.replyEmail || '';

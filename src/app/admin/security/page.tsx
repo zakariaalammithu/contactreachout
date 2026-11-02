@@ -24,6 +24,8 @@ export default function AdminSecurityPage() {
   const [lockoutDuration, setLockoutDuration] = useState(15);
   const [twoFactorReady, setTwoFactorReady] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [durable, setDurable] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -37,6 +39,7 @@ export default function AdminSecurityPage() {
         if (data.loginRateLimitPerMinute) setRateLimit(data.loginRateLimitPerMinute);
         if (data.failedLoginLockoutThreshold) setLockoutThreshold(data.failedLoginLockoutThreshold);
         if (data.lockoutDurationMinutes) setLockoutDuration(data.lockoutDurationMinutes);
+        if (data.durable !== undefined) setDurable(Boolean(data.durable));
       })
       .catch(() => {});
   }, []);
@@ -44,6 +47,7 @@ export default function AdminSecurityPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    setSaveError(null);
     try {
       const res = await fetch('/api/admin/security', {
         method: 'POST',
@@ -56,10 +60,15 @@ export default function AdminSecurityPage() {
         }),
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setSaveSuccess(true);
+        setDurable(true);
         setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        setSaveError(data.error || 'Failed to save security policies.');
       }
+    } catch {
+      setSaveError('Network error while saving security policies.');
     } finally {
       setIsSaving(false);
     }
@@ -98,6 +107,20 @@ export default function AdminSecurityPage() {
         <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-950/20 text-xs font-semibold text-emerald-400 flex items-center gap-2 shadow-sm">
           <CheckCircle2 className="h-4 w-4" />
           Security policies updated and active across all authentication gates.
+        </div>
+      )}
+
+      {saveError && (
+        <div className="p-3.5 rounded-xl border border-rose-500/30 bg-rose-950/20 text-xs font-semibold text-rose-300 flex items-center gap-2 shadow-sm">
+          <AlertTriangle className="h-4 w-4" />
+          {saveError}
+        </div>
+      )}
+
+      {!durable && (
+        <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-950/20 text-xs font-semibold text-amber-300 flex items-center gap-2 shadow-sm">
+          <AlertTriangle className="h-4 w-4" />
+          Settings are not durable yet: the admin_settings table is missing (migration 20261102000005 not applied). Values shown are defaults, and saves will fail until the migration is applied.
         </div>
       )}
 

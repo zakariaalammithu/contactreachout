@@ -2,34 +2,64 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, ShieldAlert, AlertOctagon, CheckCircle2, PauseCircle, PlayCircle, Lock } from 'lucide-react';
 
 export default function EmergencyControlsPage() {
   const [killswitchActive, setKillswitchActive] = useState(false);
   const [campaignsPaused, setCampaignsPaused] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [isBusy, setIsBusy] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/emergency/killswitch')
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data.sendingPaused === 'boolean') {
+          setKillswitchActive(data.sendingPaused);
+          setCampaignsPaused(data.sendingPaused);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const setPaused = async (paused: boolean) => {
+    setIsBusy(true);
+    setStatusError(null);
+    try {
+      const res = await fetch('/api/admin/emergency/killswitch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paused }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update killswitch.');
+      }
+      setKillswitchActive(data.sendingPaused);
+      setCampaignsPaused(data.sendingPaused);
+      setStatusMessage(
+        data.sendingPaused
+          ? 'Emergency Killswitch ACTIVATED. Sending-pause flag set on this instance.'
+          : 'Emergency Killswitch DEACTIVATED. Sending-pause flag cleared on this instance.',
+      );
+      setTimeout(() => setStatusMessage(null), 4000);
+    } catch (err: any) {
+      setStatusError(err.message || 'Failed to update killswitch.');
+    } finally {
+      setIsBusy(false);
+    }
+  };
 
   const toggleKillswitch = () => {
-    const nextState = !killswitchActive;
-    setKillswitchActive(nextState);
-    setStatusMessage(
-      nextState
-        ? 'Emergency Killswitch ACTIVATED. All outbound workers halted.'
-        : 'Emergency Killswitch DEACTIVATED. System restored to normal operation.'
-    );
-    setTimeout(() => setStatusMessage(null), 4000);
+    if (!isBusy) void setPaused(!killswitchActive);
   };
 
   const togglePauseCampaigns = () => {
-    const nextState = !campaignsPaused;
-    setCampaignsPaused(nextState);
-    setStatusMessage(
-      nextState
-        ? 'All active campaign dispatches PAUSED.'
-        : 'Campaign dispatches RESUMED.'
-    );
-    setTimeout(() => setStatusMessage(null), 4000);
+    if (!isBusy) void setPaused(!campaignsPaused);
   };
 
   return (
@@ -60,6 +90,17 @@ export default function EmergencyControlsPage() {
         </div>
       )}
 
+      {statusError && (
+        <div className="p-4 rounded-xl border border-rose-900 bg-rose-950 text-xs font-bold flex items-center gap-2.5 text-rose-300">
+          <AlertOctagon className="h-4 w-4 shrink-0" />
+          <span>{statusError}</span>
+        </div>
+      )}
+
+      <p className="text-[11px] text-amber-300/80 leading-relaxed">
+        Honest scope: these buttons set a server-side sending-pause flag. The flag is in-memory on this instance (it resets on recycle, and other instances do not see it), and enforcement inside the campaign send path is wired separately — until that wiring lands, toggling here does not by itself halt sending.
+      </p>
+
       {/* Main Controls Card */}
       <div className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-xs space-y-6">
         {/* Master Killswitch Control */}
@@ -81,7 +122,8 @@ export default function EmergencyControlsPage() {
           <button
             type="button"
             onClick={toggleKillswitch}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition shadow-xs ${
+            disabled={isBusy || isLoading}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition shadow-xs disabled:opacity-50 ${
               killswitchActive
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                 : 'bg-rose-600 hover:bg-rose-700 text-white'
@@ -108,7 +150,8 @@ export default function EmergencyControlsPage() {
           <button
             type="button"
             onClick={togglePauseCampaigns}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition shadow-xs ${
+            disabled={isBusy || isLoading}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition shadow-xs disabled:opacity-50 ${
               campaignsPaused
                 ? 'bg-[#0e6de4] hover:bg-[#0758bd] text-white'
                 : 'bg-amber-600 hover:bg-amber-700 text-white'

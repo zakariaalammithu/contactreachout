@@ -62,11 +62,24 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON request payload.' }, { status: 400 });
+  // Accept both JSON (JS submit) and URL-encoded/multipart form data
+  // (native no-JS submit: the form declares action="/api/contact"
+  // method="post"). Same schema, same Resend path, same response shape.
+  const contentType = request.headers.get('content-type') || '';
+  let body: unknown;
+  if (contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data')) {
+    try {
+      const form = await request.formData();
+      body = Object.fromEntries(form.entries());
+    } catch {
+      return NextResponse.json({ error: 'Invalid form request payload.' }, { status: 400 });
+    }
+  } else {
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON request payload.' }, { status: 400 });
+    }
   }
 
   const parsed = contactSchema.safeParse(body);

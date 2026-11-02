@@ -3,6 +3,7 @@ import { AdminAuthGuard } from '@/lib/auth/admin-auth-guard';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { AdminLeadStore, type AdminLeadItem } from '@/lib/services/admin-lead-store';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 export interface FilterRule {
   field: string;
@@ -309,6 +310,19 @@ export async function GET(req: NextRequest) {
       }
       return rowObj;
     });
+
+    if (url.searchParams.get('export') === 'xlsx') {
+      const worksheet = XLSX.utils.json_to_sheet(csvRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Contacts');
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      return new NextResponse(buffer, {
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename=admin_crm_contacts_${Date.now()}.xlsx`,
+        },
+      });
+    }
 
     const csvContent = Papa.unparse(csvRows);
     return new NextResponse(csvContent, {

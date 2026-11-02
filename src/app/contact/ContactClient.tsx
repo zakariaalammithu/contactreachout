@@ -170,7 +170,7 @@ export function ContactClient() {
           email: '',
           company: '',
           website: '',
-          subject: '',
+          subject: topic === 'demo' ? 'Business / Demo Inquiry' : 'Contact Form Inquiry',
           message: '',
         });
         setErrors({});
@@ -281,6 +281,8 @@ export function ContactClient() {
               </div>
             ) : (
               <form ref={formRef} action="/api/contact" method="post" onSubmit={handleSubmit} noValidate className="space-y-6">
+              <input type="hidden" name="subject" value={formData.subject} />
+              <input type="hidden" name="topic" value={topic} />
                 <div>
                   <h2 className="text-2xl font-black text-zinc-100">Send us a message</h2>
                   <p className="mt-1 text-sm text-zinc-400">

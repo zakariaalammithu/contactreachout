@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Check, KeyRound, ArrowRight, ShieldCheck, Mail, Lock, User, RefreshCw, AlertCircle, ChevronLeft } from 'lucide-react';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
@@ -271,6 +272,10 @@ export default function LoginClient() {
       });
 
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Could not send a verification code to this account.');
+      }
 
       setMaskedEmail(data.maskedEmail || maskEmailString(selectedEmail));
       setOtpPurpose('signup');
@@ -588,6 +593,12 @@ export default function LoginClient() {
               )}
             </button>
 
+            <p className="text-center text-xs">
+              <Link href="/forgot-password" className="text-blue-400 font-bold hover:underline">
+                Forgot password?
+              </Link>
+            </p>
+
             {/* Divider OR */}
             <div className="relative flex items-center justify-center pt-2">
               <div className="border-t border-zinc-800 w-full" />
@@ -677,8 +688,8 @@ export default function LoginClient() {
 
             <p className="text-[10px] text-zinc-400 leading-relaxed pt-2">
               Before using this app, you can review ContactReachout&apos;s{' '}
-              <a href="#" className="text-blue-400 underline font-medium">Privacy Policy</a> and{' '}
-              <a href="#" className="text-blue-400 underline font-medium">Terms of Service</a>.
+              <a href="/privacy" className="text-blue-400 underline font-medium">Privacy Policy</a> and{' '}
+              <a href="/terms" className="text-blue-400 underline font-medium">Terms of Service</a>.
             </p>
 
             <div className="pt-2 text-center">

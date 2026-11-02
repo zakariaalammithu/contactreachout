@@ -3,12 +3,20 @@ import { AdminAuthGuard } from '@/lib/auth/admin-auth-guard';
 import { SecretManager } from '@/lib/security/secret-manager';
 import { AuditLogService } from '@/lib/services/audit-log-service';
 import { QueueManager } from '@/lib/queue/queue-manager';
+import { getAdminSetting, setAdminSetting } from '@/lib/services/admin-settings-service';
 
 export async function GET(req: NextRequest) {
   const { session, errorResponse } = await AdminAuthGuard.requireAdmin(req);
   if (errorResponse) return errorResponse;
 
   try {
+    const stored = await getAdminSetting<{
+      workerConcurrency?: number;
+      navigationTimeoutSeconds?: number;
+      screenshotOnSuccess?: boolean;
+      screenshotOnFailure?: boolean;
+      mode?: string;
+    }>('browser.settings');
     const savedConcurrency = SecretManager.getSecret('BROWSER_CONCURRENCY');
     const savedTimeout = SecretManager.getSecret('BROWSER_NAV_TIMEOUT');
     const savedMode = SecretManager.getSecret('BROWSER_AUTOMATION_MODE');
@@ -16,15 +24,16 @@ export async function GET(req: NextRequest) {
     const savedFailureScreenshot = SecretManager.getSecret('BROWSER_SCREENSHOT_FAILURE');
 
     const mode = (
+      stored.value?.mode ||
       savedMode ||
       process.env.CONTACT_FORM_MODE ||
       (process.env.NODE_ENV === 'production' ? 'live' : 'test')
     ).toLowerCase();
 
-    const workerConcurrency = savedConcurrency ? parseInt(savedConcurrency, 10) : 5;
-    const navigationTimeoutSeconds = savedTimeout ? parseInt(savedTimeout, 10) : 30;
-    const screenshotOnSuccess = savedSuccessScreenshot ? savedSuccessScreenshot === 'true' : true;
-    const screenshotOnFailure = savedFailureScreenshot ? savedFailureScreenshot === 'true' : true;
+    const workerConcurrency = stored.value?.workerConcurrency ?? (savedConcurrency ? parseInt(savedConcurrency, 10) : 5);
+    const navigationTimeoutSeconds = stored.value?.navigationTimeoutSeconds ?? (savedTimeout ? parseInt(savedTimeout, 10) : 30);
+    const screenshotOnSuccess = stored.value?.screenshotOnSuccess ?? (savedSuccessScreenshot ? savedSuccessScreenshot === 'true' : true);
+    const screenshotOnFailure = stored.value?.screenshotOnFailure ?? (savedFailureScreenshot ? savedFailureScreenshot === 'true' : true);
 
     return NextResponse.json({
       success: true,
@@ -38,6 +47,8 @@ export async function GET(req: NextRequest) {
       mode: mode.toUpperCase(),
       zeroBypassEnforced: true,
       ssrfFirewallActive: true,
+      durable: stored.available,
+      durableError: stored.available ? undefined : stored.error,
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to retrieve browser automation config.';
@@ -80,7 +91,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Persist settings in SecretManager vault
+    // Fail closed: persist durably first. Only after a durable save do
+    // we sync the in-memory vault/queue, so a missing table never
+    // produces a fake "saved" state.
+    const saved = await setAdminSetting('browser.settings', {
+      workerConcurrency: concurrencyNum,
+      navigationTimeoutSeconds: timeoutNum,
+      screenshotOnSuccess: Boolean(screenshotOnSuccess),
+      screenshotOnFailure: Boolean(screenshotOnFailure),
+      mode: cleanMode,
+    });
+    if (!saved.ok) {
+      return NextResponse.json(
+        { error: saved.error || 'Browser settings could not be saved durably.' },
+        { status: 503 },
+      );
+    }
+
+    // Persist settings in SecretManager vault (in-memory sync for this instance)
     SecretManager.setSecret('BROWSER_CONCURRENCY', String(concurrencyNum), null, 'Browser Worker Concurrency');
     SecretManager.setSecret('BROWSER_NAV_TIMEOUT', String(timeoutNum), null, 'Browser Navigation Timeout');
     SecretManager.setSecret('BROWSER_AUTOMATION_MODE', cleanMode, null, 'Browser Automation Mode');
@@ -104,6 +132,7 @@ export async function POST(req: NextRequest) {
       mode: cleanMode.toUpperCase(),
       workerConcurrency: concurrencyNum,
       navigationTimeoutSeconds: timeoutNum,
+      durable: true,
     });
   } catch (err: any) {
     return NextResponse.json(

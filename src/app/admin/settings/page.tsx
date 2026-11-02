@@ -14,6 +14,7 @@ export default function AdminSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [durable, setDurable] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchSettings = async () => {
@@ -29,6 +30,7 @@ export default function AdminSettingsPage() {
           setMaintenanceMode(Boolean(data.settings.maintenanceMode));
         }
         if (data.userRole) {
+          if (data.durable !== undefined) setDurable(Boolean(data.durable));
           setUserRole(data.userRole);
         }
       } else {
@@ -124,6 +126,12 @@ export default function AdminSettingsPage() {
       {/* Main Form Card */}
       <div className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-xs space-y-6">
         <form onSubmit={handleSave} className="space-y-5">
+      {!durable && (
+        <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-950/20 text-xs font-semibold text-amber-300">
+          Settings are not durable yet: the admin_settings table is missing (migration 20261102000005 not applied). Values shown are defaults or in-memory values, and saves will fail until the migration is applied.
+        </div>
+      )}
+
           {/* Application Title */}
           <div className="space-y-1.5">
             <label className="text-xs font-extrabold text-zinc-100 block">

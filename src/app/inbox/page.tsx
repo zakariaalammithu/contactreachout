@@ -21,7 +21,6 @@ import {
   Copy,
   Check,
   ChevronLeft,
-  FlaskConical,
   RefreshCw,
   Globe,
   Tag,
@@ -30,6 +29,7 @@ import {
 } from 'lucide-react';
 import { getInboxReplyError, isAcceptedInboxReply } from '@/lib/services/inbox-reply-response';
 import { ACTIVE_MAILBOX_STORAGE_KEY, resolveActiveMailboxId, resolveSyncTargets } from '@/lib/services/mailbox-selection';
+import { readCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 import { Button } from '@/components/ui/Button';
 
 export interface LeadReply {
@@ -83,18 +83,10 @@ export default function InboxPage() {
   const [forwardEmail, setForwardEmail] = useState('');
   const [availableCredits, setAvailableCredits] = useState<number>(0);
   const [durableInbox, setDurableInbox] = useState(false);
+  const [inboxNotice, setInboxNotice] = useState<string | null>(null);
 
   // Mobile layout panel view toggle ('list' or 'detail')
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
-
-  // Developer Sandbox Test Reply Modal
-  const [showSandboxModal, setShowSandboxModal] = useState(false);
-  const [syncProspectName, setSyncProspectName] = useState('Alex Rivera');
-  const [syncProspectEmail, setSyncProspectEmail] = useState('alex.rivera@growthtech.io');
-  const [syncCompanyName, setSyncCompanyName] = useState('GrowthTech Solutions');
-  const [syncReplyMessage, setSyncReplyMessage] = useState(
-    'Thanks for reaching out via our website contact form! We would like to learn more about ContactReachout.'
-  );
 
   const fetchInboxData = async (showRefreshSpinner = false, mailboxId?: string | null) => {
     if (showRefreshSpinner) setIsRefreshing(true);
@@ -110,6 +102,7 @@ export default function InboxPage() {
           return { id: conversation.id, conversationId: conversation.provider_thread_id, mailboxId: conversation.connected_mailbox_id, prospectName: 'Gmail conversation', email: '', companyName: '', website: '', campaignName: 'Gmail', date: new Date(conversation.latest_message_at).toLocaleTimeString(), createdAt: conversation.latest_message_at, isUnread: !state?.is_read, isArchived: Boolean(state?.is_archived), status: conversation.status === 'UNMATCHED' ? 'UNMATCHED' : conversation.status === 'REPLIED' ? 'REPLIED' : 'NEW', originalSubject: conversation.subject_preview || '(No subject)', originalMessage: '', replyMessage: '', forwardedToEmail: '' } as LeadReply;
         }) : data.messages || [];
         setDurableInbox(Boolean(data.durable));
+        setInboxNotice(typeof data.notice === 'string' ? data.notice : null);
         setReplies(msgList);
         if (data.forwardingEmail) setForwardEmail(data.forwardingEmail);
         if (typeof data.availableCredits === 'number') setAvailableCredits(data.availableCredits);
@@ -203,8 +196,10 @@ export default function InboxPage() {
     } catch {
       // Connect-result notice is best-effort only.
     }
-    // Auto-refresh interval every 12 seconds for background sync
-    const interval = setInterval(() => fetchInboxData(false), 12000);
+    // Auto-refresh interval every 12 seconds for background sync.
+    // Background mode only: the spinning refresh icon, never the full
+    // "Loading conversations..." spinner (that used to flash every poll).
+    const interval = setInterval(() => fetchInboxData(true), 12000);
     return () => clearInterval(interval);
   }, []);
 
@@ -311,7 +306,36 @@ export default function InboxPage() {
         const detail = await response.json();
         if (!response.ok) throw new Error(detail.error || 'Unable to load conversation.');
         const latest = (detail.messages || []).at(-1);
-        if (latest) setReplies((current) => current.map((item) => item.id === rep.id ? { ...item, email: latest.prospect_email || latest.sender_email || item.email, prospectName: latest.prospect_name || item.prospectName, originalSubject: latest.subject || item.originalSubject, replyMessage: latest.reply_message || item.replyMessage, originalMessage: latest.reply_message || item.originalMessage } : item));
+        // Resolve the linked lead/campaign from client storage: the
+        // durable list mapping carries no website/company/campaign
+        // (campaigns and leads live in localStorage, not in Supabase),
+        // so enrich the row here from the detail payload's link ids.
+        let website = '';
+        let companyName = '';
+        let campaignName = '';
+        const linkMsg = [...(detail.messages || [])].reverse().find((m: any) => m.app_campaign_id && m.app_lead_id);
+        const campaignId = linkMsg?.app_campaign_id || detail.link?.campaignId;
+        const leadId = linkMsg?.app_lead_id || detail.link?.leadId;
+        if (campaignId || leadId) {
+          try {
+            const drafts = readCampaignDrafts(localStorage);
+            const draft = campaignId ? drafts.find((c: any) => String(c.id) === String(campaignId)) : undefined;
+            if (draft) campaignName = draft.name || '';
+            const draftLead = draft && leadId
+              ? (draft.prospectsList || []).find((l: any) => String(l.id) === String(leadId))
+              : undefined;
+            let lead = draftLead;
+            if (!lead && leadId) {
+              const pool = JSON.parse(localStorage.getItem('user_imported_leads') || '[]');
+              lead = Array.isArray(pool) ? pool.find((l: any) => String(l.id) === String(leadId)) : undefined;
+            }
+            if (lead) {
+              website = lead.website || lead.domain || '';
+              companyName = lead.companyName || lead.company_name || '';
+            }
+          } catch { /* enrichment is best-effort; the row keeps its placeholders */ }
+        }
+        if (latest) setReplies((current) => current.map((item) => item.id === rep.id ? { ...item, email: latest.prospect_email || latest.sender_email || item.email, prospectName: latest.prospect_name || item.prospectName, originalSubject: latest.subject || item.originalSubject, replyMessage: latest.reply_message || item.replyMessage, originalMessage: latest.reply_message || item.originalMessage, website: website || item.website, companyName: companyName || item.companyName, campaignName: campaignName || item.campaignName } : item));
       } catch (error) { setToastMessage(error instanceof Error ? error.message : 'Unable to load conversation.'); }
     }
 
@@ -322,12 +346,21 @@ export default function InboxPage() {
 
       try {
         const endpoint = durableInbox ? `/api/inbox/${encodeURIComponent(rep.id)}` : '/api/inbox';
-        await fetch(endpoint, {
+        const res = await fetch(endpoint, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(durableInbox ? { action: 'mark_read' } : { messageId: rep.id, action: 'mark_read' }),
         });
+        if (!res.ok) throw new Error('Mark as read failed.');
       } catch (err) {
+        // Roll the optimistic flip back: the old code only logged, so a
+        // failed PATCH left the row looking read while the server
+        // still had it unread.
+        setReplies((prev) =>
+          prev.map((r) => (r.id === rep.id ? { ...r, isUnread: true } : r))
+        );
+        setToastMessage('Could not mark this conversation as read. Please try again.');
+        setTimeout(() => setToastMessage(null), 3500);
         console.error('Error marking message as read:', err);
       }
     }
@@ -341,12 +374,18 @@ export default function InboxPage() {
     );
 
     try {
-      await fetch(durableInbox ? `/api/inbox/${encodeURIComponent(messageId)}` : '/api/inbox', {
+      const res = await fetch(durableInbox ? `/api/inbox/${encodeURIComponent(messageId)}` : '/api/inbox', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(durableInbox ? { action: nextUnread ? 'mark_unread' : 'mark_read' } : { messageId, action: nextUnread ? 'mark_unread' : 'mark_read' }),
       });
+      if (!res.ok) throw new Error('Read-state update failed.');
     } catch (err) {
+      setReplies((prev) =>
+        prev.map((r) => (r.id === messageId ? { ...r, isUnread: currentUnread } : r))
+      );
+      setToastMessage('Could not update the read status. Please try again.');
+      setTimeout(() => setToastMessage(null), 3500);
       console.error('Error toggling read status:', err);
     }
   };
@@ -359,20 +398,27 @@ export default function InboxPage() {
       prev.map((r) => (r.id === messageId ? { ...r, isArchived: nextArchived } : r))
     );
 
-    setToastMessage(
-      nextArchived
-        ? 'Conversation moved to Archived.'
-        : 'Conversation restored to All chats.'
-    );
-    setTimeout(() => setToastMessage(null), 3500);
-
     try {
-      await fetch(durableInbox ? `/api/inbox/${encodeURIComponent(messageId)}` : '/api/inbox', {
+      const res = await fetch(durableInbox ? `/api/inbox/${encodeURIComponent(messageId)}` : '/api/inbox', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(durableInbox ? { action: nextArchived ? 'archive' : 'unarchive' } : { messageId, action: nextArchived ? 'archive' : 'unarchive' }),
       });
+      if (!res.ok) throw new Error('Archive update failed.');
+      // Toast ONLY after the PATCH succeeds: the old code toasted first
+      // and never rolled back, so a failed archive still claimed success.
+      setToastMessage(
+        nextArchived
+          ? 'Conversation moved to Archived.'
+          : 'Conversation restored to All chats.'
+      );
+      setTimeout(() => setToastMessage(null), 3500);
     } catch (err) {
+      setReplies((prev) =>
+        prev.map((r) => (r.id === messageId ? { ...r, isArchived: currentArchived } : r))
+      );
+      setToastMessage('Could not update the archive status. Please try again.');
+      setTimeout(() => setToastMessage(null), 3500);
       console.error('Error toggling archive status:', err);
     }
   };
@@ -403,7 +449,11 @@ export default function InboxPage() {
 
       const data = await res.json();
 
-      if (res.ok) {
+      // Accept a reply ONLY when the shared acceptance helper says the
+      // provider really sent it (success + isLiveSent + providerAccepted
+      // + messageId). Both reply routes now return that shape; a bare
+      // res.ok used to mark unsent replies as REPLIED.
+      if (isAcceptedInboxReply(res.ok, data)) {
         setReplies((prev) =>
           prev.map((r) =>
             r.id === targetId
@@ -427,47 +477,34 @@ export default function InboxPage() {
     }
   };
 
-  // Developer Sandbox Simulated Inbound Reply Trigger
-  const handleSimulateSandboxReply = async () => {
-    if (!syncProspectEmail.trim() || !syncReplyMessage.trim()) {
-      alert('Please provide a valid prospect email and message.');
-      return;
-    }
-
+  const copyToClipboard = async (text: string) => {
+    let copied = false;
     try {
-      const res = await fetch('/api/inbox/webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prospectName: syncProspectName.trim() || 'Alex Rivera',
-          prospectEmail: syncProspectEmail.trim(),
-          companyName: syncCompanyName.trim() || 'GrowthTech Solutions',
-          website: `https://${(syncCompanyName.trim() || 'growthtech').toLowerCase().replace(/[^a-z0-9]/g, '')}.io`,
-          subject: 'Website Outreach Inquiry & Demo Request',
-          replyMessage: syncReplyMessage.trim(),
-          userEmail: forwardEmail,
-          campaignName: 'Product Demo Campaign',
-          status: 'INTERESTED',
-        }),
-      });
-
-      if (res.ok) {
-        setShowSandboxModal(false);
-        setToastMessage('✅ Inbound test reply synced to Inbox!');
-        setTimeout(() => setToastMessage(null), 4000);
-        await fetchInboxData(true);
-      } else {
-        alert('Failed to simulate test reply');
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    } catch {
+      // Clipboard API unavailable or denied (non-secure context, browser
+      // permission): fall back to the legacy textarea + execCommand path.
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        copied = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch {
+        copied = false;
       }
-    } catch (err) {
-      console.error('Error simulating test reply:', err);
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedEmail(true);
-    setTimeout(() => setCopiedEmail(false), 2000);
+    if (copied) {
+      setCopiedEmail(true);
+      setTimeout(() => setCopiedEmail(false), 2000);
+    } else {
+      setToastMessage('Could not copy the email address. Please copy it manually.');
+      setTimeout(() => setToastMessage(null), 3500);
+    }
   };
 
   return (
@@ -683,6 +720,15 @@ export default function InboxPage() {
               )}
             </button>
           </div>
+
+          {/* Ephemeral-store warning: shown only after the first load
+              resolves to non-durable storage, so it never flashes while
+              the inbox is still loading. */}
+          {!isLoading && !durableInbox && inboxNotice && (
+            <div className="mx-3 mt-3 rounded-xl border border-amber-900 bg-amber-950/60 px-4 py-3 text-xs font-medium text-amber-200">
+              {inboxNotice}
+            </div>
+          )}
 
           {/* Conversation List Container */}
           <div className="flex-1 overflow-y-auto divide-y divide-zinc-800">

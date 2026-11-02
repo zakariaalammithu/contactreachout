@@ -149,7 +149,9 @@ export default function CampaignEditorClient() {
   const [isStarting, setIsStarting] = useState(false);
 
   // Credit Wallet & Shortfall States
-  const [availableCredits, setAvailableCredits] = useState(100);
+  // null = balance not loaded yet or the fetch failed; the UI must show
+  // "Unavailable" in that case, never the old fake default of 100.
+  const [availableCredits, setAvailableCredits] = useState<number | null>(null);
   const [showCreditShortfallModal, setShowCreditShortfallModal] = useState(false);
   const [creditShortfallData, setCreditShortfallData] = useState<any>(null);
   const [userProfileSummary, setUserProfileSummary] = useState<{
@@ -160,10 +162,6 @@ export default function CampaignEditorClient() {
     replyEmail?: string;
     replyEmailVerified?: boolean;
   }>({});
-  const [editingContactIdentity, setEditingContactIdentity] = useState(true);
-  const [contactIdentityDraft, setContactIdentityDraft] = useState({ name: '', phone: '', whatsApp: '' });
-  const [savingContactIdentity, setSavingContactIdentity] = useState(false);
-  const [contactIdentityMessage, setContactIdentityMessage] = useState('');
 
 
   const [aiPersonalizationEnabled, setAiPersonalizationEnabled] = useState(false);
@@ -401,7 +399,6 @@ export default function CampaignEditorClient() {
       ]).then(([profileData, creditData]) => {
         if (profileData?.user) {
           setUserProfileSummary(profileData.user);
-          setContactIdentityDraft({ name: profileData.user.name || '', phone: profileData.user.phone || '', whatsApp: profileData.user.whatsApp || '' });
         }
         if (creditData?.wallet?.totalCreditsAvailable !== undefined) {
           setAvailableCredits(creditData.wallet.totalCreditsAvailable);
@@ -471,6 +468,32 @@ export default function CampaignEditorClient() {
           });
           setCampaignName(generateNextUniqueCampaignName(userCamps));
         }
+        // Prefill intake (Leads page → editor): leads carried in
+        // sessionStorage are merged into the pool and their lists
+        // selected, so the editor opens with those prospects instead of
+        // a blank editor. The key is consumed once.
+        try {
+          const rawPrefill = sessionStorage.getItem('campaign_prefill_leads');
+          if (rawPrefill) {
+            sessionStorage.removeItem('campaign_prefill_leads');
+            const prefill = JSON.parse(rawPrefill);
+            if (Array.isArray(prefill) && prefill.length > 0) {
+              const normalized = prefill
+                .filter((l: any) => l && (l.website || l.id))
+                .map((l: any) => ({ ...l, listId: l.listId || l.listName || 'prefill' }));
+              if (normalized.length > 0) {
+                setLeads((existingLeads) => {
+                  const existingIds = new Set(existingLeads.map((x) => x.id || x.website));
+                  const missing = normalized.filter((l: any) => l && (l.id || l.website) && !existingIds.has(l.id || l.website));
+                  return missing.length > 0 ? [...existingLeads, ...missing] : existingLeads;
+                });
+                const prefillListIds = Array.from(new Set(normalized.map((l: any) => l.listId)));
+                setSelectedListIds(prefillListIds);
+                setSelectedListId(prefillListIds[0] || '');
+              }
+            }
+          }
+        } catch { /* malformed prefill ignored; editor opens blank as before */ }
       }
     } catch { setError('Campaign data could not be loaded from this browser.'); }
   }, [editId]);
@@ -662,7 +685,11 @@ export default function CampaignEditorClient() {
         setIsSaving(false);
         return;
       }
-      if ((activeTab === 'prospects' || launch) && (!selectedListIds.length || selectedLeads.length === 0)) {
+      // The prospect guard applies ONLY to starting. A draft save on the
+      // Prospects tab with 0 prospects is legitimate (the user is still
+      // building the campaign) and must not be blocked with a "before
+      // starting" error.
+      if (launch && (!selectedListIds.length || selectedLeads.length === 0)) {
         setError('Add at least 1 prospect before starting this campaign.');
         setActiveTab('prospects');
         setIsStarting(false);
@@ -839,33 +866,6 @@ export default function CampaignEditorClient() {
     { id: 'setup', label: 'Campaign setup' }, { id: 'prospects', label: `Prospects (${selectedLeads.length})` },
     { id: 'message', label: 'Message' }, { id: 'settings', label: 'Safety & pacing' },
   ];
-
-  const saveContactIdentityInline = async () => {
-    setSavingContactIdentity(true);
-    setContactIdentityMessage('');
-    try {
-      const res = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: contactIdentityDraft.name.trim(),
-          phone: contactIdentityDraft.phone.trim(),
-          whatsApp: contactIdentityDraft.whatsApp.trim(),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to update contact identity.');
-      const updatedUser = data.user || { ...userProfileSummary, ...contactIdentityDraft };
-      setUserProfileSummary(updatedUser);
-      setContactIdentityDraft({ name: updatedUser.name || '', phone: updatedUser.phone || '', whatsApp: updatedUser.whatsApp || '' });
-      setEditingContactIdentity(false);
-      setContactIdentityMessage('Contact identity updated successfully.');
-    } catch (error: any) {
-      setContactIdentityMessage(error?.message || 'Failed to update contact identity.');
-    } finally {
-      setSavingContactIdentity(false);
-    }
-  };
 
   return (<>
     <MatchDataModal isOpen={showMatchModal} onClose={() => setShowMatchModal(false)} fileName={uploadData.fileName} headers={uploadData.headers} sampleRows={uploadData.sampleRows} allRawRows={uploadData.allRawRows} onImportSuccess={(importedLeads, listInfo) => { const newList = { ...listInfo, ownerEmail: accountEmail, totalLeads: importedLeads.length, columns: Object.keys(importedLeads[0] || {}), createdAt: listInfo.uploadedAt || new Date().toISOString() }; const taggedLeads = importedLeads.map((lead) => ({ ...lead, listId: newList.id, listName: newList.name, ownerEmail: accountEmail })); const storedLists = safeParseJSON<any[]>(localStorage.getItem('user_lead_lists'), []); localStorage.setItem('user_lead_lists', JSON.stringify([newList, ...storedLists.filter((l: any) => l && l.id !== newList.id)])); const storedLeads = safeParseJSON<any[]>(localStorage.getItem('user_imported_leads'), []); localStorage.setItem('user_imported_leads', JSON.stringify([...taggedLeads, ...storedLeads])); setLeadLists((items) => [newList, ...items.filter((l) => l.id !== newList.id)]); setLeads((items) => [...taggedLeads, ...items]); setSelectedListId(newList.id); setSelectedListIds((prev) => Array.from(new Set([...prev, newList.id]))); setShowMatchModal(false); setError(`${importedLeads.length} leads imported successfully.`); }} />
@@ -1760,14 +1760,14 @@ export default function CampaignEditorClient() {
                   <span>CREDIT REQUIREMENTS & READINESS</span>
                 </h4>
                 <span className="text-xs font-mono font-bold text-zinc-300">
-                  Available: <strong className="text-blue-400">{availableCredits}</strong>
+                  Available: <strong className="text-blue-400">{availableCredits === null ? 'Unavailable' : availableCredits}</strong>
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
                   <span className="text-[11px] font-semibold text-zinc-400 block">Available Credits</span>
-                  <span className="font-extrabold text-zinc-100 text-sm">{availableCredits}</span>
+                  <span className="font-extrabold text-zinc-100 text-sm">{availableCredits === null ? 'Unavailable' : availableCredits}</span>
                 </div>
                 <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
                   <span className="text-[11px] font-semibold text-zinc-400 block">Campaign Prospects</span>
@@ -1782,6 +1782,10 @@ export default function CampaignEditorClient() {
                   {selectedLeads.length === 0 ? (
                     <span className="font-extrabold text-amber-300 text-xs flex items-center gap-1">
                       ✕ Not Ready
+                    </span>
+                  ) : availableCredits === null ? (
+                    <span className="font-extrabold text-amber-300 text-xs flex items-center gap-1">
+                      ? Unknown — balance unavailable
                     </span>
                   ) : selectedLeads.length <= availableCredits ? (
                     <span className="font-extrabold text-emerald-300 text-xs flex items-center gap-1">
@@ -1809,6 +1813,10 @@ export default function CampaignEditorClient() {
                     Add Prospects
                   </button>
                 </div>
+              ) : availableCredits === null ? (
+                <p className="text-xs text-amber-300 bg-amber-950/80 p-3 rounded-xl border border-amber-900 font-medium">
+                  Credit balance unavailable — the server will check credits when you start this campaign.
+                </p>
               ) : selectedLeads.length <= availableCredits ? (
                 <p className="text-xs text-emerald-300 bg-emerald-950/80 p-3 rounded-xl border border-emerald-900 font-medium">
                   ✓ {selectedLeads.length} prospects can be processed with your current {availableCredits} available credits.
@@ -1972,7 +1980,7 @@ export default function CampaignEditorClient() {
             <div className="p-3.5 rounded-2xl bg-zinc-900 border border-zinc-800 text-xs font-mono space-y-1.5">
               <div className="flex justify-between text-zinc-400">
                 <span>Available Credits:</span>
-                <strong className="text-zinc-100">{creditShortfallData.availableCredits ?? availableCredits}</strong>
+                <strong className="text-zinc-100">{creditShortfallData.availableCredits ?? (availableCredits === null ? 'Unavailable' : availableCredits)}</strong>
               </div>
               <div className="flex justify-between text-zinc-400">
                 <span>Campaign Prospects:</span>

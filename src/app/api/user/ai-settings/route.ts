@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     if (openaiApiKey !== undefined && openaiApiKey !== null && openaiApiKey.trim() !== '') {
       const cleanKey = openaiApiKey.trim();
-      SecretManager.setSecret(`USER_OPENAI_KEY_${emailKey}`, cleanKey, 'User-provided OpenAI API Key');
+      SecretManager.setSecret(`USER_OPENAI_KEY_${emailKey}`, cleanKey, null, 'User-provided OpenAI API Key');
       AuthStore.updateUser(session.email, {
         openaiApiKeyConfigured: true,
         aiProviderChoice: chosenProvider,

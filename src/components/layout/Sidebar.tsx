@@ -284,6 +284,14 @@ export function Sidebar({ isOpen, onClose, currentUserProfile }: { isOpen?: bool
           >
             <LogOut className="h-4 w-4" />
           </button>
+          <button
+            type="button"
+            onClick={() => setShowLogoutModal(true)}
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-900 transition-colors lg:hidden"
+            title="Log Out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </aside>
 

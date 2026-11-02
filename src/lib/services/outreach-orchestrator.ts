@@ -69,6 +69,7 @@ export interface PipelineExecutionResult {
     | 'NO_CONTACT_PAGE'
     | 'NO_FORM_DETECTED'
     | 'CAPTCHA_DETECTED'
+    | 'WORKER_UNAVAILABLE'
     | 'FAILED';
   currentStage: PipelineStage;
   discovery?: ContactDiscoveryResult;
@@ -262,6 +263,13 @@ export class OutreachPipelineOrchestrator {
     let selectedContactUrl: string | null = null;
     let lastNavigationError: string | null = null;
     let lastDetection: FormDetectionResult | null = null;
+    // Worker-outage tracking (item 26): a configured worker that is
+    // unreachable for every candidate must surface as WORKER_UNAVAILABLE,
+    // not as NO_FORM_DETECTED (fetch probing cannot see JS-rendered
+    // forms, so its silence proves nothing about the site).
+    let workerAttempts = 0;
+    let workerUnavailableAttempts = 0;
+    let workerRenderedAny = false;
 
     for (const candidateUrl of candidateList) {
       if (!candidateUrl) continue;
@@ -271,6 +279,8 @@ export class OutreachPipelineOrchestrator {
 
       if (workerConfigured) {
         const workerDetection = await detectWithBrowserWorker({ url: candidateUrl, timeoutMs: options.timeoutMs || 15000 });
+        workerAttempts++;
+        if (!workerDetection.available) workerUnavailableAttempts++;
         if (workerDetection.available && workerDetection.status === 'CAPTCHA_DETECTED') {
           addLog('FORM_DETECTION', `CAPTCHA / Bot challenge detected on candidate ${candidateUrl}. Routing to REVIEW_REQUIRED.`);
           return {
@@ -301,6 +311,7 @@ export class OutreachPipelineOrchestrator {
         }
         if (workerDetection.available) {
           workerRendered = true;
+          workerRenderedAny = true;
           const bestForm = pickBestWorkerForm(workerDetection.forms);
           if (bestForm) detectionCandidate = workerFormToDetection(candidateUrl, bestForm);
         } else {
@@ -381,6 +392,43 @@ export class OutreachPipelineOrchestrator {
       };
     }
 
+    // Worker outage, not a missing form: the worker was configured but
+    // unreachable for every attempted candidate, never rendered a page,
+    // and fetch probing found nothing. Reporting NO_FORM_DETECTED here
+    // would blame the prospect's site for an infrastructure outage, and
+    // the runner would keep the lead live. WORKER_UNAVAILABLE is
+    // terminal (see the campaigns-page TERMINAL_LOG_STATUSES set).
+    if (
+      !detection &&
+      workerConfigured &&
+      workerAttempts > 0 &&
+      workerUnavailableAttempts === workerAttempts &&
+      !workerRenderedAny
+    ) {
+      addLog('FORM_DETECTION', `Browser worker unreachable for every candidate on ${lead.website}; reporting WORKER_UNAVAILABLE instead of NO_FORM_DETECTED.`);
+      return {
+        leadId: lead.id,
+        targetWebsite: lead.website,
+        finalStatus: 'WORKER_UNAVAILABLE',
+        currentStage: 'FORM_DETECTION',
+        discovery,
+        detection: {
+          targetUrl: activeContactUrl || lead.website,
+          hasContactForm: false,
+          selectedForm: null,
+          allFormsCount: 0,
+          status: 'NO_FORM_FOUND',
+          confidenceScore: 0,
+          detectedAt: new Date().toISOString(),
+        },
+        renderedSubject: '',
+        renderedBody: '',
+        totalDurationMs: Date.now() - startTime,
+        completedAt: new Date().toISOString(),
+        logs,
+      };
+    }
+
     if (!detection || !detection.hasContactForm || !detection.selectedForm) {
       addLog('FORM_DETECTION', 'No valid public contact form identified across all candidate contact pages.');
       return {
@@ -451,7 +499,11 @@ export class OutreachPipelineOrchestrator {
       { minConfidenceThreshold }
     );
 
-    if (mapping.status === 'REVIEW_REQUIRED' || mapping.status === 'MISSING_MANDATORY_FIELDS' || mapping.status === 'FIELD_MAPPING_REQUIRED') {
+    // Gate on ANYTHING not ready: the old gate listed only three
+    // statuses, so EMAIL_REQUIREMENT_NOT_MET,
+    // MESSAGE_VALIDATION_REQUIRED and PHONE_REQUIREMENT_NOT_MET fell
+    // through to submission and failed instead of becoming REVIEW.
+    if (mapping.status !== 'READY_FOR_SUBMISSION') {
       addLog('FIELD_MAPPING', `Mapping requires review: ${mapping.reason}`);
       return {
         leadId: lead.id,

@@ -322,16 +322,26 @@ export default function AdminLeadsPage() {
       return;
     setIsDeleting(true);
     try {
-      await Promise.all(
+      // Only rows the server actually deleted (or 404 = already gone)
+      // are removed locally. Per-id failures are surfaced, not swallowed.
+      const results = await Promise.all(
         ids.map(async (id) => {
           try {
             const res = await fetch(`/api/admin/leads/${encodeURIComponent(id)}`, { method: 'DELETE' });
             if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
+            return { id, ok: true as const };
           } catch (e) {
             console.error('Delete lead error:', id, e);
+            return { id, ok: false as const };
           }
-        })
+        }),
       );
+      const succeededIds = results.filter((r) => r.ok).map((r) => r.id);
+      const failedIds = results.filter((r) => !r.ok).map((r) => r.id);
+      if (failedIds.length > 0) {
+        alert(`Failed to delete ${failedIds.length} lead(s) on the server. They were kept in the list: ${failedIds.join(', ')}`);
+      }
+      if (succeededIds.length === 0) return;
       if (typeof window !== 'undefined') {
         try {
           const stored = localStorage.getItem('user_imported_leads');
@@ -340,7 +350,7 @@ export default function AdminLeadsPage() {
             if (Array.isArray(parsed)) {
               localStorage.setItem(
                 'user_imported_leads',
-                JSON.stringify(parsed.filter((l: any) => l && !ids.includes(l.id)))
+                JSON.stringify(parsed.filter((l: any) => l && !succeededIds.includes(l.id)))
               );
             }
           }
@@ -348,10 +358,10 @@ export default function AdminLeadsPage() {
           console.error('Local lead delete error:', e);
         }
       }
-      setLeads((prev) => prev.filter((l) => !ids.includes(l.id)));
-      setTotalCount((prev) => Math.max(0, prev - ids.length));
-      setMetrics((prev) => ({ ...prev, totalLeads: Math.max(0, prev.totalLeads - ids.length) }));
-      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
+      setLeads((prev) => prev.filter((l) => !succeededIds.includes(l.id)));
+      setTotalCount((prev) => Math.max(0, prev - succeededIds.length));
+      setMetrics((prev) => ({ ...prev, totalLeads: Math.max(0, prev.totalLeads - succeededIds.length) }));
+      setSelectedIds((prev) => prev.filter((id) => !succeededIds.includes(id)));
     } finally {
       setIsDeleting(false);
     }

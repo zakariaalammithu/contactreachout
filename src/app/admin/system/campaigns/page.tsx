@@ -28,6 +28,7 @@ export default function GlobalCampaignSettingsPage() {
   const [isConfirmingLive, setIsConfirmingLive] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [durable, setDurable] = useState(true);
 
   useEffect(() => {
     async function fetchConfig() {
@@ -42,6 +43,7 @@ export default function GlobalCampaignSettingsPage() {
           if (data.globalDailyLimit !== undefined) setDailyLimit(data.globalDailyLimit);
           if (data.globalMaxConcurrency !== undefined) setMaxConcurrency(data.globalMaxConcurrency);
           if (data.defaultInterPageDelayMs !== undefined) setInterDelay(data.defaultInterPageDelayMs);
+          if (data.durable !== undefined) setDurable(Boolean(data.durable));
         }
       } catch (err) {
         console.error('Failed to fetch campaign settings:', err);
@@ -125,6 +127,11 @@ export default function GlobalCampaignSettingsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans">
+      {!durable && (
+        <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-950/20 text-xs font-semibold text-amber-300">
+          Settings are not durable yet: the admin_settings table is missing (migration 20261102000005 not applied). Values shown are defaults or in-memory values, and saves will fail until the migration is applied.
+        </div>
+      )}
       {/* Header */}
       <div className="border-b border-zinc-800 pb-4">
         <h1 className="text-xl font-extrabold text-zinc-100 flex items-center gap-2.5">

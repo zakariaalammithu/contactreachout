@@ -58,6 +58,8 @@ export interface UserSession {
   email: string;
   role: AppRole;
   expiresAt: number;
+  /** Creation timestamp. Tokens issued before a revocation epoch are rejected. */
+  issuedAt?: number;
 }
 
 declare global {
@@ -76,6 +78,14 @@ const otpRegistry = globalThis.__cr_otpRegistry ?? (globalThis.__cr_otpRegistry 
 const sessionRegistry = globalThis.__cr_sessionRegistry ?? (globalThis.__cr_sessionRegistry = new Map<string, UserSession>());
 const pendingSignupRegistry = globalThis.__cr_pendingSignupRegistry ?? (globalThis.__cr_pendingSignupRegistry = new Map<string, { fullName: string; email: string; phone?: string; password: string; referralCode?: string }>());
 const rateLimitTracker = globalThis.__cr_rateLimitTracker ?? (globalThis.__cr_rateLimitTracker = new Map<string, { count: number; windowExpiresAt: number }>());
+
+// Per-user session-revocation epochs (email -> timestamp). Any session
+// with issuedAt older than the epoch (or without issuedAt, i.e. issued
+// before revocation support existed) is rejected by getSession.
+// IN-MEMORY ONLY: epochs reset when the server instance recycles, and
+// other serverless instances do not see a revoke issued elsewhere.
+// The admin UI states this limit honestly.
+const sessionRevocationEpoch = new Map<string, number>();
 
 export class AuthStore {
   public static readonly PRIMARY_SUPER_ADMIN_EMAIL = 'mithusquare@gmail.com';
@@ -435,6 +445,7 @@ export class AuthStore {
       email: cleanEmail,
       role,
       expiresAt: Date.now() + ttlMs,
+      issuedAt: Date.now(),
     };
     sessionRegistry.set(sessionId, session);
 
@@ -458,6 +469,78 @@ export class AuthStore {
   }
 
 
+  /**
+   * True when the session predates the user's latest revoke-all. Tokens
+   * without issuedAt predate revocation support and are treated as revoked
+   * once any epoch exists for the user.
+   */
+  private static isSessionRevoked(session: UserSession): boolean {
+    const epoch = sessionRevocationEpoch.get(session.email.toLowerCase().trim());
+    if (epoch === undefined) return false;
+    return (session.issuedAt ?? 0) < epoch;
+  }
+
+  /**
+   * Revokes every session of the user except the current one. The current
+   * browser survives only if the caller re-issues its token with a fresh
+   * issuedAt (see the admin profile route). In-memory only: see the
+   * sessionRevocationEpoch comment for the recycle/cross-instance limit.
+   */
+  public static revokeAllOtherSessions(email: string, currentSessionId: string): number {
+    const cleanEmail = email.toLowerCase().trim();
+    const epoch = Date.now();
+    sessionRevocationEpoch.set(cleanEmail, epoch);
+    for (const [key, session] of sessionRegistry.entries()) {
+      if (session.email.toLowerCase().trim() === cleanEmail && key !== currentSessionId) {
+        sessionRegistry.delete(key);
+      }
+    }
+    return epoch;
+  }
+
+  /**
+   * Revoke-all helper for the current request token. Bumps the user's
+   * epoch (rejecting every older token), deletes other registry sessions,
+   * and returns a fresh token for the current browser when the request
+   * carried a v2 signed token (issuedAt = epoch, so it passes the check).
+   * For bare registry session ids it refreshes the registry entry in
+   * place and returns freshToken: null (no cookie change needed).
+   */
+  public static revokeAllOtherSessionsForToken(
+    email: string,
+    rawToken: string,
+  ): { freshToken: string | null; expiresAt: number | null } {
+    let currentSessionId = '';
+    let parsed: UserSession | null = null;
+    const parts = (rawToken || '').split('.');
+    if (parts.length === 3 && parts[0] === 'v2') {
+      try {
+        const decoded = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')) as UserSession;
+        if (decoded?.sessionId && decoded?.email) {
+          parsed = decoded;
+          currentSessionId = decoded.sessionId;
+        }
+      } catch { /* unparsable token: revoke still applies by epoch */ }
+    } else if (rawToken) {
+      currentSessionId = rawToken;
+    }
+    const epoch = this.revokeAllOtherSessions(email, currentSessionId);
+    if (parsed) {
+      return {
+        freshToken: this.createSignedSessionToken({ ...parsed, issuedAt: epoch }),
+        expiresAt: parsed.expiresAt,
+      };
+    }
+    if (currentSessionId) {
+      const existing = sessionRegistry.get(currentSessionId);
+      if (existing) {
+        existing.issuedAt = epoch;
+        sessionRegistry.set(currentSessionId, existing);
+      }
+    }
+    return { freshToken: null, expiresAt: null };
+  }
+
   public static getSession(sessionId: string): UserSession | null {
     const session = sessionRegistry.get(sessionId);
     // Vercel/serverless requests can land on a different instance, so the
@@ -473,7 +556,7 @@ export class AuthStore {
         if (parts[2].length === expected.length && crypto.timingSafeEqual(Buffer.from(parts[2]), Buffer.from(expected))) {
           try {
             const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as UserSession;
-            if (parsed?.sessionId && parsed?.userId && parsed?.email && Number.isFinite(parsed.expiresAt) && Date.now() <= parsed.expiresAt) return parsed;
+            if (parsed?.sessionId && parsed?.userId && parsed?.email && Number.isFinite(parsed.expiresAt) && Date.now() <= parsed.expiresAt && !this.isSessionRevoked(parsed)) return parsed;
           } catch { /* invalid token */ }
         }
         return null;
@@ -491,6 +574,10 @@ export class AuthStore {
       return null;
     }
     if (Date.now() > session.expiresAt) {
+      sessionRegistry.delete(sessionId);
+      return null;
+    }
+    if (this.isSessionRevoked(session)) {
       sessionRegistry.delete(sessionId);
       return null;
     }

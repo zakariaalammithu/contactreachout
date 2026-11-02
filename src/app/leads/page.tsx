@@ -113,10 +113,15 @@ export default function LeadsPage() {
         listName: listName,
       } as any);
 
+      // One id for the whole upload, generated BEFORE the leads so the
+      // leads' listId matches the list object (previously the leads
+      // carried the list NAME as listId while the list object got a
+      // different, later timestamp id).
+      const generatedListId = `list-${Date.now()}`;
       const validLeads = importResult.validLeads.map((ld: any, idx: number) => ({
         id: `direct-lead-${Date.now()}-${idx}`,
-        companyName: ld.companyName || ld.company_name || 'Company',
-        company_name: ld.companyName || ld.company_name || 'Company',
+        companyName: ld.companyName || ld.company_name || '',
+        company_name: ld.companyName || ld.company_name || '',
         website: ld.website || ld.domain || '',
         domain: ld.domain || ld.website || '',
         email: ld.email || '',
@@ -133,7 +138,9 @@ export default function LeadsPage() {
         sourceFileName: fileName,
         source_file: fileName,
         file_name: fileName,
-        listId: listName,
+        listId: generatedListId,
+        listName: listName,
+        ownerEmail: activeAccount,
         isNewlyImported: true,
       }));
 
@@ -151,11 +158,12 @@ export default function LeadsPage() {
         }
         const existingLists = storedLists ? JSON.parse(storedLists) : [];
         const newListObj = {
-          id: `list-${Date.now()}`,
+          id: generatedListId,
           name: listName,
           fileName: fileName,
           count: validLeads.length,
           uploadedAt: new Date().toISOString(),
+          ownerEmail: activeAccount,
         };
         localStorage.setItem('user_lead_lists', JSON.stringify([newListObj, ...existingLists]));
         setLeadLists((prev) => [newListObj, ...prev.filter((item) => item.id !== newListObj.id)]);
@@ -520,10 +528,44 @@ export default function LeadsPage() {
         captchaCount: 0,
       };
       writeCampaignDrafts(localStorage, [campaign, ...storedCampaigns]);
-      localStorage.setItem('user_imported_leads', JSON.stringify(selectedLeads));
+      // Merge into the global pool instead of replacing it: the old
+      // code overwrote user_imported_leads with only the selected rows,
+      // silently destroying every other imported lead.
+      const storedPool = localStorage.getItem('user_imported_leads');
+      const existingPool = storedPool ? JSON.parse(storedPool) : [];
+      const poolArray = Array.isArray(existingPool) ? existingPool : [];
+      const poolIds = new Set(poolArray.map((l: any) => l.id || l.website));
+      const mergedPool = [
+        ...poolArray,
+        ...selectedLeads.filter((l: any) => l && (l.id || l.website) && !poolIds.has(l.id || l.website)),
+      ];
+      localStorage.setItem('user_imported_leads', JSON.stringify(mergedPool));
       router.push(`/campaigns/new?edit=${encodeURIComponent(campaignId)}`);
       return;
     }
+  };
+
+  // Carry leads into a fresh editor via sessionStorage (consumed once by
+  // the editor's mount effect). The old bare links opened a blank editor.
+  const handleCreateCampaignWithNewlyImported = () => {
+    const fresh = allLeads.filter(
+      (l: any) =>
+        l &&
+        (l.isNewlyImported ||
+          (uploadedFileName && (l.sourceFileName === uploadedFileName || l.file_name === uploadedFileName)))
+    );
+    const prefill = fresh.length > 0 ? fresh : allLeads.slice(0, newlyImportedCount);
+    try {
+      sessionStorage.setItem('campaign_prefill_leads', JSON.stringify(prefill));
+    } catch {}
+    router.push('/campaigns/new');
+  };
+
+  const handleLaunchCampaignWithRecord = (record: any) => {
+    try {
+      sessionStorage.setItem('campaign_prefill_leads', JSON.stringify([record]));
+    } catch {}
+    router.push('/campaigns/new');
   };
 
   return (
@@ -688,27 +730,51 @@ export default function LeadsPage() {
                       const listKey = list.id || list.name;
                       const selected = activeListIds.includes(listKey);
                       return (
-                        <label
+                        <div
                           key={list.id || list.name}
-                          className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs ${
+                          className={`flex w-full items-center gap-1 rounded-md px-2.5 py-1.5 text-left text-xs ${
                             selected ? 'bg-blue-950 font-bold text-blue-300' : 'text-zinc-300 hover:bg-zinc-900'
                           }`}
                         >
-                          <input
-                            type="checkbox"
-                            checked={selected}
-                            onChange={() => {
-                              setActiveListIds((prev) =>
-                                selected ? prev.filter((id) => id !== listKey) : [...prev, listKey]
-                              );
+                          <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => {
+                                setActiveListIds((prev) =>
+                                  selected ? prev.filter((id) => id !== listKey) : [...prev, listKey]
+                                );
+                              }}
+                              className="h-3.5 w-3.5 shrink-0 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <span className="truncate">
+                              {list.name || list.fileName}
+                              <span className="ml-1 text-zinc-400">({listLeadCount(list)})</span>
+                            </span>
+                          </label>
+                          <button
+                            type="button"
+                            title="Rename list"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              renameList(list);
                             }}
-                            className="h-3.5 w-3.5 shrink-0 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer"
-                          />
-                          <span>
-                            {list.name || list.fileName}
-                            <span className="ml-1 text-zinc-400">({listLeadCount(list)})</span>
-                          </span>
-                        </label>
+                            className="shrink-0 rounded px-1 py-0.5 text-[10px] font-bold text-zinc-400 hover:bg-zinc-800 hover:text-blue-300"
+                          >
+                            Rename
+                          </button>
+                          <button
+                            type="button"
+                            title="Delete list"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeList(list);
+                            }}
+                            className="shrink-0 rounded px-1 py-0.5 text-rose-400 hover:bg-zinc-800 hover:text-rose-300"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       );
                     })
                   ) : (
@@ -716,6 +782,13 @@ export default function LeadsPage() {
                   )}
                 </div>
               )}
+              <button
+                type="button"
+                onClick={clearImportedLeads}
+                className="w-full rounded-lg border border-zinc-800 px-2 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-950/40"
+              >
+                Clear all imported leads
+              </button>
             </div>
           </details>
 
@@ -956,12 +1029,15 @@ export default function LeadsPage() {
             </div>
           </div>
 
-          <Link href="/campaigns/new">
-            <Button variant="primary" size="sm" className="shrink-0 font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm cursor-pointer">
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Create Campaign with These Leads
-            </Button>
-          </Link>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleCreateCampaignWithNewlyImported}
+            className="shrink-0 font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Create Campaign with These Leads
+          </Button>
         </div>
       )}
 
@@ -1349,12 +1425,15 @@ export default function LeadsPage() {
 
             {/* Modal Actions */}
             <div className="p-4 border-t border-zinc-800 bg-zinc-900 flex items-center justify-between">
-              <Link href="/campaigns/new">
-                <Button variant="primary" size="sm" className="font-bold bg-blue-600 hover:bg-blue-700 cursor-pointer">
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  Launch Campaign with this Record
-                </Button>
-              </Link>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleLaunchCampaignWithRecord(selectedLeadForModal)}
+                className="font-bold bg-blue-600 hover:bg-blue-700 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Launch Campaign with this Record
+              </Button>
 
               <button
                 onClick={() => setSelectedLeadForModal(null)}

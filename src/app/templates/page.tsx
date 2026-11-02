@@ -34,7 +34,7 @@ import { AIService } from '@/lib/services/ai/ai-service';
 import { MessageTemplate } from '@/types';
 
 export default function TemplatesPage() {
-  const [templates, setTemplates] = useState<MessageTemplate[]>(mockTemplates);
+  const [templates, setTemplates] = useState<StoredTemplate[]>(mockTemplates);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(mockTemplates[0]?.id || '');
   const [isCreatingNew, setIsCreatingNew] = useState(false);
 
@@ -55,6 +55,44 @@ export default function TemplatesPage() {
   const [aiMaxWords, setAiMaxWords] = useState(120);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiGeneratedDraft, setAiGeneratedDraft] = useState<{ subject: string; body: string } | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Templates saved through this page share the 'user_message_templates'
+  // store with the editor's dropdown, which filters strictly by
+  // ownerEmail and reads category/usageCount. Those fields must survive
+  // save/load, or saved templates vanish from the editor.
+  type StoredTemplate = MessageTemplate & {
+    ownerEmail?: string;
+    category?: 'initial' | 'followup' | 'general';
+    usageCount?: number;
+  };
+  const mockTemplateIds = new Set(mockTemplates.map((t) => t.id));
+  const persistTemplates = (list: StoredTemplate[]) => {
+    try {
+      const toStore = list
+        .filter((t) => !mockTemplateIds.has(t.id))
+        .map((t) => ({
+          id: t.id,
+          name: t.name,
+          subject: t.subjectTemplate,
+          body: t.bodyTemplate,
+          subjectTemplate: t.subjectTemplate,
+          bodyTemplate: t.bodyTemplate,
+          complianceFooter: t.complianceFooter,
+          isSpintaxEnabled: t.isSpintaxEnabled,
+          variables: t.variables,
+          ownerEmail: t.ownerEmail,
+          category: t.category || 'general',
+          usageCount: t.usageCount || 0,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+        }));
+      localStorage.setItem('user_message_templates', JSON.stringify(toStore));
+    } catch (err) {
+      console.error('Error storing templates to localStorage:', err);
+    }
+  };
 
   // Real Lead Selector for Live Preview
   const [selectedLeadId, setSelectedLeadId] = useState<string>(mockLeads[0]?.id || '');
@@ -111,6 +149,7 @@ export default function TemplatesPage() {
   const handleGenerateAiMessage = async () => {
     const selectedLead = mockLeads.find((l) => l.id === selectedLeadId) || mockLeads[0];
     setIsGeneratingAi(true);
+    setAiError(null);
 
     try {
       const res = await AIService.personalizeMessage({
@@ -132,6 +171,11 @@ export default function TemplatesPage() {
       setFormSubject(res.subject);
       setFormBody(res.body);
     } catch (err) {
+      // Surface provider errors in the UI instead of swallowing them in
+      // the console: a failed generation used to look like nothing
+      // happened, and the deterministic fallback draft could pass as AI.
+      const message = err instanceof Error ? err.message : 'AI generation failed.';
+      setAiError(message);
       console.error('AI generation error:', err);
     } finally {
       setIsGeneratingAi(false);
@@ -146,7 +190,7 @@ export default function TemplatesPage() {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const mapped: MessageTemplate[] = parsed.map((t: any) => ({
+            const mapped: StoredTemplate[] = parsed.map((t: any) => ({
               id: t.id,
               name: t.name,
               subjectTemplate: t.subject || t.subjectTemplate || '',
@@ -156,8 +200,23 @@ export default function TemplatesPage() {
               variables: t.variables || [],
               createdAt: t.createdAt || new Date().toISOString(),
               updatedAt: t.updatedAt || new Date().toISOString(),
+              // Preserved so the editor's owner-filtered dropdown keeps
+              // showing these templates (previously dropped on load).
+              ownerEmail: t.ownerEmail || '',
+              category: t.category || 'general',
+              usageCount: t.usageCount || 0,
             }));
-            setTemplates([...mapped, ...mockTemplates]);
+            // Seed mocks ONLY when the store is truly empty. Previously
+            // mocks were always appended, so a deleted template reappeared
+            // on every reload.
+            setTemplates(mapped);
+            setSelectedTemplateId(mapped[0].id);
+            setIsCreatingNew(false);
+            setFormName(mapped[0].name);
+            setFormSubject(mapped[0].subjectTemplate);
+            setFormBody(mapped[0].bodyTemplate);
+            setFormFooter(mapped[0].complianceFooter);
+            setIsSpintaxEnabled(mapped[0].isSpintaxEnabled);
           }
         }
       } catch (err) {
@@ -168,12 +227,18 @@ export default function TemplatesPage() {
 
   // Save / Update Template
   const handleSave = () => {
-    if (!formName.trim() || !formSubject.trim() || !formBody.trim()) return;
+    // A blank save used to be a silent no-op; surface the problem.
+    if (!formName.trim() || !formSubject.trim() || !formBody.trim()) {
+      setSaveError('Template name, subject and body are all required before saving.');
+      return;
+    }
+    setSaveError(null);
 
-    let updatedList: MessageTemplate[] = [];
+    let updatedList: StoredTemplate[] = [];
+    const activeAccount = (typeof window !== 'undefined' ? (localStorage.getItem('active_account_email') || '') : '').trim().toLowerCase();
 
     if (isCreatingNew) {
-      const newTemplate: MessageTemplate = {
+      const newTemplate: StoredTemplate = {
         id: `tpl-${Date.now()}`,
         name: formName,
         subjectTemplate: formSubject,
@@ -183,6 +248,9 @@ export default function TemplatesPage() {
         variables: allValidVariables,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        ownerEmail: activeAccount,
+        category: 'general',
+        usageCount: 0,
       };
       updatedList = [newTemplate, ...templates];
       setTemplates(updatedList);
@@ -206,22 +274,12 @@ export default function TemplatesPage() {
       setTemplates(updatedList);
     }
 
-    try {
-      if (typeof window !== 'undefined') {
-        const toStore = updatedList.map((t) => ({
-          id: t.id,
-          name: t.name,
-          subject: t.subjectTemplate,
-          body: t.bodyTemplate,
-          subjectTemplate: t.subjectTemplate,
-          bodyTemplate: t.bodyTemplate,
-          complianceFooter: t.complianceFooter,
-          isSpintaxEnabled: t.isSpintaxEnabled,
-        }));
-        localStorage.setItem('user_message_templates', JSON.stringify(toStore));
-      }
-    } catch (err) {
-      console.error('Error storing templates to localStorage:', err);
+    // Persist through the shared helper so ownerEmail/category/
+    // usageCount survive (the old inline mapping dropped them, which
+    // made saved templates vanish from the editor's owner-filtered
+    // dropdown). Mock templates are never written to the store.
+    if (typeof window !== 'undefined') {
+      persistTemplates(updatedList);
     }
 
     setSaveSuccess(true);
@@ -236,6 +294,11 @@ export default function TemplatesPage() {
     }
     const remaining = templates.filter((t) => t.id !== id);
     setTemplates(remaining);
+    // Persist the deletion: the old handler only changed state, so the
+    // deleted template came back from localStorage on reload.
+    if (typeof window !== 'undefined') {
+      persistTemplates(remaining);
+    }
     if (selectedTemplateId === id) {
       handleSelectTemplate(remaining[0]);
     }
@@ -402,6 +465,12 @@ export default function TemplatesPage() {
                 </Button>
               </div>
             </div>
+            {saveError && (
+              <div className="flex items-center gap-2 rounded-xl border border-rose-900 bg-rose-950 p-3 text-xs font-semibold text-rose-300">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400" />
+                <span>{saveError}</span>
+              </div>
+            )}
 
             {/* AI Personalization Option Block (Prompt 16) */}
             <div className="rounded-xl border border-indigo-500/30 bg-indigo-950/20 p-4 space-y-3">
@@ -473,6 +542,12 @@ export default function TemplatesPage() {
                       {aiGeneratedDraft ? 'Re-generate AI Variant' : 'Generate Personalized Draft'}
                     </Button>
                   </div>
+                  {aiError && (
+                    <div className="flex items-center gap-2 rounded-xl border border-rose-900 bg-rose-950 p-3 text-xs font-semibold text-rose-300">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400" />
+                      <span>AI generation failed: {aiError}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -588,12 +663,12 @@ export default function TemplatesPage() {
             </div>
           </Card>
 
-          {/* Live Preview with Real Lead Data */}
+          {/* Preview with Sample Lead Data (never live leads) */}
           <Card className="glass-panel p-6 space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <Eye className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-bold text-white">Live Rendered Preview</h3>
+                <h3 className="text-sm font-bold text-white">Sample Lead Preview</h3>
               </div>
 
               <div className="flex items-center gap-3">
@@ -624,6 +699,7 @@ export default function TemplatesPage() {
                 </button>
               </div>
             </div>
+            <p className="text-[11px] text-zinc-400">Preview uses sample leads only — never your live leads.</p>
 
             {/* Preview Output Box */}
             <div className="rounded-xl border border-primary/20 bg-black p-5 space-y-3 shadow-inner">

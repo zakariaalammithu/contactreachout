@@ -25,7 +25,7 @@ const outreachProfiles = [
 const homeFaqs = [
   { question: 'What does ContactReachout automate?', answer: 'ContactReachout helps teams upload named lead lists, find suitable website contact pages, prepare campaign messages, process contact-form outreach with safeguards, and track verifiable results.' },
   { question: 'How does AI personalization work?', answer: 'The AI uses the lead fields and campaign guidance you provide to draft a relevant message. You can review the campaign configuration before processing, and the system does not need to invent company facts.' },
-  { question: 'How are credits used?', answer: 'A successful website submission uses 2 credits. Optional AI personalization uses 1 additional credit. Current plan allowances are shown on the Pricing page.' },
+  { question: 'How are credits used?', answer: 'A successful website submission uses 1 credit. Failed, blocked, or unavailable outcomes charge 0 credits. AI Personalization uses 0 credits on paid plans. Current plan allowances are shown on the Pricing page.' },
   { question: 'Can I pause or review a campaign?', answer: 'Yes. Campaign controls and per-lead states help you pause work, review outcomes, and keep submission history connected to the original lead list.' },
   { question: 'Which lead-list formats are supported?', answer: 'The campaign workflow is designed for CSV and Excel lead lists. You can map the available company and contact fields before starting outreach.' },
   { question: 'Does ContactReachout guarantee every website can be submitted?', answer: 'No. Some websites have no suitable contact form, use CAPTCHA, block automation, or require manual review. ContactReachout records these outcomes instead of claiming an unverified submission.' },

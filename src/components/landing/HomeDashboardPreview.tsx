@@ -574,7 +574,7 @@ function ProfileView() {
 
 function ReferralView() {
   const [copied, setCopied] = useState(false);
-  const link = 'contactreachout.com/signup?ref=demo';
+  const link = 'contactreachout.com/signup';
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(`https://${link}`);

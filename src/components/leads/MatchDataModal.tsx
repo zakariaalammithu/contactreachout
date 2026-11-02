@@ -220,12 +220,21 @@ export function MatchDataModal({
         }
       });
 
-      const rowsToProcess = ignoreFirstRow ? allRawRows : allRawRows;
+      // The toggle must actually skip the first row (e.g. a repeated
+      // header row in a headerless export). Previously both branches
+      // used allRawRows, so the toggle did nothing.
+      const rowsToProcess = ignoreFirstRow ? allRawRows.slice(1) : allRawRows;
       const result = processImportRows(rowsToProcess, mappingObj);
 
-      const rawRowsToUse = (result.validLeads && result.validLeads.length > 0)
-        ? result.validLeads
-        : allRawRows;
+      // Zero valid leads must import NOTHING. Previously the code fell
+      // through to the raw unmapped rows, importing unvalidated data
+      // the user never mapped.
+      if (!result.validLeads || result.validLeads.length === 0) {
+        alert('No valid leads found in this file with the current column mapping. Please map a Website column and check that at least one row has a website, then try again.');
+        return;
+      }
+
+      const rawRowsToUse = result.validLeads;
 
       const generatedListId = `list-${Date.now()}`;
       const generatedListName = listName.trim();

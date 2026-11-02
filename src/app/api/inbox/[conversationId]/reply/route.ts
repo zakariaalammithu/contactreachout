@@ -14,6 +14,9 @@ export async function POST(request: NextRequest, { params }: { params: { convers
     const sent = await sendGmailReply(context, { mailboxId: input.mailboxId, to: input.recipientEmail, subject: input.subject, text: input.replyText, threadId: detail.conversation.provider_thread_id });
     if (!sent.messageId || !sent.threadId) throw new Error('GMAIL_SEND_FAILED');
     await recordGmailOutboundMessage(context, { conversationId: params.conversationId, mailboxId: input.mailboxId, providerMessageId: sent.messageId, providerThreadId: sent.threadId, recipient: input.recipientEmail, subject: input.subject, text: input.replyText });
-    return NextResponse.json({ success: true, providerAccepted: true, messageId: sent.messageId, threadId: sent.threadId });
+    // Same acceptance shape as the ephemeral send-reply route. isLiveSent
+    // is honest here: Gmail accepted the send AND the outbound message
+    // was recorded before this response is returned.
+    return NextResponse.json({ success: true, isLiveSent: true, providerAccepted: true, messageId: sent.messageId, threadId: sent.threadId });
   } catch (error) { const status = error instanceof z.ZodError ? 400 : error instanceof PersistenceAuthorizationError ? 401 : 502; return NextResponse.json({ error: status === 400 ? 'Invalid reply request.' : status === 401 ? 'Authentication is required.' : 'Gmail did not accept or persist this reply.' }, { status }); }
 }

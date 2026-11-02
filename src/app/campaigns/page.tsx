@@ -105,6 +105,7 @@ const TERMINAL_LOG_STATUSES = new Set([
   'BLOCKED',
   'BLOCKED_NO_CREDITS',
   'BLOCKED_SUPPRESSED',
+  'WORKER_UNAVAILABLE',
 ]);
 
 
@@ -125,22 +126,30 @@ export default function CampaignsPage() {
 
   const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
   const [availableCredits, setAvailableCredits] = useState<number | null>(null);
+  const [creditsFailed, setCreditsFailed] = useState(false);
 
-  // Live card credit balance (best effort: the card hides the remainder when unknown).
-  useEffect(() => {
-    let cancelled = false;
+  // Live card credit balance. Refreshed after every processed lead (not
+  // just once on mount), because each DELIVERED lead deducts a credit.
+  // A failed fetch sets creditsFailed so the card shows an honest
+  // "unavailable" state instead of silently hiding the remainder.
+  const refreshCredits = React.useCallback(() => {
     fetch('/api/credits')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!cancelled && data?.wallet && typeof data.wallet.totalCreditsAvailable === 'number') {
+        if (data?.wallet && typeof data.wallet.totalCreditsAvailable === 'number') {
           setAvailableCredits(data.wallet.totalCreditsAvailable);
+          setCreditsFailed(false);
+        } else {
+          setCreditsFailed(true);
         }
       })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+      .catch(() => {
+        setCreditsFailed(true);
+      });
   }, []);
+  useEffect(() => {
+    refreshCredits();
+  }, [refreshCredits]);
   const [folderFilter, setFolderFilter] = useState('All Folders');
   const [tagFilter, setTagFilter] = useState('All Tags');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
@@ -787,13 +796,27 @@ export default function CampaignsPage() {
                   const campToUpdate = currentCamps.find((c: any) => c && c.id === rawCamp.id);
                   if (campToUpdate) {
                     if (res.status === 402) {
+                      // Use the server's own block reason: a subscription
+                      // expiry block is NOT a credit shortage, and labelling
+                      // it as one sends the user to buy credits they cannot
+                      // use. The process route returns status
+                      // BLOCKED_SUBSCRIPTION_EXPIRED or BLOCKED_NO_CREDITS.
+                      const blockBody = await res.json().catch(() => ({} as any));
+                      const blockStatus = typeof blockBody?.status === 'string' && blockBody.status
+                        ? blockBody.status
+                        : 'BLOCKED_NO_CREDITS';
+                      const blockMessage = typeof blockBody?.error === 'string' && blockBody.error
+                        ? blockBody.error
+                        : blockStatus === 'BLOCKED_SUBSCRIPTION_EXPIRED'
+                          ? 'Subscription expired. Campaign paused.'
+                          : 'Available credit balance is 0. Campaign paused.';
                       campToUpdate.status = 'paused';
                       campToUpdate.logs = [
                         {
                           leadId: nextLead.id,
                           domain: resolveLeadWebsite(nextLead) || 'N/A',
                           status: 'FAILED',
-                          code: 'BLOCKED_NO_CREDITS - Available credit balance is 0. Campaign paused.',
+                          code: `${blockStatus} - ${blockMessage}`,
                           time: safeFormatTime(new Date()),
                           timestamp: new Date().toISOString(),
                         },
@@ -878,6 +901,9 @@ export default function CampaignsPage() {
               } finally {
                 if (leadKey) inFlightLeadKeys.delete(leadKey);
                 lastSubmissionAtByCampaign.set(rawCamp.id, Date.now());
+                // Refresh the live credit balance after every processed
+                // lead so the progress card never shows a stale remainder.
+                void refreshCredits();
               }
 
               // Fast path only when no delay is configured: keep the
@@ -1322,11 +1348,48 @@ export default function CampaignsPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
   };
 
-  const toggleCampaignStatus = (id: string, e: React.MouseEvent) => {
+  const toggleCampaignStatus = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isActionAuthorized(id)) {
       alert('Unauthorized: You can only modify campaigns that belong to your account.');
       return;
+    }
+    const target = campaigns.find((c) => c.id === id);
+    if (!target) return;
+    const activating = target.status !== 'active';
+    if (activating) {
+      // A draft with no prospects must never flip to RUNNING (the sender
+      // loop has nothing to process, so it would stay running forever).
+      const draft = (() => {
+        try {
+          return (readCampaignDrafts(localStorage) as any[]).find((item: any) => item && item.id === id);
+        } catch {
+          return undefined;
+        }
+      })();
+      const prospectCount = Array.isArray(draft?.prospectsList) ? draft.prospectsList.length : 0;
+      if (prospectCount === 0) {
+        alert('Add at least 1 prospect before starting this campaign.');
+        return;
+      }
+      // Start goes through the same server gate as the editor: credit
+      // capacity + subscription-expiry, surfaced honestly (402/400/500),
+      // instead of silently flipping to RUNNING and failing per lead.
+      try {
+        const valRes = await fetch('/api/campaigns/validate-start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campaignId: id, prospectsCount: prospectCount, aiPersonalizationEnabled: Boolean((draft as any)?.aiPersonalizationEnabled) }),
+        });
+        const valData = await valRes.json().catch(() => ({}));
+        if (!valRes.ok || !valData.allowed) {
+          alert(valData.message || valData.error || 'This campaign cannot be started right now. Please check your credits and try again.');
+          return;
+        }
+      } catch (err: any) {
+        alert(err?.message || 'Could not validate campaign credits. The campaign was not started.');
+        return;
+      }
     }
     setCampaigns((prev) =>
       prev.map((c) => {
@@ -1344,7 +1407,12 @@ export default function CampaignsPage() {
                 window.dispatchEvent(new CustomEvent('trigger_campaign_process'));
               }
             }
-          } catch (err) {}
+          } catch (err: any) {
+            // Storage failures must never be swallowed: the list flip
+            // below would otherwise disagree with what was persisted.
+            alert(`Could not save the campaign status change: ${err?.message || 'browser storage failed.'} The campaign was not ${newStatus === 'active' ? 'started' : 'paused'}.`);
+            return c;
+          }
           return { ...c, status: newStatus };
         }
         return c;
@@ -1894,6 +1962,7 @@ export default function CampaignsPage() {
                   dailyLimit={typeof camp.dailySubmissionLimit === 'number' ? camp.dailySubmissionLimit : 100}
                   sendingWeekdays={sendingDaysToWeekdays(camp.schedule?.sendingDays)}
                   availableCredits={availableCredits}
+                  creditsUnavailable={creditsFailed}
                   onPause={(e) => toggleCampaignStatus(camp.id, e)}
                 />
               ))}
@@ -2890,7 +2959,15 @@ export default function CampaignsPage() {
                 <div className="font-bold text-zinc-300 uppercase tracking-wider text-[10px] font-mono">Target Website URLs</div>
                 <div className="grid grid-cols-1 gap-1 font-mono text-[11px]">
                   <div><span className="text-zinc-400">Domain:</span> <span className="font-bold text-zinc-100">{selectedProspectDetail.domain}</span></div>
-                  <div><span className="text-zinc-400">Contact URL:</span> <a href={selectedProspectDetail.url} target="_blank" rel="noreferrer" className="text-blue-400 underline">{selectedProspectDetail.url}</a></div>
+                  <div><span className="text-zinc-400">Contact URL:</span> {(() => {
+                    const contactUrl = selectedProspectDetail.url;
+                    const hasUrl = typeof contactUrl === 'string' && contactUrl.trim() !== '' && contactUrl.trim() !== 'N/A';
+                    return hasUrl ? (
+                      <a href={contactUrl} target="_blank" rel="noreferrer" className="text-blue-400 underline">{contactUrl}</a>
+                    ) : (
+                      <span className="text-zinc-500">N/A</span>
+                    );
+                  })()}</div>
                 </div>
               </div>
 

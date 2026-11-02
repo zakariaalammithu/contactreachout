@@ -87,11 +87,16 @@ export default function RevenuePage() {
     return params.toString();
   }, [endDate, range, startDate]);
 
+  const customIncomplete = range === 'custom' && (!startDate || !endDate);
+  const customInvalid = range === 'custom' && Boolean(startDate && endDate && startDate > endDate);
+  const customBlocked = customIncomplete || customInvalid;
+
   const fetchRevenueData = useCallback(async () => {
-    if (range === 'custom' && (!startDate || !endDate)) {
+    if (customBlocked) {
       setMetrics(null);
       setPackageSales([]);
       setRevenueTrend([]);
+      setIsLoading(false);
       return;
     }
 
@@ -212,6 +217,15 @@ export default function RevenuePage() {
         </div>
       )}
 
+      {customBlocked && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-900 bg-amber-950 p-4 text-xs font-bold text-amber-300">
+          <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
+          {customIncomplete
+            ? 'Custom Range needs both a start date and an end date — pick both dates above to load revenue.'
+            : 'Start date must be on or before the end date.'}
+        </div>
+      )}
+
       {/* Top 3 Summary Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         <Card className="p-5 space-y-2 border border-zinc-800 bg-zinc-950 rounded-xl shadow-xs">
@@ -222,7 +236,7 @@ export default function RevenuePage() {
             </div>
           </div>
           <div className="text-3xl font-black text-emerald-300">
-            {isLoading ? '—' : metrics ? metrics.todayFormatted : '$0.00'}
+            {isLoading || customBlocked ? '—' : metrics ? metrics.todayFormatted : '$0.00'}
           </div>
           <p className="text-xs font-medium text-zinc-400">Gross revenue since midnight</p>
         </Card>
@@ -235,7 +249,7 @@ export default function RevenuePage() {
             </div>
           </div>
           <div className="text-3xl font-black text-blue-400">
-            {isLoading ? '—' : metrics ? metrics.thisMonthFormatted : '$0.00'}
+            {isLoading || customBlocked ? '—' : metrics ? metrics.thisMonthFormatted : '$0.00'}
           </div>
           <p className="text-xs font-medium text-zinc-400">Gross revenue for current month</p>
         </Card>
@@ -248,7 +262,7 @@ export default function RevenuePage() {
             </div>
           </div>
           <div className="text-3xl font-black text-zinc-100">
-            {isLoading ? '—' : metrics ? metrics.totalFormatted : '$0.00'}
+            {isLoading || customBlocked ? '—' : metrics ? metrics.totalFormatted : '$0.00'}
           </div>
           <p className="text-xs font-medium text-zinc-400">Cumulative Stripe verified earnings</p>
         </Card>

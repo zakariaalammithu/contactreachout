@@ -13,6 +13,7 @@ interface SendingProgressCardProps {
   dailyLimit: number;
   sendingWeekdays: number[];
   availableCredits: number | null;
+  creditsUnavailable?: boolean;
   onPause: (e: React.MouseEvent) => void;
 }
 
@@ -36,6 +37,7 @@ export function SendingProgressCard({
   dailyLimit,
   sendingWeekdays,
   availableCredits,
+  creditsUnavailable,
   onPause,
 }: SendingProgressCardProps) {
   const remaining = Math.max(0, total - sent - failed);
@@ -101,7 +103,11 @@ export function SendingProgressCard({
           <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-500">Credits used</p>
           <p className="mt-0.5 text-lg font-black text-blue-400">
             {creditsUsed}
-            {creditsLeft !== null && <span className="ml-1 text-xs font-bold text-zinc-400">/ {creditsLeft} left</span>}
+            {creditsUnavailable ? (
+              <span className="ml-1 text-xs font-bold text-amber-400">/ unavailable</span>
+            ) : creditsLeft !== null ? (
+              <span className="ml-1 text-xs font-bold text-zinc-400">/ {creditsLeft} left</span>
+            ) : null}
           </p>
         </div>
       </div>

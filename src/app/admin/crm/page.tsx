@@ -130,6 +130,7 @@ export default function AdminCrmPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('csv');
   const [errorState, setErrorState] = useState<{ status: number; message: string } | null>(null);
 
   // Search & Basic Filter States
@@ -354,7 +355,7 @@ export default function AdminCrmPage() {
         country: selectedCountryFilter,
         logic: logicMode,
         filters: JSON.stringify(filterRules),
-        export: 'csv',
+        export: exportFormat,
       });
 
       const res = await fetch(`/api/admin/crm?${queryParams.toString()}`);
@@ -363,7 +364,7 @@ export default function AdminCrmPage() {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `admin_global_crm_export_${Date.now()}.csv`);
+        link.setAttribute('download', `admin_global_crm_export_${Date.now()}.${exportFormat}`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -390,16 +391,26 @@ export default function AdminCrmPage() {
       return;
     setIsDeleting(true);
     try {
-      await Promise.all(
+      // Only rows the server actually deleted (or 404 = already gone)
+      // are removed locally. Per-id failures are surfaced, not swallowed.
+      const results = await Promise.all(
         ids.map(async (id) => {
           try {
             const res = await fetch(`/api/admin/crm/${encodeURIComponent(id)}`, { method: 'DELETE' });
             if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
+            return { id, ok: true as const };
           } catch (e) {
             console.error('Delete contact error:', id, e);
+            return { id, ok: false as const };
           }
-        })
+        }),
       );
+      const succeededIds = results.filter((r) => r.ok).map((r) => r.id);
+      const failedIds = results.filter((r) => !r.ok).map((r) => r.id);
+      if (failedIds.length > 0) {
+        alert(`Failed to delete ${failedIds.length} contact(s) on the server. They were kept in the list: ${failedIds.join(', ')}`);
+      }
+      if (succeededIds.length === 0) return;
       if (typeof window !== 'undefined') {
         try {
           const stored = localStorage.getItem('user_imported_leads');
@@ -408,7 +419,7 @@ export default function AdminCrmPage() {
             if (Array.isArray(parsed)) {
               localStorage.setItem(
                 'user_imported_leads',
-                JSON.stringify(parsed.filter((l: any) => l && !ids.includes(l.id)))
+                JSON.stringify(parsed.filter((l: any) => l && !succeededIds.includes(l.id)))
               );
             }
           }
@@ -416,10 +427,10 @@ export default function AdminCrmPage() {
           console.error('Local lead delete error:', e);
         }
       }
-      setContacts((prev) => prev.filter((c) => !ids.includes(c.id)));
-      setTotalCount((prev) => Math.max(0, prev - ids.length));
-      setMetrics((prev) => ({ ...prev, totalContacts: Math.max(0, prev.totalContacts - ids.length) }));
-      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
+      setContacts((prev) => prev.filter((c) => !succeededIds.includes(c.id)));
+      setTotalCount((prev) => Math.max(0, prev - succeededIds.length));
+      setMetrics((prev) => ({ ...prev, totalContacts: Math.max(0, prev.totalContacts - succeededIds.length) }));
+      setSelectedIds((prev) => prev.filter((id) => !succeededIds.includes(id)));
     } finally {
       setIsDeleting(false);
     }
@@ -595,6 +606,16 @@ export default function AdminCrmPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <select
+            value={exportFormat}
+            onChange={(e) => setExportFormat(e.target.value as 'csv' | 'xlsx')}
+            disabled={isExporting}
+            title="Export format"
+            className="h-9 rounded-xl border border-zinc-800 bg-zinc-950 px-2 text-xs text-zinc-300"
+          >
+            <option value="csv">CSV</option>
+            <option value="xlsx">XLSX</option>
+          </select>
           <Button
             variant="outline"
             size="sm"

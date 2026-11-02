@@ -17,7 +17,7 @@ export function ContactReplySettings() {
   // Default is USA (+1) — a saved E.164 value overrides it on load.
   const [phoneCountry, setPhoneCountry] = useState('1');
   const [whatsAppCountry, setWhatsAppCountry] = useState('1');
-  const [isVerified, setIsVerified] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -312,7 +312,9 @@ export function ContactReplySettings() {
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center justify-between">
                 <span>Reply Email</span>
-                <span className="text-[10px] text-emerald-400 font-bold font-mono">Verified</span>
+                <span className={`text-[10px] font-bold font-mono ${isVerified ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {isVerified ? 'Verified' : 'Verification Pending'}
+                </span>
               </label>
               <div className="relative flex items-center gap-2">
                 <div className="relative flex-1">

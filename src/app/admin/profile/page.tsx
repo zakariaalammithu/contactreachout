@@ -146,6 +146,18 @@ export default function AdminProfilePage() {
 
         <form onSubmit={handleChangePassword} className="space-y-3.5">
           <div className="space-y-1">
+            <label className="text-xs font-semibold text-zinc-400">Current Master Password</label>
+            <input
+              type="password"
+              required
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="Enter your current password to verify"
+              className="w-full rounded-xl border border-zinc-700 bg-black px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="space-y-1">
             <label className="text-xs font-semibold text-zinc-400">New Master Password</label>
             <input
               type="password"
@@ -186,6 +198,9 @@ export default function AdminProfilePage() {
           <div>
             <h3 className="text-sm font-bold text-white">Active Sessions & Token Revocation</h3>
             <p className="text-xs text-zinc-400 mt-0.5">Revoke all active browser tokens if suspicious activity is suspected.</p>
+            <p className="text-[11px] text-amber-300/80 mt-1.5">
+              Limit: revocation is enforced in memory on this server instance and resets when the instance recycles; other instances may still accept revoked tokens until they recycle.
+            </p>
           </div>
 
           <Button variant="destructive" size="sm" onClick={handleRevokeSessions}>

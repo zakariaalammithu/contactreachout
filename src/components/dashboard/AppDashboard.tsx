@@ -42,7 +42,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { mockMetrics, mockCampaigns } from '@/lib/store/mock-data';
-import { HeyreachWorkflowBuilder } from '@/components/dashboard/HeyreachWorkflowBuilder';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 import { CampaignAnalyticsOverview } from '@/components/dashboard/CampaignAnalyticsOverview';
 import { readCampaignDrafts } from '@/lib/services/campaign-draft-storage';

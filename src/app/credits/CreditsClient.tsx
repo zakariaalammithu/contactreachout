@@ -24,6 +24,24 @@ export default function CreditsClient() {
   const [wallet, setWallet] = useState<CreditWallet | null>(null);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
+
+  const openBillingPortal = async () => {
+    setPortalBusy(true);
+    setPortalError(null);
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Billing portal could not be opened.');
+      if (!data.url) throw new Error('Billing portal could not be opened.');
+      window.location.href = data.url;
+    } catch (e) {
+      setPortalError(e instanceof Error ? e.message : 'Billing portal could not be opened.');
+    } finally {
+      setPortalBusy(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -134,12 +152,25 @@ export default function CreditsClient() {
           </p>
         </div>
 
-        <a href="#buy-packages">
-          <Button variant="primary" className="font-bold bg-[#0e6de4] hover:bg-[#0758bd] flex items-center gap-2 cursor-pointer shadow-md">
-            <Plus className="h-4 w-4" />
-            <span>Buy Credit Packages</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <a href="#buy-packages">
+            <Button variant="primary" className="font-bold bg-[#0e6de4] hover:bg-[#0758bd] flex items-center gap-2 cursor-pointer shadow-md">
+              <Plus className="h-4 w-4" />
+              <span>Buy Credit Packages</span>
+            </Button>
+          </a>
+          <Button
+            variant="outline"
+            onClick={openBillingPortal}
+            disabled={portalBusy}
+            className="font-bold flex items-center gap-2 cursor-pointer"
+          >
+            <span>{portalBusy ? 'Opening…' : 'Manage Subscription'}</span>
           </Button>
-        </a>
+        </div>
+        {portalError && (
+          <p role="alert" className="mt-2 text-right text-xs font-semibold text-rose-400">{portalError}</p>
+        )}
       </div>
 
       {/* Credit Balances Overview Cards */}
@@ -302,7 +333,7 @@ export default function CreditsClient() {
                 </div>
               </div>
 
-              <Link href={`/checkout?credits=${pkg.credits}`} className="block w-full pt-2">
+              <Link href={`/checkout?credits=${pkg.credits}&period=monthly&type=${pkg.billingCycle === 'one_time' ? 'one_time' : 'subscription'}`} className="block w-full pt-2">
                 <Button className="w-full font-bold bg-[#0e6de4] hover:bg-[#0758bd] text-white py-2.5 text-xs shadow-sm cursor-pointer">
                   BUY NOW
                 </Button>

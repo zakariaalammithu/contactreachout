@@ -52,6 +52,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; read: boolean; createdAt: string }>>([]);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
   const [showNameModal, setShowNameModal] = useState(false);
   const [inputCampaignName, setInputCampaignName] = useState('');
   const [currentHeaderCampName, setCurrentHeaderCampName] = useState('new');
@@ -265,6 +266,22 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
 
         {/* Dark / light mode switch (dashboard header: flips the dashboard,
             admin and campaign theme; the public site always stays dark) */}
+        <button
+          type="button"
+          onClick={() => setShowNameModal(true)}
+          className="hidden sm:flex items-center gap-1.5 rounded-xl bg-[#0e6de4] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#0758bd] transition-colors cursor-pointer shadow-2xs"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          New Campaign
+        </button>
+        <button
+          type="button"
+          onClick={handleImportLeadsClick}
+          className="hidden sm:flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-bold text-zinc-200 hover:bg-zinc-900 transition-colors cursor-pointer shadow-2xs"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Import Leads
+        </button>
         <ThemeToggle />
 
         {/* User Profile / Account Switcher Controls */}
@@ -298,6 +315,9 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
               <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="border-b border-zinc-800 px-4 py-3">
                   <p className="text-sm font-extrabold text-zinc-100">Notifications</p>
+                  {notificationError && (
+                    <p role="alert" className="mt-1 text-xs font-semibold text-rose-400">{notificationError}</p>
+                  )}
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length ? (
@@ -307,16 +327,24 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
                         type="button"
                         onClick={async () => {
                           if (!item.read) {
-                            await fetch('/api/notifications', {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ id: item.id }),
-                            });
-                            setNotifications((current) =>
-                              current.map((candidate) =>
-                                candidate.id === item.id ? { ...candidate, read: true } : candidate
-                              )
-                            );
+                            try {
+                              const res = await fetch('/api/notifications', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id: item.id }),
+                              });
+                              if (!res.ok) throw new Error('Could not mark notification as read.');
+                              setNotificationError(null);
+                              setNotifications((current) =>
+                                current.map((candidate) =>
+                                  candidate.id === item.id ? { ...candidate, read: true } : candidate
+                                )
+                              );
+                            } catch {
+                              // Roll back: leave the item unread and surface the failure
+                              // instead of showing a fake read state.
+                              setNotificationError('Could not mark notification as read. Please try again.');
+                            }
                           }
                         }}
                         className={`block w-full border-b border-zinc-800 px-4 py-3 text-left ${

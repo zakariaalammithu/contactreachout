@@ -2,18 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AdminAuthGuard } from '@/lib/auth/admin-auth-guard';
 import { ChatbotService, DEFAULT_CHATBOT_PROMPT } from '@/lib/services/chatbot-service';
 import { AuditLogService } from '@/lib/services/audit-log-service';
+import { getAdminSetting, setAdminSetting } from '@/lib/services/admin-settings-service';
 
 export async function GET(request: NextRequest) {
   const { session, errorResponse } = await AdminAuthGuard.requireAdmin(request);
   if (errorResponse) return errorResponse;
 
   try {
+    const stored = await getAdminSetting<string>('chatbot.prompt');
     return NextResponse.json({
       success: true,
-      prompt: ChatbotService.getPrompt(),
+      prompt: stored.available && stored.value ? stored.value : ChatbotService.getPrompt(),
       defaultPrompt: DEFAULT_CHATBOT_PROMPT,
       metadata: ChatbotService.getMetadata(),
       maxCharacters: 5000,
+      durable: stored.available,
+      durableError: stored.available ? undefined : stored.error,
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to retrieve chatbot configuration.';
@@ -71,6 +75,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fail closed: persist durably first; only then sync the in-memory
+    // service, so a missing table never produces a fake "saved" state.
+    const saved = await setAdminSetting('chatbot.prompt', prompt.trim());
+    if (!saved.ok) {
+      return NextResponse.json(
+        { error: saved.error || 'Chatbot instructions could not be saved durably.' },
+        { status: 503 },
+      );
+    }
+
     ChatbotService.setPrompt(prompt, session.email);
 
     AuditLogService.log({
@@ -85,6 +99,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Chatbot instructions saved successfully.',
       metadata: ChatbotService.getMetadata(),
+      durable: true,
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to save chatbot instructions.';

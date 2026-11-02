@@ -9,7 +9,17 @@ const failure = (error: unknown) => NextResponse.json({ error: error instanceof 
 
 export async function GET(request: NextRequest, { params }: { params: { conversationId: string } }) {
   if (!isDurableInboxEnabled()) return unavailable();
-  try { const data = await getInboxConversation(await resolvePersistenceContext(request), params.conversationId); return data ? NextResponse.json(data) : NextResponse.json({ error: 'Conversation was not found.' }, { status: 404 }); } catch (error) { return failure(error); }
+  try {
+    const data = await getInboxConversation(await resolvePersistenceContext(request), params.conversationId);
+    if (!data) return NextResponse.json({ error: 'Conversation was not found.' }, { status: 404 });
+    // Explicit link ids for the client: the repository payload's messages
+    // carry app_campaign_id/app_lead_id, but the client needs the linked
+    // pair surfaced directly to resolve website/company/campaign from
+    // localStorage (campaigns and leads do not live in Supabase).
+    const linkMsg = [...(data.messages || [])].reverse().find((m: any) => m.app_campaign_id && m.app_lead_id);
+    const link = linkMsg ? { campaignId: linkMsg.app_campaign_id, leadId: linkMsg.app_lead_id } : null;
+    return NextResponse.json({ ...data, link });
+  } catch (error) { return failure(error); }
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: { conversationId: string } }) {

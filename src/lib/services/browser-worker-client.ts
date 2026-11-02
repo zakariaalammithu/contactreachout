@@ -85,12 +85,12 @@ export function renderWorkerDiagnosticEvidence(evidence: unknown): string {
 // target outside the static list still reaches the worker instead of
 // failing fast here. Removing this gate is what makes bulk outreach to new
 // domains work without an env edit or redeploy.
-function unavailable(message: string, fieldsFilledCount: number, startedAt: number): SubmissionExecutionResult {
+function unavailable(message: string, fieldsFilledCount: number, startedAt: number, diagnosticCode = 'BROWSER_RUNTIME_UNAVAILABLE'): SubmissionExecutionResult {
   return {
     status: 'FAILED', isDryRun: false, isTestMode: false, httpStatus: null,
     fieldsFilledCount, honeypotsNeutralizedCount: 0, successVerified: false, submitAttempted: false,
     executionDurationMs: Date.now() - startedAt, submittedAt: new Date().toISOString(),
-    diagnosticCode: 'BROWSER_RUNTIME_UNAVAILABLE', errorMessage: message,
+    diagnosticCode, errorMessage: message,
   };
 }
 
@@ -233,7 +233,30 @@ export async function submitWithBrowserWorker(input: {
         };
       }
       if (!response.ok) {
-        return unavailable(`BROWSER_RUNTIME_UNAVAILABLE: worker returned HTTP ${response.status}.`, fields.length, startedAt);
+        // Worker refusals used to collapse into one runtime-unavailable
+        // message. A 400 (target disallowed) and a 401 (bad secret) are
+        // different failures with different fixes, so they get distinct
+        // diagnostic codes; 5xx and anything else stay runtime-unavailable.
+        let detail = '';
+        try {
+          const bodyText = await response.text();
+          if (bodyText) {
+            try {
+              const parsed = JSON.parse(bodyText) as { error?: string; message?: string };
+              const msg = parsed.error || parsed.message;
+              if (msg) detail = `: ${String(msg).slice(0, 200)}`;
+            } catch {
+              detail = `: ${bodyText.slice(0, 200)}`;
+            }
+          }
+        } catch { /* body unreadable; status alone still distinguishes */ }
+        if (response.status === 400) {
+          return unavailable(`WORKER_TARGET_DISALLOWED: worker refused this target (HTTP 400)${detail}. The target domain is not on the worker's allow-list or failed campaign-lead verification.`, fields.length, startedAt, 'WORKER_TARGET_DISALLOWED');
+        }
+        if (response.status === 401) {
+          return unavailable(`WORKER_AUTH_FAILED: worker rejected the request authorization (HTTP 401)${detail}. The worker auth secret does not match the worker's configured secret.`, fields.length, startedAt, 'WORKER_AUTH_FAILED');
+        }
+        return unavailable(`BROWSER_RUNTIME_UNAVAILABLE: worker returned HTTP ${response.status}${detail}.`, fields.length, startedAt);
       }
       const result = await response.json() as Partial<SubmissionExecutionResult>;
       // Worker output is not trusted as delivery proof unless it supplies explicit verification.

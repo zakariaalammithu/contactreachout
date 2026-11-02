@@ -162,6 +162,8 @@ export default function AdminUsersPage() {
   // Password Reset Modal State
   const [resetPasswordModalUser, setResetPasswordModalUser] = useState<UserData | null>(null);
   const [tempPassword, setTempPassword] = useState('');
+  const [issuedResetToken, setIssuedResetToken] = useState<string | null>(null);
+  const [tokenCopyState, setTokenCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   // Delete User Modal State
   const [deleteModalUser, setDeleteModalUser] = useState<UserData | null>(null);
@@ -561,9 +563,18 @@ export default function AdminUsersPage() {
 
       if (json.success) {
         const targetEmail = resetPasswordModalUser.email;
-        setResetPasswordModalUser(null);
-        setTempPassword('');
-        showSuccess(json.message || `Password reset process initiated for ${targetEmail}.`);
+        if (json.resetToken) {
+          // The server issued a token but does not email it. Keep the
+          // modal open and show the token so the admin can copy and
+          // share it manually. Never claim it was emailed.
+          setIssuedResetToken(json.resetToken);
+          setTokenCopyState('idle');
+          setTempPassword('');
+        } else {
+          setResetPasswordModalUser(null);
+          setTempPassword('');
+          showSuccess(json.message || `Password reset process initiated for ${targetEmail}.`);
+        }
       } else {
         showError(json.error || 'Failed to reset password.');
       }
@@ -2049,6 +2060,43 @@ export default function AdminUsersPage() {
               Initiating password reset for <strong className="text-zinc-100 font-mono">{resetPasswordModalUser.email}</strong>.
             </p>
 
+            {issuedResetToken ? (
+              <div className="space-y-3 text-xs">
+                <p className="text-emerald-300 font-semibold">Reset token issued for {resetPasswordModalUser.email}.</p>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+                  <p className="font-mono text-[11px] break-all text-zinc-100">{issuedResetToken}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(issuedResetToken);
+                        setTokenCopyState('copied');
+                      } catch {
+                        setTokenCopyState('failed');
+                      }
+                    }}
+                    className="bg-[#0e6de4] hover:bg-[#0c5bc0] text-white font-bold"
+                  >
+                    {tokenCopyState === 'copied' ? 'Copied!' : 'Copy Token'}
+                  </Button>
+                  {tokenCopyState === 'failed' && (
+                    <span className="text-amber-300">Copy failed — select the token manually.</span>
+                  )}
+                </div>
+                <p className="text-zinc-400 leading-relaxed">
+                  This token is not emailed automatically — share it with the user yourself.
+                </p>
+                <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+                  <Button variant="secondary" size="sm" type="button" onClick={() => { setResetPasswordModalUser(null); setIssuedResetToken(null); }} className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800">
+                    Done
+                  </Button>
+                </div>
+              </div>
+            ) : (
             <form onSubmit={executePasswordReset} className="space-y-3 text-xs">
               <div className="space-y-1">
                 <label className="font-semibold text-zinc-300">Set New Temporary Password (Optional)</label>
@@ -2071,6 +2119,7 @@ export default function AdminUsersPage() {
                 </Button>
               </div>
             </form>
+            )}
           </Card>
         </div>
       )}

@@ -60,7 +60,7 @@ export default function AdminIntegrationsPage() {
       title: 'Stripe Payments',
       desc: 'Server-side payment credential for secure credit-package checkout processing.',
       icon: CreditCard,
-      href: '/admin/billing/transactions',
+      href: '/admin/integrations/stripe',
       status: isLoading ? 'CHECKING' : integrations?.stripe?.status || 'NOT_CONFIGURED',
       maskedKey: integrations?.stripe?.maskedKey || 'NOT_CONFIGURED',
     },

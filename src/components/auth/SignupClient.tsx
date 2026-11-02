@@ -23,9 +23,10 @@ export default function SignupClient() {
   // 6-Digit Code Verification State
   const [isVerificationStep, setIsVerificationStep] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [isResendingCode, setIsResendingCode] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleGoogleSignup = () => {
@@ -52,12 +53,38 @@ export default function SignupClient() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to create account.');
-      setGeneratedOtp(data.debugCode || '');
       setIsSendingCode(false);
       setIsVerificationStep(true);
     } catch (error: any) {
       setIsSendingCode(false);
       setErrorMessage(error.message || 'Unable to create account.');
+    }
+  };
+
+  // Resend the 6-digit code (server enforces its own cooldown; the
+  // client adds a 60s button cooldown so users cannot spam requests).
+  const handleResendCode = async () => {
+    if (isResendingCode || resendCooldown > 0) return;
+    setIsResendingCode(true);
+    setErrorMessage(null);
+    try {
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, purpose: 'signup' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to resend verification code.');
+      setResendCooldown(60);
+      const timer = setInterval(() => {
+        setResendCooldown((current) => {
+          if (current <= 1) { clearInterval(timer); return 0; }
+          return current - 1;
+        });
+      }, 1000);
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Unable to resend verification code.');
+    } finally {
+      setIsResendingCode(false);
     }
   };
 
@@ -211,12 +238,7 @@ export default function SignupClient() {
                 <p className="text-xs text-zinc-400 font-mono">
                   We sent a 6-digit code to <strong className="text-blue-400">{email}</strong>
                 </p>
-
-                {generatedOtp && (
-                  <div className="p-2 rounded-xl bg-blue-950/80 border border-blue-800 text-blue-300 text-[11px] font-mono mt-2">
-                    Development verification code: <strong className="text-white tracking-widest">{generatedOtp}</strong>
-                  </div>
-                )}
+                <p className="text-[11px] text-zinc-400">Codes expire in 2 minutes. Didn&apos;t get it? Resend a fresh code below.</p>
               </div>
 
               {errorMessage && (
@@ -245,6 +267,24 @@ export default function SignupClient() {
               >
                 {isVerifyingCode ? 'Verifying Code...' : 'Verify Code & Activate Account'}
               </Button>
+
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setIsVerificationStep(false); setVerificationCode(''); setErrorMessage(null); }}
+                  className="text-xs font-bold text-zinc-400 hover:text-zinc-200 underline cursor-pointer"
+                >
+                  ← Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={isResendingCode || resendCooldown > 0}
+                  className="text-xs font-bold text-blue-400 hover:underline disabled:text-zinc-500 disabled:no-underline cursor-pointer"
+                >
+                  {isResendingCode ? 'Sending…' : resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : 'Resend code'}
+                </button>
+              </div>
             </form>
           )}
         </div>

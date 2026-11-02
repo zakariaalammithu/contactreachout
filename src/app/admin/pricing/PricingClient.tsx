@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { DollarSign, Coins, Save, Check, Sparkles, RotateCcw, Crown, ShieldCheck } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { DollarSign, Coins, Sparkles, Crown, ShieldCheck } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { PricingService, SystemPricingConfig, DEFAULT_PRICING_CONFIG, PricingPlan } from '@/lib/services/pricing-service';
 
@@ -25,26 +24,6 @@ export default function PricingClient() {
     }
   });
 
-  const [saveToast, setSaveToast] = useState(false);
-
-  const handleSavePricing = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('user_pricing_config_overrides', JSON.stringify(config));
-    }
-    setSaveToast(true);
-    setTimeout(() => setSaveToast(false), 2500);
-  };
-
-  const handleResetDefaults = () => {
-    if (confirm('Reset to system default pricing ($0 Free, $50 Starter, $99 Growth, $199 Agency, $299 Enterprise)?')) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('user_pricing_config_overrides');
-      }
-      setConfig(DEFAULT_PRICING_CONFIG);
-      setSaveToast(true);
-      setTimeout(() => setSaveToast(false), 2500);
-    }
-  };
 
   const freePlan: PricingPlan = {
     ...DEFAULT_PRICING_CONFIG.freePlan,
@@ -87,24 +66,11 @@ export default function PricingClient() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleResetDefaults} className="text-xs font-bold">
-            <RotateCcw className="h-3.5 w-3.5 mr-1" />
-            Reset Defaults
-          </Button>
-          <Button variant="primary" size="sm" onClick={handleSavePricing} className="font-bold bg-[#0e6de4] hover:bg-[#0758bd]">
-            <Save className="h-3.5 w-3.5 mr-1" />
-            Save Pricing Specs
-          </Button>
-        </div>
+        <p className="max-w-md text-[11px] leading-relaxed text-zinc-400">
+          Read-only: these specs are the system pricing defaults. Edits here previously saved only to this browser and never reached checkout, so the save controls were removed rather than pretend to sync.
+        </p>
       </div>
 
-      {saveToast && (
-        <div className="p-3.5 rounded-xl bg-emerald-950 border border-emerald-900 text-emerald-300 text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
-          <Check className="h-4 w-4 text-emerald-400" />
-          <span>Pricing configuration saved successfully! Synchronized across all application modules.</span>
-        </div>
-      )}
 
       {/* Free Plan Spec */}
       <Card className="p-6 space-y-4 border-zinc-800">
