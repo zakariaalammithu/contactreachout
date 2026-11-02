@@ -4,6 +4,9 @@ import { AuthStore } from '@/lib/auth/auth-store';
 import { PaymentStore } from '@/lib/services/payment-store';
 import { QueueManager } from '@/lib/queue/queue-manager';
 import { PricingService } from '@/lib/services/pricing-service';
+import { StripeService } from '@/lib/services/stripe-service';
+import { listDurablePayments } from '@/lib/services/stripe-payment-record';
+import { getSupabaseAdminClient } from '@/lib/supabase/admin-client';
 import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 import { z } from 'zod';
 
@@ -30,8 +33,11 @@ export async function GET(request: NextRequest) {
     const monthlyGrantPerUser = 100;
     const freeCreditsGranted = activeCustomerCount * monthlyGrantPerUser;
 
-    // Billing & Revenue Metrics (Stripe Paid Transactions Only)
-    const payments = PaymentStore.list();
+    // Billing & Revenue Metrics (Stripe Paid Transactions Only).
+    // Durable records first (survive cold starts); the in-memory store is
+    // the fallback until the stripe_payments migration is applied.
+    const durablePayments = await listDurablePayments();
+    const payments = durablePayments ?? PaymentStore.list();
     const paidPayments = payments.filter((p) => p.status === 'paid');
     const paidCreditsSold = paidPayments.reduce((sum, p) => sum + p.credits, 0);
     const totalRevenueCents = paidPayments.reduce((sum, p) => sum + p.amountCents, 0);
@@ -58,12 +64,14 @@ export async function GET(request: NextRequest) {
 
       // Daily paid credits purchased
       const dayPayments = paidPayments.filter((p) => {
-        const t = new Date(p.createdAt).getTime();
+        const t = new Date(p.createdAt || 0).getTime();
         return t >= dayStart.getTime() && t < dayEnd.getTime();
       });
       const dayPaidSold = dayPayments.reduce((sum, p) => sum + p.credits, 0);
 
-      // Estimate day credit consumption based on activity proportion
+      // Estimate day credit consumption based on activity proportion.
+      // This trend is an estimate (the queue has no per-day ledger), so it
+      // is flagged as such instead of presented as exact telemetry.
       const dayUsed = i === 0 ? Math.min(totalCreditsUsed, 15) : Math.min(totalCreditsUsed, 8);
 
       dailyTrend.push({
@@ -76,6 +84,20 @@ export async function GET(request: NextRequest) {
     }
 
     const pricingConfig = PricingService.getPricingConfig();
+
+    // Real Stripe connectivity check (previously hardcoded true): a live
+    // balance read proves the key works; any failure (unconfigured key,
+    // network, auth) reports false instead of a fabricated verified state.
+    let stripeVerified = false;
+    try {
+      await Promise.race([
+        StripeService.request('balance'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('stripe balance check timed out')), 5000)),
+      ]);
+      stripeVerified = true;
+    } catch {
+      stripeVerified = false;
+    }
 
     return NextResponse.json({
       success: true,
@@ -93,7 +115,8 @@ export async function GET(request: NextRequest) {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}`,
-        stripeVerified: true,
+        stripeVerified,
+        dailyTrendEstimated: true,
         dailyTrend,
       },
       pricingConfig,
@@ -114,14 +137,24 @@ export async function POST(request: NextRequest) {
   }
 
   const targetEmail = parsed.data.targetUserEmail.toLowerCase().trim();
-  const targetUser = AuthStore.getUserByEmail(targetEmail);
-  if (!targetUser) return NextResponse.json({ error: 'Target user was not found.' }, { status: 404 });
+  // Target resolution must not depend on the in-memory registry alone: on
+  // another serverless instance a self-registered user is absent from
+  // AuthStore even though they exist. Fall back to the durable users table.
+  let targetEmailResolved: string | undefined = AuthStore.getUserByEmail(targetEmail)?.email;
+  if (!targetEmailResolved) {
+    const client = getSupabaseAdminClient();
+    if (client) {
+      const { data } = await client.from('users').select('email').eq('email', targetEmail).maybeSingle();
+      if (data?.email) targetEmailResolved = data.email;
+    }
+  }
+  if (!targetEmailResolved) return NextResponse.json({ error: 'Target user was not found.' }, { status: 404 });
 
   const reason = `Admin grant by ${session.email}${parsed.data.reason ? `: ${parsed.data.reason}` : ''}`;
   const { wallet, transaction } = await CreditWalletService.addBonusCreditsForServer(
     parsed.data.amount,
     reason,
-    targetUser.email,
+    targetEmailResolved,
     `admin-grant-${parsed.data.requestId}`
   );
 

@@ -241,6 +241,17 @@ export async function POST(req: NextRequest) {
         source: deduction.source,
       };
       updatedWallet = deduction.wallet;
+      if (!deduction.success) {
+        // DELIVERED but no credit recorded (e.g. the balance was exhausted
+        // by parallel campaigns between the pre-check and this deduction).
+        // The delivery is honest — it happened — but the ledger gap must be
+        // visible, not silently free. Do not write a zero-amount ledger row.
+        console.warn('[process] DELIVERED without a credit deduction (balance race).', {
+          campaignId,
+          leadId: lead.id,
+          userId,
+        });
+      }
     }
 
     // 5. Construct Real Telemetry Log

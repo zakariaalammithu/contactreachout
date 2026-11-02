@@ -11,6 +11,7 @@ export interface StripePurchase {
   displayMonthlyPrice: number;
   actualAnnualCharge: number;
   planName: string;
+  purchaseType: 'one_time' | 'subscription';
 }
 
 export class StripeService {
@@ -65,7 +66,40 @@ export class StripeService {
       displayMonthlyPrice,
       actualAnnualCharge,
       planName,
+      purchaseType: 'subscription',
     };
+  }
+
+  /**
+   * One-time credit pack: a single payment for N credits, priced from the
+   * monthly table (no period discount, no recurring billing). Never uses a
+   * configured Price ID — one-time checkout always uses price_data, so the
+   * charged amount is exactly this table amount.
+   */
+  static getOneTimePurchase(credits: number): StripePurchase {
+    if (!Number.isSafeInteger(credits) || credits < 1000 || credits > 500000) {
+      throw new Error('Select a valid credit quantity between 1,000 and 500,000.');
+    }
+    const planDetails = PLAN_PRICING_DETAILS[credits];
+    const monthlyPrice = planDetails ? planDetails.monthlyPrice : PricingService.calculateCustomCreditPrice(credits).price;
+    const planName = planDetails?.name || `${credits.toLocaleString()} Credits`;
+    return {
+      credits,
+      amountCents: Math.round(monthlyPrice * 100),
+      priceId: undefined,
+      period: 'monthly',
+      interval: 'month',
+      displayMonthlyPrice: monthlyPrice,
+      actualAnnualCharge: monthlyPrice,
+      planName,
+      purchaseType: 'one_time',
+    };
+  }
+
+  /** Stripe Price amount in cents (null when the Price has no unit amount). */
+  static async getPriceUnitAmount(priceId: string): Promise<number | null> {
+    const price = await this.request(`prices/${encodeURIComponent(priceId)}`);
+    return typeof price?.unit_amount === 'number' ? price.unit_amount : null;
   }
 
   static getSecretKey(): string {

@@ -306,7 +306,10 @@ export class CreditWalletService {
   }
 
   /**
-   * Deducts credits prioritizing FREE credits first, then PAID credits.
+   * Deducts credits using the database RPC's single-bucket rule: FREE if it
+   * covers the cost, else PAID if it covers it, else BONUS if it covers it
+   * — never split across buckets (the previous split could leave a bonus-only
+   * wallet undeducted while still counting the spend).
    */
   public static deductCredits(
     resultType: string,
@@ -314,7 +317,7 @@ export class CreditWalletService {
     leadId?: string,
     companyName?: string,
     userId: string = 'usr_operator'
-  ): { success: boolean; cost: number; source: 'FREE' | 'PAID' | 'NONE'; wallet: CreditWallet } {
+  ): { success: boolean; cost: number; source: 'FREE' | 'PAID' | 'BONUS' | 'NONE'; wallet: CreditWallet } {
     const cost = PricingService.getCreditCost(resultType);
     const wallet = this.getWallet(userId);
     const idempotencyKey = `usage-${campaignId || 'manual'}-${leadId || 'unknown'}`;
@@ -333,21 +336,23 @@ export class CreditWalletService {
     }
 
     const balanceBefore = wallet.totalCreditsAvailable;
-    let source: 'FREE' | 'PAID' = 'FREE';
+    let source: 'FREE' | 'PAID' | 'BONUS';
 
     const freeRemaining = Math.max(0, wallet.freeMonthlyCredits - wallet.freeMonthlyUsed);
 
     if (freeRemaining >= cost) {
-      // Consume FREE credits
       wallet.freeMonthlyUsed += cost;
       source = 'FREE';
-    } else {
-      // Consume remaining FREE credits then PAID credits
-      const freePart = freeRemaining;
-      const paidPart = cost - freePart;
-      wallet.freeMonthlyUsed += freePart;
-      wallet.paidCredits = Math.max(0, wallet.paidCredits - paidPart);
+    } else if (wallet.paidCredits >= cost) {
+      wallet.paidCredits -= cost;
       source = 'PAID';
+    } else if (wallet.bonusCredits >= cost) {
+      wallet.bonusCredits -= cost;
+      source = 'BONUS';
+    } else {
+      // Total covers the cost only by splitting buckets; the RPC refuses
+      // that shape, so fail cleanly instead of recording a false spend.
+      return { success: false, cost, source: 'NONE', wallet };
     }
 
     wallet.lifetimeCreditsUsed += cost;
@@ -381,6 +386,9 @@ export class CreditWalletService {
 
   /**
    * Adds paid credits after purchase confirmation.
+   * Idempotent on the purchase key: a duplicate call for the same
+   * referenceId returns the wallet unchanged (previously the balance was
+   * incremented before the transaction dedupe ran, double-crediting).
    */
   public static addPaidCredits(
     amount: number = 5000,
@@ -388,6 +396,10 @@ export class CreditWalletService {
     userId?: string
   ): CreditWallet {
     const wallet = this.getWallet(userId);
+    const purchaseKey = `purchase-${referenceId || Date.now()}`;
+    if (referenceId && this.getTransactions(wallet.userId).some((tx) => tx.idempotencyKey === purchaseKey)) {
+      return wallet;
+    }
     const balanceBefore = wallet.totalCreditsAvailable;
 
     wallet.paidCredits += amount;
@@ -410,13 +422,61 @@ export class CreditWalletService {
         balanceAfter: wallet.totalCreditsAvailable,
         description: `Purchased ${amount.toLocaleString()} Paid Credits Package`,
         referenceId,
-        idempotencyKey: `purchase-${referenceId || Date.now()}`,
+        idempotencyKey: purchaseKey,
         createdAt: new Date().toISOString(),
       },
       wallet.userId
     );
 
     return wallet;
+  }
+
+  /**
+   * Reverses paid credits for a Stripe refund, capped at the paid balance.
+   * Returns the actually reversed amount plus any shortfall (when the paid
+   * balance cannot cover the refund — needs admin review, never a negative
+   * balance). Idempotent on the refund key.
+   */
+  public static recordRefund(
+    amount: number,
+    refundId: string,
+    sessionId: string | undefined,
+    userId?: string
+  ): { wallet: CreditWallet; refundedCredits: number; shortfall: number } {
+    const wallet = this.getWallet(userId);
+    const refundKey = `stripe-refund-${refundId}`;
+    if (this.getTransactions(wallet.userId).some((tx) => tx.idempotencyKey === refundKey)) {
+      return { wallet, refundedCredits: 0, shortfall: 0 };
+    }
+    const refundedCredits = Math.max(0, Math.min(amount, wallet.paidCredits));
+    const shortfall = Math.max(0, amount - refundedCredits);
+    if (refundedCredits <= 0) {
+      return { wallet, refundedCredits: 0, shortfall };
+    }
+    const balanceBefore = wallet.totalCreditsAvailable;
+    wallet.paidCredits -= refundedCredits;
+    wallet.totalCreditsAvailable =
+      Math.max(0, wallet.freeMonthlyCredits - wallet.freeMonthlyUsed) +
+      wallet.paidCredits +
+      wallet.bonusCredits;
+    this.saveWallet(wallet);
+    this.recordTransaction(
+      {
+        id: `tx-refund-${Date.now()}`,
+        userId: wallet.userId,
+        transactionType: 'REFUND',
+        creditSource: 'PAID',
+        amount: -refundedCredits,
+        balanceBefore,
+        balanceAfter: wallet.totalCreditsAvailable,
+        description: `Stripe refund ${refundId}${sessionId ? ` (original purchase ${sessionId})` : ''}${shortfall > 0 ? ` — ${shortfall} credits shortfall, admin review needed` : ''}`,
+        referenceId: sessionId,
+        idempotencyKey: refundKey,
+        createdAt: new Date().toISOString(),
+      },
+      wallet.userId
+    );
+    return { wallet, refundedCredits, shortfall };
   }
 
   /**

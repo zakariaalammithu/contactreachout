@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, CreditCard, Loader2, ShieldCheck, TriangleAlert } from 'lucide-react';
@@ -14,6 +14,20 @@ export default function CheckoutClient() {
   const period = (params?.get('period') || 'yearly') === 'monthly' ? 'monthly' : 'yearly';
   const sessionId = params?.get('session_id');
   const statusParam = params?.get('status');
+  // Purchase model: subscription plans are the default (all existing links
+  // keep working); a one-time top-up pack is opt-in via ?type=one_time.
+  const [purchaseType, setPurchaseType] = useState<'one_time' | 'subscription'>(
+    params?.get('type') === 'one_time' ? 'one_time' : 'subscription'
+  );
+  // One intent key per checkout page load: a refresh or retry of the same
+  // intent reuses the same Stripe session instead of a second chargeable one.
+  const intentKeyRef = useRef<string>('');
+  if (!intentKeyRef.current) {
+    intentKeyRef.current =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
 
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState<'ready' | 'pending' | 'paid' | 'cancelled' | 'error'>(
@@ -26,11 +40,13 @@ export default function CheckoutClient() {
   // Compute exact server purchase breakdown for checkout display
   const purchaseInfo = useMemo(() => {
     try {
-      return StripeService.getPurchase(credits, period);
+      return purchaseType === 'one_time'
+        ? StripeService.getOneTimePurchase(credits)
+        : StripeService.getPurchase(credits, period);
     } catch {
       return StripeService.getPurchase(5000, 'yearly');
     }
-  }, [credits, period]);
+  }, [credits, period, purchaseType]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -69,12 +85,12 @@ export default function CheckoutClient() {
       const response = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credits: purchaseInfo.credits, period: purchaseInfo.period }),
+        body: JSON.stringify({ credits: purchaseInfo.credits, period: purchaseInfo.period, purchaseType, idempotencyKey: intentKeyRef.current }),
       });
       const data = await response.json();
       if (response.status === 401) {
         window.location.href = `/login?tab=signin&next=${encodeURIComponent(
-          `/checkout?credits=${purchaseInfo.credits}&period=${purchaseInfo.period}`
+          `/checkout?credits=${purchaseInfo.credits}&period=${purchaseInfo.period}&type=${purchaseType}`
         )}`;
         return;
       }
@@ -114,18 +130,26 @@ export default function CheckoutClient() {
         <div className="flex items-start justify-between gap-4 border-b border-zinc-800 pb-5">
           <div className="space-y-1">
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-blue-400 bg-blue-950 px-3 py-1 rounded-full border border-blue-900">
-              {purchaseInfo.planName} Plan — {isYearly ? 'Annual Billing' : 'Monthly Billing'}
+              {purchaseType === 'one_time'
+                ? `${purchaseInfo.planName} One-time Pack`
+                : `${purchaseInfo.planName} Plan — ${isYearly ? 'Annual Billing' : 'Monthly Billing'}`}
             </span>
             <div className="pt-2">
               <span className="text-3xl font-extrabold text-white font-mono">
-                ${isYearly ? purchaseInfo.actualAnnualCharge.toLocaleString() : purchaseInfo.displayMonthlyPrice.toLocaleString()} USD
+                ${purchaseType === 'one_time'
+                  ? purchaseInfo.displayMonthlyPrice.toLocaleString()
+                  : isYearly
+                  ? purchaseInfo.actualAnnualCharge.toLocaleString()
+                  : purchaseInfo.displayMonthlyPrice.toLocaleString()} USD
               </span>
               <span className="text-sm font-bold text-zinc-400 font-mono">
-                {isYearly ? ' / year' : ' / month'}
+                {purchaseType === 'one_time' ? ' / once' : isYearly ? ' / year' : ' / month'}
               </span>
             </div>
             <p className="text-xs text-zinc-400 font-medium pt-1">
-              {isYearly
+              {purchaseType === 'one_time'
+                ? 'One-time payment • No subscription • No renewal'
+                : isYearly
                 ? `(Equivalent to $${purchaseInfo.displayMonthlyPrice}/month • Billed $${purchaseInfo.actualAnnualCharge} annually • Save 20%)`
                 : 'Billed monthly • Cancel anytime'}
             </p>
@@ -134,12 +158,38 @@ export default function CheckoutClient() {
           <ShieldCheck className="h-10 w-10 text-blue-400 shrink-0" />
         </div>
 
+        {/* Purchase Model Toggle — one-time pack vs subscription plan */}
+        {state !== 'paid' && state !== 'pending' && (
+          <div className="flex gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 p-1.5">
+            <button
+              type="button"
+              onClick={() => setPurchaseType('one_time')}
+              className={`flex-1 rounded-xl px-3 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                purchaseType === 'one_time' ? 'bg-[#0e6de4] text-white' : 'text-zinc-400 hover:text-zinc-100'
+              }`}
+            >
+              One-time Pack
+            </button>
+            <button
+              type="button"
+              onClick={() => setPurchaseType('subscription')}
+              className={`flex-1 rounded-xl px-3 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                purchaseType === 'subscription' ? 'bg-[#0e6de4] text-white' : 'text-zinc-400 hover:text-zinc-100'
+              }`}
+            >
+              Subscription Plan
+            </button>
+          </div>
+        )}
+
         {/* Plan Feature Summary */}
         <div className="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 space-y-2 text-xs font-mono">
           <div className="flex justify-between text-zinc-300">
             <span>Outreach Credit Allocation:</span>
             <strong className="text-zinc-100">
-              {isYearly
+              {purchaseType === 'one_time'
+                ? `${purchaseInfo.credits.toLocaleString()} Credits (one-time)`
+                : isYearly
                 ? `${(purchaseInfo.credits * 12).toLocaleString()} Credits/year (${purchaseInfo.credits.toLocaleString()} Credits/mo)`
                 : `${purchaseInfo.credits.toLocaleString()} Credits/month`}
             </strong>
@@ -147,7 +197,11 @@ export default function CheckoutClient() {
           <div className="flex justify-between text-zinc-300">
             <span>Billing Interval:</span>
             <strong className="text-blue-400 uppercase">
-              {isYearly ? 'Billed Annually ($' + purchaseInfo.actualAnnualCharge + ' / yr)' : 'Billed Monthly ($' + purchaseInfo.displayMonthlyPrice + ' / mo)'}
+              {purchaseType === 'one_time'
+                ? 'One-time ($' + purchaseInfo.displayMonthlyPrice + ' once)'
+                : isYearly
+                ? 'Billed Annually ($' + purchaseInfo.actualAnnualCharge + ' / yr)'
+                : 'Billed Monthly ($' + purchaseInfo.displayMonthlyPrice + ' / mo)'}
             </strong>
           </div>
           <div className="flex justify-between text-zinc-300">
@@ -197,7 +251,9 @@ export default function CheckoutClient() {
               <CreditCard className="mr-2 h-4 w-4" />
             )}
             <span>
-              {isYearly
+              {purchaseType === 'one_time'
+                ? `Pay $${purchaseInfo.displayMonthlyPrice} USD Once on Stripe`
+                : isYearly
                 ? `Pay $${purchaseInfo.actualAnnualCharge} USD / Year on Stripe`
                 : `Pay $${purchaseInfo.displayMonthlyPrice} USD / Month on Stripe`}
             </span>

@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { SessionManager } from '@/lib/auth/session';
 import { CreditWalletServerService as CreditWalletService } from '@/lib/services/credit-wallet-server-service';
 
 export async function GET(req: NextRequest) {
   try {
     const session = SessionManager.getSessionFromRequest(req);
-    const userId = session?.email || 'usr_guest';
+    // Unauthenticated requests get 401, not a fabricated guest wallet:
+    // a guest balance is not a real balance and must never be displayed
+    // as one. All three client callers tolerate a non-ok response.
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+    const userId = session.email;
     const wallet = await CreditWalletService.getWalletForServer(userId);
     const transactions = await CreditWalletService.getTransactionsForServer(userId);
 
@@ -23,58 +28,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-const deductSchema = z.object({
-  action: z.literal('deduct'),
-  resultType: z.literal('SUCCESSFUL_SUBMISSION').optional(),
-  campaignId: z.string().optional(),
-  leadId: z.string().optional(),
-  companyName: z.string().optional(),
-});
-
-export async function POST(req: NextRequest) {
-  try {
-    const session = SessionManager.getSessionFromRequest(req);
-    if (!session) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
-
-    const body = await req.json();
-    const parsed = deductSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
-    }
-
-    const { resultType = 'SUCCESSFUL_SUBMISSION', campaignId, leadId, companyName } = parsed.data;
-    const userId = session.email;
-
-    const result = await CreditWalletService.deductCreditsForServer(
-      resultType,
-      campaignId,
-      leadId,
-      companyName,
-      userId
-    );
-
-    if (!result.success) {
-      return NextResponse.json(
-        {
-          error: 'Insufficient credit balance. Please purchase additional credits to submit outreach.',
-          wallet: result.wallet,
-        },
-        { status: 402 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      cost: result.cost,
-      source: result.source,
-      wallet: result.wallet,
-    });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || 'Failed to process credit deduction' },
-      { status: 500 }
-    );
-  }
-}
+// NOTE (2026-11-02, credit + Stripe fix batch): the undocumented POST
+// self-deduction endpoint was removed. It let any authenticated user drain
+// their own wallet with arbitrary campaign/lead ids (fake USAGE ledger
+// rows), had no client callers, and is not part of any supported flow.
+// Credit deduction happens only server-side, in the campaign process route,
+// on verified DELIVERED submissions.

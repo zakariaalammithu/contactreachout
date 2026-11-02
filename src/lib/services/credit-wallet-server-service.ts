@@ -182,10 +182,22 @@ export class CreditWalletServerService {
       const wallet = CreditWalletService.addBonusCredits(amount, reason, userId, idempotencyKey);
       return { wallet, transaction: CreditWalletService.getTransactions(userId).find((item) => item.idempotencyKey === idempotencyKey) };
     }
-    const outcome = await this.applyDatabaseTransaction({
-      userId, amount, transactionType: 'ADMIN_ADJUSTMENT', creditSource: 'BONUS', description: reason, idempotencyKey,
-    });
-    return { wallet: outcome.wallet, transaction: outcome.transaction };
+    try {
+      const outcome = await this.applyDatabaseTransaction({
+        userId, amount, transactionType: 'ADMIN_ADJUSTMENT', creditSource: 'BONUS', description: reason, idempotencyKey,
+      });
+      return { wallet: outcome.wallet, transaction: outcome.transaction };
+    } catch (error) {
+      // Same unprovisioned-account fallback as paid credits: an admin grant
+      // to a user with no public.users row lands in the in-memory wallet
+      // instead of 500ing (the grant's target resolution already verified
+      // the email against AuthStore or the durable users table).
+      if (error instanceof Error && error.message.includes('CREDIT_DATABASE_USER_NOT_FOUND')) {
+        const wallet = CreditWalletService.addBonusCredits(amount, reason, userId, idempotencyKey);
+        return { wallet, transaction: CreditWalletService.getTransactions(userId).find((item) => item.idempotencyKey === idempotencyKey) };
+      }
+      throw error;
+    }
   }
 
   public static async addPaidCreditsForServer(
@@ -196,12 +208,107 @@ export class CreditWalletServerService {
       const wallet = CreditWalletService.addPaidCredits(amount, referenceId, userId);
       return { wallet, transaction: CreditWalletService.getTransactions(userId).find((item) => item.idempotencyKey === `purchase-${referenceId}`) };
     }
-    const outcome = await this.applyDatabaseTransaction({
-      userId, amount, transactionType: 'PURCHASE', creditSource: 'PAID',
-      description: `Stripe purchase ${referenceId}`,
-      idempotencyKey: `stripe-purchase-${referenceId}`,
-      referenceId,
-    });
-    return { wallet: outcome.wallet, transaction: outcome.transaction };
+    try {
+      const outcome = await this.applyDatabaseTransaction({
+        userId, amount, transactionType: 'PURCHASE', creditSource: 'PAID',
+        description: `Stripe purchase ${referenceId}`,
+        idempotencyKey: `stripe-purchase-${referenceId}`,
+        referenceId,
+      });
+      return { wallet: outcome.wallet, transaction: outcome.transaction };
+    } catch (error) {
+      // Same unprovisioned-account fallback as deductions: public.users rows
+      // are keyed by Supabase Auth id + organization, which the app's own
+      // auth cannot mint — so a payer without a row must still receive
+      // their credits, in the same in-memory wallet their sends deduct
+      // from. Durable crediting resumes automatically once a users row
+      // exists (the DB path above runs first whenever the lookup succeeds).
+      // A durable identity fix needs a schema decision (see report); until
+      // then this fallback is strictly better than charging without credit.
+      if (error instanceof Error && error.message.includes('CREDIT_DATABASE_USER_NOT_FOUND')) {
+        const wallet = CreditWalletService.addPaidCredits(amount, referenceId, userId);
+        return { wallet, transaction: CreditWalletService.getTransactions(userId).find((item) => item.idempotencyKey === `purchase-${referenceId}`) };
+      }
+      throw error;
+    }
+  }
+
+  /** Subscription renewal grant: same PURCHASE/PAID shape, keyed by invoice id. */
+  public static async addRenewalCreditsForServer(
+    amount: number, invoiceId: string, userId: string
+  ): Promise<{ wallet: CreditWallet; transaction?: CreditTransaction }> {
+    if (!Number.isSafeInteger(amount) || amount <= 0) throw new Error('Invalid renewal credit amount.');
+    if (!getSupabaseAdminClient()) {
+      const wallet = CreditWalletService.addPaidCredits(amount, `renewal-${invoiceId}`, userId);
+      return { wallet, transaction: CreditWalletService.getTransactions(userId).find((item) => item.idempotencyKey === `purchase-renewal-${invoiceId}`) };
+    }
+    try {
+      const outcome = await this.applyDatabaseTransaction({
+        userId, amount, transactionType: 'PURCHASE', creditSource: 'PAID',
+        description: `Stripe subscription renewal ${invoiceId}`,
+        idempotencyKey: `stripe-renewal-${invoiceId}`,
+        referenceId: invoiceId,
+      });
+      return { wallet: outcome.wallet, transaction: outcome.transaction };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('CREDIT_DATABASE_USER_NOT_FOUND')) {
+        const wallet = CreditWalletService.addPaidCredits(amount, `renewal-${invoiceId}`, userId);
+        return { wallet, transaction: CreditWalletService.getTransactions(userId).find((item) => item.idempotencyKey === `purchase-renewal-${invoiceId}`) };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Reverses paid credits for a Stripe refund, capped at the paid balance
+   * (never a negative balance). Returns the reversed amount and any
+   * shortfall for admin review. Note: the RPC's negative path consumes by
+   * its own bucket order (FREE first), so the ledger's creditSource on a
+   * refund may differ from PAID — the total movement is exact, and a
+   * source-respecting RPC parameter is a drafted follow-up migration.
+   */
+  public static async recordRefundForServer(
+    amount: number, refundId: string, sessionId: string | undefined, userId: string
+  ): Promise<{ wallet: CreditWallet; transaction?: CreditTransaction; refundedCredits: number; shortfall: number }> {
+    if (!Number.isSafeInteger(amount) || amount <= 0) throw new Error('Invalid refund credit amount.');
+    if (!getSupabaseAdminClient()) {
+      const result = CreditWalletService.recordRefund(amount, refundId, sessionId, userId);
+      return { ...result, transaction: CreditWalletService.getTransactions(userId).find((item) => item.idempotencyKey === `stripe-refund-${refundId}`) };
+    }
+    const wallet = await this.getWalletForServer(userId);
+    const refundedCredits = Math.max(0, Math.min(amount, wallet.paidCredits));
+    const shortfall = Math.max(0, amount - refundedCredits);
+    if (refundedCredits <= 0) {
+      return { wallet, transaction: undefined, refundedCredits: 0, shortfall };
+    }
+    try {
+      const outcome = await this.applyDatabaseTransaction({
+        userId, amount: -refundedCredits, transactionType: 'REFUND', creditSource: 'PAID',
+        description: `Stripe refund ${refundId}${sessionId ? ` (original purchase ${sessionId})` : ''}${shortfall > 0 ? ` — ${shortfall} credits shortfall, admin review needed` : ''}`,
+        idempotencyKey: `stripe-refund-${refundId}`,
+        referenceId: sessionId,
+      });
+      return { wallet: outcome.wallet, transaction: outcome.transaction, refundedCredits, shortfall };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('CREDIT_DATABASE_USER_NOT_FOUND')) {
+        const result = CreditWalletService.recordRefund(amount, refundId, sessionId, userId);
+        return { ...result, transaction: CreditWalletService.getTransactions(userId).find((item) => item.idempotencyKey === `stripe-refund-${refundId}`) };
+      }
+      throw error;
+    }
+  }
+
+  /** Original PURCHASE grant for a checkout session (DB path; null when absent). */
+  public static async getPurchaseGrantBySession(sessionId: string): Promise<{ credits: number } | null> {
+    const client = getSupabaseAdminClient();
+    if (!client) return null;
+    const { data, error } = await client
+      .from('credit_ledger')
+      .select('amount')
+      .eq('idempotency_key', `stripe-purchase-${sessionId}`)
+      .eq('transaction_type', 'PURCHASE')
+      .maybeSingle();
+    if (error || !data) return null;
+    return { credits: Number(data.amount) || 0 };
   }
 }
