@@ -276,7 +276,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
             className="flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-1.5 text-xs font-bold text-zinc-200 hover:bg-zinc-900 hover:border-zinc-700 transition-all cursor-pointer shadow-2xs"
           >
             <span className="truncate max-w-[150px] sm:max-w-[220px]">
-              {userProfile?.name || 'Zakaria Alam Mithu'}
+              {userProfile?.name || userProfile?.email?.split('@')[0] || 'User'}
             </span>
             <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -342,7 +342,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
             className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0e6de4] text-xs font-extrabold text-white shadow-xs hover:opacity-90 transition-opacity cursor-pointer shrink-0"
             title={userProfile?.name || 'Account'}
           >
-            {getInitials(userProfile?.name || 'Zakaria Alam Mithu')}
+            {getInitials(userProfile?.name || userProfile?.email?.split('@')[0] || 'User')}
           </button>
 
           {/* Manyreach-Style Profile / Account Switcher Dropdown */}
@@ -362,7 +362,7 @@ export function Header({ onOpenMobileMenu, initialUserProfile }: HeaderProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-zinc-100 truncate flex items-center gap-1.5">
-                    <span className="truncate">{userProfile?.name || 'Zakaria Alam Mithu'}</span>
+                    <span className="truncate">{userProfile?.name || userProfile?.email?.split('@')[0] || 'User'}</span>
                     <span className="text-[10px] font-mono font-bold bg-blue-900 text-blue-300 px-1.5 py-0.2 rounded-md shrink-0">
                       [main]
                     </span>

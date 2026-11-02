@@ -14,8 +14,9 @@ export function ContactReplySettings() {
   // Country for each number (any country, not just the examples). The
   // selected dial code only matters for trunk-0 national numbers and
   // numbers without a country code; an explicit +number always wins.
-  const [phoneCountry, setPhoneCountry] = useState('880');
-  const [whatsAppCountry, setWhatsAppCountry] = useState('880');
+  // Default is USA (+1) — a saved E.164 value overrides it on load.
+  const [phoneCountry, setPhoneCountry] = useState('1');
+  const [whatsAppCountry, setWhatsAppCountry] = useState('1');
   const [isVerified, setIsVerified] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,7 +43,7 @@ export function ContactReplySettings() {
           setFullName(pData.user.name || '');
           setPhone(pData.user.phone || '');
           setWhatsApp(pData.user.whatsApp || '');
-          // Preselect the country from a stored E.164 value; default 880.
+          // Preselect the country from a stored E.164 value; default USA (+1).
           const phoneDial = inferDialCode(pData.user.phone || '');
           if (phoneDial) setPhoneCountry(phoneDial);
           const waDial = inferDialCode(pData.user.whatsApp || '');
