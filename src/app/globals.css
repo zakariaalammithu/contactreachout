@@ -1028,6 +1028,83 @@ html.light .to-zinc-950 { --tw-gradient-to: #ffffff var(--tw-gradient-to-positio
 html.light .to-blue-950\/50 { --tw-gradient-to: rgb(219 234 254 / 0.5) var(--tw-gradient-to-position); }
 html.light .to-blue-950\/30 { --tw-gradient-to: rgb(219 234 254 / 0.3) var(--tw-gradient-to-position); }
 
+/* Admin theme sweep 2026-11-02: classes used by admin (and shared) pages
+   that earlier sweeps never mapped, so their surfaces stayed dark in white
+   mode while their text flipped dark — the Security page's bg-black/60
+   boxes in the user's screenshot are the visible case. Dark mode is
+   untouched: every rule is html.light-prefixed. */
+html.light .bg-black\/50:not(.fixed) { background-color: rgba(255,255,255,0.50); }
+html.light .bg-black\/60:not(.fixed) { background-color: rgba(255,255,255,0.60); }
+/* Backdrops keep their dimming: every bg-black/40, /70, /80 use is a fixed
+   modal backdrop, and fixed bg-black/50, /60 backdrops are excluded by the
+   :not(.fixed) guard above — do NOT add blanket black/alpha flips. */
+html.light .bg-indigo-950\/50 { background-color: rgba(238,242,255,0.50); }
+html.light .bg-rose-950\/20 { background-color: rgba(255,241,242,0.20); }
+html.light .bg-rose-950\/50 { background-color: rgba(255,241,242,0.50); }
+html.light .bg-rose-950\/60 { background-color: rgba(255,241,242,0.60); }
+html.light .bg-red-950\/50 { background-color: rgba(254,242,242,0.50); }
+html.light .bg-red-950\/60 { background-color: rgba(254,242,242,0.60); }
+html.light .bg-amber-950\/30 { background-color: rgba(255,251,235,0.30); }
+html.light .bg-amber-950\/50 { background-color: rgba(255,251,235,0.50); }
+html.light .bg-amber-950\/80 { background-color: rgba(255,251,235,0.80); }
+html.light .bg-emerald-900\/50 { background-color: rgba(209,250,229,0.50); }
+html.light .bg-emerald-900\/60 { background-color: rgba(209,250,229,0.60); }
+html.light .bg-slate-800 { background-color: #e2e8f0; }
+html.light .bg-slate-900 { background-color: #f1f5f9; }
+html.light .bg-teal-950 { background-color: #f0fdfa; }
+html.light .bg-pink-950 { background-color: #fdf2f8; }
+html.light .bg-purple-950\/40 { background-color: rgba(250,245,255,0.40); }
+html.light .bg-purple-950\/60 { background-color: rgba(250,245,255,0.60); }
+html.light .bg-cyan-950\/20 { background-color: rgba(236,254,255,0.20); }
+html.light .text-slate-200 { color: #334155; }
+html.light .text-slate-400 { color: #475569; }
+html.light .border-white { border-color: #e4e4e7; }
+html.light .border-white\/\[0\.08\] { border-color: rgba(0,0,0,0.08); }
+/* White text on saturated buttons: the old exception covered blue/emerald/
+   rose/red/amber/purple buttons only. Rose-500, amber-500, sky, blue-500/700,
+   indigo-500, violet-600 and the saturated hex buttons flipped their white
+   labels dark in white mode. Saturated backgrounds never flip, so their
+   white text must never flip either. */
+html.light .bg-rose-500.text-white, html.light .bg-rose-500 .text-white,
+html.light .bg-amber-500.text-white, html.light .bg-amber-500 .text-white,
+html.light .bg-sky-400.text-white, html.light .bg-sky-400 .text-white,
+html.light .bg-sky-500.text-white, html.light .bg-sky-500 .text-white,
+html.light .bg-sky-600.text-white, html.light .bg-sky-600 .text-white,
+html.light .bg-blue-500.text-white, html.light .bg-blue-500 .text-white,
+html.light .bg-blue-700.text-white, html.light .bg-blue-700 .text-white,
+html.light .bg-indigo-500.text-white, html.light .bg-indigo-500 .text-white,
+html.light .bg-indigo-600.text-white, html.light .bg-indigo-600 .text-white,
+html.light .bg-violet-600.text-white, html.light .bg-violet-600 .text-white,
+html.light .bg-purple-500.text-white, html.light .bg-purple-500 .text-white,
+html.light .bg-purple-600.text-white, html.light .bg-purple-600 .text-white,
+html.light .bg-red-500.text-white, html.light .bg-red-500 .text-white,
+html.light .bg-cyan-600.text-white, html.light .bg-cyan-600 .text-white,
+html.light .bg-teal-600.text-white, html.light .bg-teal-600 .text-white,
+html.light .bg-orange-600.text-white, html.light .bg-orange-600 .text-white,
+html.light .bg-\[\#10b981\].text-white, html.light .bg-\[\#10b981\] .text-white,
+html.light .bg-\[\#1DBF73\].text-white, html.light .bg-\[\#1DBF73\] .text-white,
+html.light .bg-\[\#F59E0B\].text-white, html.light .bg-\[\#F59E0B\] .text-white { color: #ffffff; }
+/* Hover washes that stayed dark in white mode. */
+html.light .hover\:bg-zinc-900\/60:hover { background-color: rgba(244,244,245,0.60); }
+html.light .hover\:bg-zinc-900\/70:hover { background-color: rgba(244,244,245,0.70); }
+html.light .hover\:bg-zinc-900\/80:hover { background-color: rgba(244,244,245,0.80); }
+html.light .hover\:bg-zinc-950\/40:hover { background-color: rgba(255,255,255,0.40); }
+html.light .hover\:bg-zinc-950\/60:hover { background-color: rgba(255,255,255,0.60); }
+html.light .hover\:bg-zinc-950\/80:hover { background-color: rgba(255,255,255,0.80); }
+html.light .hover\:bg-blue-950\/30:hover { background-color: rgba(219,234,254,0.30); }
+html.light .hover\:bg-blue-950\/50:hover { background-color: rgba(219,234,254,0.50); }
+html.light .hover\:bg-blue-950\/80:hover { background-color: rgba(219,234,254,0.80); }
+html.light .hover\:bg-amber-900:hover { background-color: #fef3c7; }
+html.light .hover\:bg-rose-900:hover { background-color: #ffe4e6; }
+html.light .hover\:bg-zinc-700:hover { background-color: #d4d4d8; }
+
+/* Disabled buttons (shared Button component): the old disabled:opacity-50
+   washed white labels to near-invisible on a pale-blue button in white mode.
+   Disabled buttons are now solid muted gray with dark text in BOTH modes
+   (no opacity wash), and icons inside a disabled button inherit that dark
+   text instead of keeping their own white. Enabled buttons are untouched. */
+button:disabled .text-white { color: inherit; }
+
 /* Page-level safety net: nothing may spill past the left or right edge on
    any screen size. `clip` (unlike `hidden`) creates no scroll container, so
    sticky headers keep working. */
