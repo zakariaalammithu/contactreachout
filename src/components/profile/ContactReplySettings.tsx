@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Mail, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, KeyRound, Check, Save } from 'lucide-react';
+import { COUNTRY_DIAL_CODES, inferDialCode, normalizePhoneNumber } from '@/lib/services/phone-normalization';
 
 export function ContactReplySettings() {
   const [fullName, setFullName] = useState('');
@@ -10,6 +11,11 @@ export function ContactReplySettings() {
   const [accountEmail, setAccountEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [whatsApp, setWhatsApp] = useState('');
+  // Country for each number (any country, not just the examples). The
+  // selected dial code only matters for trunk-0 national numbers and
+  // numbers without a country code; an explicit +number always wins.
+  const [phoneCountry, setPhoneCountry] = useState('880');
+  const [whatsAppCountry, setWhatsAppCountry] = useState('880');
   const [isVerified, setIsVerified] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,6 +42,11 @@ export function ContactReplySettings() {
           setFullName(pData.user.name || '');
           setPhone(pData.user.phone || '');
           setWhatsApp(pData.user.whatsApp || '');
+          // Preselect the country from a stored E.164 value; default 880.
+          const phoneDial = inferDialCode(pData.user.phone || '');
+          if (phoneDial) setPhoneCountry(phoneDial);
+          const waDial = inferDialCode(pData.user.whatsApp || '');
+          if (waDial) setWhatsAppCountry(waDial);
           setAccountEmail(pData.user.email || '');
           setReplyEmail(pData.user.replyEmail || pData.user.email || '');
           setIsVerified(Boolean(pData.user.replyEmailVerified));
@@ -77,20 +88,44 @@ export function ContactReplySettings() {
     setError(null);
     setSuccessMsg(null);
 
+    // Normalize client-side first so the user sees the exact E.164 value
+    // that campaigns will fill into target forms. wa.me links, local
+    // trunk-0 numbers and +numbers are all accepted here.
+    const normalizedPhone = normalizePhoneNumber(phone, phoneCountry);
+    const normalizedWhatsApp = normalizePhoneNumber(whatsApp, whatsAppCountry);
+    if (normalizedPhone === null) {
+      setError('Phone number is not valid. Use a full number with its country code, e.g. +8801725592014, or pick the right country for a local number.');
+      setSaving(false);
+      return;
+    }
+    if (normalizedWhatsApp === null) {
+      setError('WhatsApp number is not valid. Use a full number with its country code, e.g. +8801725592014, or pick the right country for a local number.');
+      setSaving(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: fullName.trim(),
-          phone: phone.trim(),
-          whatsApp: whatsApp.trim(),
+          phone: normalizedPhone,
+          whatsApp: normalizedWhatsApp,
+          phoneCountry,
+          whatsAppCountry,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setSuccessMsg('✓ Contact identity updated successfully!');
+        setPhone(data.user.phone || '');
+        setWhatsApp(data.user.whatsApp || '');
+        setSuccessMsg(
+          data.contactDurable === false
+            ? '✓ Contact identity updated (saved on this session; durable profile storage is pending a migration, so re-check it after a fresh login).'
+            : '✓ Contact identity updated successfully!',
+        );
         if (typeof window !== 'undefined') {
           const stored = localStorage.getItem('user_sender_profile');
           const parsed = stored ? JSON.parse(stored) : {};
@@ -99,8 +134,8 @@ export function ContactReplySettings() {
             JSON.stringify({
               ...parsed,
               name: fullName.trim(),
-              phone: phone.trim(),
-              whatsApp: whatsApp.trim(),
+              phone: normalizedPhone,
+              whatsApp: normalizedWhatsApp,
             })
           );
         }
@@ -306,13 +341,25 @@ export function ContactReplySettings() {
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
                 Phone Number <span className="text-[10px] font-normal text-zinc-400">(Optional)</span>
               </label>
-              <input
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. +1 (555) 234-5678"
-                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={phoneCountry}
+                  onChange={(e) => setPhoneCountry(e.target.value)}
+                  title="Country code"
+                  className="shrink-0 rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4]"
+                >
+                  {COUNTRY_DIAL_CODES.map((c) => (
+                    <option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="017... / +880... / wa.me/..."
+                  className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
             </div>
 
             {/* 4. WhatsApp Number */}
@@ -320,13 +367,26 @@ export function ContactReplySettings() {
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
                 WhatsApp Number <span className="text-[10px] font-normal text-zinc-400">(Optional)</span>
               </label>
-              <input
-                type="text"
-                value={whatsApp}
-                onChange={(e) => setWhatsApp(e.target.value)}
-                placeholder="e.g. +1 (555) 987-6543"
-                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={whatsAppCountry}
+                  onChange={(e) => setWhatsAppCountry(e.target.value)}
+                  title="Country code"
+                  className="shrink-0 rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4]"
+                >
+                  {COUNTRY_DIAL_CODES.map((c) => (
+                    <option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={whatsApp}
+                  onChange={(e) => setWhatsApp(e.target.value)}
+                  placeholder="017... / +880... / wa.me/..."
+                  className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+              <p className="text-[11px] text-zinc-400">Any country: pick the code, or paste a +number or wa.me link — it is saved as +E.164 automatically. Target forms that require a WhatsApp number (like m.b2bgdc.com) use this value when the lead has no number.</p>
             </div>
           </div>
 

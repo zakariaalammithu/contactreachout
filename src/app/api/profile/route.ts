@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { SessionManager } from '@/lib/auth/session';
+import { normalizePhoneNumber } from '@/lib/services/phone-normalization';
+import {
+  readDurableContact,
+  writeDurableContact,
+} from '@/lib/services/profile-contact-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,18 +19,25 @@ export async function GET(request: NextRequest) {
   const activeReplyEmail = user.replyEmail || '';
   const replyEmailVerified = user.replyEmailVerified ?? user.isEmailVerified;
 
+  // Durable merge: AuthStore first (freshest on this instance), durable
+  // app_users row second (the value that survives instance changes).
+  const durable = await readDurableContact(session.email);
+  const phone = user.phone || durable?.phone || '';
+  const whatsApp = user.whatsApp || durable?.whatsapp || '';
+
   return NextResponse.json({
     user: {
       name: user.name || '',
       email: user.email,
-      phone: user.phone || '',
-      whatsApp: user.whatsApp || '',
+      phone,
+      whatsApp,
       avatarUrl: user.avatarUrl || '',
       replyEmail: activeReplyEmail,
       replyEmailVerified,
       unverifiedReplyEmail: user.unverifiedReplyEmail || '',
       createdAt: user.createdAt,
     },
+    contactDurable: durable !== null,
   });
 }
 
@@ -33,6 +45,8 @@ const profileSchema = z.object({
   name: z.string().trim().max(100).optional().default(''),
   phone: z.string().trim().max(50).optional().default(''),
   whatsApp: z.string().trim().max(50).optional().default(''),
+  phoneCountry: z.string().trim().max(10).optional().default(''),
+  whatsAppCountry: z.string().trim().max(10).optional().default(''),
   avatarUrl: z.string().max(1_500_000).optional().default(''),
 });
 
@@ -42,12 +56,31 @@ export async function PATCH(request: NextRequest) {
   const parsed = profileSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid profile.' }, { status: 400 });
 
-  const user = AuthStore.updateUser(session.email, parsed.data);
+  // Server-side normalization (the client normalizes too, but the API
+  // must not trust it): wa.me links, local trunk-0 numbers and +numbers
+  // all become E.164; an unparseable non-empty value is rejected.
+  const normalizedPhone = normalizePhoneNumber(parsed.data.phone, parsed.data.phoneCountry);
+  const normalizedWhatsApp = normalizePhoneNumber(parsed.data.whatsApp, parsed.data.whatsAppCountry);
+  if (normalizedPhone === null) {
+    return NextResponse.json({ error: 'Phone number is not valid. Use a full number with its country code, e.g. +8801725592014.' }, { status: 400 });
+  }
+  if (normalizedWhatsApp === null) {
+    return NextResponse.json({ error: 'WhatsApp number is not valid. Use a full number with its country code, e.g. +8801725592014.' }, { status: 400 });
+  }
+
+  const user = AuthStore.updateUser(session.email, {
+    name: parsed.data.name,
+    phone: normalizedPhone,
+    whatsApp: normalizedWhatsApp,
+    avatarUrl: parsed.data.avatarUrl,
+  });
+  const contactDurable = await writeDurableContact(user.id, session.email, normalizedPhone, normalizedWhatsApp);
   const activeReplyEmail = user.replyEmail || '';
   const replyEmailVerified = user.replyEmailVerified ?? user.isEmailVerified;
 
   return NextResponse.json({
     success: true,
+    contactDurable,
     user: {
       name: user.name || '',
       email: user.email,

@@ -9,6 +9,7 @@ import { AuthStore } from '@/lib/auth/auth-store';
 import { resolvePersistenceContext } from '@/lib/persistence/identity';
 import { ensureCampaignReplyLink } from '@/lib/services/campaign-reply-link';
 import { getSendingAccess } from '@/lib/services/subscription-service';
+import { resolveSenderContact } from '@/lib/services/profile-contact-service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -105,14 +106,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const userContactIdentity = userAccount
-      ? {
-          fullName: userAccount.name,
-          replyEmail: userAccount.replyEmail || userAccount.email,
-          phone: userAccount.phone,
-          whatsApp: userAccount.whatsApp,
-        }
-      : undefined;
+    const senderContact = await resolveSenderContact(session.email, userAccount);
+    const userContactIdentity =
+      userAccount || senderContact.phone || senderContact.whatsapp
+        ? {
+            fullName: userAccount?.name,
+            replyEmail: userAccount?.replyEmail || userAccount?.email,
+            phone: senderContact.phone,
+            whatsApp: senderContact.whatsapp,
+          }
+        : undefined;
 
     // 3. Execute Real Lead Outreach Pipeline
     const startTime = Date.now();
