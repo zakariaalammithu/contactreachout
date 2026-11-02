@@ -30,6 +30,9 @@ export type UserSubscription = {
   amountCents: number | null;
   period: string | null;
   status: SubscriptionStatus;
+  purchaseType: string | null;
+  adminAssignedBy: string | null;
+  adminNote: string | null;
   purchaseDate: string | null;
   currentPeriodStart: string | null;
   currentPeriodEnd: string | null;
@@ -60,6 +63,9 @@ function rowToSubscription(row: any): UserSubscription {
     amountCents: row.amount_cents,
     period: row.period,
     status: row.status,
+    purchaseType: row.purchase_type ?? null,
+    adminAssignedBy: row.admin_assigned_by ?? null,
+    adminNote: row.admin_note ?? null,
     purchaseDate: row.purchase_date,
     currentPeriodStart: row.current_period_start,
     currentPeriodEnd: row.current_period_end,
@@ -137,7 +143,7 @@ export async function getSendingAccess(userEmail: string): Promise<{ blocked: bo
   const rows = await listSubscriptionsForUser(userEmail);
   if (rows.length === 0) return { blocked: false };
   const now = Date.now();
-  const hasActive = rows.some((r) => r.status === 'active' || r.status === 'past_due');
+  const hasActive = rows.some((r) => r.status === 'active' || r.status === 'past_due' || r.status === 'lifetime');
   const hasExpired = rows.some((r) =>
     isSubscriptionExpired(
       { id: r.id, status: r.status, current_period_end: r.currentPeriodEnd, cancel_at_period_end: r.cancelAtPeriodEnd },

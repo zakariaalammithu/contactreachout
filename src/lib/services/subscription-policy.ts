@@ -13,7 +13,7 @@
  *  - cancelled immediately, or expired, blocks immediately.
  */
 
-export type SubscriptionStatus = 'active' | 'past_due' | 'cancelled' | 'expired' | 'paused' | 'incomplete';
+export type SubscriptionStatus = 'active' | 'past_due' | 'cancelled' | 'expired' | 'paused' | 'incomplete' | 'lifetime';
 
 /**
  * Stripe subscription statuses → app statuses. Stripe spells it
@@ -52,6 +52,8 @@ export function isSubscriptionExpired(
   sub: SubscriptionRowShape,
   nowMs: number = Date.now(),
 ): boolean {
+  // Lifetime never expires: no period end, no reminders, no gating.
+  if (sub.status === 'lifetime') return false;
   if (sub.status === 'expired') return true;
   if (sub.status === 'cancelled') {
     // Immediate cancellation blocks now; at-period-end cancellation blocks

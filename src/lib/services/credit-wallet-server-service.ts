@@ -200,6 +200,49 @@ export class CreditWalletServerService {
     }
   }
 
+  /**
+   * Admin credit removal (2026-11-02). DB path: pre-checks the wallet so
+   * the RPC never sees an unaffordable deduct, then applies a negative
+   * ADMIN_ADJUSTMENT (single-bucket, same rule as the in-memory path).
+   * INSUFFICIENT_CREDITS from the RPC (a race with the pre-check) is a
+   * clean failure, not a 500. Unprovisioned accounts fall back to the
+   * in-memory wallet, mirroring the grant path.
+   */
+  public static async deductCreditsForAdminForServer(
+    amount: number, reason: string, userId: string, idempotencyKey: string
+  ): Promise<{ success: boolean; wallet: CreditWallet; transaction?: CreditTransaction; deducted: number; error?: string }> {
+    const precheck = await this.getWalletForServer(userId);
+    const inMemory = () => {
+      const result = CreditWalletService.deductAdminCredits(amount, reason, userId, idempotencyKey);
+      const transaction = CreditWalletService.getTransactions(userId).find((item) => item.idempotencyKey === idempotencyKey);
+      return { success: result.success, wallet: result.wallet, transaction, deducted: result.deducted, error: result.error };
+    };
+    if (!precheck || precheck.totalCreditsAvailable < amount) {
+      return { success: false, wallet: precheck, transaction: undefined, deducted: 0, error: 'Not enough credits available for this deduct.' };
+    }
+    // Single-bucket rule (mirrors the RPC): the RPC picks FREE, else PAID,
+    // else BONUS and assumes that bucket covers the amount. A total that
+    // covers the deduct only by splitting buckets would drive BONUS
+    // negative on the DB path, so reject it here with a clear message.
+    const freeRemaining = Math.max(0, precheck.freeMonthlyCredits - precheck.freeMonthlyUsed);
+    if (freeRemaining < amount && precheck.paidCredits < amount && precheck.bonusCredits < amount) {
+      return { success: false, wallet: precheck, transaction: undefined, deducted: 0, error: `Not enough credits in any single bucket (free ${freeRemaining}, paid ${precheck.paidCredits}, bonus ${precheck.bonusCredits}). Split the adjustment so each part fits one bucket.` };
+    }
+    if (!getSupabaseAdminClient()) return inMemory();
+    try {
+      const outcome = await this.applyDatabaseTransaction({
+        userId, amount: -amount, transactionType: 'ADMIN_ADJUSTMENT', creditSource: 'FREE', description: reason, idempotencyKey,
+      });
+      return { success: true, wallet: outcome.wallet, transaction: outcome.transaction, deducted: outcome.applied ? amount : 0 };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('INSUFFICIENT_CREDITS')) {
+        return { success: false, wallet: await this.getWalletForServer(userId), transaction: undefined, deducted: 0, error: 'Not enough credits available for this deduct.' };
+      }
+      if (error instanceof Error && error.message.includes('CREDIT_DATABASE_USER_NOT_FOUND')) return inMemory();
+      throw error;
+    }
+  }
+
   public static async addPaidCreditsForServer(
     amount: number, referenceId: string, userId: string
   ): Promise<{ wallet: CreditWallet; transaction?: CreditTransaction }> {

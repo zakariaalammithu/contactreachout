@@ -2,22 +2,40 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AdminAuthGuard, type AppRole } from '@/lib/auth/admin-auth-guard';
 import { AuthStore, type UserAccount } from '@/lib/auth/auth-store';
 import { AuditLogService } from '@/lib/services/audit-log-service';
+import { CreditWalletServerService } from '@/lib/services/credit-wallet-server-service';
 
 function countSuperAdmins(users: UserAccount[]): number {
   return users.filter((u) => u.role === 'SUPER_ADMIN' && !u.isSuspended).length;
 }
 
-function enrichUser(user: UserAccount) {
+async function enrichUser(user: UserAccount) {
   const isAdminOrSuperAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
-  const freeMonthlyCredits = 100;
-  const bonusCredits = user.bonusCredits || 0;
-  const paidCredits = user.paidCredits || 0;
-  
-  // Available credits calculation using real backend rules
-  const availableCredits = isAdminOrSuperAdmin
-    ? 1000000
-    : freeMonthlyCredits + bonusCredits + paidCredits;
-  
+
+  // Credits come from the wallet service (2026-11-02 admin management
+  // batch): the old formula read AuthStore bonus/paid fields, which the
+  // grant/purchase flows never update — so the table kept showing stale
+  // balances after a grant. Admins keep the 1,000,000 testing display.
+  // Wallet reads are keyed by email (the same key the admin grant flows
+  // use); a read failure falls back to the old formula, never failing
+  // the whole list.
+  let freeMonthlyCredits = 100;
+  let bonusCredits = user.bonusCredits || 0;
+  let paidCredits = user.paidCredits || 0;
+  let availableCredits: number;
+  if (isAdminOrSuperAdmin) {
+    availableCredits = 1000000;
+  } else {
+    try {
+      const wallet = await CreditWalletServerService.getWalletForServer(user.email);
+      availableCredits = wallet.totalCreditsAvailable;
+      freeMonthlyCredits = Math.max(0, wallet.freeMonthlyCredits - wallet.freeMonthlyUsed);
+      bonusCredits = wallet.bonusCredits;
+      paidCredits = wallet.paidCredits;
+    } catch {
+      availableCredits = freeMonthlyCredits + bonusCredits + paidCredits;
+    }
+  }
+
   const usedCredits = 0; // Usage tracked per ledger
   const plan = user.plan || (isAdminOrSuperAdmin ? 'Enterprise / Admin' : 'Free');
 
@@ -111,7 +129,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Enriched mapping
-  let enriched = users.map(enrichUser);
+  let enriched = await Promise.all(users.map(enrichUser));
 
   // Sorting
   enriched.sort((a, b) => {
@@ -367,7 +385,7 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, user: enrichUser(updatedUser) });
+    return NextResponse.json({ success: true, user: await enrichUser(updatedUser) });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to update user.' }, { status: 400 });
   }

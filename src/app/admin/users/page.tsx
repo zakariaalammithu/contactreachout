@@ -22,6 +22,10 @@ import {
   X,
   ExternalLink,
   CreditCard,
+  Coins,
+  Package,
+  CalendarClock,
+  History,
   BarChart3,
   AlertTriangle,
   MoreVertical,
@@ -121,6 +125,33 @@ export default function AdminUsersPage() {
   const [creditGrantAmount, setCreditGrantAmount] = useState('');
   const [creditGrantReason, setCreditGrantReason] = useState('');
   const [isGrantingCredits, setIsGrantingCredits] = useState(false);
+
+  // Admin management modals (2026-11-02, URGENT admin brief): credit
+  // add/deduct, package change, subscription dates, history.
+  const [manageCreditsUser, setManageCreditsUser] = useState<UserData | null>(null);
+  const [creditDirection, setCreditDirection] = useState<'add' | 'deduct'>('add');
+  const [creditAdjustAmount, setCreditAdjustAmount] = useState('');
+  const [creditAdjustReason, setCreditAdjustReason] = useState('');
+  const [creditConfirm, setCreditConfirm] = useState(false);
+  const [isAdjustingCredits, setIsAdjustingCredits] = useState(false);
+  const [packageUser, setPackageUser] = useState<UserData | null>(null);
+  const [packagePlan, setPackagePlan] = useState('Starter');
+  const [packagePeriod, setPackagePeriod] = useState('monthly');
+  const [packageReason, setPackageReason] = useState('');
+  const [packageConfirm, setPackageConfirm] = useState(false);
+  const [isChangingPackage, setIsChangingPackage] = useState(false);
+  const [datesUser, setDatesUser] = useState<UserData | null>(null);
+  const [datesAction, setDatesAction] = useState<'extend' | 'set' | 'expire' | 'reactivate'>('extend');
+  const [datesDays, setDatesDays] = useState('30');
+  const [datesStart, setDatesStart] = useState('');
+  const [datesEnd, setDatesEnd] = useState('');
+  const [datesReason, setDatesReason] = useState('');
+  const [datesConfirm, setDatesConfirm] = useState(false);
+  const [isChangingDates, setIsChangingDates] = useState(false);
+  const [historyUser, setHistoryUser] = useState<UserData | null>(null);
+  const [historyTab, setHistoryTab] = useState<'subscriptions' | 'payments' | 'credits' | 'activity'>('payments');
+  const [historyData, setHistoryData] = useState<any | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   // Role Change Modal State
   const [roleModalData, setRoleModalData] = useState<{ user: UserData; targetRole: 'SUPER_ADMIN' | 'ADMIN' | 'USER' } | null>(null);
@@ -249,6 +280,164 @@ export default function AdminUsersPage() {
       showError(error instanceof Error ? error.message : 'Credit grant failed.');
     } finally {
       setIsGrantingCredits(false);
+    }
+  };
+
+  // Admin credit add/deduct (signed amount; confirm step shows the new
+  // balance before anything is written).
+  const submitCreditAdjust = async () => {
+    if (!manageCreditsUser || isAdjustingCredits) return;
+    const amount = Number(creditAdjustAmount);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      showError('Enter a valid positive whole-number credit amount.');
+      return;
+    }
+    if (!creditAdjustReason.trim()) {
+      showError('A reason is required for every credit adjustment.');
+      return;
+    }
+    if (!creditConfirm) {
+      setCreditConfirm(true);
+      return;
+    }
+    setIsAdjustingCredits(true);
+    try {
+      const response = await fetch('/api/admin/users/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserEmail: manageCreditsUser.email,
+          amount: creditDirection === 'add' ? amount : -amount,
+          reason: creditAdjustReason,
+          requestId: crypto.randomUUID(),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Credit adjustment failed.');
+      showSuccess(
+        `${creditDirection === 'add' ? 'Added' : 'Removed'} ${amount.toLocaleString()} credits for ${manageCreditsUser.email}. New balance: ${data.wallet.totalCreditsAvailable.toLocaleString()}.`,
+      );
+      setManageCreditsUser(null);
+      setCreditAdjustAmount('');
+      setCreditAdjustReason('');
+      setCreditConfirm(false);
+      void fetchUsers();
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Credit adjustment failed.');
+    } finally {
+      setIsAdjustingCredits(false);
+    }
+  };
+
+  // Admin package change (manual assignment — never a Stripe payment).
+  const submitPackageChange = async () => {
+    if (!packageUser || isChangingPackage) return;
+    if (!packageReason.trim()) {
+      showError('A reason is required for every package change.');
+      return;
+    }
+    if (!packageConfirm) {
+      setPackageConfirm(true);
+      return;
+    }
+    setIsChangingPackage(true);
+    try {
+      const response = await fetch('/api/admin/users/package', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserEmail: packageUser.email,
+          plan: packagePlan,
+          period: packagePlan === 'Free' ? null : packagePeriod,
+          reason: packageReason,
+          requestId: crypto.randomUUID(),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Package change failed.');
+      showSuccess(
+        `${packageUser.email} is now on ${packagePlan}${packagePlan === 'Free' ? '' : ` (${packagePeriod})`}${data.creditsGranted ? `, ${data.creditsGranted.toLocaleString()} credits granted.` : '.'}`,
+      );
+      setPackageUser(null);
+      setPackageReason('');
+      setPackageConfirm(false);
+      void fetchUsers();
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Package change failed.');
+    } finally {
+      setIsChangingPackage(false);
+    }
+  };
+
+  // Admin subscription-date action.
+  const submitDatesChange = async () => {
+    if (!datesUser || isChangingDates) return;
+    if (!datesReason.trim()) {
+      showError('A reason is required for every date change.');
+      return;
+    }
+    if (datesAction === 'extend' || datesAction === 'reactivate') {
+      const days = Number(datesDays);
+      if (!Number.isInteger(days) || days <= 0) {
+        showError('Enter whole days between 1 and 3650.');
+        return;
+      }
+    }
+    if (datesAction === 'set' && (!datesStart || !datesEnd)) {
+      showError('Both a start date and an expiry date are required.');
+      return;
+    }
+    if (!datesConfirm) {
+      setDatesConfirm(true);
+      return;
+    }
+    setIsChangingDates(true);
+    try {
+      const response = await fetch('/api/admin/users/subscription-dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserEmail: datesUser.email,
+          action: datesAction,
+          extendDays: datesAction === 'extend' || datesAction === 'reactivate' ? Number(datesDays) : undefined,
+          startDate: datesAction === 'set' ? datesStart : undefined,
+          endDate: datesAction === 'set' ? datesEnd : undefined,
+          reason: datesReason,
+          requestId: crypto.randomUUID(),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Date change failed.');
+      showSuccess(
+        `Subscription dates updated for ${datesUser.email} (now ${data.subscription?.status || 'updated'}${data.subscription?.currentPeriodEnd ? `, ends ${new Date(data.subscription.currentPeriodEnd).toLocaleDateString()}` : ''}).`,
+      );
+      setDatesUser(null);
+      setDatesReason('');
+      setDatesConfirm(false);
+      void fetchUsers();
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Date change failed.');
+    } finally {
+      setIsChangingDates(false);
+    }
+  };
+
+  // Per-user history (payments / credits / activity / subscriptions).
+  const openHistory = async (user: UserData, tab: 'subscriptions' | 'payments' | 'credits' | 'activity') => {
+    setHistoryUser(user);
+    setHistoryTab(tab);
+    setHistoryData(null);
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch(`/api/admin/users/history?email=${encodeURIComponent(user.email)}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to load history.');
+      setHistoryData(data);
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Failed to load history.');
+      setHistoryUser(null);
+    } finally {
+      setIsLoadingHistory(false);
     }
   };
 
@@ -1040,7 +1229,7 @@ export default function AdminUsersPage() {
                               </Button>
 
                               {isMenuOpen && (
-                                <div className="absolute right-0 top-8 z-50 w-48 rounded-xl border border-zinc-800 bg-zinc-950 p-1.5 shadow-xl text-left font-sans text-xs space-y-0.5">
+                                <div className="absolute right-0 top-8 z-50 w-56 max-h-[70vh] overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-950 p-1.5 shadow-xl text-left font-sans text-xs space-y-0.5">
                                   <button
                                     onClick={() => {
                                       setSelectedUserForDetails(user);
@@ -1051,6 +1240,99 @@ export default function AdminUsersPage() {
                                     <Eye className="h-3.5 w-3.5 text-blue-400" />
                                     View Details
                                   </button>
+
+                                  <div className="border-t border-zinc-800 my-1" />
+
+                                  <button
+                                    onClick={() => {
+                                      setManageCreditsUser(user);
+                                      setCreditDirection('add');
+                                      setCreditConfirm(false);
+                                      setActiveMenuUserId(null);
+                                    }}
+                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
+                                  >
+                                    <Coins className="h-3.5 w-3.5 text-blue-400" />
+                                    Manage Credits
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setPackageUser(user);
+                                      setPackagePlan(user.plan && user.plan !== 'Enterprise / Admin' ? user.plan : 'Starter');
+                                      setPackagePeriod('monthly');
+                                      setPackageConfirm(false);
+                                      setActiveMenuUserId(null);
+                                    }}
+                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
+                                  >
+                                    <Package className="h-3.5 w-3.5 text-blue-400" />
+                                    Change Package
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setDatesUser(user);
+                                      setDatesAction('extend');
+                                      setDatesDays('30');
+                                      setDatesConfirm(false);
+                                      setActiveMenuUserId(null);
+                                    }}
+                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
+                                  >
+                                    <CalendarClock className="h-3.5 w-3.5 text-blue-400" />
+                                    Extend Subscription
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setDatesUser(user);
+                                      setDatesAction('set');
+                                      setDatesConfirm(false);
+                                      setActiveMenuUserId(null);
+                                    }}
+                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
+                                  >
+                                    <CalendarClock className="h-3.5 w-3.5 text-blue-400" />
+                                    Edit Subscription Dates
+                                  </button>
+
+                                  <div className="border-t border-zinc-800 my-1" />
+
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuUserId(null);
+                                      void openHistory(user, 'payments');
+                                    }}
+                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
+                                  >
+                                    <History className="h-3.5 w-3.5 text-blue-400" />
+                                    View Payment History
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuUserId(null);
+                                      void openHistory(user, 'credits');
+                                    }}
+                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
+                                  >
+                                    <History className="h-3.5 w-3.5 text-blue-400" />
+                                    View Credit History
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuUserId(null);
+                                      void openHistory(user, 'activity');
+                                    }}
+                                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-zinc-900 text-zinc-100 font-medium rounded-lg transition-colors"
+                                  >
+                                    <History className="h-3.5 w-3.5 text-blue-400" />
+                                    View Activity Logs
+                                  </button>
+
+                                  <div className="border-t border-zinc-800 my-1" />
 
                                   <button
                                     onClick={() => {
@@ -1316,6 +1598,206 @@ export default function AdminUsersPage() {
       )}
 
       {/* USER DETAILS SLIDE-OVER DRAWER */}
+      {/* Manage Credits modal: add or deduct, with a confirm step. */}
+      {manageCreditsUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-2xl text-zinc-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold">Manage Credits — {manageCreditsUser.email}</h3>
+              <button onClick={() => { setManageCreditsUser(null); setCreditConfirm(false); }} className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-900"><X className="h-5 w-5" /></button>
+            </div>
+            <p className="text-xs text-zinc-400">Current balance: <span className="font-mono font-bold text-blue-400">{manageCreditsUser.availableCredits.toLocaleString()}</span> credits</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => { setCreditDirection('add'); setCreditConfirm(false); }} className={`flex-1 rounded-lg border px-3 py-2 text-sm font-bold ${creditDirection === 'add' ? 'border-blue-500 bg-blue-950 text-blue-300' : 'border-zinc-800 bg-zinc-950 text-zinc-300'}`}>Add credits</button>
+              <button type="button" onClick={() => { setCreditDirection('deduct'); setCreditConfirm(false); }} className={`flex-1 rounded-lg border px-3 py-2 text-sm font-bold ${creditDirection === 'deduct' ? 'border-rose-500 bg-rose-950 text-rose-300' : 'border-zinc-800 bg-zinc-950 text-zinc-300'}`}>Remove credits</button>
+            </div>
+            <div className="grid gap-2">
+              <input type="number" min="1" step="1" value={creditAdjustAmount} onChange={(e) => { setCreditAdjustAmount(e.target.value); setCreditConfirm(false); }} placeholder="Amount" className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2" />
+              <input value={creditAdjustReason} onChange={(e) => { setCreditAdjustReason(e.target.value); setCreditConfirm(false); }} maxLength={500} placeholder="Reason (required — saved in the audit log)" className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2" />
+            </div>
+            {creditDirection === 'deduct' && creditAdjustAmount && Number(creditAdjustAmount) > manageCreditsUser.availableCredits && (
+              <p className="text-xs text-amber-300">This exceeds the current balance — the server will reject it. Split the adjustment so each part fits one bucket.</p>
+            )}
+            {creditConfirm && creditAdjustAmount && (
+              <div className="rounded-lg border border-amber-900 bg-amber-950/40 p-3 text-xs space-y-1">
+                <p className="font-bold text-amber-300">Confirm this adjustment</p>
+                <p className="text-zinc-300">{creditDirection === 'add' ? 'Add' : 'Remove'} {Number(creditAdjustAmount).toLocaleString()} credits {creditDirection === 'add' ? 'to' : 'from'} {manageCreditsUser.email}.</p>
+                <p className="text-zinc-300">New balance: {creditDirection === 'add' ? (manageCreditsUser.availableCredits + Number(creditAdjustAmount)).toLocaleString() : (manageCreditsUser.availableCredits - Number(creditAdjustAmount)).toLocaleString()} credits. Reason: {creditAdjustReason}</p>
+                <p className="text-zinc-400">Manual adjustments are never shown as Stripe payments.</p>
+              </div>
+            )}
+            <Button type="button" disabled={isAdjustingCredits || !creditAdjustAmount || !creditAdjustReason.trim()} onClick={submitCreditAdjust} className={creditDirection === 'add' ? 'bg-[#0e6de4] text-white hover:bg-[#0b5ac0]' : 'bg-rose-600 text-white hover:bg-rose-500'}>
+              {isAdjustingCredits ? 'Saving…' : creditConfirm ? `Confirm ${creditDirection === 'add' ? 'Add' : 'Remove'} Credits` : 'Review Adjustment'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Change Package modal: manual assignment, never a Stripe payment. */}
+      {packageUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-2xl text-zinc-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold">Change Package — {packageUser.email}</h3>
+              <button onClick={() => { setPackageUser(null); setPackageConfirm(false); }} className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-900"><X className="h-5 w-5" /></button>
+            </div>
+            <p className="text-xs text-zinc-400">Current plan: <span className="font-bold text-zinc-100">{packageUser.plan}</span></p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label className="text-xs text-zinc-400 space-y-1 block">
+                <span>Plan</span>
+                <select value={packagePlan} onChange={(e) => { setPackagePlan(e.target.value); setPackageConfirm(false); }} className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100">
+                  {['Free', 'Starter', 'Growth', 'Agency', 'Enterprise'].map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </label>
+              {packagePlan !== 'Free' && (
+                <label className="text-xs text-zinc-400 space-y-1 block">
+                  <span>Billing period</span>
+                  <select value={packagePeriod} onChange={(e) => { setPackagePeriod(e.target.value); setPackageConfirm(false); }} className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100">
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                    <option value="lifetime">Lifetime (admin-assigned)</option>
+                  </select>
+                </label>
+              )}
+            </div>
+            <input value={packageReason} onChange={(e) => { setPackageReason(e.target.value); setPackageConfirm(false); }} maxLength={500} placeholder="Reason (required — saved in the audit log)" className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 w-full" />
+            {packagePlan !== 'Free' && packagePeriod === 'lifetime' && (
+              <p className="text-xs text-zinc-400">Lifetime access has no expiry date and no renewal reminders. It grants no automatic credits — use Manage Credits for that.</p>
+            )}
+            {packageConfirm && (
+              <div className="rounded-lg border border-amber-900 bg-amber-950/40 p-3 text-xs space-y-1">
+                <p className="font-bold text-amber-300">Confirm this package change</p>
+                <p className="text-zinc-300">{packageUser.email} → {packagePlan}{packagePlan === 'Free' ? '' : ` (${packagePeriod})`}.</p>
+                <p className="text-zinc-300">Manual assignment — this is NOT a Stripe payment and will never be shown as one. Previous active subscriptions are cancelled (superseded).</p>
+                <p className="text-zinc-400">Reason: {packageReason}</p>
+              </div>
+            )}
+            <Button type="button" disabled={isChangingPackage || !packageReason.trim()} onClick={submitPackageChange} className="bg-[#0e6de4] text-white hover:bg-[#0b5ac0]">
+              {isChangingPackage ? 'Saving…' : packageConfirm ? 'Confirm Package Change' : 'Review Package Change'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Subscription Dates modal: extend / set / expire / reactivate. */}
+      {datesUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-2xl text-zinc-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold">Subscription Dates — {datesUser.email}</h3>
+              <button onClick={() => { setDatesUser(null); setDatesConfirm(false); }} className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-900"><X className="h-5 w-5" /></button>
+            </div>
+            <label className="text-xs text-zinc-400 space-y-1 block">
+              <span>Action</span>
+              <select value={datesAction} onChange={(e) => { setDatesAction(e.target.value as any); setDatesConfirm(false); }} className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100">
+                <option value="extend">Extend subscription</option>
+                <option value="set">Set start / expiry dates</option>
+                <option value="reactivate">Reactivate expired subscription</option>
+                <option value="expire">Expire subscription now</option>
+              </select>
+            </label>
+            {(datesAction === 'extend' || datesAction === 'reactivate') && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {['7', '15', '30'].map((d) => <button key={d} type="button" onClick={() => { setDatesDays(d); setDatesConfirm(false); }} className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold ${datesDays === d ? 'border-blue-500 bg-blue-950 text-blue-300' : 'border-zinc-800 bg-zinc-950 text-zinc-300'}`}>{d} days</button>)}
+                </div>
+                <input type="number" min="1" max="3650" step="1" value={datesDays} onChange={(e) => { setDatesDays(e.target.value); setDatesConfirm(false); }} placeholder="Custom days" className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 w-full" />
+                <p className="text-[11px] text-zinc-400">Extending from the current expiry when it is still in the future, otherwise from today. Lifetime access has no expiry and cannot be extended.</p>
+              </div>
+            )}
+            {datesAction === 'set' && (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="text-xs text-zinc-400 space-y-1 block">
+                  <span>Start date</span>
+                  <input type="date" value={datesStart} onChange={(e) => { setDatesStart(e.target.value); setDatesConfirm(false); }} className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100" />
+                </label>
+                <label className="text-xs text-zinc-400 space-y-1 block">
+                  <span>Expiry date</span>
+                  <input type="date" value={datesEnd} onChange={(e) => { setDatesEnd(e.target.value); setDatesConfirm(false); }} className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100" />
+                </label>
+              </div>
+            )}
+            {datesAction === 'expire' && (
+              <p className="text-xs text-amber-300">This marks the subscription expired immediately. Features stop for users who had a paid subscription with no active subscription left (Free users keep their Free allowance).</p>
+            )}
+            <input value={datesReason} onChange={(e) => { setDatesReason(e.target.value); setDatesConfirm(false); }} maxLength={500} placeholder="Reason (required — saved in the audit log)" className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 w-full" />
+            {datesConfirm && (
+              <div className="rounded-lg border border-amber-900 bg-amber-950/40 p-3 text-xs space-y-1">
+                <p className="font-bold text-amber-300">Confirm this date change</p>
+                <p className="text-zinc-300">{datesAction === 'extend' ? `Extend by ${datesDays} days` : datesAction === 'reactivate' ? `Reactivate for ${datesDays} days` : datesAction === 'expire' ? 'Expire now' : `Set dates ${datesStart} → ${datesEnd}`} for {datesUser.email}.</p>
+                <p className="text-zinc-400">Reason: {datesReason}</p>
+              </div>
+            )}
+            <Button type="button" disabled={isChangingDates || !datesReason.trim()} onClick={submitDatesChange} className="bg-[#0e6de4] text-white hover:bg-[#0b5ac0]">
+              {isChangingDates ? 'Saving…' : datesConfirm ? 'Confirm Date Change' : 'Review Date Change'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* History modal: subscriptions / payments / credits / activity. */}
+      {historyUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-2xl text-zinc-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold">History — {historyUser.email}</h3>
+              <button onClick={() => { setHistoryUser(null); setHistoryData(null); }} className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-900"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(['subscriptions', 'payments', 'credits', 'activity'] as const).map((tab) => (
+                <button key={tab} type="button" onClick={() => setHistoryTab(tab)} className={`rounded-lg border px-3 py-1.5 text-xs font-bold capitalize ${historyTab === tab ? 'border-blue-500 bg-blue-950 text-blue-300' : 'border-zinc-800 bg-zinc-950 text-zinc-300'}`}>{tab}</button>
+              ))}
+            </div>
+            {isLoadingHistory && <p className="text-xs text-zinc-400">Loading…</p>}
+            {!isLoadingHistory && historyData && historyTab === 'subscriptions' && (
+              <div className="space-y-2 text-xs">
+                {historyData.subscriptions.length === 0 && <p className="text-zinc-400">No subscription rows. Assign a package to create one. (If the subscription tables are not applied yet, rows cannot exist.)</p>}
+                {historyData.subscriptions.map((s: any) => (
+                  <div key={s.id} className="rounded-lg border border-zinc-800 p-3 space-y-1">
+                    <p className="font-bold text-zinc-100">{s.planName || '—'} · {s.period || 'no period'} · {s.status}</p>
+                    <p className="text-zinc-400">Start: {s.currentPeriodStart ? new Date(s.currentPeriodStart).toLocaleDateString() : '—'} · Expiry: {s.currentPeriodEnd ? new Date(s.currentPeriodEnd).toLocaleDateString() : 'None (lifetime / free)'}</p>
+                    <p className="text-zinc-400">Credits/period: {s.creditsPerPeriod ?? '—'} · Purchase type: {(s as any).purchaseType || 'stripe'} · Amount: {s.amountCents != null ? `$${(s.amountCents / 100).toFixed(2)}` : 'Manual (no payment)'}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isLoadingHistory && historyData && historyTab === 'payments' && (
+              <div className="space-y-2 text-xs">
+                {historyData.payments.length === 0 && <p className="text-zinc-400">No Stripe payments found for this user. Manual assignments are never listed here.</p>}
+                {historyData.payments.map((p: any, i: number) => (
+                  <div key={p.id || i} className="rounded-lg border border-zinc-800 p-3 space-y-1">
+                    <p className="font-bold text-zinc-100">{p.credits?.toLocaleString()} credits · {p.amountCents != null ? `$${(p.amountCents / 100).toFixed(2)}` : '—'} · {p.status}</p>
+                    <p className="text-zinc-400">{p.purchaseType || ''} · {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isLoadingHistory && historyData && historyTab === 'credits' && (
+              <div className="space-y-2 text-xs">
+                {historyData.creditTransactions.length === 0 && <p className="text-zinc-400">No credit ledger entries for this user.</p>}
+                {historyData.creditTransactions.map((t: any, i: number) => (
+                  <div key={t.id || i} className="rounded-lg border border-zinc-800 p-3 space-y-1">
+                    <p className="font-bold text-zinc-100">{t.transactionType} · {t.amount > 0 ? '+' : ''}{t.amount} · {t.creditSource}</p>
+                    <p className="text-zinc-400">{t.description} · Balance {t.balanceBefore} → {t.balanceAfter} · {t.createdAt ? new Date(t.createdAt).toLocaleString() : ''}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isLoadingHistory && historyData && historyTab === 'activity' && (
+              <div className="space-y-2 text-xs">
+                {historyData.adminActions.length === 0 && <p className="text-zinc-400">No durable admin actions recorded for this user yet. (Durable logging needs migration 20261102000003; recent actions still appear on the Audit Logs page.)</p>}
+                {historyData.adminActions.map((a: any) => (
+                  <div key={a.id} className="rounded-lg border border-zinc-800 p-3 space-y-1">
+                    <p className="font-bold text-zinc-100">{a.action} by {a.actorEmail}</p>
+                    <p className="text-zinc-400">{a.reason} · {a.createdAt ? new Date(a.createdAt).toLocaleString() : ''}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {selectedUserForDetails && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-xl bg-zinc-950 border-l border-zinc-800 h-full overflow-y-auto p-6 space-y-6 shadow-2xl text-zinc-100">

@@ -50,6 +50,69 @@ const serverTransactions = new Map<string, CreditTransaction[]>();
 
 export class CreditWalletService {
   /**
+   * Admin credit removal (2026-11-02, admin management batch). Single-bucket
+   * rule, mirroring the apply_credit_transaction RPC: the deduct must fit
+   * entirely in FREE remainder, PAID, or BONUS — otherwise it fails cleanly
+   * instead of driving a bucket negative or splitting silently. Idempotent
+   * on the idempotency key: a replay returns the unchanged wallet.
+   */
+  public static deductAdminCredits(
+    amount: number,
+    reason: string,
+    userId?: string,
+    idempotencyKey?: string,
+  ): { success: boolean; wallet: CreditWallet; deducted: number; error?: string } {
+    const wallet = this.getWallet(userId);
+    const key = idempotencyKey || `admin-deduct-${Date.now()}-${amount}-${Math.random().toString(36).slice(2, 6)}`;
+    if (this.getTransactions(wallet.userId).some((transaction) => transaction.idempotencyKey === key)) {
+      return { success: true, wallet, deducted: 0 };
+    }
+    if (!Number.isInteger(amount) || amount <= 0) {
+      return { success: false, wallet, deducted: 0, error: 'Deduct amount must be a positive whole number.' };
+    }
+    const freeRemaining = Math.max(0, wallet.freeMonthlyCredits - wallet.freeMonthlyUsed);
+    let source: 'FREE' | 'PAID' | 'BONUS' | null = null;
+    if (freeRemaining >= amount) source = 'FREE';
+    else if (wallet.paidCredits >= amount) source = 'PAID';
+    else if (wallet.bonusCredits >= amount) source = 'BONUS';
+    if (!source) {
+      return {
+        success: false,
+        wallet,
+        deducted: 0,
+        error: `Not enough credits in any single bucket (free ${freeRemaining}, paid ${wallet.paidCredits}, bonus ${wallet.bonusCredits}). Split the adjustment so each part fits one bucket.`,
+      };
+    }
+    const balanceBefore = wallet.totalCreditsAvailable;
+    if (source === 'FREE') wallet.freeMonthlyUsed += amount;
+    else if (source === 'PAID') wallet.paidCredits -= amount;
+    else wallet.bonusCredits -= amount;
+    wallet.lifetimeCreditsUsed += amount;
+    wallet.totalCreditsAvailable =
+      Math.max(0, wallet.freeMonthlyCredits - wallet.freeMonthlyUsed) +
+      wallet.paidCredits +
+      wallet.bonusCredits;
+    this.saveWallet(wallet);
+    this.recordTransaction(
+      {
+        id: `tx-admin-deduct-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        userId: wallet.userId,
+        transactionType: 'ADMIN_ADJUSTMENT',
+        creditSource: source,
+        amount: -amount,
+        balanceBefore,
+        balanceAfter: wallet.totalCreditsAvailable,
+        description: reason,
+        idempotencyKey: key,
+        createdAt: new Date().toISOString(),
+      },
+      wallet.userId,
+    );
+    return { success: true, wallet, deducted: amount };
+  }
+
+
+  /**
    * Helper to check if current account or userId is an authorized Admin account
    */
   public static isAdminAccount(userId: string): boolean {
