@@ -894,6 +894,23 @@ export default function CampaignEditorClient() {
             )}
 
             <div
+              role="button"
+              tabIndex={0}
+              aria-label="Upload CSV or XLSX file"
+              onClick={() => {
+                // The whole box opens the file picker (not just the link
+                // text). Single trigger: the inner text is plain text now,
+                // so this cannot fire twice. The hidden input is a sibling
+                // of this box, so its click never bubbles back here.
+                if (!isParsingFile) uploadInputRef.current?.click();
+              }}
+              onKeyDown={(e) => {
+                if (isParsingFile) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  uploadInputRef.current?.click();
+                }
+              }}
               onDragOver={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -911,7 +928,7 @@ export default function CampaignEditorClient() {
                 const file = e.dataTransfer.files?.[0];
                 if (file) processSelectedFile(file);
               }}
-              className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
+              className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all cursor-pointer ${
                 isDragging
                   ? 'border-[#0e6de4] bg-blue-950/80 scale-[1.01]'
                   : 'border-zinc-800 bg-zinc-900/50 hover:border-blue-800 hover:bg-zinc-900'
@@ -930,13 +947,9 @@ export default function CampaignEditorClient() {
                   </div>
                   <p className="text-sm font-medium text-zinc-300">
                     Drop file to upload or{' '}
-                    <button
-                      type="button"
-                      onClick={() => uploadInputRef.current?.click()}
-                      className="font-bold text-blue-400 underline underline-offset-2 hover:text-blue-300 cursor-pointer"
-                    >
+                    <span className="font-bold text-blue-400 underline underline-offset-2">
                       select file from computer
-                    </button>
+                    </span>
                   </p>
                   <p className="mt-2 text-xs font-semibold text-zinc-400">
                     Supported: .CSV, .XLSX
