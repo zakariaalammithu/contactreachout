@@ -87,6 +87,16 @@ const rateLimitTracker = globalThis.__cr_rateLimitTracker ?? (globalThis.__cr_ra
 // The admin UI states this limit honestly.
 const sessionRevocationEpoch = new Map<string, number>();
 
+// Admin-issued password-reset tokens: sha256(token) -> { email, expiry }.
+// Raw tokens are never stored; entries are deleted on first use.
+declare global {
+  // eslint-disable-next-line no-var
+  var __cr_pendingResetTokens: Map<string, { email: string; expiresAt: number }> | undefined;
+}
+const pendingResetTokens =
+  globalThis.__cr_pendingResetTokens ??
+  (globalThis.__cr_pendingResetTokens = new Map<string, { email: string; expiresAt: number }>());
+
 export class AuthStore {
   public static readonly PRIMARY_SUPER_ADMIN_EMAIL = 'mithusquare@gmail.com';
 
@@ -413,9 +423,32 @@ export class AuthStore {
       return { success: true };
     }
     const resetToken = crypto.randomBytes(32).toString('hex');
+    // Stored hashed, 1h expiry, single-use: the raw token is only ever
+    // shown once to the admin who issued it. Without this store the token
+    // was unverifiable theater (generated and immediately lost).
+    pendingResetTokens.set(crypto.createHash('sha256').update(resetToken).digest('hex'), {
+      email: user.email,
+      expiresAt: Date.now() + 3600_000,
+    });
     user.updatedAt = new Date().toISOString();
     userRegistry.set(user.email, user);
     return { success: true, resetToken };
+  }
+
+  /**
+   * Consumes an admin-issued reset token (single-use, 1h expiry).
+   * Returns the account email on success, null when the token is
+   * unknown, expired, or already used — callers must not distinguish
+   * those cases in user-facing errors.
+   */
+  public static consumeResetToken(token: string, newPassword: string): string | null {
+    const digest = crypto.createHash('sha256').update(token).digest('hex');
+    const entry = pendingResetTokens.get(digest);
+    if (!entry) return null;
+    pendingResetTokens.delete(digest);
+    if (Date.now() > entry.expiresAt) return null;
+    this.resetPassword(entry.email, newPassword);
+    return entry.email;
   }
 
   public static addPaidCredits(userId: string, credits: number): UserAccount {

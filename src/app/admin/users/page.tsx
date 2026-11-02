@@ -163,6 +163,7 @@ export default function AdminUsersPage() {
   const [resetPasswordModalUser, setResetPasswordModalUser] = useState<UserData | null>(null);
   const [tempPassword, setTempPassword] = useState('');
   const [issuedResetToken, setIssuedResetToken] = useState<string | null>(null);
+  const [issuedResetLink, setIssuedResetLink] = useState<string | null>(null);
   const [tokenCopyState, setTokenCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   // Delete User Modal State
@@ -564,10 +565,11 @@ export default function AdminUsersPage() {
       if (json.success) {
         const targetEmail = resetPasswordModalUser.email;
         if (json.resetToken) {
-          // The server issued a token but does not email it. Keep the
-          // modal open and show the token so the admin can copy and
-          // share it manually. Never claim it was emailed.
+          // The server issued a single-use, 1h token but does not email
+          // it. Keep the modal open and show the full reset link so the
+          // admin can copy and share it manually. Never claim it was emailed.
           setIssuedResetToken(json.resetToken);
+          setIssuedResetLink(`${window.location.origin}/reset-password?token=${json.resetToken}`);
           setTokenCopyState('idle');
           setTempPassword('');
         } else {
@@ -2062,9 +2064,9 @@ export default function AdminUsersPage() {
 
             {issuedResetToken ? (
               <div className="space-y-3 text-xs">
-                <p className="text-emerald-300 font-semibold">Reset token issued for {resetPasswordModalUser.email}.</p>
+                <p className="text-emerald-300 font-semibold">Reset link issued for {resetPasswordModalUser.email}.</p>
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                  <p className="font-mono text-[11px] break-all text-zinc-100">{issuedResetToken}</p>
+                  <p className="font-mono text-[11px] break-all text-zinc-100">{issuedResetLink}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -2073,7 +2075,7 @@ export default function AdminUsersPage() {
                     type="button"
                     onClick={async () => {
                       try {
-                        await navigator.clipboard.writeText(issuedResetToken);
+                        await navigator.clipboard.writeText(issuedResetLink ?? issuedResetToken);
                         setTokenCopyState('copied');
                       } catch {
                         setTokenCopyState('failed');
@@ -2081,17 +2083,17 @@ export default function AdminUsersPage() {
                     }}
                     className="bg-[#0e6de4] hover:bg-[#0c5bc0] text-white font-bold"
                   >
-                    {tokenCopyState === 'copied' ? 'Copied!' : 'Copy Token'}
+                    {tokenCopyState === 'copied' ? 'Copied!' : 'Copy Reset Link'}
                   </Button>
                   {tokenCopyState === 'failed' && (
-                    <span className="text-amber-300">Copy failed — select the token manually.</span>
+                    <span className="text-amber-300">Copy failed — select the link manually.</span>
                   )}
                 </div>
                 <p className="text-zinc-400 leading-relaxed">
-                  This token is not emailed automatically — share it with the user yourself.
+                  This link is not emailed automatically — share it with the user yourself. It works once and expires after 1 hour.
                 </p>
                 <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
-                  <Button variant="secondary" size="sm" type="button" onClick={() => { setResetPasswordModalUser(null); setIssuedResetToken(null); }} className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800">
+                  <Button variant="secondary" size="sm" type="button" onClick={() => { setResetPasswordModalUser(null); setIssuedResetToken(null); setIssuedResetLink(null); }} className="bg-zinc-900 text-zinc-100 hover:bg-zinc-800">
                     Done
                   </Button>
                 </div>
