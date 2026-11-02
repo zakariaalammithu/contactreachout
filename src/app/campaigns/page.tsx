@@ -1379,7 +1379,7 @@ export default function CampaignsPage() {
         const valRes = await fetch('/api/campaigns/validate-start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ campaignId: id, prospectsCount: prospectCount, aiPersonalizationEnabled: Boolean((draft as any)?.aiPersonalizationEnabled) }),
+          body: JSON.stringify({ campaignId: id, prospectsCount: prospectCount, aiPersonalizationEnabled: Boolean((draft as any)?.aiPersonalizationEnabled), dryRun: Boolean((draft as any)?.dryRun) }),
         });
         const valData = await valRes.json().catch(() => ({}));
         if (!valRes.ok || !valData.allowed) {

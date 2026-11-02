@@ -3,6 +3,8 @@ import { SessionManager } from '@/lib/auth/session';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { CreditWalletServerService } from '@/lib/services/credit-wallet-server-service';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { resolveSenderContact } from '@/lib/services/profile-contact-service';
+import { checkSenderIdentity, formatMissingIdentity } from '@/lib/services/sender-identity-policy';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (authenticatedUser?.isSuspended) return NextResponse.json({ error: 'Account is suspended.' }, { status: 403 });
     const userId = session.email.toLowerCase().trim();
     const body = await req.json();
-    const { prospectsCount = 0, aiPersonalizationEnabled = false } = body;
+    const { prospectsCount = 0, aiPersonalizationEnabled = false, dryRun = false } = body;
 
     const count = Number(prospectsCount);
     if (isNaN(count) || count < 1) {
@@ -40,6 +42,33 @@ export async function POST(req: NextRequest) {
         reason: 'NO_PROSPECTS',
         message: 'Add at least 1 prospect before starting this campaign.',
       }, { status: 400 });
+    }
+
+    // 0. Sender-identity completeness gate (LIVE starts only).
+    // Dry runs send nothing, so they are never blocked here. The
+    // contact is resolved with the SAME resolver the process route
+    // uses (AuthStore first, durable app_users second), so the gate
+    // cannot pass while sending would fail on missing identity.
+    // Applies to every role including admins: a missing sender name
+    // or number is a sendability fact, not a permission.
+    if (!dryRun) {
+      const senderContact = await resolveSenderContact(session.email, authenticatedUser);
+      const identity = checkSenderIdentity({
+        fullName: authenticatedUser?.name,
+        phone: senderContact.phone,
+        whatsApp: senderContact.whatsapp,
+      });
+      if (!identity.complete) {
+        return NextResponse.json(
+          {
+            allowed: false,
+            reason: 'IDENTITY_INCOMPLETE',
+            missing: identity.missing,
+            message: `Complete your sender identity in Settings & Profile before starting a live campaign. Missing: ${formatMissingIdentity(identity.missing)}.`,
+          },
+          { status: 400 },
+        );
+      }
     }
 
     // 1. AI Personalization Access Control Check

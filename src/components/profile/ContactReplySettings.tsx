@@ -297,7 +297,7 @@ export function ContactReplySettings() {
             {/* 1. Full Name */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-                Full Name <span className="text-[10px] font-normal text-zinc-400">(Optional)</span>
+                Full Name <span className="text-[10px] font-normal text-zinc-400">(Required for live campaigns)</span>
               </label>
               <input
                 type="text"
@@ -347,7 +347,7 @@ export function ContactReplySettings() {
             {/* 3. Phone Number */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-                Phone Number <span className="text-[10px] font-normal text-zinc-400">(Optional)</span>
+                Phone Number <span className="text-[10px] font-normal text-zinc-400">(Required for live campaigns)</span>
               </label>
               <div className="flex gap-2">
                 <select
@@ -373,7 +373,7 @@ export function ContactReplySettings() {
             {/* 4. WhatsApp Number */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-                WhatsApp Number <span className="text-[10px] font-normal text-zinc-400">(Optional)</span>
+                WhatsApp Number <span className="text-[10px] font-normal text-zinc-400">(Required for live campaigns)</span>
               </label>
               <div className="flex gap-2">
                 <select

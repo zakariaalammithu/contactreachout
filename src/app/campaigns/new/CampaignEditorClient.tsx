@@ -13,6 +13,7 @@ import { parseSpreadsheetPreview } from '@/lib/services/import-service';
 import { CANONICAL_DEFAULT_SAFETY_CONFIG, SendingScheduleConfig } from '@/lib/services/processing-controls-service';
 import { MatchDataModal } from '@/components/leads/MatchDataModal';
 import { CampaignMessageEditor } from './CampaignMessageEditor';
+import { IDENTITY_FIELD_LABELS } from '@/lib/services/sender-identity-policy';
 import { ContactReplySettings } from '@/components/profile/ContactReplySettings';
 import { readCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 
@@ -170,6 +171,7 @@ export default function CampaignEditorClient() {
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [identityMissing, setIdentityMissing] = useState<string[] | null>(null);
   const [manualWebsites, setManualWebsites] = useState('');
   const [manualListName, setManualListName] = useState('');
   const [manualModalOpen, setManualModalOpen] = useState(false);
@@ -743,6 +745,7 @@ export default function CampaignEditorClient() {
 
       // Server-Side Credit & AI Entitlement Validation on Campaign Launch
       if (launch) {
+        setIdentityMissing(null);
         try {
           const valRes = await fetch('/api/campaigns/validate-start', {
             method: 'POST',
@@ -751,11 +754,20 @@ export default function CampaignEditorClient() {
               campaignId: editId || 'new',
               prospectsCount: selectedLeads.length,
               aiPersonalizationEnabled,
+              dryRun: isDryRun,
             }),
           });
 
           const valData = await valRes.json();
           if (!valRes.ok || !valData.allowed) {
+            // Identity failures get a fix banner with a profile link,
+            // never the credit-shortfall modal (that would mislead).
+            if (valData.reason === 'IDENTITY_INCOMPLETE') {
+              setError(valData.message || 'Complete your sender identity before starting a live campaign.');
+              setIdentityMissing(Array.isArray(valData.missing) ? valData.missing : []);
+              setIsStarting(false);
+              return;
+            }
             setError(valData.message || 'Not enough credits to start this campaign.');
             setCreditShortfallData(valData);
             setShowCreditShortfallModal(true);
@@ -1145,6 +1157,16 @@ export default function CampaignEditorClient() {
         </div>
       </div>
       {error && <div className="rounded-xl border border-amber-900 bg-amber-950 p-3 text-sm font-medium text-amber-300">{error}</div>}
+      {identityMissing && (
+        <div className="rounded-xl border border-amber-900 bg-amber-950 p-3 text-sm font-medium text-amber-300 flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+          <span>
+            Missing sender identity: {identityMissing.map((f) => IDENTITY_FIELD_LABELS[f as keyof typeof IDENTITY_FIELD_LABELS] ?? f).join(', ')}. Live campaigns cannot start until these are filled.
+          </span>
+          <Link href="/profile" className="shrink-0 rounded-lg bg-[#0e6de4] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0c5bc0] text-center">
+            Go to Settings &amp; Profile
+          </Link>
+        </div>
+      )}
       <div className="flex overflow-x-auto scrollbar-none flex-nowrap sm:flex-wrap gap-2 rounded-2xl border border-zinc-800 bg-zinc-950 p-2">
         {tabs.map((tab) => (
           <button
