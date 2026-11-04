@@ -60,6 +60,31 @@ export interface DetectedForm {
   detectedFields: DetectedFormField[];
 }
 
+export type FormPurpose = 'contact' | 'inquiry' | 'sales' | 'quote' | 'appointment' | 'other';
+
+// Business purpose of a form, from its page URL + action + selector, in
+// the brief's priority order: contact > inquiry > sales > quote >
+// appointment. Used to pick the most suitable form when a page offers
+// several, and reported as the Contact Method Type.
+export function detectFormPurpose(haystack: string): FormPurpose {
+  const hay = haystack.toLowerCase();
+  if (/contact|get-in-touch|reach-us|talk-to-us|connect-with-us|\/connect(\/|$|\?|#)/.test(hay)) return 'contact';
+  if (/inquir|enquir/.test(hay)) return 'inquiry';
+  if (/sales/.test(hay)) return 'sales';
+  if (/quote|request-demo|\/demo(\/|$|\?|#)/.test(hay)) return 'quote';
+  if (/appointment|consultation|schedule|book|callback/.test(hay)) return 'appointment';
+  return 'other';
+}
+
+// Resolve a form's purpose: the form's own action/selector wins when it
+// carries a purpose signal; otherwise the page URL supplies it. (The
+// page URL must not decide selection between forms on the SAME page —
+// it is constant across them, so scoring uses form signals only.)
+export function resolveFormPurpose(pageUrl: string, action: string, selector: string): FormPurpose {
+  const own = detectFormPurpose(`${action} ${selector}`);
+  return own !== 'other' ? own : detectFormPurpose(pageUrl);
+}
+
 export interface FormDetectionResult {
   targetUrl: string;
   hasContactForm: boolean;
@@ -78,6 +103,7 @@ export interface FormDetectionResult {
   detectedAt: string;
   errorCode?: string;
   errorMessage?: string;
+  formPurpose?: FormPurpose;
 }
 
 // Honeypot naming and style signatures

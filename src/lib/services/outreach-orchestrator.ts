@@ -5,8 +5,8 @@
  */
 
 import { ContactPageFinder, ContactDiscoveryResult, COMMON_CONTACT_PATHS, normalizeDedupUrl } from './contact-page-finder';
-import { ContactFormDetector, FormDetectionResult, DetectedFormField, detectFormsViaFetch, classifyFetchField } from './form-detector';
-import { isBrowserWorkerConfigured, detectWithBrowserWorker, WorkerDetectionForm } from './browser-worker-client';
+import { ContactFormDetector, FormDetectionResult, DetectedFormField, detectFormsViaFetch, classifyFetchField, detectFormPurpose, resolveFormPurpose } from './form-detector';
+import { isBrowserWorkerConfigured, detectWithBrowserWorker, WorkerDetectionForm, AlternativeContactLinks } from './browser-worker-client';
 import { interpolateTemplate, extractVariables, convertHtmlToPlainText, prepareContactFormPlainText } from './template-engine';
 import { mapLeadToFormFields, FieldMappingResult, LeadMappingContext } from './field-mapper';
 import { FormSubmitter, SubmissionExecutionResult } from './form-submitter';
@@ -74,6 +74,10 @@ export interface PipelineExecutionResult {
   currentStage: PipelineStage;
   discovery?: ContactDiscoveryResult;
   detection?: FormDetectionResult;
+  // Public alternative contact options found on rendered pages
+  // (mailto:/tel:/WhatsApp links). Report-only: never a submission, never
+  // an auto-send. Set only when no form was selected.
+  alternativeContact?: AlternativeContactLinks;
   renderedSubject: string;
   renderedBody: string;
   mapping?: FieldMappingResult;
@@ -85,14 +89,19 @@ export interface PipelineExecutionResult {
 
 /** Score worker-rendered forms and pick the best contact form. Login,
  * search, and newsletter forms are never contact forms. A form only
- * counts when it has at least one mappable field. */
+ * counts when it has at least one mappable field. Business purpose
+ * (contact > inquiry > sales > quote > appointment) outranks raw field
+ * count, but field richness still breaks ties between equal purposes.
+ * Scoring uses the form's own action/selector only: the page URL is
+ * constant across forms on one page, so it cannot differentiate them. */
 function pickBestWorkerForm(forms: WorkerDetectionForm[]): WorkerDetectionForm | null {
+  const purposeBonus: Record<string, number> = { contact: 20, inquiry: 16, sales: 12, quote: 8, appointment: 4, other: 0 };
   let best: WorkerDetectionForm | null = null;
   let bestScore = 0;
   for (const form of forms) {
     const hay = `${form.selector} ${form.action}`.toLowerCase();
     if (/login|signin|sign-in|auth/.test(hay) || /search/.test(hay) || /subscribe|newsletter/.test(hay)) continue;
-    let score = 0;
+    let score = purposeBonus[detectFormPurpose(`${form.action} ${form.selector}`)] || 0;
     for (const f of form.fields) {
       const t = classifyFetchField(f.tag, f.type, f.name, f.label);
       if (t === 'message') score += 4;
@@ -103,6 +112,8 @@ function pickBestWorkerForm(forms: WorkerDetectionForm[]): WorkerDetectionForm |
   }
   return best;
 }
+
+export { pickBestWorkerForm, detectFormPurpose };
 
 function workerFormToDetection(targetUrl: string, form: WorkerDetectionForm): FormDetectionResult {
   const fields: DetectedFormField[] = form.fields.map((f) => ({
@@ -138,6 +149,7 @@ function workerFormToDetection(targetUrl: string, form: WorkerDetectionForm): Fo
     status: 'DETECTED',
     confidenceScore: 90,
     detectedAt: new Date().toISOString(),
+    formPurpose: resolveFormPurpose(targetUrl, form.action, form.selector),
   };
 }
 
@@ -230,6 +242,9 @@ export class OutreachPipelineOrchestrator {
     let candidateList: string[];
     // Sitemap-derived candidates, for honest Discovery Method reporting.
     let sitemapCandidateUrls = new Set<string>();
+    // Internal pages (About/Services/Pricing/Locations) scanned for
+    // embedded forms only after all contact candidates fail.
+    const internalPageUrls = new Set<string>();
     // One page under two URL spellings (/contact vs /contact/) must be
     // tried and counted once.
     const dedupCandidates = (urls: string[]): string[] => {
@@ -243,20 +258,33 @@ export class OutreachPipelineOrchestrator {
       }
       return out;
     };
+    // Internal pages that duplicate a contact candidate stay contact
+    // candidates (first occurrence wins) and never report as embedded.
+    const appendInternalPages = (contactCandidates: string[]): string[] => {
+      const contactKeys = new Set(contactCandidates.map((u) => normalizeDedupUrl(u)));
+      for (const u of discovery.internalPageUrls || []) {
+        if (!contactKeys.has(normalizeDedupUrl(u))) internalPageUrls.add(u);
+      }
+      return [...contactCandidates, ...internalPageUrls];
+    };
     if (discovery.status === 'FOUND' && discovery.contactPageUrl) {
       addLog('CONTACT_PAGE_DISCOVERY', `Discovered contact page: ${discovery.contactPageUrl} via ${discovery.discoveryMethod}`);
+      let contactCandidates: string[];
       if (discovery.candidateUrls && discovery.candidateUrls.length > 0) {
         sitemapCandidateUrls = new Set(
           discovery.candidateUrls.filter((c) => c.matchReason === 'Sitemap entry').map((c) => c.url)
         );
-        candidateList = dedupCandidates(discovery.candidateUrls.map((c) => c.url));
+        contactCandidates = dedupCandidates(discovery.candidateUrls.map((c) => c.url));
       } else {
-        candidateList = [discovery.contactPageUrl];
+        contactCandidates = [discovery.contactPageUrl];
       }
+      candidateList = appendInternalPages(contactCandidates);
     } else if (workerConfigured) {
       addLog('CONTACT_PAGE_DISCOVERY', `No static contact page verified on ${lead.website}; trying likely contact paths through the remote browser worker.`);
       const base = lead.website.replace(/\/$/, '');
-      candidateList = dedupCandidates([...COMMON_CONTACT_PATHS.map((path) => `${base}${path}`), base]);
+      candidateList = appendInternalPages(
+        dedupCandidates([...COMMON_CONTACT_PATHS.map((path) => `${base}${path}`), base])
+      );
     } else {
       addLog('CONTACT_PAGE_DISCOVERY', `No public contact page found on ${lead.website}`);
       return {
@@ -299,6 +327,22 @@ export class OutreachPipelineOrchestrator {
     let workerAttempts = 0;
     let workerUnavailableAttempts = 0;
     let workerRenderedAny = false;
+    // Public alternative contact options found on rendered pages
+    // (mailto:/tel:/WhatsApp links). Report-only: they never count as a
+    // form submission and never trigger an auto-send.
+    const alternativeContact: AlternativeContactLinks = { emails: [], phones: [], whatsapp: [] };
+    const mergeAlternativeContact = (links?: Partial<AlternativeContactLinks>) => {
+      if (!links) return;
+      for (const key of ['emails', 'phones', 'whatsapp'] as const) {
+        for (const v of links[key] || []) {
+          if (v && !alternativeContact[key].includes(v) && alternativeContact[key].length < 3) {
+            alternativeContact[key].push(v);
+          }
+        }
+      }
+    };
+    const hasAlternativeContact = () =>
+      alternativeContact.emails.length > 0 || alternativeContact.phones.length > 0 || alternativeContact.whatsapp.length > 0;
 
     for (const candidateUrl of candidateList) {
       if (!candidateUrl) continue;
@@ -335,6 +379,7 @@ export class OutreachPipelineOrchestrator {
         if (workerDetection.available) {
           workerRendered = true;
           workerRenderedAny = true;
+          mergeAlternativeContact(workerDetection.contactLinks);
           const bestForm = pickBestWorkerForm(workerDetection.forms);
           if (bestForm) detectionCandidate = workerFormToDetection(candidateUrl, bestForm);
         } else {
@@ -350,6 +395,16 @@ export class OutreachPipelineOrchestrator {
 
       if (!detectionCandidate) continue;
       lastDetection = detectionCandidate;
+
+      // Fetch-path detections carry no purpose; derive it the same way
+      // so reporting is uniform across detection paths.
+      if (detectionCandidate.selectedForm && !detectionCandidate.formPurpose) {
+        detectionCandidate.formPurpose = resolveFormPurpose(
+          candidateUrl,
+          detectionCandidate.selectedForm.action || '',
+          detectionCandidate.selectedForm.formSelector
+        );
+      }
 
       if (detectionCandidate.status === 'CAPTCHA_DETECTED') {
         addLog('FORM_DETECTION', `CAPTCHA / Bot challenge detected on candidate ${candidateUrl}. Trying next candidate.`);
@@ -481,6 +536,7 @@ export class OutreachPipelineOrchestrator {
           confidenceScore: 0,
           detectedAt: new Date().toISOString(),
         },
+        alternativeContact: hasAlternativeContact() ? alternativeContact : undefined,
         renderedSubject: '',
         renderedBody: '',
         totalDurationMs: Date.now() - startTime,
@@ -493,10 +549,13 @@ export class OutreachPipelineOrchestrator {
     if (activeContactUrl) discovery.contactPageUrl = activeContactUrl;
 
     // Report the actual discovery method for the SELECTED candidate:
+    // embedded-form selections (internal pages) report 'embedded_form';
     // sitemap-derived selections report 'sitemap'; selections from the
     // worker's common-path fallback (finder found nothing) report
     // 'worker_candidate_probe'; otherwise keep the finder's method.
-    if (selectedContactUrl && sitemapCandidateUrls.has(selectedContactUrl)) {
+    if (selectedContactUrl && internalPageUrls.has(selectedContactUrl)) {
+      discovery.discoveryMethod = 'embedded_form';
+    } else if (selectedContactUrl && sitemapCandidateUrls.has(selectedContactUrl)) {
       discovery.discoveryMethod = 'sitemap';
     } else if (discovery.status !== 'FOUND') {
       discovery.discoveryMethod = 'worker_candidate_probe';

@@ -16,6 +16,7 @@ export type DiscoveryMethod =
   | 'path_probe'
   | 'sitemap'
   | 'worker_candidate_probe'
+  | 'embedded_form'
   | 'none';
 
 export type DiscoveryStatus =
@@ -39,6 +40,10 @@ export interface ContactDiscoveryResult {
   targetDomain: string;
   contactPageUrl: string | null;
   candidateUrls?: ScoredLink[];
+  // Internal pages (About/Services/Pricing/Locations) to scan for
+  // embedded forms after all contact candidates fail. The orchestrator
+  // appends these after the contact candidates.
+  internalPageUrls?: string[];
   discoveryMethod: DiscoveryMethod;
   confidenceScore: number;
   status: DiscoveryStatus;
@@ -378,11 +383,29 @@ function isSameSite(url: string, domain: string): boolean {
   }
 }
 
-// Sitemap-derived contact candidates, tried after nav links but before
+// Sitemap-derived candidates, tried after nav links but before
 // blind path guesses: sitemap entries are the site's own declaration of
-// its pages. Returns [] on any failure — sitemap discovery is an
-// enhancement, never a gate.
-export async function discoverSitemapContactUrls(baseUrl: string, domain: string): Promise<ScoredLink[]> {
+// its pages. Returns contact candidates plus internal pages (About /
+// Services / Pricing / Locations) for embedded-form scanning, [] on any
+// failure — sitemap discovery is an enhancement, never a gate.
+const INTERNAL_KEYWORDS = ['about', 'service', 'product', 'pricing', 'location', 'branch', 'store'];
+
+// True for a same-site internal page that is NOT itself a contact page:
+// the embedded-form scan targets these after contact candidates fail.
+export function isInternalPageUrl(url: string, domain: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (host !== domain && !host.endsWith(`.${domain}`)) return false;
+    if (isContactishUrl(url, domain)) return false;
+    const path = parsed.pathname.toLowerCase();
+    return INTERNAL_KEYWORDS.some((k) => path.includes(k));
+  } catch {
+    return false;
+  }
+}
+
+export async function discoverSitemapUrls(baseUrl: string, domain: string): Promise<{ contact: ScoredLink[]; internal: string[] }> {
   const base = baseUrl.replace(/\/$/, '');
   const docUrls: string[] = [];
   const pushDoc = (u: string) => {
@@ -413,6 +436,17 @@ export async function discoverSitemapContactUrls(baseUrl: string, domain: string
     found.push({ url: u, text: 'Sitemap entry', score: 90, matchReason: 'Sitemap entry' });
   };
 
+  const internal: string[] = [];
+  const internalSeen = new Set<string>();
+  const addInternal = (u: string) => {
+    if (internal.length >= 6) return;
+    const key = normalizeDedupUrl(u);
+    if (internalSeen.has(key)) return;
+    if (!isInternalPageUrl(u, domain)) return;
+    internalSeen.add(key);
+    internal.push(u);
+  };
+
   const docs = await Promise.all(docUrls.map((u) => fetchTextCapped(u)));
   const nestedUrls: string[] = [];
   for (const xml of docs) {
@@ -425,7 +459,7 @@ export async function discoverSitemapContactUrls(baseUrl: string, domain: string
         }
       }
     } else {
-      for (const u of locs) addUrl(u);
+      for (const u of locs) { addUrl(u); addInternal(u); }
     }
     if (found.length >= SITEMAP_MAX_URLS) break;
   }
@@ -433,11 +467,16 @@ export async function discoverSitemapContactUrls(baseUrl: string, domain: string
     const nestedDocs = await Promise.all(nestedUrls.map((u) => fetchTextCapped(u)));
     for (const xml of nestedDocs) {
       if (!xml) continue;
-      for (const u of extractLocUrls(xml)) addUrl(u);
+      for (const u of extractLocUrls(xml)) { addUrl(u); addInternal(u); }
       if (found.length >= SITEMAP_MAX_URLS) break;
     }
   }
-  return found;
+  return { contact: found, internal };
+}
+
+// Backward-compatible wrapper: the original single-list shape.
+export async function discoverSitemapContactUrls(baseUrl: string, domain: string): Promise<ScoredLink[]> {
+  return (await discoverSitemapUrls(baseUrl, domain)).contact;
 }
 
 /**
@@ -619,12 +658,39 @@ export class ContactPageFinder {
 
         // Sitemap-derived candidates outrank blind path guesses: the site
         // itself declares these pages.
-        const sitemapLinks = await discoverSitemapContactUrls(normalizedUrl, domain);
-        for (const s of sitemapLinks) {
+        const sitemap = await discoverSitemapUrls(normalizedUrl, domain);
+        for (const s of sitemap.contact) {
           if (!seenUrls.has(normalizeDedupUrl(s.url))) {
             seenUrls.add(normalizeDedupUrl(s.url));
             scoredLinks.push(s);
           }
+        }
+
+        // Internal pages for the embedded-form scan: nav links to
+        // About/Services/Products/Pricing/Locations pages that are not
+        // themselves contact candidates, topped up from sitemap entries.
+        // Capped; the orchestrator tries them only after every contact
+        // candidate fails.
+        const internalPageUrls: string[] = [];
+        const internalSeen = new Set<string>();
+        for (const a of rawAnchors) {
+          let abs: string;
+          try {
+            abs = new URL(a.href, `${normalizedUrl.replace(/\/$/, '')}/`).toString();
+          } catch {
+            continue;
+          }
+          if (!isInternalPageUrl(abs, domain)) continue;
+          const key = normalizeDedupUrl(abs);
+          if (seenUrls.has(key) || internalSeen.has(key)) continue;
+          internalSeen.add(key);
+          if (internalPageUrls.length < 6) internalPageUrls.push(abs);
+        }
+        for (const u of sitemap.internal) {
+          const key = normalizeDedupUrl(u);
+          if (seenUrls.has(key) || internalSeen.has(key)) continue;
+          internalSeen.add(key);
+          if (internalPageUrls.length < 6) internalPageUrls.push(u);
         }
 
         // Add common contact path probing candidates as backup fallback candidates
@@ -654,6 +720,7 @@ export class ContactPageFinder {
             targetDomain: domain,
             contactPageUrl: topCandidate.url,
             candidateUrls: scoredLinks,
+            internalPageUrls,
             discoveryMethod: 'homepage_anchor',
             confidenceScore: topCandidate.score,
             status: 'FOUND',
@@ -771,6 +838,10 @@ async function httpFallbackDiscovery(
   for (const r of results) {
     if (r.status === 'fulfilled' && r.value) hits.push(r.value);
   }
+  // Sitemap entries serve both branches: contact candidates in FOUND,
+  // and internal pages for the embedded-form scan in NOT_FOUND (the
+  // worker fallback branch needs them when no probe hit exists).
+  const sitemap = await discoverSitemapUrls(normalizedUrl, domain);
   if (hits.length > 0) {
     const first = hits[0];
     // Full ordered candidate list (previously only the first hit was
@@ -794,7 +865,7 @@ async function httpFallbackDiscovery(
         hit.path === '' ? 'Form detected on homepage' : `Path probe (${hit.path})`
       );
     }
-    const sitemapLinks = await discoverSitemapContactUrls(normalizedUrl, domain);
+    const sitemapLinks = sitemap.contact;
     for (const s of sitemapLinks) pushCandidate(s.url, s.text, s.score, s.matchReason);
     for (const path of COMMON_CONTACT_PATHS) {
       const probeUrl = `${baseUrl}${path}`;
@@ -810,6 +881,7 @@ async function httpFallbackDiscovery(
       targetDomain: domain,
       contactPageUrl: first.target,
       candidateUrls,
+      internalPageUrls: sitemap.internal,
       discoveryMethod: first.path === '' ? 'homepage_form' : 'path_probe',
       confidenceScore: first.path === '' ? 85 : 95,
       status: 'FOUND',
@@ -830,6 +902,7 @@ async function httpFallbackDiscovery(
     targetWebsite: websiteUrl,
     targetDomain: domain,
     contactPageUrl: null,
+    internalPageUrls: sitemap.internal,
     discoveryMethod: 'none',
     confidenceScore: 0,
     status: 'NOT_FOUND',

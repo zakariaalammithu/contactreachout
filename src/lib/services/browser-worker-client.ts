@@ -111,8 +111,16 @@ export interface WorkerDetectionForm {
   fields: WorkerDetectionField[];
 }
 
+// Public alternative contact options found on a rendered page. Report-only:
+// they never count as a form submission and never trigger an auto-send.
+export interface AlternativeContactLinks {
+  emails: string[];
+  phones: string[];
+  whatsapp: string[];
+}
+
 export type WorkerDetectionOutcome =
-  | { available: true; status: 'DETECTED' | 'NOT_FOUND' | 'CAPTCHA_DETECTED' | 'NAVIGATION_FAILED'; forms: WorkerDetectionForm[]; errorMessage?: string }
+  | { available: true; status: 'DETECTED' | 'NOT_FOUND' | 'CAPTCHA_DETECTED' | 'NAVIGATION_FAILED'; forms: WorkerDetectionForm[]; errorMessage?: string; contactLinks?: AlternativeContactLinks }
   | { available: false; reason: string };
 
 export function isBrowserWorkerConfigured(): boolean {
@@ -159,6 +167,7 @@ export async function detectWithBrowserWorker(input: {
       hasForm?: boolean;
       forms?: WorkerDetectionForm[];
       errorMessage?: string;
+      contactLinks?: AlternativeContactLinks;
     };
     if (result.status === 'CAPTCHA_DETECTED') {
       return { available: true, status: 'CAPTCHA_DETECTED', forms: [] };
@@ -167,9 +176,9 @@ export async function detectWithBrowserWorker(input: {
       return { available: true, status: 'NAVIGATION_FAILED', forms: [], errorMessage: result.errorMessage };
     }
     if (result.status === 'DETECTED' && Array.isArray(result.forms) && result.forms.length > 0) {
-      return { available: true, status: 'DETECTED', forms: result.forms };
+      return { available: true, status: 'DETECTED', forms: result.forms, contactLinks: result.contactLinks };
     }
-    return { available: true, status: 'NOT_FOUND', forms: [] };
+    return { available: true, status: 'NOT_FOUND', forms: [], contactLinks: result.contactLinks };
   } catch (error) {
     return { available: false, reason: `BROWSER_WORKER_DETECT_UNAVAILABLE: worker could not be reached (${error instanceof Error ? error.message : 'unknown error'}).` };
   }

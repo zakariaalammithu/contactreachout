@@ -286,6 +286,22 @@ export async function POST(req: NextRequest) {
         'Form handler request failed or timed out';
     }
 
+    // Alternative-only leads: no form exists, but a public contact
+    // option was found. The lead stays NO-FORM (never Delivered) and
+    // the option is flagged for manual review — the system never
+    // auto-sends to an email or WhatsApp number.
+    if (campaignStatus === 'NO-FORM' && result.alternativeContact) {
+      const alt = result.alternativeContact;
+      const parts = [
+        ...alt.emails.map((e) => `email ${e}`),
+        ...alt.phones.map((p) => `phone ${p}`),
+        ...alt.whatsapp.map((w) => `WhatsApp ${w}`),
+      ];
+      if (parts.length > 0) {
+        diagnosticMessage += ` Public contact found (${parts.join(', ')}) — manual review only; not auto-sent (no authorized email/WhatsApp integration).`;
+      }
+    }
+
     // 4. Perform Server-Side Credit Deduction ONLY on Successful Live Submission
     let creditDeduction = { success: true, cost: 0, source: 'NONE' };
     let creditDeductionFailed = false;
@@ -338,6 +354,31 @@ export async function POST(req: NextRequest) {
       successVerification: isNavigationFailure ? 'NOT_CHECKED' : undefined,
       techStack: result.detection?.selectedForm?.formSelector ? `Form (${result.detection.selectedForm.formSelector})` : 'NOT_DETECTED',
       discoveryMethod: result.discovery?.discoveryMethod || 'N/A',
+      contactMethodType: (() => {
+        const purpose = result.detection?.formPurpose;
+        if (purpose === 'contact') return 'Official Business Contact Form';
+        if (purpose === 'inquiry') return 'Business Inquiry Form';
+        if (purpose === 'sales') return 'Sales Inquiry Form';
+        if (purpose === 'quote') return 'Request a Quote Form';
+        if (purpose === 'appointment') return 'Appointment / Consultation Form';
+        if (result.alternativeContact?.emails.length) return 'Official Public Business Email';
+        if (result.alternativeContact?.whatsapp.length) return 'WhatsApp Business Contact';
+        if (result.alternativeContact?.phones.length) return 'Other Verified Business Contact';
+        return result.detection?.selectedForm ? 'Contact Form' : 'N/A';
+      })(),
+      contactOption: (() => {
+        if (result.detection?.selectedForm) return `Form (${result.detection.selectedForm.formSelector})`;
+        const alt = result.alternativeContact;
+        if (alt) {
+          const parts = [
+            ...alt.emails.map((e) => `Email: ${e}`),
+            ...alt.phones.map((p) => `Phone: ${p}`),
+            ...alt.whatsapp.map((w) => `WhatsApp: ${w}`),
+          ];
+          if (parts.length > 0) return parts.join(', ');
+        }
+        return 'N/A';
+      })(),
       domainAge: 'N/A',
       lastUpdated: 'N/A',
       status: campaignStatus,

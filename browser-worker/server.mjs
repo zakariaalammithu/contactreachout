@@ -46,7 +46,7 @@ http.createServer(async (req, res) => {
       await page.waitForTimeout(1200);
       const content = await page.content();
       if (blockedPattern.test(content)) return send(res, 200, { status: 'CAPTCHA_DETECTED', hasForm: false, forms: [] });
-      const forms = await page.evaluate(() => {
+      const extractForms = () => page.evaluate(() => {
         const cssPath = (el) => {
           const parts = [];
           let node = el;
@@ -102,8 +102,83 @@ http.createServer(async (req, res) => {
           };
         });
       });
-      const withFields = forms.filter((f) => f.fields.length > 0);
-      return send(res, 200, { status: withFields.length > 0 ? 'DETECTED' : 'NOT_FOUND', hasForm: withFields.length > 0, forms: withFields });
+      let forms = await extractForms();
+      // Public alternative contact options on the rendered page.
+      // Report-only: the app never auto-sends to them.
+      const contactLinks = await page.evaluate(() => {
+        const emails = [];
+        const phones = [];
+        const whatsapp = [];
+        const seen = new Set();
+        document.querySelectorAll('a[href]').forEach((a) => {
+          const href = (a.getAttribute('href') || '').trim();
+          const lower = href.toLowerCase();
+          if (lower.startsWith('mailto:')) {
+            const v = href.slice(7).split('?')[0].trim();
+            if (v && !seen.has(`e:${v}`) && emails.length < 3) { seen.add(`e:${v}`); emails.push(v); }
+          } else if (lower.startsWith('tel:')) {
+            const v = href.slice(4).trim();
+            if (v && !seen.has(`t:${v}`) && phones.length < 3) { seen.add(`t:${v}`); phones.push(v); }
+          } else if (/whatsapp\.com|wa\.me/i.test(href)) {
+            if (!seen.has(`w:${href}`) && whatsapp.length < 3) { seen.add(`w:${href}`); whatsapp.push(href); }
+          }
+        });
+        return { emails, phones, whatsapp };
+      }).catch(() => ({ emails: [], phones: [], whatsapp: [] }));
+      let withFields = forms.filter((f) => f.fields.length > 0);
+      let popupRevealed = false;
+      if (withFields.length === 0) {
+        // No visible form: some sites reveal the form only after a
+        // contact trigger is clicked (popup/modal/slide-in). Try up to
+        // 3 toggle-style triggers only (buttons, role=button, or
+        // fragment links) — never a submit/send/subscribe/login
+        // control, and never a real navigation link (that page is a
+        // separate candidate). Stop at once on navigation.
+        const isTriggerSrc = `
+          const isTrigger = (el) => {
+            const t = ((el.textContent || '').trim() + ' ' + (el.getAttribute('aria-label') || '')).toLowerCase();
+            if (!t) return false;
+            if (/submit|send|subscribe|newsletter|login|sign\\s*in|search/.test(t)) return false;
+            return /contact|get in touch|request.*callback|book.*appointment|book.*call|talk to sales|inquir|request.*quote/.test(t);
+          };
+        `;
+        const triggerCount = await page.evaluate(new Function(`
+          ${isTriggerSrc}
+          return Array.from(document.querySelectorAll('button, a, [role="button"]')).filter((el) => {
+            if (!isTrigger(el)) return false;
+            if (el.tagName === 'A') {
+              const href = (el.getAttribute('href') || '').trim();
+              if (href && !href.startsWith('#') && !href.toLowerCase().startsWith('javascript:')) return false;
+            }
+            return true;
+          }).length;
+        `)).catch(() => 0);
+        const attempts = Math.min(triggerCount, 3);
+        for (let i = 0; i < attempts; i++) {
+          const beforeUrl = page.url().split('#')[0];
+          const clicked = await page.evaluate(new Function('idx', `
+            ${isTriggerSrc}
+            const triggers = Array.from(document.querySelectorAll('button, a, [role="button"]')).filter((el) => {
+              if (!isTrigger(el)) return false;
+              if (el.tagName === 'A') {
+                const href = (el.getAttribute('href') || '').trim();
+                if (href && !href.startsWith('#') && !href.toLowerCase().startsWith('javascript:')) return false;
+              }
+              return true;
+            });
+            if (idx >= triggers.length) return false;
+            triggers[idx].click();
+            return true;
+          `), i).catch(() => false);
+          if (!clicked) continue;
+          await page.waitForTimeout(800).catch(() => {});
+          if (page.url().split('#')[0] !== beforeUrl) break;
+          const revealed = await extractForms().catch(() => []);
+          const revealedWithFields = revealed.filter((f) => f.fields.length > 0);
+          if (revealedWithFields.length > 0) { withFields = revealedWithFields; popupRevealed = true; break; }
+        }
+      }
+      return send(res, 200, { status: withFields.length > 0 ? 'DETECTED' : 'NOT_FOUND', hasForm: withFields.length > 0, forms: withFields, contactLinks, popupRevealed });
     } catch (error) {
       return send(res, 200, { status: 'NAVIGATION_FAILED', hasForm: false, forms: [], errorMessage: error instanceof Error ? error.message : 'Worker failure' });
     } finally { await browser?.close().catch(() => {}); }
