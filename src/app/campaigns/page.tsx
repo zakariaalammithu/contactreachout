@@ -49,6 +49,7 @@ import { SendingProgressCard } from './SendingProgressCard';
 import { sendingDaysToWeekdays } from '@/lib/services/sending-estimate';
 import { resolveSubmissionDelayMs, resolveDailySubmissionLimit, countDeliveredToday, nextDayMidnightISO, isDelayElapsed } from '@/lib/services/campaign-runner-policy';
 import { countDeliveredLast24h } from '@/lib/services/campaign-24h';
+import { splitPersonName } from '@/lib/lead-name';
 import { classifyFailure } from '@/lib/services/failure-reason';
 import { createUniqueCampaignId, formatStoragePressureMessage, persistCampaignDraft, readCampaignDrafts, removeCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -774,7 +775,21 @@ export default function CampaignsPage() {
                       id: nextLead.id,
                       company_name: nextLead.companyName || nextLead.company_name || '',
                       website: resolveLeadWebsite(nextLead),
-                      first_name: nextLead.firstName || nextLead.first_name || '',
+                      // Editor leads carry a single "Contact Person"
+                      // string, not first/last fields — split it here,
+                      // because the mapper never receives last_name
+                      // otherwise and required name fields stay unmapped
+                      // even though the name is in the list.
+                      first_name:
+                        nextLead.firstName ||
+                        nextLead.first_name ||
+                        splitPersonName(nextLead.contactPerson || nextLead.contact_person || '').firstName ||
+                        '',
+                      last_name:
+                        nextLead.lastName ||
+                        nextLead.last_name ||
+                        splitPersonName(nextLead.contactPerson || nextLead.contact_person || '').lastName ||
+                        '',
                       email: nextLead.email || '',
                       phone: nextLead.phone || '',
                       whatsApp: nextLead.whatsApp || nextLead.whatsapp || '',

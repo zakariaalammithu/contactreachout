@@ -363,11 +363,27 @@ export function mapLeadToFormFields(
       case 'country':
       case 'state':
         if (field.options && field.options.length > 0) {
-          const matchedOpt = matchSelectOption(field.options, lead[field.normalizedType] || lead.country || lead.state);
-          if (matchedOpt) {
-            valueToFill = matchedOpt;
-            strategy = 'select_matching_option';
-            sourceLeadField = field.normalizedType;
+          const matchValue = lead[field.normalizedType] || lead.country || lead.state;
+          if (!matchValue) {
+            // No data drives this choice: prefer the site's own generic
+            // 'Other' option over a keyword guess. A keyword fallback
+            // (e.g. 'Service and repairs' for a partnership inquiry)
+            // would misstate the sender's intent; 'Other' states
+            // nothing false.
+            const otherOpt = field.options.find((o) => o.trim().toLowerCase() === 'other');
+            if (otherOpt) {
+              valueToFill = otherOpt;
+              strategy = 'select_matching_option';
+              sourceLeadField = 'default_other';
+            }
+          }
+          if (!valueToFill) {
+            const matchedOpt = matchSelectOption(field.options, matchValue);
+            if (matchedOpt) {
+              valueToFill = matchedOpt;
+              strategy = 'select_matching_option';
+              sourceLeadField = field.normalizedType;
+            }
           }
         }
         break;
