@@ -35,4 +35,16 @@ assert.match(browserWorker, /BROWSER_WORKER_ALLOWED_DOMAINS/);
 assert.match(browserWorker, /idempotency-key/);
 assert.match(browserWorker, /result\.successVerified === true/);
 
+// A CAPTCHA on one candidate must not end the lead: the loop records the
+// first CAPTCHA hit and tries the next candidate (each candidate faces its
+// own CAPTCHA check — this is not a bypass). Only when no candidate yields
+// a form does the post-loop outcome report the first CAPTCHA hit.
+assert.match(orchestrator, /let firstCaptcha/);
+assert.match(orchestrator, /CAPTCHA \/ Bot challenge detected on candidate \$\{candidateUrl\}\. Trying next candidate\./);
+assert.match(orchestrator, /if \(!detection && firstCaptcha\)/);
+assert.match(orchestrator, /All candidate pages failed; first CAPTCHA \/ Bot challenge was on/);
+// The old immediate returns on CAPTCHA must be gone (both the worker path
+// and the fetch/local path routed straight to REVIEW_REQUIRED).
+assert.doesNotMatch(orchestrator, /CAPTCHA \/ Bot challenge detected on candidate \$\{candidateUrl\}\. Routing to REVIEW_REQUIRED\./);
+
 console.log('campaign-submission regression checks passed');

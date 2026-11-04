@@ -255,6 +255,9 @@ export class OutreachPipelineOrchestrator {
 
     // 3. Stage 2: Form Detection with Multi-Candidate Fallback Loop
     // Rather than stopping if Candidate #1 lacks a form, iterate through all discovered candidate URLs.
+    // A CAPTCHA on one candidate is recorded and the loop continues — the challenge is
+    // per-URL, and stopping at the first one abandons later candidates (e.g. /contact-us/)
+    // that may serve a plain form. Each candidate still faces its own CAPTCHA check.
     // Detection order per candidate: remote worker first (renders JS
     // pages), then fetch/local detection only when the worker is
     // unavailable. A worker that rendered a page and found no form is
@@ -263,6 +266,12 @@ export class OutreachPipelineOrchestrator {
     let selectedContactUrl: string | null = null;
     let lastNavigationError: string | null = null;
     let lastDetection: FormDetectionResult | null = null;
+    // A CAPTCHA on one candidate must not end the lead: the challenge is
+    // per-URL, so record the FIRST CAPTCHA hit and keep trying the
+    // remaining candidates (each faces its own CAPTCHA check — this is
+    // not a bypass). Only if no candidate yields a form does the
+    // post-loop outcome report the first CAPTCHA hit.
+    let firstCaptcha: { url: string; detection: FormDetectionResult } | null = null;
     // Worker-outage tracking (item 26): a configured worker that is
     // unreachable for every candidate must surface as WORKER_UNAVAILABLE,
     // not as NO_FORM_DETECTED (fetch probing cannot see JS-rendered
@@ -282,28 +291,22 @@ export class OutreachPipelineOrchestrator {
         workerAttempts++;
         if (!workerDetection.available) workerUnavailableAttempts++;
         if (workerDetection.available && workerDetection.status === 'CAPTCHA_DETECTED') {
-          addLog('FORM_DETECTION', `CAPTCHA / Bot challenge detected on candidate ${candidateUrl}. Routing to REVIEW_REQUIRED.`);
-          return {
-            leadId: lead.id,
-            targetWebsite: lead.website,
-            finalStatus: 'CAPTCHA_DETECTED',
-            currentStage: 'FORM_DETECTION',
-            discovery: { ...discovery, contactPageUrl: candidateUrl },
-            detection: {
-              targetUrl: candidateUrl,
-              hasContactForm: false,
-              selectedForm: null,
-              allFormsCount: 0,
-              status: 'CAPTCHA_DETECTED',
-              confidenceScore: 0,
-              detectedAt: new Date().toISOString(),
-            },
-            renderedSubject: '',
-            renderedBody: '',
-            totalDurationMs: Date.now() - startTime,
-            completedAt: new Date().toISOString(),
-            logs,
-          };
+          addLog('FORM_DETECTION', `CAPTCHA / Bot challenge detected on candidate ${candidateUrl}. Trying next candidate.`);
+          if (!firstCaptcha) {
+            firstCaptcha = {
+              url: candidateUrl,
+              detection: {
+                targetUrl: candidateUrl,
+                hasContactForm: false,
+                selectedForm: null,
+                allFormsCount: 0,
+                status: 'CAPTCHA_DETECTED',
+                confidenceScore: 0,
+                detectedAt: new Date().toISOString(),
+              },
+            };
+          }
+          continue;
         }
         if (workerDetection.available && workerDetection.status === 'NAVIGATION_FAILED') {
           lastNavigationError = workerDetection.errorMessage || 'Worker could not load the page.';
@@ -329,20 +332,9 @@ export class OutreachPipelineOrchestrator {
       lastDetection = detectionCandidate;
 
       if (detectionCandidate.status === 'CAPTCHA_DETECTED') {
-        addLog('FORM_DETECTION', `CAPTCHA / Bot challenge detected on candidate ${candidateUrl}. Routing to REVIEW_REQUIRED.`);
-        return {
-          leadId: lead.id,
-          targetWebsite: lead.website,
-          finalStatus: 'CAPTCHA_DETECTED',
-          currentStage: 'FORM_DETECTION',
-          discovery: { ...discovery, contactPageUrl: candidateUrl },
-          detection: detectionCandidate,
-          renderedSubject: '',
-          renderedBody: '',
-          totalDurationMs: Date.now() - startTime,
-          completedAt: new Date().toISOString(),
-          logs,
-        };
+        addLog('FORM_DETECTION', `CAPTCHA / Bot challenge detected on candidate ${candidateUrl}. Trying next candidate.`);
+        if (!firstCaptcha) firstCaptcha = { url: candidateUrl, detection: detectionCandidate };
+        continue;
       }
 
       if (detectionCandidate.status === 'FORM_INACCESSIBLE' && detectionCandidate.selectedForm?.isInsideIframe) {
@@ -372,6 +364,29 @@ export class OutreachPipelineOrchestrator {
 
     const detection = selectedDetection;
     const activeContactUrl = selectedContactUrl || discovery.contactPageUrl;
+
+    // No candidate yielded a form, but at least one served a bot
+    // challenge: report the FIRST CAPTCHA hit (same outcome shape as
+    // before this fix, when the first CAPTCHA ended the lead). This
+    // branch runs before the navigation-error branch on purpose — a
+    // rendered challenge page proves the site is reachable, so a
+    // navigation failure on another candidate must not mask it.
+    if (!detection && firstCaptcha) {
+      addLog('FORM_DETECTION', `All candidate pages failed; first CAPTCHA / Bot challenge was on ${firstCaptcha.url}. Routing to REVIEW_REQUIRED.`);
+      return {
+        leadId: lead.id,
+        targetWebsite: lead.website,
+        finalStatus: 'CAPTCHA_DETECTED',
+        currentStage: 'FORM_DETECTION',
+        discovery: { ...discovery, contactPageUrl: firstCaptcha.url },
+        detection: firstCaptcha.detection,
+        renderedSubject: '',
+        renderedBody: '',
+        totalDurationMs: Date.now() - startTime,
+        completedAt: new Date().toISOString(),
+        logs,
+      };
+    }
 
     // Every candidate failed to load in the worker (and none produced a
     // form): the site itself could not be reached, not its forms.
