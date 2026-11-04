@@ -1051,6 +1051,7 @@ export default function CampaignsPage() {
                 }
 
                 const techStack = (log.techStack && log.techStack !== 'HTML Form' && log.techStack !== 'Not detected') ? log.techStack : 'NOT_DETECTED';
+                const discoveryMethod = safeString(log.discoveryMethod, 'N/A');
                 const domainAge = (log.domainAge && log.domainAge !== 'Verified' && log.domainAge !== 'Verified Active Domain') ? log.domainAge : 'N/A';
                 const lastUpdated = log.lastUpdated && log.lastUpdated !== 'N/A' ? log.lastUpdated : 'N/A';
 
@@ -1064,6 +1065,7 @@ export default function CampaignsPage() {
                   successVerification,
                   finalStatus,
                   techStack,
+                  discoveryMethod,
                   domainAge,
                   lastUpdated,
                   code,
@@ -1099,6 +1101,7 @@ export default function CampaignsPage() {
                   successVerification: 'NOT_ATTEMPTED',
                   finalStatus: safeString(ld.status, 'PENDING'),
                   techStack: 'NOT_DETECTED',
+                  discoveryMethod: 'N/A',
                   domainAge: 'N/A',
                   lastUpdated: 'N/A',
                   code: 'QUEUED_PACING',
@@ -1155,6 +1158,7 @@ export default function CampaignsPage() {
       'Success Yield %',
       'Website Domain',
       'Contact Page URL',
+      'Discovery Method',
       'Form Status',
       'Fields Detected',
       'Submission Status',
@@ -1188,6 +1192,7 @@ export default function CampaignsPage() {
           `"${yieldPct}%"`,
           `"${safeString(log.domain).replace(/"/g, '""')}"`,
           `"${safeString(log.url).replace(/"/g, '""')}"`,
+          `"${safeString(log.discoveryMethod).replace(/"/g, '""')}"`,
           `"${safeString(log.formStatus).replace(/"/g, '""')}"`,
           `"${safeString(log.fieldsDetected).replace(/"/g, '""')}"`,
           `"${safeString(log.submissionStatus).replace(/"/g, '""')}"`,
@@ -1217,6 +1222,7 @@ export default function CampaignsPage() {
           pending,
           replied,
           `"${yieldPct}%"`,
+          '"N/A"',
           '"N/A"',
           '"N/A"',
           '"NOT_DETECTED"',

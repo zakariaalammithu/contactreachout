@@ -4,7 +4,7 @@
  * Field Mapping, and Form Submission into a unified, deterministic workflow.
  */
 
-import { ContactPageFinder, ContactDiscoveryResult, COMMON_CONTACT_PATHS } from './contact-page-finder';
+import { ContactPageFinder, ContactDiscoveryResult, COMMON_CONTACT_PATHS, normalizeDedupUrl } from './contact-page-finder';
 import { ContactFormDetector, FormDetectionResult, DetectedFormField, detectFormsViaFetch, classifyFetchField } from './form-detector';
 import { isBrowserWorkerConfigured, detectWithBrowserWorker, WorkerDetectionForm } from './browser-worker-client';
 import { interpolateTemplate, extractVariables, convertHtmlToPlainText, prepareContactFormPlainText } from './template-engine';
@@ -228,15 +228,35 @@ export class OutreachPipelineOrchestrator {
     // Playwright error that never applied.
     const workerConfigured = isBrowserWorkerConfigured();
     let candidateList: string[];
+    // Sitemap-derived candidates, for honest Discovery Method reporting.
+    let sitemapCandidateUrls = new Set<string>();
+    // One page under two URL spellings (/contact vs /contact/) must be
+    // tried and counted once.
+    const dedupCandidates = (urls: string[]): string[] => {
+      const seen = new Set<string>();
+      const out: string[] = [];
+      for (const u of urls) {
+        const key = normalizeDedupUrl(u);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(u);
+      }
+      return out;
+    };
     if (discovery.status === 'FOUND' && discovery.contactPageUrl) {
       addLog('CONTACT_PAGE_DISCOVERY', `Discovered contact page: ${discovery.contactPageUrl} via ${discovery.discoveryMethod}`);
-      candidateList = (discovery.candidateUrls && discovery.candidateUrls.length > 0)
-        ? discovery.candidateUrls.map((c) => c.url)
-        : [discovery.contactPageUrl];
+      if (discovery.candidateUrls && discovery.candidateUrls.length > 0) {
+        sitemapCandidateUrls = new Set(
+          discovery.candidateUrls.filter((c) => c.matchReason === 'Sitemap entry').map((c) => c.url)
+        );
+        candidateList = dedupCandidates(discovery.candidateUrls.map((c) => c.url));
+      } else {
+        candidateList = [discovery.contactPageUrl];
+      }
     } else if (workerConfigured) {
       addLog('CONTACT_PAGE_DISCOVERY', `No static contact page verified on ${lead.website}; trying likely contact paths through the remote browser worker.`);
       const base = lead.website.replace(/\/$/, '');
-      candidateList = [...COMMON_CONTACT_PATHS.map((path) => `${base}${path}`), base];
+      candidateList = dedupCandidates([...COMMON_CONTACT_PATHS.map((path) => `${base}${path}`), base]);
     } else {
       addLog('CONTACT_PAGE_DISCOVERY', `No public contact page found on ${lead.website}`);
       return {
@@ -471,6 +491,16 @@ export class OutreachPipelineOrchestrator {
 
     // Update discovery contactPageUrl to point to the candidate page with the verified form
     if (activeContactUrl) discovery.contactPageUrl = activeContactUrl;
+
+    // Report the actual discovery method for the SELECTED candidate:
+    // sitemap-derived selections report 'sitemap'; selections from the
+    // worker's common-path fallback (finder found nothing) report
+    // 'worker_candidate_probe'; otherwise keep the finder's method.
+    if (selectedContactUrl && sitemapCandidateUrls.has(selectedContactUrl)) {
+      discovery.discoveryMethod = 'sitemap';
+    } else if (discovery.status !== 'FOUND') {
+      discovery.discoveryMethod = 'worker_candidate_probe';
+    }
 
     addLog(
       'FORM_DETECTION',

@@ -337,6 +337,7 @@ export async function POST(req: NextRequest) {
       submissionStatus: isNavigationFailure ? 'NOT_ATTEMPTED' : undefined,
       successVerification: isNavigationFailure ? 'NOT_CHECKED' : undefined,
       techStack: result.detection?.selectedForm?.formSelector ? `Form (${result.detection.selectedForm.formSelector})` : 'NOT_DETECTED',
+      discoveryMethod: result.discovery?.discoveryMethod || 'N/A',
       domainAge: 'N/A',
       lastUpdated: 'N/A',
       status: campaignStatus,
