@@ -120,7 +120,7 @@ export interface AlternativeContactLinks {
 }
 
 export type WorkerDetectionOutcome =
-  | { available: true; status: 'DETECTED' | 'NOT_FOUND' | 'CAPTCHA_DETECTED' | 'NAVIGATION_FAILED'; forms: WorkerDetectionForm[]; errorMessage?: string; contactLinks?: AlternativeContactLinks }
+  | { available: true; status: 'DETECTED' | 'NOT_FOUND' | 'CAPTCHA_DETECTED' | 'NAVIGATION_FAILED'; forms: WorkerDetectionForm[]; errorMessage?: string; contactLinks?: AlternativeContactLinks; finalUrl?: string }
   | { available: false; reason: string };
 
 export function isBrowserWorkerConfigured(): boolean {
@@ -168,17 +168,18 @@ export async function detectWithBrowserWorker(input: {
       forms?: WorkerDetectionForm[];
       errorMessage?: string;
       contactLinks?: AlternativeContactLinks;
+      finalUrl?: string;
     };
     if (result.status === 'CAPTCHA_DETECTED') {
-      return { available: true, status: 'CAPTCHA_DETECTED', forms: [] };
+      return { available: true, status: 'CAPTCHA_DETECTED', forms: [], finalUrl: result.finalUrl };
     }
     if (result.status === 'NAVIGATION_FAILED') {
       return { available: true, status: 'NAVIGATION_FAILED', forms: [], errorMessage: result.errorMessage };
     }
     if (result.status === 'DETECTED' && Array.isArray(result.forms) && result.forms.length > 0) {
-      return { available: true, status: 'DETECTED', forms: result.forms, contactLinks: result.contactLinks };
+      return { available: true, status: 'DETECTED', forms: result.forms, contactLinks: result.contactLinks, finalUrl: result.finalUrl };
     }
-    return { available: true, status: 'NOT_FOUND', forms: [], contactLinks: result.contactLinks };
+    return { available: true, status: 'NOT_FOUND', forms: [], contactLinks: result.contactLinks, finalUrl: result.finalUrl };
   } catch (error) {
     return { available: false, reason: `BROWSER_WORKER_DETECT_UNAVAILABLE: worker could not be reached (${error instanceof Error ? error.message : 'unknown error'}).` };
   }

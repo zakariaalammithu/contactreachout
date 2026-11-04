@@ -120,4 +120,17 @@ describe('worker alternative contact links', () => {
     const outcome = await detectWithBrowserWorker({ url: 'https://example.com/contact' });
     expect(outcome).toMatchObject({ available: true, status: 'DETECTED', contactLinks: links });
   });
+
+  it('passes the worker final URL through for redirect dedup', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ status: 'NOT_FOUND', hasForm: false, forms: [], finalUrl: 'https://example.com/contact-us/' }), { status: 200 })
+      )
+    );
+    const outcome = await detectWithBrowserWorker({ url: 'https://example.com/contact' });
+    expect(outcome).toMatchObject({ available: true, status: 'NOT_FOUND', finalUrl: 'https://example.com/contact-us/' });
+  });
 });

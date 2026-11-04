@@ -37,15 +37,27 @@ http.createServer(async (req, res) => {
       // A missing path (404) cannot host a form: return at once instead
       // of waiting out the hydration window for every dead candidate.
       if (gotoResponse && gotoResponse.status() >= 400) {
-        return send(res, 200, { status: 'NOT_FOUND', hasForm: false, forms: [] });
+        return send(res, 200, { status: 'NOT_FOUND', hasForm: false, forms: [], finalUrl: page.url() });
       }
       // Let client-rendered (JS) forms hydrate before extracting: static
       // HTML alone cannot see them, which is exactly why this endpoint
       // exists (the app's fetch-based detection cannot).
       await page.waitForSelector('form', { timeout: 3_000 }).catch(() => {});
       await page.waitForTimeout(1200);
-      const content = await page.content();
-      if (blockedPattern.test(content)) return send(res, 200, { status: 'CAPTCHA_DETECTED', hasForm: false, forms: [] });
+      // 504 fix: CAPTCHA check on VISIBLE text only (title + rendered
+      // body text), not full HTML. Script tags on ordinary WordPress /
+      // WPForms pages mention recaptcha/turnstile without any visible
+      // challenge, and matching those strings marked every candidate
+      // CAPTCHA, burning the whole loop until the platform timed out.
+      // A real visible challenge still matches. The submit handler
+      // keeps its full-content check, so a protected form still fails
+      // closed at submit time.
+      const visibleText = await page.evaluate(() => {
+        const title = document.title || '';
+        const bodyText = document.body ? document.body.innerText || '' : '';
+        return `${title}\n${bodyText}`;
+      }).catch(() => '');
+      if (blockedPattern.test(visibleText)) return send(res, 200, { status: 'CAPTCHA_DETECTED', hasForm: false, forms: [], finalUrl: page.url() });
       const extractForms = () => page.evaluate(() => {
         const cssPath = (el) => {
           const parts = [];
@@ -178,7 +190,7 @@ http.createServer(async (req, res) => {
           if (revealedWithFields.length > 0) { withFields = revealedWithFields; popupRevealed = true; break; }
         }
       }
-      return send(res, 200, { status: withFields.length > 0 ? 'DETECTED' : 'NOT_FOUND', hasForm: withFields.length > 0, forms: withFields, contactLinks, popupRevealed });
+      return send(res, 200, { status: withFields.length > 0 ? 'DETECTED' : 'NOT_FOUND', hasForm: withFields.length > 0, forms: withFields, contactLinks, popupRevealed, finalUrl: page.url() });
     } catch (error) {
       return send(res, 200, { status: 'NAVIGATION_FAILED', hasForm: false, forms: [], errorMessage: error instanceof Error ? error.message : 'Worker failure' });
     } finally { await browser?.close().catch(() => {}); }

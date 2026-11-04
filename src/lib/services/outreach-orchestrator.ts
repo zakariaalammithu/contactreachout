@@ -46,6 +46,10 @@ export interface PipelineExecutionInput {
     minConfidenceThreshold?: number;
     timeoutMs?: number;
     runtimeMode?: 'live' | 'test' | 'disabled';
+    // Detection time budget override (tests only — production uses the
+    // 120s default below, which keeps the whole request inside a
+    // minutes-scale function limit).
+    detectionDeadlineMs?: number;
   };
 }
 
@@ -343,9 +347,45 @@ export class OutreachPipelineOrchestrator {
     };
     const hasAlternativeContact = () =>
       alternativeContact.emails.length > 0 || alternativeContact.phones.length > 0 || alternativeContact.whatsapp.length > 0;
+    // 504 fix: the detection loop must never run longer than the
+    // platform allows. Budget 120s for detection (discovery is bounded
+    // by its own timeouts, submit by 25s, so the whole request stays
+    // well under a minutes-scale function limit). The deadline is
+    // checked between candidates — a single in-flight candidate can
+    // overrun by at most one worker timeout (~20s). When the budget
+    // ends, the loop stops and the lead reports an honest timeout
+    // outcome instead of letting the edge return a generic 504 with
+    // no row at all.
+    const detectionDeadlineMs = options.detectionDeadlineMs ?? 120_000;
+    const detectionDeadline = Date.now() + detectionDeadlineMs;
+    const MAX_DETECTION_CANDIDATES = 80;
+    let detectionStopReason: 'timeout' | 'cap' | null = null;
+    let triedCandidates = 0;
+    // Final URLs already rendered (redirect-aware): a candidate that
+    // resolves to an already-tried page is skipped, not re-rendered.
+    const triedFinalUrls = new Set<string>();
 
     for (const candidateUrl of candidateList) {
       if (!candidateUrl) continue;
+      // Redirect-aware skip: this page was already rendered under
+      // another URL (e.g. /contact resolved to /contact-us/).
+      if (triedFinalUrls.has(normalizeDedupUrl(candidateUrl))) {
+        addLog('FORM_DETECTION', `Skipping candidate ${candidateUrl}: page already tried under a redirect.`);
+        continue;
+      }
+      // Deadline + cap: stop starting new candidates so the function
+      // always answers with a real row instead of timing out at the edge.
+      if (triedCandidates >= MAX_DETECTION_CANDIDATES) {
+        detectionStopReason = 'cap';
+        addLog('FORM_DETECTION', `Detection stopped at the ${MAX_DETECTION_CANDIDATES}-candidate cap; reporting an honest limit outcome.`);
+        break;
+      }
+      if (Date.now() >= detectionDeadline) {
+        detectionStopReason = 'timeout';
+        addLog('FORM_DETECTION', `Detection budget (${detectionDeadlineMs}ms) ended after ${triedCandidates} candidates; stopping with an honest timeout outcome.`);
+        break;
+      }
+      triedCandidates++;
       addLog('FORM_DETECTION', `Analyzing candidate page: ${candidateUrl}`);
       let detectionCandidate: FormDetectionResult | null = null;
       let workerRendered = false;
@@ -354,6 +394,13 @@ export class OutreachPipelineOrchestrator {
         const workerDetection = await detectWithBrowserWorker({ url: candidateUrl, timeoutMs: options.timeoutMs || 15000 });
         workerAttempts++;
         if (!workerDetection.available) workerUnavailableAttempts++;
+        // Record rendered URLs first: even a CAPTCHA page proves this
+        // final URL was already rendered, so redirect-aliases of it
+        // are skipped later instead of re-rendered.
+        if (workerDetection.available) {
+          triedFinalUrls.add(normalizeDedupUrl(candidateUrl));
+          if (workerDetection.finalUrl) triedFinalUrls.add(normalizeDedupUrl(workerDetection.finalUrl));
+        }
         if (workerDetection.available && workerDetection.status === 'CAPTCHA_DETECTED') {
           addLog('FORM_DETECTION', `CAPTCHA / Bot challenge detected on candidate ${candidateUrl}. Trying next candidate.`);
           if (!firstCaptcha) {
@@ -439,6 +486,45 @@ export class OutreachPipelineOrchestrator {
 
     const detection = selectedDetection;
     const activeContactUrl = selectedContactUrl || discovery.contactPageUrl;
+
+    // 504 fix: a budget stop outranks the CAPTCHA branch — the loop did
+    // not finish, so reporting only the first challenge would hide the
+    // operative reason (time/candidates ran out). The message still
+    // records that challenges were seen, when they were.
+    if (!detection && detectionStopReason) {
+      addLog('FORM_DETECTION', 'Detection stopped on budget; reporting an honest timeout/limit outcome.');
+      return {
+        leadId: lead.id,
+        targetWebsite: lead.website,
+        finalStatus: 'NO_FORM_DETECTED',
+        currentStage: 'FORM_DETECTION',
+        discovery,
+        detection: {
+          targetUrl: activeContactUrl || lead.website,
+          hasContactForm: false,
+          selectedForm: null,
+          allFormsCount: 0,
+          status: 'NO_FORM_FOUND',
+          confidenceScore: 0,
+          detectedAt: new Date().toISOString(),
+          ...(detectionStopReason === 'timeout'
+            ? {
+                errorCode: 'DETECTION_TIMEOUT',
+                errorMessage: `DETECTION_TIMEOUT: detection stopped after ${triedCandidates} candidates within the ${detectionDeadlineMs}ms budget — no form verified in the time available.${firstCaptcha ? ` Early candidates showed CAPTCHA challenges (first: ${firstCaptcha.url}).` : ''} This is a time-budget outcome, not proof the site has no form.`,
+              }
+            : {
+                errorCode: 'DETECTION_CANDIDATE_LIMIT',
+                errorMessage: `DETECTION_CANDIDATE_LIMIT: detection stopped after the ${MAX_DETECTION_CANDIDATES}-candidate cap — no form verified among the candidates tried.${firstCaptcha ? ` Early candidates showed CAPTCHA challenges (first: ${firstCaptcha.url}).` : ''}`,
+              }),
+        },
+        alternativeContact: hasAlternativeContact() ? alternativeContact : undefined,
+        renderedSubject: '',
+        renderedBody: '',
+        totalDurationMs: Date.now() - startTime,
+        completedAt: new Date().toISOString(),
+        logs,
+      };
+    }
 
     // No candidate yielded a form, but at least one served a bot
     // challenge: report the FIRST CAPTCHA hit (same outcome shape as
