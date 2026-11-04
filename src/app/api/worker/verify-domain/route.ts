@@ -69,15 +69,35 @@ export async function GET(request: NextRequest) {
   const domain = normalizeDomain(request.nextUrl.searchParams.get('domain'));
   if (!domain) return NextResponse.json({ error: 'Missing domain.' }, { status: 400 });
   const client = getSupabaseAdminClient();
-  if (!client) return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
+  // TEMPORARY DIAGNOSTIC (3-4 investigation, 2026-11-04): the worker denied
+  // targets that should have verified, while Request Logs showed only the
+  // 200 status — which is returned for allowed:true AND allowed:false alike.
+  // These logs record only the queried host, the decision, and aggregate
+  // row counts — never lead data, emails, or secrets — so the decision is
+  // visible in Runtime Logs. REMOVE once the deny cause is proven.
+  if (!client) {
+    console.log(`[verify-domain] domain=${domain} error=no-client`);
+    return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
+  }
 
   const links = await client.from('app_campaign_leads').select('app_lead_id');
-  if (links.error) return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
+  if (links.error) {
+    console.log(`[verify-domain] domain=${domain} error=links`);
+    return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
+  }
   const leadIds = [...new Set(((links.data || []) as Array<{ app_lead_id: string }>).map((row) => row.app_lead_id))];
-  if (!leadIds.length) return NextResponse.json({ allowed: false });
+  if (!leadIds.length) {
+    console.log(`[verify-domain] domain=${domain} allowed=false links=0 leads=0`);
+    return NextResponse.json({ allowed: false });
+  }
 
   const leads = await client.from('app_leads').select('id, email, domain, website').in('id', leadIds);
-  if (leads.error) return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
+  if (leads.error) {
+    console.log(`[verify-domain] domain=${domain} error=leads`);
+    return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
+  }
   const rows = (leads.data || []) as LeadContact[];
-  return NextResponse.json({ allowed: rows.some((lead) => hostMatchesLead(domain, lead)) });
+  const allowed = rows.some((lead) => hostMatchesLead(domain, lead));
+  console.log(`[verify-domain] domain=${domain} allowed=${allowed} links=${leadIds.length} leads=${rows.length}`);
+  return NextResponse.json({ allowed });
 }
