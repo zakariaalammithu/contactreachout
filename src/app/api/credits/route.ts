@@ -13,7 +13,18 @@ export async function GET(req: NextRequest) {
     }
     const userId = session.email;
     const wallet = await CreditWalletService.getWalletForServer(userId);
-    const transactions = await CreditWalletService.getTransactionsForServer(userId);
+    // The wallet is the primary data: a ledger read failure must never
+    // 500 the balance (the campaign editor showed "Unavailable" while
+    // the sidebar showed the real balance, because the transactions
+    // lookup had no unprovisioned-account fallback). History degrades
+    // to empty and the failure is logged server-side.
+    let transactions: Awaited<ReturnType<typeof CreditWalletService.getTransactionsForServer>>;
+    try {
+      transactions = await CreditWalletService.getTransactionsForServer(userId);
+    } catch (txErr: any) {
+      console.error('[credits] transaction history unavailable:', txErr?.message || txErr);
+      transactions = [];
+    }
 
     return NextResponse.json({
       success: true,

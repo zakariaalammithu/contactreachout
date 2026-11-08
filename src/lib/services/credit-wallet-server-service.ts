@@ -9,6 +9,24 @@ import {
 } from './credit-wallet-service';
 
 /** Server-only durable adapter for the browser-safe credit wallet service. */
+
+/**
+ * "No database wallet" errors: the account was never provisioned in
+ * public.users (no row), Supabase is not configured, or the users table
+ * itself is absent (lookup failed). All three mean the same thing — there
+ * is no durable wallet for this account — so callers fall back to the
+ * standard in-memory wallet instead of 500ing. A lookup failure is
+ * included because a missing table is the same situation, not a
+ * transient error worth failing the whole request over.
+ */
+function isUnprovisionedAccountError(message: string): boolean {
+  return (
+    message.includes('CREDIT_DATABASE_USER_NOT_FOUND') ||
+    message.includes('CREDIT_DATABASE_NOT_CONFIGURED') ||
+    message.includes('CREDIT_DATABASE_USER_LOOKUP_FAILED')
+  );
+}
+
 export class CreditWalletServerService {
   private static async getDatabaseUserId(userEmail: string): Promise<string> {
     const client = getSupabaseAdminClient();
@@ -79,7 +97,7 @@ export class CreditWalletServerService {
       databaseUserId = await this.getDatabaseUserId(userId);
     } catch (err: any) {
       const message = String(err?.message || '');
-      if (message.includes('CREDIT_DATABASE_USER_NOT_FOUND') || message.includes('CREDIT_DATABASE_NOT_CONFIGURED')) {
+      if (isUnprovisionedAccountError(message)) {
         return CreditWalletService.getWallet(userId);
       }
       throw err;
@@ -101,7 +119,21 @@ export class CreditWalletServerService {
   public static async getTransactionsForServer(userId: string): Promise<CreditTransaction[]> {
     const client = getSupabaseAdminClient();
     if (!client) return CreditWalletService.getTransactions(userId);
-    const databaseUserId = await this.getDatabaseUserId(userId);
+    // Same unprovisioned-account fallback as getWalletForServer: an
+    // account with no public.users row (or no users table at all) has
+    // no durable ledger either. Without this, GET /api/credits 500s
+    // even though the wallet resolved fine — and the campaign editor
+    // shows "Unavailable" while the sidebar (local wallet) shows the
+    // real balance. Any other database failure still surfaces.
+    let databaseUserId: string;
+    try {
+      databaseUserId = await this.getDatabaseUserId(userId);
+    } catch (err: any) {
+      if (isUnprovisionedAccountError(String(err?.message || ''))) {
+        return CreditWalletService.getTransactions(userId);
+      }
+      throw err;
+    }
     const { data, error } = await client.from('credit_ledger').select('*').eq('user_id', databaseUserId).order('created_at', { ascending: false });
     if (error) throw new Error(`CREDIT_DATABASE_LEDGER_READ_FAILED: ${error.message}`);
     return (data || []).map((row) => this.transactionFromDatabase(row, userId));
@@ -168,7 +200,7 @@ export class CreditWalletServerService {
       // Same unprovisioned-account fallback as getWalletForServer: a
       // successful submission must still deduct from the standard
       // in-memory wallet instead of failing the whole submission.
-      if (error instanceof Error && (error.message.includes('CREDIT_DATABASE_USER_NOT_FOUND') || error.message.includes('CREDIT_DATABASE_NOT_CONFIGURED'))) {
+      if (error instanceof Error && isUnprovisionedAccountError(error.message)) {
         return CreditWalletService.deductCredits(resultType, campaignId, leadId, companyName, userId);
       }
       throw error;

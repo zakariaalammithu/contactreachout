@@ -16,6 +16,7 @@ import { CampaignMessageEditor } from './CampaignMessageEditor';
 import { IDENTITY_FIELD_LABELS } from '@/lib/services/sender-identity-policy';
 import { ChooseLeadListsModal } from '@/components/campaigns/ChooseLeadListsModal';
 import { buildLeadListRows } from '@/lib/services/lead-list-browse';
+import { CreditWalletService } from '@/lib/services/credit-wallet-service';
 import { ContactReplySettings } from '@/components/profile/ContactReplySettings';
 import { readCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 
@@ -404,6 +405,12 @@ export default function CampaignEditorClient() {
         }
         if (creditData?.wallet?.totalCreditsAvailable !== undefined) {
           setAvailableCredits(creditData.wallet.totalCreditsAvailable);
+        } else {
+          // The server balance is the authority, but the sidebar shows
+          // this account's local wallet — never show "Unavailable" in
+          // the editor while the sidebar shows a balance. The
+          // start-time server check stays authoritative either way.
+          setAvailableCredits(CreditWalletService.getWallet().totalCreditsAvailable);
         }
       });
       if (editId) {
