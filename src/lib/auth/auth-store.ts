@@ -67,7 +67,7 @@ declare global {
   var __cr_userRegistry: Map<string, UserAccount> | undefined;
   var __cr_otpRegistry: Map<string, OtpRecord> | undefined;
   var __cr_sessionRegistry: Map<string, UserSession> | undefined;
-  var __cr_pendingSignupRegistry: Map<string, { fullName: string; email: string; phone?: string; password: string; referralCode?: string }> | undefined;
+  var __cr_pendingSignupRegistry: Map<string, { fullName: string; email: string; phone?: string; whatsApp?: string; password: string; referralCode?: string }> | undefined;
   var __cr_rateLimitTracker: Map<string, { count: number; windowExpiresAt: number }> | undefined;
   /* eslint-enable no-var */
 }
@@ -76,7 +76,7 @@ declare global {
 const userRegistry = globalThis.__cr_userRegistry ?? (globalThis.__cr_userRegistry = new Map<string, UserAccount>());
 const otpRegistry = globalThis.__cr_otpRegistry ?? (globalThis.__cr_otpRegistry = new Map<string, OtpRecord>());
 const sessionRegistry = globalThis.__cr_sessionRegistry ?? (globalThis.__cr_sessionRegistry = new Map<string, UserSession>());
-const pendingSignupRegistry = globalThis.__cr_pendingSignupRegistry ?? (globalThis.__cr_pendingSignupRegistry = new Map<string, { fullName: string; email: string; phone?: string; password: string; referralCode?: string }>());
+const pendingSignupRegistry = globalThis.__cr_pendingSignupRegistry ?? (globalThis.__cr_pendingSignupRegistry = new Map<string, { fullName: string; email: string; phone?: string; whatsApp?: string; password: string; referralCode?: string }>());
 const rateLimitTracker = globalThis.__cr_rateLimitTracker ?? (globalThis.__cr_rateLimitTracker = new Map<string, { count: number; windowExpiresAt: number }>());
 
 // Per-user session-revocation epochs (email -> timestamp). Any session
@@ -302,6 +302,7 @@ export class AuthStore {
     name: string;
     email: string;
     phone?: string;
+    whatsApp?: string;
     password?: string;
     googleSub?: string;
     avatarUrl?: string;
@@ -342,6 +343,7 @@ export class AuthStore {
       name: params.name,
       email: emailKey,
       phone: params.phone,
+      whatsApp: params.whatsApp,
       passwordHash,
       salt,
       googleSub: params.googleSub,
@@ -370,7 +372,7 @@ export class AuthStore {
     return newUser;
   }
 
-  public static savePendingSignup(details: { fullName: string; email: string; phone?: string; password: string; referralCode?: string }): void {
+  public static savePendingSignup(details: { fullName: string; email: string; phone?: string; whatsApp?: string; password: string; referralCode?: string }): void {
     pendingSignupRegistry.set(details.email.toLowerCase().trim(), details);
   }
 

@@ -10,7 +10,6 @@ import { resolvePersistenceContext } from '@/lib/persistence/identity';
 import { ensureCampaignReplyLink } from '@/lib/services/campaign-reply-link';
 import { getSendingAccess } from '@/lib/services/subscription-service';
 import { resolveAccountIdentity } from '@/lib/services/profile-contact-service';
-import { parseCampaignSenderIdentity, resolveCampaignSenderIdentity } from '@/lib/services/campaign-sender-identity';
 import { isSendingPaused } from '@/lib/services/killswitch';
 
 export async function POST(req: NextRequest) {
@@ -30,7 +29,7 @@ export async function POST(req: NextRequest) {
     const userId = session.email;
 
     const body = await req.json();
-    const { campaignId, campaignName, lead, template, options = {}, senderIdentity: rawCampaignIdentity } = body;
+    const { campaignId, campaignName, lead, template, options = {} } = body;
 
     if (!lead || !lead.website || !lead.company_name) {
       return NextResponse.json(
@@ -132,27 +131,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Sender identity: the account default (AuthStore first, durable
-    // app_users row second), layered with this campaign's own override
-    // when the runner sent one. A campaign field wins only for that
-    // field; an empty or unparseable campaign value falls back to the
-    // account value. The campaign identity is never written back to
-    // the account — editing it in the editor changes this campaign
-    // only. `senderIdentitySource` is recorded in telemetry so a run
-    // can always be traced to the identity it used.
+    // Sender identity: the account identity only (AuthStore first,
+    // durable app_users row second). There is no per-campaign override:
+    // every campaign sends with the account identity, and a change to
+    // the account identity applies to every campaign after it.
     const accountIdentity = await resolveAccountIdentity(session.email, userAccount);
-    const campaignIdentity = parseCampaignSenderIdentity(rawCampaignIdentity);
-    const { identity: effectiveIdentity, source: senderIdentitySource } = resolveCampaignSenderIdentity(
-      campaignIdentity,
-      accountIdentity,
-    );
     const userContactIdentity =
-      effectiveIdentity.fullName || effectiveIdentity.replyEmail || effectiveIdentity.phone || effectiveIdentity.whatsApp
+      accountIdentity.fullName || accountIdentity.replyEmail || accountIdentity.phone || accountIdentity.whatsApp
         ? {
-            fullName: effectiveIdentity.fullName,
-            replyEmail: effectiveIdentity.replyEmail,
-            phone: effectiveIdentity.phone,
-            whatsApp: effectiveIdentity.whatsApp,
+            fullName: accountIdentity.fullName,
+            replyEmail: accountIdentity.replyEmail,
+            phone: accountIdentity.phone,
+            whatsApp: accountIdentity.whatsApp,
           }
         : undefined;
 
@@ -400,7 +390,6 @@ export async function POST(req: NextRequest) {
       // (item 27): previously only a server console.warn recorded it, so
       // a DELIVERED lead looked fully settled while no credit was taken.
       code: creditDeductionFailed ? `${diagnosticMessage} [CREDIT_DEDUCTION_FAILED]` : diagnosticMessage,
-      senderIdentitySource,
       workerDown: campaignStatus === 'WORKER_UNAVAILABLE' ? true : undefined,
       creditDeductionFailed: creditDeductionFailed ? true : undefined,
       time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),

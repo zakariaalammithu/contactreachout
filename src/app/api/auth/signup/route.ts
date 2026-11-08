@@ -3,11 +3,13 @@ import { z } from 'zod';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
 import { RiskEngine } from '@/lib/auth/risk-engine';
+import { normalizePhoneNumber } from '@/lib/services/phone-normalization';
 
 const signupSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
-  phone: z.string().optional(),
+  phone: z.string().min(1, 'Phone number is required for live campaigns'),
+  whatsApp: z.string().min(1, 'WhatsApp number is required for live campaigns'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(6, 'Confirm password must be at least 6 characters'),
   resendApiKey: z.string().optional(),
@@ -39,8 +41,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: firstIssue.message }, { status: 400 });
     }
 
-    const { fullName, email, phone, password, resendApiKey, referralCode } = parsed.data;
+    const { fullName, email, phone, whatsApp, password, resendApiKey, referralCode } = parsed.data;
     const cleanEmail = email.toLowerCase().trim();
+
+    // The form sends E.164 numbers (normalized with the selected country
+    // on the client). The server re-validates: anything that is not a
+    // valid E.164 number is rejected instead of being saved as identity.
+    const cleanPhone = normalizePhoneNumber(phone, '');
+    if (!cleanPhone) {
+      return NextResponse.json({ error: 'Enter a valid phone number.' }, { status: 400 });
+    }
+    const cleanWhatsApp = normalizePhoneNumber(whatsApp, '');
+    if (!cleanWhatsApp) {
+      return NextResponse.json({ error: 'Enter a valid WhatsApp number.' }, { status: 400 });
+    }
 
     // 3. Multi-Signal Risk Engine & Anti-Abuse Check
     const riskEval = RiskEngine.evaluateSignupRequest({
@@ -69,7 +83,7 @@ export async function POST(req: Request) {
     if (referralCode && !AuthStore.getUserByReferralCode(referralCode)) {
       return NextResponse.json({ error: 'This referral code is not valid.' }, { status: 400 });
     }
-    AuthStore.savePendingSignup({ fullName, email: cleanEmail, phone, password, referralCode });
+    AuthStore.savePendingSignup({ fullName, email: cleanEmail, phone: cleanPhone, whatsApp: cleanWhatsApp, password, referralCode });
 
     // 5. Send 6-digit verification code
     const dispatchResult = await EmailVerificationService.sendVerificationCode({

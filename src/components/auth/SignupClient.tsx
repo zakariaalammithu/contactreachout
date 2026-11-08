@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, User, KeyRound } from 'lucide-react';
+import { Mail, Lock, User, KeyRound, Phone, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
+import { COUNTRY_DIAL_CODES, normalizePhoneNumber } from '@/lib/services/phone-normalization';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { useTheme } from '@/components/theme/ThemeProvider';
 
@@ -19,6 +20,14 @@ export default function SignupClient() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // Sender identity, collected at signup so every campaign after this
+  // one already has its default contact details (name, reply email,
+  // phone, WhatsApp). Country defaults to the United States (+1), the
+  // same default the profile phone fields use.
+  const [phone, setPhone] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState('1');
+  const [whatsApp, setWhatsApp] = useState('');
+  const [whatsAppCountry, setWhatsAppCountry] = useState('1');
 
   // 6-Digit Code Verification State
   const [isVerificationStep, setIsVerificationStep] = useState(false);
@@ -42,6 +51,19 @@ export default function SignupClient() {
       setErrorMessage('Please enter email and password.');
       return;
     }
+    // Normalize both numbers to E.164 before sending; the server
+    // re-validates, but a bad number should stop here with a clear
+    // message instead of a failed signup.
+    const cleanPhone = normalizePhoneNumber(phone, phoneCountry);
+    if (!cleanPhone) {
+      setErrorMessage('Enter a valid phone number.');
+      return;
+    }
+    const cleanWhatsApp = normalizePhoneNumber(whatsApp, whatsAppCountry);
+    if (!cleanWhatsApp) {
+      setErrorMessage('Enter a valid WhatsApp number.');
+      return;
+    }
 
     setIsSendingCode(true);
     setErrorMessage(null);
@@ -49,7 +71,7 @@ export default function SignupClient() {
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: name, email, password, confirmPassword: password, referralCode: referralCode || undefined }),
+        body: JSON.stringify({ fullName: name, email, phone: cleanPhone, whatsApp: cleanWhatsApp, password, confirmPassword: password, referralCode: referralCode || undefined }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to create account.');
@@ -206,6 +228,57 @@ export default function SignupClient() {
                       className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-zinc-700 bg-zinc-950 text-xs text-white focus:border-blue-500 focus:outline-none"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-zinc-300 font-bold uppercase tracking-wider text-[10px]">Phone Number — Required for live campaigns</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={phoneCountry}
+                      onChange={(e) => setPhoneCountry(e.target.value)}
+                      aria-label="Phone country code"
+                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-2.5 text-xs font-bold text-zinc-200 focus:border-blue-500 focus:outline-none cursor-pointer"
+                    >
+                      {COUNTRY_DIAL_CODES.map((c) => (<option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>))}
+                    </select>
+                    <div className="relative min-w-0 flex-1">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
+                      <input
+                        type="tel"
+                        required
+                        placeholder={phoneCountry === '1' ? '(555) 234-5678' : `+${phoneCountry}...`}
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-zinc-700 bg-zinc-950 text-xs text-white focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-zinc-300 font-bold uppercase tracking-wider text-[10px]">WhatsApp Number — Required for live campaigns</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={whatsAppCountry}
+                      onChange={(e) => setWhatsAppCountry(e.target.value)}
+                      aria-label="WhatsApp country code"
+                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-2.5 text-xs font-bold text-zinc-200 focus:border-blue-500 focus:outline-none cursor-pointer"
+                    >
+                      {COUNTRY_DIAL_CODES.map((c) => (<option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>))}
+                    </select>
+                    <div className="relative min-w-0 flex-1">
+                      <MessageCircle className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
+                      <input
+                        type="tel"
+                        required
+                        placeholder={whatsAppCountry === '1' ? '(555) 234-5678' : `+${whatsAppCountry}...`}
+                        value={whatsApp}
+                        onChange={(e) => setWhatsApp(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-zinc-700 bg-zinc-950 text-xs text-white focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-zinc-500">Saved to your account and used as the default sender identity for every campaign. You can change it anytime in Settings &amp; Profile.</p>
                 </div>
               </div>
 

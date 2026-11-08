@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
 import { SessionManager } from '@/lib/auth/session';
+import { writeDurableContact } from '@/lib/services/profile-contact-service';
 
 export async function POST(req: Request) {
   try {
@@ -31,10 +32,25 @@ export async function POST(req: Request) {
         name: pendingSignup?.fullName || cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' '),
         email: cleanEmail,
         phone: pendingSignup?.phone,
+        whatsApp: pendingSignup?.whatsApp,
         password: pendingSignup?.password,
         referredByCode: pendingSignup?.referralCode,
         isEmailVerified: true,
       });
+      // Best-effort durable copy of the signup identity (name, numbers,
+      // reply email) so it survives a redeploy once the app_users
+      // identity migration is applied. Never blocks account creation:
+      // the AuthStore record is the source of truth for this session.
+      try {
+        await writeDurableContact(user.id, user.email, {
+          displayName: user.name,
+          phone: user.phone,
+          whatsapp: user.whatsApp,
+          replyEmail: user.replyEmail,
+        });
+      } catch {
+        // Durable store unavailable — the account still works.
+      }
     } else {
       // Existing user -> Mark email verified if not already
       if (!user.isEmailVerified) {
@@ -61,6 +77,7 @@ export async function POST(req: Request) {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        whatsApp: user.whatsApp,
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         referralCode: user.referralCode,

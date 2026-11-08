@@ -127,8 +127,6 @@ export async function resolveSenderContact(
  * (freshest on this instance), durable app_users row second. The reply
  * email falls back to the login email, matching the account's verified
  * default; the name has no fallback beyond the durable display name.
- * Callers layer a campaign override on top with
- * resolveCampaignSenderIdentity.
  */
 export async function resolveAccountIdentity(
   email: string,
