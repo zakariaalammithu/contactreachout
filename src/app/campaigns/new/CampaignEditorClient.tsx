@@ -17,6 +17,8 @@ import { IDENTITY_FIELD_LABELS } from '@/lib/services/sender-identity-policy';
 import { COUNTRY_DIAL_CODES, inferDialCode, normalizePhoneNumber } from '@/lib/services/phone-normalization';
 import type { CampaignSenderIdentity } from '@/lib/services/campaign-sender-identity';
 import { parseCampaignSenderIdentity } from '@/lib/services/campaign-sender-identity';
+import { ChooseLeadListsModal } from '@/components/campaigns/ChooseLeadListsModal';
+import { buildLeadListRows } from '@/lib/services/lead-list-browse';
 import { ContactReplySettings } from '@/components/profile/ContactReplySettings';
 import { readCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 
@@ -220,7 +222,6 @@ export default function CampaignEditorClient() {
   const [manualModalOpen, setManualModalOpen] = useState(false);
   const [manualBulkWebsites, setManualBulkWebsites] = useState('');
   const [listsModalOpen, setListsModalOpen] = useState(false);
-  const [listsModalSelection, setListsModalSelection] = useState<string[]>([]);
   const [accountEmail, setAccountEmail] = useState('');
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const [showMatchModal, setShowMatchModal] = useState(false);
@@ -717,7 +718,16 @@ export default function CampaignEditorClient() {
     );
   }, [selectedLeads, prospectSearchQuery]);
 
-  const ownedLeadLists = accountEmail ? leadLists.filter((list) => list.ownerEmail === accountEmail) : leadLists;
+  const ownedLeadLists = useMemo(
+    () => (accountEmail ? leadLists.filter((list) => list.ownerEmail === accountEmail) : leadLists),
+    [accountEmail, leadLists],
+  );
+
+  // One row per list with its live lead count, computed in a single pass
+  // over the leads (the old modal filtered the whole lead collection
+  // once per list on every render). Memoized so searching, sorting and
+  // paging the modal never recounts.
+  const leadListRows = useMemo(() => buildLeadListRows(ownedLeadLists, leads), [ownedLeadLists, leads]);
 
   const generateAiPreview = async () => {
     const lead = selectedLeads[0];
@@ -1148,7 +1158,18 @@ export default function CampaignEditorClient() {
         </div>
       </div>
     )}
-    {listsModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-zinc-950 p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-bold text-zinc-100">Choose Lead Lists</h2><p className="mt-1 text-sm text-zinc-400">Select one or more lists to add to this campaign.</p></div><List className="h-5 w-5 text-blue-400" /></div><div className="mt-5 space-y-3">{ownedLeadLists.length ? ownedLeadLists.map((list) => { const count = leads.filter((lead) => lead.listId === list.id || lead.listName === list.name).length; const checked = listsModalSelection.includes(list.id); return <label key={list.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border p-4 transition-colors ${checked ? 'border-blue-500 bg-blue-950' : 'border-zinc-800 bg-zinc-950 hover:border-blue-900'}`}><span className="flex items-center gap-3"><FileSpreadsheet className="h-5 w-5 text-blue-400" /><span><span className="block text-sm font-bold text-zinc-100">{list.name}</span><span className="block text-xs text-zinc-400">{count} leads</span></span></span><input type="checkbox" checked={checked} onChange={() => setListsModalSelection((current) => current.includes(list.id) ? current.filter((id) => id !== list.id) : [...current, list.id])} className="h-5 w-5" /></label>; }) : <div className="rounded-2xl border border-dashed border-zinc-700 p-6 text-center text-sm text-zinc-400">No lead lists are available yet.</div>}</div><div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={() => setListsModalOpen(false)} className="rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-300">Cancel</button><Button type="button" onClick={() => { setSelectedListIds(listsModalSelection); setSelectedListId(listsModalSelection[0] || ''); setListsModalOpen(false); setError(listsModalSelection.length ? '' : 'Select at least one lead list.'); }} className="px-5 py-2.5">Add to Campaign</Button></div></div></div>}
+    <ChooseLeadListsModal
+      open={listsModalOpen}
+      lists={leadListRows}
+      initialSelection={selectedListIds}
+      onCancel={() => setListsModalOpen(false)}
+      onAdd={(ids) => {
+        setSelectedListIds(ids);
+        setSelectedListId(ids[0] || '');
+        setListsModalOpen(false);
+        setError(ids.length ? '' : 'Select at least one lead list.');
+      }}
+    />
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       <div className="flex flex-col gap-4 border-b border-zinc-800 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
@@ -1415,7 +1436,7 @@ export default function CampaignEditorClient() {
             </button>
             <button
               type="button"
-              onClick={() => { setListsModalSelection(selectedListIds); setListsModalOpen(true); }}
+              onClick={() => setListsModalOpen(true)}
               className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-center shadow-2xs transition hover:border-blue-800 cursor-pointer"
             >
               <List className="mx-auto mb-3 h-7 w-7 rounded-lg bg-blue-950 p-1.5 text-blue-400" />
@@ -1470,7 +1491,6 @@ export default function CampaignEditorClient() {
                     <button
                       type="button"
                       onClick={() => {
-                        setListsModalSelection(selectedListIds);
                         setListsModalOpen(true);
                       }}
                       className="ml-1.5 text-[11px] font-bold text-blue-400 hover:underline cursor-pointer"
