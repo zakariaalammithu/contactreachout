@@ -3,7 +3,8 @@ import { SessionManager } from '@/lib/auth/session';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { CreditWalletServerService } from '@/lib/services/credit-wallet-server-service';
 import { CreditWalletService } from '@/lib/services/credit-wallet-service';
-import { resolveSenderContact } from '@/lib/services/profile-contact-service';
+import { resolveAccountIdentity } from '@/lib/services/profile-contact-service';
+import { parseCampaignSenderIdentity, resolveCampaignSenderIdentity } from '@/lib/services/campaign-sender-identity';
 import { checkSenderIdentity, formatMissingIdentity } from '@/lib/services/sender-identity-policy';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
     if (authenticatedUser?.isSuspended) return NextResponse.json({ error: 'Account is suspended.' }, { status: 403 });
     const userId = session.email.toLowerCase().trim();
     const body = await req.json();
-    const { prospectsCount = 0, aiPersonalizationEnabled = false, dryRun = false } = body;
+    const { prospectsCount = 0, aiPersonalizationEnabled = false, dryRun = false, senderIdentity: rawCampaignIdentity } = body;
 
     const count = Number(prospectsCount);
     if (isNaN(count) || count < 1) {
@@ -46,17 +47,22 @@ export async function POST(req: NextRequest) {
 
     // 0. Sender-identity completeness gate (LIVE starts only).
     // Dry runs send nothing, so they are never blocked here. The
-    // contact is resolved with the SAME resolver the process route
-    // uses (AuthStore first, durable app_users second), so the gate
-    // cannot pass while sending would fail on missing identity.
-    // Applies to every role including admins: a missing sender name
-    // or number is a sendability fact, not a permission.
+    // identity checked is the EFFECTIVE one for this campaign: the
+    // campaign's own override layered over the account default, with
+    // the SAME resolver the process route uses — so the gate cannot
+    // pass while sending would fail on missing identity, and cannot
+    // block a start whose campaign identity is complete even when the
+    // account identity is not. Applies to every role including
+    // admins: a missing sender name or number is a sendability fact,
+    // not a permission.
     if (!dryRun) {
-      const senderContact = await resolveSenderContact(session.email, authenticatedUser);
+      const accountIdentity = await resolveAccountIdentity(session.email, authenticatedUser);
+      const campaignIdentity = parseCampaignSenderIdentity(rawCampaignIdentity);
+      const { identity: effectiveIdentity } = resolveCampaignSenderIdentity(campaignIdentity, accountIdentity);
       const identity = checkSenderIdentity({
-        fullName: authenticatedUser?.name,
-        phone: senderContact.phone,
-        whatsApp: senderContact.whatsapp,
+        fullName: effectiveIdentity.fullName,
+        phone: effectiveIdentity.phone,
+        whatsApp: effectiveIdentity.whatsApp,
       });
       if (!identity.complete) {
         return NextResponse.json(

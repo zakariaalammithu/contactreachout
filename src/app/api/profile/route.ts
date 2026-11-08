@@ -16,18 +16,19 @@ export async function GET(request: NextRequest) {
   const user = AuthStore.getUserByEmail(session.email);
   if (!user) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
 
-  const activeReplyEmail = user.replyEmail || '';
   const replyEmailVerified = user.replyEmailVerified ?? user.isEmailVerified;
 
   // Durable merge: AuthStore first (freshest on this instance), durable
   // app_users row second (the value that survives instance changes).
   const durable = await readDurableContact(session.email);
+  const activeReplyEmail = user.replyEmail || durable?.replyEmail || '';
+  const name = user.name || durable?.displayName || '';
   const phone = user.phone || durable?.phone || '';
   const whatsApp = user.whatsApp || durable?.whatsapp || '';
 
   return NextResponse.json({
     user: {
-      name: user.name || '',
+      name,
       email: user.email,
       phone,
       whatsApp,
@@ -76,7 +77,16 @@ export async function PATCH(request: NextRequest) {
     // and the old zod default ('') used to wipe it on every contact save.
     ...(parsed.data.avatarUrl !== undefined ? { avatarUrl: parsed.data.avatarUrl } : {}),
   });
-  const contactDurable = await writeDurableContact(user.id, session.email, normalizedPhone, normalizedWhatsApp);
+  // Durable write (best-effort; false until the identity migration is
+  // applied). The display name is only written when non-empty: the zod
+  // default ('') would otherwise let a phone-only save wipe a stored
+  // name. Reply email is NOT written here — it has its own verified
+  // endpoint (/api/user/reply-email) and only verified values go durable.
+  const contactDurable = await writeDurableContact(user.id, session.email, {
+    ...(parsed.data.name.trim() ? { displayName: parsed.data.name.trim() } : {}),
+    phone: normalizedPhone,
+    whatsapp: normalizedWhatsApp,
+  });
   const activeReplyEmail = user.replyEmail || '';
   const replyEmailVerified = user.replyEmailVerified ?? user.isEmailVerified;
 

@@ -771,6 +771,11 @@ export default function CampaignsPage() {
                   body: JSON.stringify({
                     campaignId: rawCamp.id,
                     campaignName: rawCamp.name || '',
+                    // This campaign's own sender identity (if the editor
+                    // saved one). The process route layers it over the
+                    // account default per field; omitting it means the
+                    // account default is used for every field.
+                    senderIdentity: (rawCamp as any).senderIdentity || undefined,
                     lead: {
                       id: nextLead.id,
                       company_name: nextLead.companyName || nextLead.company_name || '',

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from '@/lib/auth/session';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
+import { readDurableContact, writeDurableContact } from '@/lib/services/profile-contact-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,8 +28,12 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const activeReplyEmail = user.replyEmail || user.email;
-  const isVerified = user.replyEmailVerified ?? user.isEmailVerified;
+  const durable = await readDurableContact(userEmail);
+  const activeReplyEmail = user.replyEmail || durable?.replyEmail || user.email;
+  // Both durable write paths below only store verified emails (an
+  // immediate restore to the user's own verified account email, or an
+  // OTP-verified promotion), so a durable value counts as verified.
+  const isVerified = user.replyEmailVerified ?? (durable?.replyEmail ? true : user.isEmailVerified);
 
   return NextResponse.json({
     success: true,
@@ -94,6 +99,9 @@ export async function POST(req: NextRequest) {
           replyEmailVerified: true,
           unverifiedReplyEmail: undefined,
         });
+        // Durable write (best-effort; no-op until the identity migration
+        // is applied). Only verified values ever go durable.
+        await writeDurableContact(user.id, user.email, { replyEmail: targetEmail });
         return NextResponse.json({
           success: true,
           immediateVerified: true,
@@ -147,6 +155,9 @@ export async function POST(req: NextRequest) {
         replyEmailVerified: true,
         unverifiedReplyEmail: undefined,
       });
+      // Durable write (best-effort; no-op until the identity migration
+      // is applied). Only OTP-verified values ever go durable.
+      await writeDurableContact(user.id, user.email, { replyEmail: targetEmail });
 
       return NextResponse.json({
         success: true,

@@ -14,6 +14,9 @@ import { CANONICAL_DEFAULT_SAFETY_CONFIG, SendingScheduleConfig } from '@/lib/se
 import { MatchDataModal } from '@/components/leads/MatchDataModal';
 import { CampaignMessageEditor } from './CampaignMessageEditor';
 import { IDENTITY_FIELD_LABELS } from '@/lib/services/sender-identity-policy';
+import { COUNTRY_DIAL_CODES, inferDialCode, normalizePhoneNumber } from '@/lib/services/phone-normalization';
+import type { CampaignSenderIdentity } from '@/lib/services/campaign-sender-identity';
+import { parseCampaignSenderIdentity } from '@/lib/services/campaign-sender-identity';
 import { ContactReplySettings } from '@/components/profile/ContactReplySettings';
 import { readCampaignDrafts, writeCampaignDrafts } from '@/lib/services/campaign-draft-storage';
 
@@ -29,6 +32,10 @@ interface StoredCampaign {
   retryFailedSubmissions?: number; failureThreshold?: number; humanReviewUncertainForms?: boolean; stopOnSecurityChallenge?: boolean;
   schedule?: SendingScheduleConfig;
   aiPersonalizationEnabled?: boolean; aiInstructions?: string;
+  // This campaign's own sender identity (Full Name, Reply Email, Phone,
+  // WhatsApp). Absent (or all empty) = use the saved account identity.
+  // Campaign edits never overwrite the account identity.
+  senderIdentity?: CampaignSenderIdentity;
   aiPreview?: { subject: string; body: string; provider: string; isAiGenerated: boolean; companyName: string };
   aiPersonalizedMessages?: Record<string, string>;
 }
@@ -163,6 +170,42 @@ export default function CampaignEditorClient() {
     replyEmail?: string;
     replyEmailVerified?: boolean;
   }>({});
+
+  // Sender identity for THIS campaign. Defaults to the saved account
+  // identity; edits here never touch the account. The account values
+  // arrive async from /api/profile — prefill once, and only for a new
+  // campaign or an old draft without a saved identity (the editId
+  // restore below marks the ref, so the account can never overwrite a
+  // campaign's own saved values).
+  const [senderFullName, setSenderFullName] = useState('');
+  const [senderReplyEmail, setSenderReplyEmail] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [senderWhatsApp, setSenderWhatsApp] = useState('');
+  const [senderPhoneCountry, setSenderPhoneCountry] = useState('1');
+  const [senderWhatsAppCountry, setSenderWhatsAppCountry] = useState('1');
+  const senderIdentityLoadedRef = useRef(false);
+
+  const resetSenderIdentityToAccount = () => {
+    const account = userProfileSummary || {};
+    setSenderFullName(account.name || '');
+    setSenderReplyEmail(account.replyEmail || account.email || '');
+    setSenderPhone(account.phone || '');
+    setSenderWhatsApp(account.whatsApp || '');
+    const phoneDial = inferDialCode(account.phone || '');
+    if (phoneDial) setSenderPhoneCountry(phoneDial);
+    const waDial = inferDialCode(account.whatsApp || '');
+    if (waDial) setSenderWhatsAppCountry(waDial);
+  };
+
+  const senderDiffersFromAccount = (() => {
+    const account = userProfileSummary || {};
+    return (
+      senderFullName.trim() !== (account.name || '').trim() ||
+      senderReplyEmail.trim() !== (account.replyEmail || account.email || '').trim() ||
+      senderPhone.trim() !== (account.phone || '').trim() ||
+      senderWhatsApp.trim() !== (account.whatsApp || '').trim()
+    );
+  })();
 
 
   const [aiPersonalizationEnabled, setAiPersonalizationEnabled] = useState(false);
@@ -401,6 +444,22 @@ export default function CampaignEditorClient() {
       ]).then(([profileData, creditData]) => {
         if (profileData?.user) {
           setUserProfileSummary(profileData.user);
+          // New campaign (or an old draft without a saved identity):
+          // prefill this campaign's sender fields from the account
+          // default, once. An existing campaign's own saved identity
+          // was already restored synchronously below and marks the ref,
+          // so the account can never overwrite it.
+          if (!senderIdentityLoadedRef.current) {
+            setSenderFullName(profileData.user.name || '');
+            setSenderReplyEmail(profileData.user.replyEmail || profileData.user.email || '');
+            setSenderPhone(profileData.user.phone || '');
+            setSenderWhatsApp(profileData.user.whatsApp || '');
+            const phoneDial = inferDialCode(profileData.user.phone || '');
+            if (phoneDial) setSenderPhoneCountry(phoneDial);
+            const waDial = inferDialCode(profileData.user.whatsApp || '');
+            if (waDial) setSenderWhatsAppCountry(waDial);
+            senderIdentityLoadedRef.current = true;
+          }
         }
         if (creditData?.wallet?.totalCreditsAvailable !== undefined) {
           setAvailableCredits(creditData.wallet.totalCreditsAvailable);
@@ -451,6 +510,21 @@ export default function CampaignEditorClient() {
           setAiPersonalizationEnabled(campaign.aiPersonalizationEnabled ?? false);
           setAiInstructions(campaign.aiInstructions || 'Write a short, professional outreach message for this business. Mention something relevant about the target website and keep the message natural and concise.');
           setAiPreview(campaign.aiPreview);
+
+          // Restore this campaign's own sender identity when it has one.
+          // The account prefill above must not overwrite it (ref guard).
+          const savedIdentity = parseCampaignSenderIdentity((campaign as any).senderIdentity);
+          if (savedIdentity) {
+            setSenderFullName(savedIdentity.fullName);
+            setSenderReplyEmail(savedIdentity.replyEmail);
+            setSenderPhone(savedIdentity.phone);
+            setSenderWhatsApp(savedIdentity.whatsApp);
+            const phoneDial = inferDialCode(savedIdentity.phone);
+            if (phoneDial) setSenderPhoneCountry(phoneDial);
+            const waDial = inferDialCode(savedIdentity.whatsApp);
+            if (waDial) setSenderWhatsAppCountry(waDial);
+            senderIdentityLoadedRef.current = true;
+          }
 
           if (Array.isArray(campaign.prospectsList) && campaign.prospectsList.length > 0) {
             setLeads((existingLeads) => {
@@ -743,6 +817,19 @@ export default function CampaignEditorClient() {
         setActiveTab(nextTab);
       }
 
+      // This campaign's sender identity, normalized the same way the
+      // account editor does (country-aware). An invalid number is kept
+      // raw — the server falls back to the account value for that field
+      // instead of blocking a draft save on a half-typed number.
+      const senderPhoneNormalized = normalizePhoneNumber(senderPhone, senderPhoneCountry);
+      const senderWhatsAppNormalized = normalizePhoneNumber(senderWhatsApp, senderWhatsAppCountry);
+      const currentSenderIdentity: CampaignSenderIdentity = {
+        fullName: senderFullName.trim(),
+        replyEmail: senderReplyEmail.trim(),
+        phone: senderPhoneNormalized === null ? senderPhone.trim() : senderPhoneNormalized,
+        whatsApp: senderWhatsAppNormalized === null ? senderWhatsApp.trim() : senderWhatsAppNormalized,
+      };
+
       // Server-Side Credit & AI Entitlement Validation on Campaign Launch
       if (launch) {
         setIdentityMissing(null);
@@ -755,6 +842,7 @@ export default function CampaignEditorClient() {
               prospectsCount: selectedLeads.length,
               aiPersonalizationEnabled,
               dryRun: isDryRun,
+              senderIdentity: currentSenderIdentity,
             }),
           });
 
@@ -849,6 +937,7 @@ export default function CampaignEditorClient() {
           aiPersonalizationEnabled,
           aiInstructions: aiInstructions.trim(),
           aiPreview,
+          senderIdentity: currentSenderIdentity,
         };
         const updated = existing ? campaigns.map((item) => item && item.id === existing.id ? campaign : item) : [campaign, ...campaigns];
         writeCampaignDrafts(localStorage, updated);
@@ -1546,6 +1635,62 @@ export default function CampaignEditorClient() {
                 Daily submission limit
                 <input type="number" min={1} value={dailySubmissionLimit} onChange={(event) => setDailySubmissionLimit(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 focus:border-blue-500 outline-none" />
               </label>
+            </div>
+
+            {/* CAMPAIGN SENDER IDENTITY SECTION */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <UserPlus className="mt-0.5 h-5 w-5 text-blue-400 shrink-0" />
+                  <div>
+                    <h3 className="font-extrabold text-zinc-100 uppercase tracking-wider text-xs">Sender Identity for This Campaign</h3>
+                    <p className="text-xs text-zinc-400 font-medium mt-0.5">Defaults to your saved account identity. Changes here apply only to this campaign — your account identity stays unchanged. To update the account permanently, use Account Contact Identity Settings below.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={resetSenderIdentityToAccount}
+                  className="inline-flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-950 hover:bg-zinc-900 px-4 py-2 text-xs font-bold text-zinc-300 shadow-2xs transition-colors cursor-pointer shrink-0"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 text-zinc-400" />
+                  <span>Use Account Default</span>
+                </button>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label className="text-sm font-semibold text-zinc-300">
+                  Full Name
+                  <input type="text" value={senderFullName} onChange={(event) => setSenderFullName(event.target.value)} placeholder="Your full name" className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 focus:border-blue-500 outline-none" />
+                </label>
+                <label className="text-sm font-semibold text-zinc-300">
+                  Reply Email
+                  <input type="text" value={senderReplyEmail} onChange={(event) => setSenderReplyEmail(event.target.value)} placeholder="name@example.com" className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 focus:border-blue-500 outline-none" />
+                </label>
+                <label className="text-sm font-semibold text-zinc-300">
+                  Phone Number
+                  <span className="mt-2 flex gap-2">
+                    <select value={senderPhoneCountry} onChange={(event) => setSenderPhoneCountry(event.target.value)} className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm font-bold text-zinc-200 focus:border-blue-500 outline-none cursor-pointer">
+                      {COUNTRY_DIAL_CODES.map((c) => (<option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>))}
+                    </select>
+                    <input type="text" value={senderPhone} onChange={(event) => setSenderPhone(event.target.value)} placeholder={senderPhoneCountry === '1' ? '(555) 234-5678 / wa.me/...' : `+${senderPhoneCountry}... / wa.me/...`} className="min-w-0 flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 focus:border-blue-500 outline-none" />
+                  </span>
+                </label>
+                <label className="text-sm font-semibold text-zinc-300">
+                  WhatsApp Number
+                  <span className="mt-2 flex gap-2">
+                    <select value={senderWhatsAppCountry} onChange={(event) => setSenderWhatsAppCountry(event.target.value)} className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm font-bold text-zinc-200 focus:border-blue-500 outline-none cursor-pointer">
+                      {COUNTRY_DIAL_CODES.map((c) => (<option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>))}
+                    </select>
+                    <input type="text" value={senderWhatsApp} onChange={(event) => setSenderWhatsApp(event.target.value)} placeholder={senderWhatsAppCountry === '1' ? '(555) 234-5678 / wa.me/...' : `+${senderWhatsAppCountry}... / wa.me/...`} className="min-w-0 flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 focus:border-blue-500 outline-none" />
+                  </span>
+                </label>
+              </div>
+
+              <p className="text-xs font-medium text-zinc-400">
+                {senderDiffersFromAccount
+                  ? 'Custom sender identity for this campaign — your account identity is unchanged.'
+                  : 'Using your saved account identity for this campaign.'}
+              </p>
             </div>
 
             {/* CONTACT & REPLY SETTINGS SECTION */}
