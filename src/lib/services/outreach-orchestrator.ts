@@ -5,7 +5,7 @@
  */
 
 import { ContactPageFinder, ContactDiscoveryResult, COMMON_CONTACT_PATHS, normalizeDedupUrl } from './contact-page-finder';
-import { ContactFormDetector, FormDetectionResult, DetectedFormField, detectFormsViaFetch, classifyFetchField, detectFormPurpose, resolveFormPurpose } from './form-detector';
+import { ContactFormDetector, FormDetectionResult, DetectedFormField, detectFormsViaFetch, classifyFetchField, detectFormPurpose, resolveFormPurpose, HONEYPOT_PATTERNS } from './form-detector';
 import { isBrowserWorkerConfigured, detectWithBrowserWorker, WorkerDetectionForm, AlternativeContactLinks } from './browser-worker-client';
 import { interpolateTemplate, extractVariables, convertHtmlToPlainText, prepareContactFormPlainText } from './template-engine';
 import { mapLeadToFormFields, FieldMappingResult, LeadMappingContext } from './field-mapper';
@@ -124,19 +124,25 @@ function pickBestWorkerForm(forms: WorkerDetectionForm[]): WorkerDetectionForm |
 export { pickBestWorkerForm, detectFormPurpose };
 
 function workerFormToDetection(targetUrl: string, form: WorkerDetectionForm): FormDetectionResult {
-  const fields: DetectedFormField[] = form.fields.map((f) => ({
-    id: f.selector.startsWith('#') ? f.selector.slice(1) : undefined,
-    name: f.name || undefined,
-    selector: f.selector,
-    tag: (f.tag === 'textarea' ? 'textarea' : f.tag === 'select' ? 'select' : 'input') as 'input' | 'textarea' | 'select',
-    htmlType: f.type,
-    label: f.label || undefined,
-    normalizedType: classifyFetchField(f.tag, f.type, f.name, f.label),
-    confidence: 0.9,
-    isRequired: f.required,
-    isHoneypot: false,
-    options: f.tag === 'select' && f.options ? f.options.map((o) => o.label || o.value).filter(Boolean) : undefined,
-  }));
+  const fields: DetectedFormField[] = form.fields.map((f) => {
+    // Honeypot traps (e.g. Framer's `framer-noscript`) arrive here as
+    // ordinary required fields; the mapper must skip them, never count
+    // them as missing, and never fill them.
+    const isHoneypot = HONEYPOT_PATTERNS.some((p) => p.test(`${f.name || ''} ${f.label || ''}`));
+    return {
+      id: f.selector.startsWith('#') ? f.selector.slice(1) : undefined,
+      name: f.name || undefined,
+      selector: f.selector,
+      tag: (f.tag === 'textarea' ? 'textarea' : f.tag === 'select' ? 'select' : 'input') as 'input' | 'textarea' | 'select',
+      htmlType: f.type,
+      label: f.label || undefined,
+      normalizedType: isHoneypot ? 'honeypot' : classifyFetchField(f.tag, f.type, f.name, f.label),
+      confidence: 0.9,
+      isRequired: f.required,
+      isHoneypot,
+      options: f.tag === 'select' && f.options ? f.options.map((o) => o.label || o.value).filter(Boolean) : undefined,
+    };
+  });
   return {
     targetUrl,
     hasContactForm: true,

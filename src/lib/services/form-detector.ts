@@ -117,6 +117,10 @@ export const HONEYPOT_PATTERNS = [
   /leave_blank/i,
   /dont_fill/i,
   /trap/i,
+  // Framer's no-JS trap: `<input required pattern="(?!)` name="framer-noscript">`
+  // — a pattern that can never match, so the field can never be filled.
+  // It is not a real field and must never count as a missing required field.
+  /noscript/i,
 ];
 
 // Heuristic semantic classifiers for field types
@@ -158,7 +162,7 @@ export const FIELD_CLASSIFIERS: Array<{
   },
   {
     type: 'phone',
-    regex: /(phone|tel|telephone|mobile|cell|contact[_\-\s]*number)/i,
+    regex: /(phone|tel|telephone|mobile|cell|contact[_\-\s]*number|input_mask)/i,
     autocomplete: /tel/i,
     weight: 0.95,
   },
@@ -709,6 +713,10 @@ export function classifyFetchField(tag: string, typeAttr: string, name: string, 
   if (typeAttr === 'radio') return 'radio';
   if (typeAttr === 'email' || hay.includes('email') || hay.includes('e-mail')) return 'email';
   if (typeAttr === 'tel' || /\bphone\b|\btel\b|mobile/.test(hay)) return 'phone';
+  // Fluent Forms names its masked phone input `input_mask`; the label is
+  // often absent or non-English (e.g. Arabic "رقم هاتف"), so the name
+  // itself is the reliable signal.
+  if (/\binput_mask\b/.test(hay)) return 'phone';
   if (/company|organisation|organization/.test(hay)) return 'company';
   if (/website|url|site/.test(hay)) return 'website';
   if (/\bmessage\b|comment|inquiry|enquiry|\bbody\b|details/.test(hay) || tag === 'textarea') return 'message';
@@ -750,8 +758,19 @@ export function parseContactFormsFromHtml(html: string, pageUrl: string): Parsed
       const name = parseAttr(`<x ${attrs}>`, 'name') || '';
       const id = parseAttr(`<x ${attrs}>`, 'id') || '';
       const label = parseAttr(`<x ${attrs}>`, 'aria-label') || parseAttr(`<x ${attrs}>`, 'placeholder') || '';
-      const normalizedType = classifyFetchField(tag, typeAttr, name, label);
+      // Honeypot traps are never real fields: a name on the honeypot list
+      // (e.g. Framer's `framer-noscript`) or a never-match pattern
+      // (`pattern="(?!)`") must not count as a required field or be filled.
+      const isHoneypot =
+        HONEYPOT_PATTERNS.some((p) => p.test(`${name} ${label}`)) ||
+        parseAttr(`<x ${attrs}>`, 'pattern') === '(?!)';
+      const normalizedType = isHoneypot ? 'honeypot' : classifyFetchField(tag, typeAttr, name, label);
       const selector = id ? `#${id}` : name ? `[name="${name.replace(/"/g, '\\"')}"]` : `${tag}[type="${typeAttr}"]`;
+      // `aria-required=false` must not count as required: the old
+      // /\brequired\b/ test matched the word inside `aria-required=false`.
+      const hasRequiredAttr = /(?:^|\s)required(?:\s|=|\/|>|$)/i.test(attrs);
+      const ariaRequiredTrue = /aria-required\s*=\s*["']?true/i.test(attrs);
+      const ariaRequiredFalse = /aria-required\s*=\s*["']?false/i.test(attrs);
       const field: DetectedFormField = {
         id: id || undefined,
         name: name || undefined,
@@ -761,8 +780,8 @@ export function parseContactFormsFromHtml(html: string, pageUrl: string): Parsed
         label: label || undefined,
         normalizedType,
         confidence: normalizedType === 'unknown' ? 0.3 : 0.9,
-        isRequired: /\brequired\b/i.test(attrs),
-        isHoneypot: false,
+        isRequired: (hasRequiredAttr || ariaRequiredTrue) && !ariaRequiredFalse,
+        isHoneypot,
       };
       if (tag === 'select') {
         const options: string[] = [];
@@ -779,8 +798,8 @@ export function parseContactFormsFromHtml(html: string, pageUrl: string): Parsed
     // A form only counts when at least one field is mappable. A form of
     // only unknown fields cannot be filled safely, so it must not be
     // reported as a usable contact form (an empty submission would be a
-    // false success).
-    const mappable = fields.filter((f) => f.normalizedType !== 'unknown');
+    // false success). Honeypots are not mappable fields either.
+    const mappable = fields.filter((f) => f.normalizedType !== 'unknown' && !f.isHoneypot);
     if (mappable.length === 0) { formIndex += 1; continue; }
     const hay = `${formId || ''} ${rawAction || ''} ${openTag}`.toLowerCase();
     let score = 0;
