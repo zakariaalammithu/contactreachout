@@ -282,8 +282,8 @@ export function ContactReplySettings() {
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-    <div className="rounded-3xl border border-blue-900 bg-zinc-950 p-6 shadow-sm sm:p-8 space-y-6">
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+    <div className="rounded-3xl border border-blue-900 bg-zinc-950 p-5 shadow-sm sm:p-6 space-y-5">
+      <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-blue-400">
             CONTACT & REPLY IDENTITY
@@ -328,8 +328,8 @@ export function ContactReplySettings() {
           Loading contact identity settings...
         </div>
       ) : (
-        <div className="space-y-6">
-          <div className="grid gap-5 sm:grid-cols-2">
+        <div className="space-y-5">
+          <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
             {/* 1. Full Name */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
@@ -340,7 +340,7 @@ export function ContactReplySettings() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. Alex Morgan"
-                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
@@ -359,7 +359,7 @@ export function ContactReplySettings() {
                     type="email"
                     readOnly
                     value={replyEmail || accountEmail}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-900 pl-10 pr-4 py-3 text-sm font-bold text-zinc-200 outline-none"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-900 pl-10 pr-4 py-2.5 text-sm font-bold text-zinc-200 outline-none"
                   />
                 </div>
                 <button
@@ -372,11 +372,11 @@ export function ContactReplySettings() {
                     setError(null);
                   }}
                   disabled={isFreePlan}
-                  className="shrink-0 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-blue-400 px-3.5 py-3 text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-blue-400 px-3.5 py-2.5 text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Change Email
                 </button>
-                {isFreePlan && <Link href="/pricing" className="shrink-0 rounded-xl bg-[#0e6de4] px-3 py-3 text-xs font-bold text-white">Upgrade</Link>}
+                {isFreePlan && <Link href="/pricing" className="shrink-0 rounded-xl bg-[#0e6de4] px-3 py-2.5 text-xs font-bold text-white">Upgrade</Link>}
               </div>
             </div>
 
@@ -390,7 +390,7 @@ export function ContactReplySettings() {
                   value={phoneCountry}
                   onChange={(e) => setPhoneCountry(e.target.value)}
                   title="Country code"
-                  className="shrink-0 rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4]"
+                  className="shrink-0 rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4]"
                 >
                   {COUNTRY_DIAL_CODES.map((c) => (
                     <option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>
@@ -401,7 +401,7 @@ export function ContactReplySettings() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder={placeholderFor(phoneCountry)}
-                  className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
             </div>
@@ -416,7 +416,7 @@ export function ContactReplySettings() {
                   value={whatsAppCountry}
                   onChange={(e) => setWhatsAppCountry(e.target.value)}
                   title="Country code"
-                  className="shrink-0 rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4]"
+                  className="shrink-0 rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4]"
                 >
                   {COUNTRY_DIAL_CODES.map((c) => (
                     <option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>
@@ -427,10 +427,10 @@ export function ContactReplySettings() {
                   value={whatsApp}
                   onChange={(e) => setWhatsApp(e.target.value)}
                   placeholder={placeholderFor(whatsAppCountry)}
-                  className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
-              <p className="text-[11px] text-zinc-400">Any country: pick the code, or paste a +number or wa.me link — it is saved as +E.164 automatically. Target forms that require a WhatsApp number use this value.</p>
+              <p className="text-[11px] text-zinc-400">Any country — saved as +E.164 automatically.</p>
             </div>
 
             {/* 5. Company Name (sender) */}
@@ -443,9 +443,9 @@ export function ContactReplySettings() {
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="e.g. ContactReachout"
-                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
-              <p className="text-[11px] text-zinc-400">Your company — target forms that ask for a Company use this value. This is not the prospect&apos;s company name.</p>
+              <p className="text-[11px] text-zinc-400">Your company — not the prospect&apos;s company name.</p>
             </div>
 
             {/* 6. Website (sender) */}
@@ -458,9 +458,9 @@ export function ContactReplySettings() {
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="e.g. contactreachout.com"
-                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
-              <p className="text-[11px] text-zinc-400">Your website — target forms that ask for a Website use this value.</p>
+              <p className="text-[11px] text-zinc-400">Your website for target forms.</p>
             </div>
 
             {/* 7. Job Title (sender) */}
@@ -473,9 +473,9 @@ export function ContactReplySettings() {
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
                 placeholder="e.g. Founder"
-                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
-              <p className="text-[11px] text-zinc-400">Your job title — target forms that ask for a Job Title use this value.</p>
+              <p className="text-[11px] text-zinc-400">Your job title for target forms.</p>
             </div>
 
             {/* 8. Country (sender) */}
@@ -488,9 +488,9 @@ export function ContactReplySettings() {
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
                 placeholder="e.g. United Kingdom"
-                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
               />
-              <p className="text-[11px] text-zinc-400">Your country — target forms that ask for a Country use this value.</p>
+              <p className="text-[11px] text-zinc-400">Your country for target forms.</p>
             </div>
           </div>
 
@@ -502,7 +502,7 @@ export function ContactReplySettings() {
               type="button"
               disabled={saving}
               onClick={handleSaveContactIdentity}
-              className="w-full sm:w-auto shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-6 py-3 text-xs font-bold text-white hover:bg-[#0758bd] disabled:opacity-60 cursor-pointer shadow-xs active:scale-95 transition-all"
+              className="w-full sm:w-auto shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#0758bd] disabled:opacity-60 cursor-pointer shadow-xs active:scale-95 transition-all"
             >
               <Save className="h-4 w-4" />
               <span>{saving ? 'Saving...' : 'Save Changes'}</span>
@@ -638,7 +638,7 @@ export function ContactReplySettings() {
 
     {/* Sidebar: live preview + completeness */}
     <aside className="space-y-6 lg:sticky lg:top-6">
-      <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm space-y-4">
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-5 shadow-sm space-y-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-950 text-blue-400">
             <Eye className="h-5 w-5" />
@@ -650,7 +650,7 @@ export function ContactReplySettings() {
         </div>
         <div className="divide-y divide-zinc-800">
           {identityFields.map((f) => (
-            <div key={f.label} className="py-2.5 first:pt-0 last:pb-0 space-y-0.5">
+            <div key={f.label} className="py-2 first:pt-0 last:pb-0 space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">{f.label}</p>
               <p className={`text-sm font-bold break-words ${f.value.trim() ? 'text-zinc-100' : 'text-zinc-500 italic font-normal'}`}>
                 {f.value.trim() || 'Not set'}
@@ -663,7 +663,7 @@ export function ContactReplySettings() {
         </p>
       </div>
 
-      <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm space-y-4">
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-5 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-extrabold text-zinc-100">Identity completeness</h4>
           <span className="text-xs font-bold text-blue-400">{identitySetCount} of {identityFields.length} set</span>
@@ -674,7 +674,7 @@ export function ContactReplySettings() {
             style={{ width: `${Math.round((identitySetCount / identityFields.length) * 100)}%` }}
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {identityFields.map((f) => (
             <div key={f.label} className="flex items-center gap-2 text-sm">
               {f.value.trim() ? (
