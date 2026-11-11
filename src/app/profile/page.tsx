@@ -11,7 +11,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'ai'>('profile');
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-400">Account Settings</p>
         <h1 className="mt-2 text-3xl font-black text-white">Settings & Profile</h1>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Mail, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, KeyRound, Check, Save } from 'lucide-react';
+import { Mail, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, KeyRound, Check, Save, Eye, Circle } from 'lucide-react';
 import { COUNTRY_DIAL_CODES, inferDialCode, normalizePhoneNumber } from '@/lib/services/phone-normalization';
 
 export function ContactReplySettings() {
@@ -265,7 +265,23 @@ export function ContactReplySettings() {
     }
   };
 
+  // Sidebar: what target forms actually receive + how complete the
+  // identity is. Same state as the form, so the preview updates live
+  // as the user types.
+  const identityFields = [
+    { label: 'Full name', value: fullName, required: true },
+    { label: 'Reply email', value: replyEmail || accountEmail, required: false },
+    { label: 'Phone', value: phone, required: true },
+    { label: 'WhatsApp', value: whatsApp, required: true },
+    { label: 'Company', value: companyName, required: false },
+    { label: 'Website', value: website, required: false },
+    { label: 'Job title', value: jobTitle, required: false },
+    { label: 'Country', value: country, required: false },
+  ];
+  const identitySetCount = identityFields.filter((f) => f.value.trim()).length;
+
   return (
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
     <div className="rounded-3xl border border-blue-900 bg-zinc-950 p-6 shadow-sm sm:p-8 space-y-6">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
         <div>
@@ -486,7 +502,7 @@ export function ContactReplySettings() {
               type="button"
               disabled={saving}
               onClick={handleSaveContactIdentity}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-6 py-3 text-xs font-bold text-white hover:bg-[#0758bd] disabled:opacity-60 cursor-pointer shadow-xs active:scale-95 transition-all"
+              className="w-full sm:w-auto shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl bg-[#0e6de4] px-6 py-3 text-xs font-bold text-white hover:bg-[#0758bd] disabled:opacity-60 cursor-pointer shadow-xs active:scale-95 transition-all"
             >
               <Save className="h-4 w-4" />
               <span>{saving ? 'Saving...' : 'Save Changes'}</span>
@@ -618,6 +634,66 @@ export function ContactReplySettings() {
           </div>
         </div>
       )}
+    </div>
+
+    {/* Sidebar: live preview + completeness */}
+    <aside className="space-y-6 lg:sticky lg:top-6">
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-950 text-blue-400">
+            <Eye className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-extrabold text-zinc-100">What target forms receive</h4>
+            <p className="text-[11px] text-zinc-400">Live preview — updates as you type.</p>
+          </div>
+        </div>
+        <div className="divide-y divide-zinc-800">
+          {identityFields.map((f) => (
+            <div key={f.label} className="py-2.5 first:pt-0 last:pb-0 space-y-0.5">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">{f.label}</p>
+              <p className={`text-sm font-bold break-words ${f.value.trim() ? 'text-zinc-100' : 'text-zinc-500 italic font-normal'}`}>
+                {f.value.trim() || 'Not set'}
+              </p>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] leading-relaxed text-zinc-400">
+          This is exactly what ContactReachout fills into a target website&apos;s contact form. A blank field stays blank — it never receives the prospect&apos;s details.
+        </p>
+      </div>
+
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-extrabold text-zinc-100">Identity completeness</h4>
+          <span className="text-xs font-bold text-blue-400">{identitySetCount} of {identityFields.length} set</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
+          <div
+            className="h-full rounded-full bg-[#0e6de4] transition-all"
+            style={{ width: `${Math.round((identitySetCount / identityFields.length) * 100)}%` }}
+          />
+        </div>
+        <div className="space-y-2">
+          {identityFields.map((f) => (
+            <div key={f.label} className="flex items-center gap-2 text-sm">
+              {f.value.trim() ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+              ) : (
+                <Circle className="h-4 w-4 shrink-0 text-zinc-600" />
+              )}
+              <span className={f.value.trim() ? 'font-bold text-zinc-100' : 'text-zinc-400'}>{f.label}</span>
+              {f.required && (
+                <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-zinc-500">Required</span>
+              )}
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] leading-relaxed text-zinc-400">
+          Live campaigns need Full name, Phone and WhatsApp. The other fields fill Company, Website, Job Title and Country on forms that ask for them.
+        </p>
+      </div>
+    </aside>
     </div>
   );
 }
