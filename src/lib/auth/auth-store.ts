@@ -34,6 +34,9 @@ export interface UserAccount {
   isEmailVerified: boolean;
   isSuspended: boolean;
   company?: string;
+  website?: string;
+  jobTitle?: string;
+  country?: string;
   plan?: string;
   replyEmail?: string;
   unverifiedReplyEmail?: string;

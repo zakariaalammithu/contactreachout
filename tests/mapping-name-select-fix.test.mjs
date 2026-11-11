@@ -50,25 +50,38 @@ describe('splitPersonName', () => {
 });
 
 describe('mapping name + select fix', () => {
-  it('maps first/last/email/message and picks Other for the no-data select', () => {
+  it('fills first/last/email from the sender identity and picks Other for the no-data select', () => {
     const result = mapLeadToFormFields(
       vitalmobilityFields,
-      { first_name: 'Bruno', last_name: 'Reznikiewicz', email: 'bruno@vitalmobility.ca', company_name: 'Vital Mobility', website: 'https://vitalmobility.ca' },
+      {
+        first_name: 'Bruno',
+        last_name: 'Reznikiewicz',
+        email: 'bruno@vitalmobility.ca',
+        company_name: 'Vital Mobility',
+        website: 'https://vitalmobility.ca',
+        user_contact_identity: { fullName: 'Zakaria Alam Mithu', replyEmail: 'zakaria@contactreachout.com' },
+      },
       { subject: 'Partnership Inquiry', body: longBody },
       {}
     );
     expect(result.status).toBe('READY_FOR_SUBMISSION');
     expect(result.unmappedRequiredCount).toBe(0);
     const byLabel = Object.fromEntries(result.mappedFields.map((a) => [a.fieldLabel, a.valueToFill]));
-    expect(byLabel.First).toBe('Bruno');
-    expect(byLabel.Last).toBe('Reznikiewicz');
+    expect(byLabel.First).toBe('Zakaria');
+    expect(byLabel.Last).toBe('Alam Mithu');
+    expect(byLabel.Email).toBe('zakaria@contactreachout.com');
     expect(byLabel["I'm looking to"]).toBe('Other');
   });
 
-  it('still reports first/last unmapped when no name data exists anywhere', () => {
+  it('still reports first/last unmapped when no sender name exists', () => {
     const result = mapLeadToFormFields(
       vitalmobilityFields,
-      { email: 'bruno@vitalmobility.ca', company_name: 'Vital Mobility', website: 'https://vitalmobility.ca' },
+      {
+        email: 'bruno@vitalmobility.ca',
+        company_name: 'Vital Mobility',
+        website: 'https://vitalmobility.ca',
+        user_contact_identity: { replyEmail: 'zakaria@contactreachout.com' },
+      },
       { subject: 'Partnership Inquiry', body: longBody },
       {}
     );
@@ -95,7 +108,7 @@ describe('mapping name + select fix', () => {
     ];
     const result = mapLeadToFormFields(
       fields,
-      { email: 'a@example.com', country: 'Canada' },
+      { email: 'a@example.com', country: 'Canada', user_contact_identity: { replyEmail: 'zakaria@contactreachout.com', country: 'Canada' } },
       { subject: 'Hi', body: longBody },
       {}
     );
@@ -118,7 +131,7 @@ describe('mapping name + select fix', () => {
         options: ['Choose one', 'Service and repairs', 'Shipping question'],
       }),
     ];
-    const result = mapLeadToFormFields(fields, { email: 'a@example.com' }, { subject: 'Hi', body: longBody }, {});
+    const result = mapLeadToFormFields(fields, { email: 'a@example.com', user_contact_identity: { replyEmail: 'zakaria@contactreachout.com' } }, { subject: 'Hi', body: longBody }, {});
     expect(result.status).toBe('READY_FOR_SUBMISSION');
     expect(result.mappedFields.find((a) => a.fieldLabel === "I'm looking to").valueToFill).toBe('Service and repairs');
   });

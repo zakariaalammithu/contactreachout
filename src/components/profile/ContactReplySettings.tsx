@@ -11,6 +11,10 @@ export function ContactReplySettings() {
   const [accountEmail, setAccountEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [whatsApp, setWhatsApp] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [website, setWebsite] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [country, setCountry] = useState('');
   // Country for each number (any country, not just the examples). The
   // selected dial code only matters for trunk-0 national numbers and
   // numbers without a country code; an explicit +number always wins.
@@ -43,6 +47,10 @@ export function ContactReplySettings() {
           setFullName(pData.user.name || '');
           setPhone(pData.user.phone || '');
           setWhatsApp(pData.user.whatsApp || '');
+          setCompanyName(pData.user.companyName || '');
+          setWebsite(pData.user.website || '');
+          setJobTitle(pData.user.jobTitle || '');
+          setCountry(pData.user.country || '');
           // Preselect the country from a stored E.164 value; default USA (+1).
           const phoneDial = inferDialCode(pData.user.phone || '');
           if (phoneDial) setPhoneCountry(phoneDial);
@@ -118,6 +126,10 @@ export function ContactReplySettings() {
           name: fullName.trim(),
           phone: normalizedPhone,
           whatsApp: normalizedWhatsApp,
+          companyName: companyName.trim(),
+          website: website.trim(),
+          jobTitle: jobTitle.trim(),
+          country: country.trim(),
           phoneCountry,
           whatsAppCountry,
         }),
@@ -127,6 +139,10 @@ export function ContactReplySettings() {
       if (res.ok && data.success) {
         setPhone(data.user.phone || '');
         setWhatsApp(data.user.whatsApp || '');
+        setCompanyName(data.user.companyName || '');
+        setWebsite(data.user.website || '');
+        setJobTitle(data.user.jobTitle || '');
+        setCountry(data.user.country || '');
         setSuccessMsg(
           data.contactDurable === false
             ? '✓ Contact identity updated (saved on this session; durable profile storage is pending a migration, so re-check it after a fresh login).'
@@ -142,6 +158,10 @@ export function ContactReplySettings() {
               name: fullName.trim(),
               phone: normalizedPhone,
               whatsApp: normalizedWhatsApp,
+              companyName: companyName.trim(),
+              website: website.trim(),
+              jobTitle: jobTitle.trim(),
+              country: country.trim(),
             })
           );
         }
@@ -256,7 +276,7 @@ export function ContactReplySettings() {
             Account Contact Identity Settings
           </h3>
           <p className="mt-0.5 text-xs text-zinc-400">
-            Manage your account contact details. All four fields are optional and automatically fill website contact forms.
+            Manage your account contact details. These fields automatically fill website contact forms.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -394,13 +414,73 @@ export function ContactReplySettings() {
                   className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
-              <p className="text-[11px] text-zinc-400">Any country: pick the code, or paste a +number or wa.me link — it is saved as +E.164 automatically. Target forms that require a WhatsApp number (like m.b2bgdc.com) use this value when the lead has no number.</p>
+              <p className="text-[11px] text-zinc-400">Any country: pick the code, or paste a +number or wa.me link — it is saved as +E.164 automatically. Target forms that require a WhatsApp number use this value.</p>
+            </div>
+
+            {/* 5. Company Name (sender) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                Company Name
+              </label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="e.g. ContactReachout"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="text-[11px] text-zinc-400">Your company — target forms that ask for a Company use this value. This is not the prospect&apos;s company name.</p>
+            </div>
+
+            {/* 6. Website (sender) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                Website
+              </label>
+              <input
+                type="text"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="e.g. contactreachout.com"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="text-[11px] text-zinc-400">Your website — target forms that ask for a Website use this value.</p>
+            </div>
+
+            {/* 7. Job Title (sender) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                Job Title
+              </label>
+              <input
+                type="text"
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                placeholder="e.g. Founder"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="text-[11px] text-zinc-400">Your job title — target forms that ask for a Job Title use this value.</p>
+            </div>
+
+            {/* 8. Country (sender) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                Country
+              </label>
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="e.g. United Kingdom"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="text-[11px] text-zinc-400">Your country — target forms that ask for a Country use this value.</p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-zinc-800 pt-4">
             <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
-              All four fields are optional. When a target website form requests your contact identity, ContactReachout uses these values automatically.
+              All fields are optional. When a target website form requests your contact identity, ContactReachout uses these values automatically.
             </p>
             <button
               type="button"

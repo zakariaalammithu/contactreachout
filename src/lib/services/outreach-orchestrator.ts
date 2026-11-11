@@ -32,6 +32,10 @@ export interface PipelineExecutionInput {
     replyEmail?: string | null;
     phone?: string | null;
     whatsApp?: string | null;
+    companyName?: string | null;
+    website?: string | null;
+    jobTitle?: string | null;
+    country?: string | null;
   };
   template: {
     id: string;

@@ -7,6 +7,14 @@ const lead = {
   company_name: 'TestCo',
   website: 'https://testco.example',
   email: 'test@testco.example',
+  // Sender identity: the form's name/email fields must fill from the
+  // sender, never from the prospect's contact person / email. No phone
+  // on purpose — the WhatsApp-required test below needs a lead with no
+  // usable phone anywhere.
+  user_contact_identity: {
+    fullName: 'Alex Morgan',
+    replyEmail: 'alex@sender.example',
+  },
 };
 
 function subjectField(options) {

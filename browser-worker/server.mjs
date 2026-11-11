@@ -289,7 +289,12 @@ http.createServer(async (req, res) => {
       } else if (tag === 'input') {
         const type = await locator.evaluate((el) => (el.type || '').toLowerCase(), undefined, { timeout: 5_000 }).catch(() => '');
         if (type === 'checkbox' || type === 'radio') {
-          if (String(field.value).toLowerCase() === 'true') await locator.check({ timeout: 5_000 }).catch(() => {});
+          // .first(): radio groups share one name selector, so the
+          // locator resolves to every button in the group and a plain
+          // check() throws a strict-mode violation (silently skipped
+          // below). The mapper only ever checks the first button in a
+          // group, so the first match is the intended one.
+          if (String(field.value).toLowerCase() === 'true') await locator.first().check({ timeout: 5_000 }).catch(() => {});
         } else {
           // Clear-then-fill (React value-tracker trap): a controlled
           // input's onChange fires only when React sees the value
@@ -363,7 +368,7 @@ http.createServer(async (req, res) => {
         if (tag === 'input') {
           const type = await locator.evaluate((el) => (el.type || '').toLowerCase(), undefined, { timeout: 2_000 }).catch(() => '');
           if (type === 'checkbox' || type === 'radio') {
-            const checked = await locator.isChecked({ timeout: 2_000 }).catch(() => false);
+            const checked = await locator.first().isChecked({ timeout: 2_000 }).catch(() => false);
             return checked ? 'true' : 'false';
           }
         }
@@ -586,14 +591,25 @@ http.createServer(async (req, res) => {
         const bodyMatch = body.match(successPattern);
         if (bodyMatch) return { kind: 'SUCCESS', confirmation: bodyMatch[0] };
       }
-      // 2. Page-text evidence (unchanged behavior).
-      const match = evidence.match(successPattern);
-      if (match) return { kind: 'SUCCESS', confirmation: match[0] };
-      // 3. Visible-text evidence (phrases, visible text only).
-      let visibleText = '';
-      try { visibleText = await page.evaluate(() => (document.body ? document.body.innerText : '') || ''); } catch { /* ignore */ }
-      const visibleMatch = visibleText.match(visibleSuccessPattern);
-      if (visibleMatch) return { kind: 'SUCCESS', confirmation: visibleMatch[0] };
+      // 2/3. Page-text evidence only counts once a form POST actually
+      // left the browser. Without this gate, static page copy verifies
+      // a submission that never happened: a contact page's intro ("fill
+      // the form and we'll be in touch"), a footer/testimonial ("Thank
+      // you for visiting"), or a hidden success div would match on the
+      // first check even when the click died in validation. A genuine
+      // submit always satisfies the gate — form POSTs are tracked
+      // precisely (form action URL or a body carrying a mapped field
+      // value) — so this only removes false positives, never real ones.
+      if (submissionRequests.length > 0) {
+        // 2. Page-text evidence (unchanged behavior).
+        const match = evidence.match(successPattern);
+        if (match) return { kind: 'SUCCESS', confirmation: match[0] };
+        // 3. Visible-text evidence (phrases, visible text only).
+        let visibleText = '';
+        try { visibleText = await page.evaluate(() => (document.body ? document.body.innerText : '') || ''); } catch { /* ignore */ }
+        const visibleMatch = visibleText.match(visibleSuccessPattern);
+        if (visibleMatch) return { kind: 'SUCCESS', confirmation: visibleMatch[0] };
+      }
       return { kind: 'NONE' };
     };
     // Attempt loop (max 3): hydration time is unknowable from outside

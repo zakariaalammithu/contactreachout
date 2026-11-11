@@ -25,6 +25,10 @@ export interface LeadMappingContext {
     replyEmail?: string | null;
     phone?: string | null;
     whatsApp?: string | null;
+    companyName?: string | null;
+    website?: string | null;
+    jobTitle?: string | null;
+    country?: string | null;
   };
   [key: string]: any;
 }
@@ -47,6 +51,7 @@ export type MappingStrategy =
   | 'rendered_message'
   | 'select_matching_option'
   | 'check_consent'
+  | 'check_radio'
   | 'custom_field'
   | 'honeypot_skip'
   | 'unmapped';
@@ -130,6 +135,27 @@ export function matchSelectOption(options: string[], leadValue?: string | null):
 }
 
 /**
+ * Strict dropdown match: exact or substring only, no keyword guess and
+ * no first-option fallback. Used by the select/country/state case so a
+ * failed match can fall through to the site's own 'Other' instead of
+ * silently picking a wrong option (e.g. 'Service and repairs' for a
+ * partnership inquiry just because the lead happens to carry a country).
+ */
+export function findSelectOptionMatch(options: string[], value?: string | null): string | null {
+  if (!options || options.length === 0 || !value) return null;
+  const candidates = options.filter((opt) => {
+    const lower = opt.toLowerCase().trim();
+    return lower.length > 0 && !lower.startsWith('--') && !lower.includes('select') && !lower.includes('choose');
+  });
+  const pool = candidates.length > 0 ? candidates : options;
+  const clean = value.toLowerCase().trim();
+  if (!clean) return null;
+  const exact = pool.find((opt) => opt.toLowerCase().trim() === clean);
+  if (exact) return exact;
+  return pool.find((opt) => opt.toLowerCase().includes(clean) || clean.includes(opt.toLowerCase())) || null;
+}
+
+/**
  * Maps lead data and message template to detected form fields.
  */
 export function mapLeadToFormFields(
@@ -148,6 +174,8 @@ export function mapLeadToFormFields(
   let scoreableFieldsCount = 0;
   let unmappedRequiredCount = 0;
   let honeypotsDetectedCount = 0;
+  // Radio groups share one name: only the first option may be checked.
+  const seenRadioGroups = new Set<string>();
 
   for (const field of detectedFields) {
     let valueToFill = '';
@@ -180,19 +208,17 @@ export function mapLeadToFormFields(
       continue;
     }
 
-    // 3. Map based on normalized field type (Lead Data Priority > User Contact Identity Fallback > Blank)
+    // 3. Map based on normalized field type. A contact form's identity
+    // fields (name, email, phone, company, website) ask about the SENDER,
+    // so they fill from the account identity first — never from the lead.
+    // The lead's (prospect's) values belong only in the message template
+    // (subject/body interpolation), where they address the prospect. A
+    // sender field with no identity value stays blank and the mapping
+    // gate holds the lead for review, instead of submitting the
+    // prospect's own details as if they were the sender's.
     switch (field.normalizedType) {
       case 'first_name':
-        if (lead.first_name) {
-          valueToFill = String(lead.first_name).trim();
-          strategy = 'direct_first_name';
-          sourceLeadField = 'first_name';
-        } else if (lead.name) {
-          valueToFill = String(lead.name).trim().split(' ')[0] || '';
-          strategy = 'direct_first_name';
-          sourceLeadField = 'name';
-          confidence *= 0.85;
-        } else if (lead.user_contact_identity?.fullName) {
+        if (lead.user_contact_identity?.fullName) {
           valueToFill = String(lead.user_contact_identity.fullName).trim().split(' ')[0] || '';
           strategy = 'direct_first_name';
           sourceLeadField = 'user_contact_identity.fullName';
@@ -206,17 +232,7 @@ export function mapLeadToFormFields(
         break;
 
       case 'last_name':
-        if (lead.last_name) {
-          valueToFill = String(lead.last_name).trim();
-          strategy = 'direct_last_name';
-          sourceLeadField = 'last_name';
-        } else if (lead.name) {
-          const parts = String(lead.name).trim().split(' ');
-          valueToFill = parts.slice(1).join(' ') || '';
-          strategy = 'direct_last_name';
-          sourceLeadField = 'name';
-          confidence *= 0.85;
-        } else if (lead.user_contact_identity?.fullName) {
+        if (lead.user_contact_identity?.fullName) {
           const parts = String(lead.user_contact_identity.fullName).trim().split(' ');
           valueToFill = parts.slice(1).join(' ') || '';
           strategy = 'direct_last_name';
@@ -227,24 +243,18 @@ export function mapLeadToFormFields(
         break;
 
       case 'full_name':
-        const leadFullName = constructFullName(lead.first_name, lead.last_name) || lead.name;
         const identityFullName = lead.user_contact_identity?.fullName || (lead as any).sender_name;
-        const finalFullName = leadFullName || identityFullName || '';
-        if (finalFullName) {
-          valueToFill = String(finalFullName).trim();
+        if (identityFullName) {
+          valueToFill = String(identityFullName).trim();
           strategy = 'composite_full_name';
-          sourceLeadField = leadFullName ? 'lead_name' : 'user_contact_identity.fullName';
+          sourceLeadField = lead.user_contact_identity?.fullName ? 'user_contact_identity.fullName' : 'sender_name';
         } else {
           valueToFill = '';
         }
         break;
 
       case 'email':
-        if (lead.email) {
-          valueToFill = String(lead.email).trim();
-          strategy = 'direct_email';
-          sourceLeadField = 'email';
-        } else if (lead.user_contact_identity?.replyEmail) {
+        if (lead.user_contact_identity?.replyEmail) {
           valueToFill = String(lead.user_contact_identity.replyEmail).trim();
           strategy = 'direct_email';
           sourceLeadField = 'user_contact_identity.replyEmail';
@@ -258,11 +268,7 @@ export function mapLeadToFormFields(
         break;
 
       case 'phone':
-        if (lead.phone) {
-          valueToFill = String(lead.phone).trim();
-          strategy = 'direct_phone';
-          sourceLeadField = 'phone';
-        } else if (lead.user_contact_identity?.phone) {
+        if (lead.user_contact_identity?.phone) {
           valueToFill = String(lead.user_contact_identity.phone).trim();
           strategy = 'direct_phone';
           sourceLeadField = 'user_contact_identity.phone';
@@ -272,18 +278,10 @@ export function mapLeadToFormFields(
         break;
 
       case 'whatsApp':
-        if (lead.whatsApp || (lead as any).whatsapp) {
-          valueToFill = String(lead.whatsApp || (lead as any).whatsapp).trim();
-          strategy = 'direct_phone';
-          sourceLeadField = 'whatsApp';
-        } else if (lead.user_contact_identity?.whatsApp) {
+        if (lead.user_contact_identity?.whatsApp) {
           valueToFill = String(lead.user_contact_identity.whatsApp).trim();
           strategy = 'direct_phone';
           sourceLeadField = 'user_contact_identity.whatsApp';
-        } else if (lead.phone) {
-          valueToFill = String(lead.phone).trim();
-          strategy = 'direct_phone';
-          sourceLeadField = 'phone';
         } else if (lead.user_contact_identity?.phone) {
           valueToFill = String(lead.user_contact_identity.phone).trim();
           strategy = 'direct_phone';
@@ -294,30 +292,30 @@ export function mapLeadToFormFields(
         break;
 
       case 'company':
-        if (lead.company_name) {
-          valueToFill = String(lead.company_name).trim();
+        if (lead.user_contact_identity?.companyName) {
+          valueToFill = String(lead.user_contact_identity.companyName).trim();
           strategy = 'direct_company';
-          sourceLeadField = 'company_name';
+          sourceLeadField = 'user_contact_identity.companyName';
         } else {
           valueToFill = '';
         }
         break;
 
       case 'website':
-        if (lead.website) {
-          valueToFill = String(lead.website).trim();
+        if (lead.user_contact_identity?.website) {
+          valueToFill = String(lead.user_contact_identity.website).trim();
           strategy = 'direct_website';
-          sourceLeadField = 'website';
+          sourceLeadField = 'user_contact_identity.website';
         } else {
           valueToFill = '';
         }
         break;
 
       case 'job_title':
-        if (lead.job_title) {
-          valueToFill = String(lead.job_title).trim();
+        if (lead.user_contact_identity?.jobTitle) {
+          valueToFill = String(lead.user_contact_identity.jobTitle).trim();
           strategy = 'direct_job_title';
-          sourceLeadField = 'job_title';
+          sourceLeadField = 'user_contact_identity.jobTitle';
         } else {
           valueToFill = '';
         }
@@ -361,32 +359,61 @@ export function mapLeadToFormFields(
 
       case 'select':
       case 'country':
-      case 'state':
+      case 'state': {
         if (field.options && field.options.length > 0) {
-          const matchValue = lead[field.normalizedType] || lead.country || lead.state;
-          if (!matchValue) {
-            // No data drives this choice: prefer the site's own generic
-            // 'Other' option over a keyword guess. A keyword fallback
-            // (e.g. 'Service and repairs' for a partnership inquiry)
-            // would misstate the sender's intent; 'Other' states
-            // nothing false.
+          // Only the sender's country can drive a choice. A generic
+          // select has no data source, and the prospect's country must
+          // never pick the sender's answer.
+          const matchValue = field.normalizedType === 'country'
+            ? (lead.user_contact_identity?.country || null)
+            : null;
+          const strictMatch = findSelectOptionMatch(field.options, matchValue);
+          if (strictMatch) {
+            valueToFill = strictMatch;
+            strategy = 'select_matching_option';
+            sourceLeadField = field.normalizedType;
+          } else {
+            // No match (or no data at all): the site's own 'Other'
+            // states nothing false. Only when the site offers no
+            // 'Other' do we fall back to the old keyword/first-option
+            // guess — a wrong choice is worse than no choice, but a
+            // blank required select blocks the submission entirely.
             const otherOpt = field.options.find((o) => o.trim().toLowerCase() === 'other');
             if (otherOpt) {
               valueToFill = otherOpt;
               strategy = 'select_matching_option';
               sourceLeadField = 'default_other';
-            }
-          }
-          if (!valueToFill) {
-            const matchedOpt = matchSelectOption(field.options, matchValue);
-            if (matchedOpt) {
-              valueToFill = matchedOpt;
-              strategy = 'select_matching_option';
-              sourceLeadField = field.normalizedType;
+            } else {
+              const fallbackOpt = matchSelectOption(field.options, matchValue);
+              if (fallbackOpt) {
+                valueToFill = fallbackOpt;
+                strategy = 'select_matching_option';
+                sourceLeadField = field.normalizedType;
+              }
             }
           }
         }
         break;
+      }
+
+      case 'radio': {
+        // A radio group shares one name and the detector reports each
+        // button as its own field with no options. Check only the
+        // first button: it is the same first-valid-option fallback the
+        // select case uses, and checking more than one would just
+        // uncheck the earlier ones (radios are mutually exclusive).
+        // The worker checks a radio only when its value is 'true'.
+        const groupKey = field.name || field.selector;
+        if (!seenRadioGroups.has(groupKey)) {
+          seenRadioGroups.add(groupKey);
+          valueToFill = 'true';
+          strategy = 'check_radio';
+          sourceLeadField = 'default_first_option';
+        } else {
+          valueToFill = '';
+        }
+        break;
+      }
 
       case 'checkbox':
         // Check if terms/privacy consent checkbox (required)
@@ -406,13 +433,13 @@ export function mapLeadToFormFields(
         } else {
           const fieldRefText = `${field.name || ''} ${field.id || ''} ${field.label || ''}`.toLowerCase();
           if (/\bname\b/i.test(fieldRefText)) {
-            const leadFullName = constructFullName(lead.first_name, lead.last_name) || lead.name;
+            // An unclassified name field still asks for the sender, not
+            // the prospect's contact person.
             const identityFullName = lead.user_contact_identity?.fullName || (lead as any).sender_name;
-            const finalFullName = leadFullName || identityFullName || '';
-            if (finalFullName) {
-              valueToFill = String(finalFullName).trim();
+            if (identityFullName) {
+              valueToFill = String(identityFullName).trim();
               strategy = 'composite_full_name';
-              sourceLeadField = leadFullName ? 'lead_name' : 'user_contact_identity.fullName';
+              sourceLeadField = lead.user_contact_identity?.fullName ? 'user_contact_identity.fullName' : 'sender_name';
               confidence = 0.85;
             }
           }
@@ -420,9 +447,13 @@ export function mapLeadToFormFields(
         break;
     }
 
-    // Check if required field has missing value
+    // Check if required field has missing value. A radio group counts
+    // once: its first button carries the check, so later buttons in the
+    // same group are not missing data when the group is satisfied.
     if (field.isRequired && !valueToFill) {
-      unmappedRequiredCount++;
+      const radioGroupSatisfied = field.normalizedType === 'radio'
+        && seenRadioGroups.has(field.name || field.selector);
+      if (!radioGroupSatisfied) unmappedRequiredCount++;
     }
 
     if (strategy !== 'unmapped') {

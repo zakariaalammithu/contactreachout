@@ -29,6 +29,40 @@ describe('worker success patterns', () => {
     expect('Thanks for visiting our site').not.toMatch(visibleSuccessPattern);
   });
 
+  it('matches non-English success wordings (Spanish, French, German, Portuguese)', () => {
+    expect('¡Gracias por tu mensaje!').toMatch(successPattern);
+    expect('¡Gracias por tu mensaje!').toMatch(visibleSuccessPattern);
+    expect('Mensaje enviado correctamente.').toMatch(successPattern);
+    expect('Merci pour votre message !').toMatch(successPattern);
+    expect('Merci pour votre message !').toMatch(visibleSuccessPattern);
+    expect('Votre message a bien été envoyé.').toMatch(successPattern);
+    expect('Vielen Dank für Ihre Nachricht.').toMatch(successPattern);
+    expect('Vielen Dank für Ihre Nachricht.').toMatch(visibleSuccessPattern);
+    expect('Ihre Nachricht wurde gesendet.').toMatch(successPattern);
+    expect('Obrigado pela sua mensagem!').toMatch(successPattern);
+    expect('Obrigado pela sua mensagem!').toMatch(visibleSuccessPattern);
+    expect('Mensagem enviada com sucesso.').toMatch(successPattern);
+  });
+
+  it('does not match a bare thank-you word in any language', () => {
+    expect('gracias').not.toMatch(successPattern);
+    expect('merci').not.toMatch(successPattern);
+    expect('danke').not.toMatch(successPattern);
+    expect('obrigado').not.toMatch(successPattern);
+    expect('gracias').not.toMatch(visibleSuccessPattern);
+    expect('merci').not.toMatch(visibleSuccessPattern);
+  });
+
+  it('documents the broad thank-you match the POST gate exists for', () => {
+    // Bare "thank you" DOES match the page-content pattern — it also
+    // appears in static page copy ("Thank you for visiting our site").
+    // That is why server.mjs only counts page-text / visible-text
+    // evidence after a form POST actually left the browser: the pattern
+    // alone must never verify a submission that never happened.
+    expect('Thank you for visiting our site').toMatch(successPattern);
+    expect("Fill the form and we'll be in touch").toMatch(visibleSuccessPattern);
+  });
+
   it('accepts explicit JSON acceptance, including Wix-style status', () => {
     expect(jsonIndicatesSuccess({ success: true })).toBe(true);
     expect(jsonIndicatesSuccess({ status: 'success' })).toBe(true);

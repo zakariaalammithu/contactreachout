@@ -25,6 +25,10 @@ export async function GET(request: NextRequest) {
   const name = user.name || durable?.displayName || '';
   const phone = user.phone || durable?.phone || '';
   const whatsApp = user.whatsApp || durable?.whatsapp || '';
+  const companyName = user.company || durable?.companyName || '';
+  const website = user.website || durable?.website || '';
+  const jobTitle = user.jobTitle || durable?.jobTitle || '';
+  const country = user.country || durable?.country || '';
 
   return NextResponse.json({
     user: {
@@ -32,6 +36,10 @@ export async function GET(request: NextRequest) {
       email: user.email,
       phone,
       whatsApp,
+      companyName,
+      website,
+      jobTitle,
+      country,
       avatarUrl: user.avatarUrl || '',
       replyEmail: activeReplyEmail,
       replyEmailVerified,
@@ -48,6 +56,10 @@ const profileSchema = z.object({
   whatsApp: z.string().trim().max(50).optional().default(''),
   phoneCountry: z.string().trim().max(10).optional().default(''),
   whatsAppCountry: z.string().trim().max(10).optional().default(''),
+  companyName: z.string().trim().max(100).optional().default(''),
+  website: z.string().trim().max(255).optional().default(''),
+  jobTitle: z.string().trim().max(100).optional().default(''),
+  country: z.string().trim().max(100).optional().default(''),
   avatarUrl: z.string().max(1_500_000).optional(),
 });
 
@@ -69,10 +81,23 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'WhatsApp number is not valid. Use a full number with its country code, e.g. +8801725592014.' }, { status: 400 });
   }
 
+  // Sender website: bare domains become full URLs so target forms that
+  // validate a URL accept the fill (contactreachout.com → https://…).
+  const rawWebsite = parsed.data.website.trim();
+  const normalizedWebsite = !rawWebsite
+    ? ''
+    : /^https?:\/\//i.test(rawWebsite)
+      ? rawWebsite
+      : `https://${rawWebsite}`;
+
   const user = AuthStore.updateUser(session.email, {
     name: parsed.data.name,
     phone: normalizedPhone,
     whatsApp: normalizedWhatsApp,
+    company: parsed.data.companyName.trim(),
+    website: normalizedWebsite,
+    jobTitle: parsed.data.jobTitle.trim(),
+    country: parsed.data.country.trim(),
     // Preserve the stored avatar: ContactReply saves never send avatarUrl,
     // and the old zod default ('') used to wipe it on every contact save.
     ...(parsed.data.avatarUrl !== undefined ? { avatarUrl: parsed.data.avatarUrl } : {}),
@@ -82,10 +107,15 @@ export async function PATCH(request: NextRequest) {
   // default ('') would otherwise let a phone-only save wipe a stored
   // name. Reply email is NOT written here — it has its own verified
   // endpoint (/api/user/reply-email) and only verified values go durable.
+  // Company/website/job title/country follow the same non-empty-only rule.
   const contactDurable = await writeDurableContact(user.id, session.email, {
     ...(parsed.data.name.trim() ? { displayName: parsed.data.name.trim() } : {}),
     phone: normalizedPhone,
     whatsapp: normalizedWhatsApp,
+    ...(parsed.data.companyName.trim() ? { companyName: parsed.data.companyName.trim() } : {}),
+    ...(normalizedWebsite ? { website: normalizedWebsite } : {}),
+    ...(parsed.data.jobTitle.trim() ? { jobTitle: parsed.data.jobTitle.trim() } : {}),
+    ...(parsed.data.country.trim() ? { country: parsed.data.country.trim() } : {}),
   });
   const activeReplyEmail = user.replyEmail || '';
   const replyEmailVerified = user.replyEmailVerified ?? user.isEmailVerified;
@@ -98,6 +128,10 @@ export async function PATCH(request: NextRequest) {
       email: user.email,
       phone: user.phone || '',
       whatsApp: user.whatsApp || '',
+      companyName: user.company || '',
+      website: user.website || '',
+      jobTitle: user.jobTitle || '',
+      country: user.country || '',
       avatarUrl: user.avatarUrl || '',
       replyEmail: activeReplyEmail,
       replyEmailVerified,

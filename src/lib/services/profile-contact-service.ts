@@ -8,9 +8,10 @@
  * user_contact_identity fallback stayed empty and required-phone forms
  * (m.b2bgdc.com) kept landing in REVIEW even after the user "saved" a
  * number. The durable home is public.app_users (migration
- * 20261108000001 adds phone/whatsapp/reply_email columns; until it is
- * applied every function here degrades to AuthStore-only and reports
- * durable=false, never throwing).
+ * 20261108000001 adds phone/whatsapp/reply_email columns; migration
+ * 20261111000001 adds company_name/website/job_title/country; until a
+ * migration is applied every function here degrades gracefully and
+ * reports durable=false for saves that need it, never throwing).
  *
  * Precedence everywhere: AuthStore value if non-empty (freshest on this
  * instance), else the durable row. Values are normalized to E.164 at
@@ -29,29 +30,63 @@ export type DurableContact = {
   phone: string;
   whatsapp: string;
   replyEmail: string;
+  companyName: string;
+  website: string;
+  jobTitle: string;
+  country: string;
 };
 
 /** Read the durable row. Null = table/columns unavailable (not an error). */
 export async function readDurableContact(email: string): Promise<DurableContact | null> {
   const client = getSupabaseAdminClient();
   if (!client) return null;
+  const key = email.toLowerCase().trim();
   try {
     const { data, error } = await client
       .from('app_users')
-      .select('display_name, phone, whatsapp, reply_email')
-      .eq('email_normalized', email.toLowerCase().trim())
+      .select('display_name, phone, whatsapp, reply_email, company_name, website, job_title, country')
+      .eq('email_normalized', key)
       .maybeSingle();
-    if (error) return null;
-    if (!data) return { found: false, displayName: '', phone: '', whatsapp: '', replyEmail: '' };
+    if (error) throw error;
+    if (!data) return { found: false, displayName: '', phone: '', whatsapp: '', replyEmail: '', companyName: '', website: '', jobTitle: '', country: '' };
     return {
       found: true,
       displayName: (data as any).display_name || '',
       phone: (data as any).phone || '',
       whatsapp: (data as any).whatsapp || '',
       replyEmail: (data as any).reply_email || '',
+      companyName: (data as any).company_name || '',
+      website: (data as any).website || '',
+      jobTitle: (data as any).job_title || '',
+      country: (data as any).country || '',
     };
   } catch {
-    return null;
+    // The sender-company migration (20261111000001) is not applied yet:
+    // the new columns do not exist, so the full select fails. Retry with
+    // the pre-existing columns so phone/WhatsApp/reply-email durability
+    // keeps working exactly as before.
+    try {
+      const { data, error } = await client
+        .from('app_users')
+        .select('display_name, phone, whatsapp, reply_email')
+        .eq('email_normalized', key)
+        .maybeSingle();
+      if (error) return null;
+      if (!data) return { found: false, displayName: '', phone: '', whatsapp: '', replyEmail: '', companyName: '', website: '', jobTitle: '', country: '' };
+      return {
+        found: true,
+        displayName: (data as any).display_name || '',
+        phone: (data as any).phone || '',
+        whatsapp: (data as any).whatsapp || '',
+        replyEmail: (data as any).reply_email || '',
+        companyName: '',
+        website: '',
+        jobTitle: '',
+        country: '',
+      };
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -60,6 +95,10 @@ export type DurableContactWrite = {
   phone?: string;
   whatsapp?: string;
   replyEmail?: string;
+  companyName?: string;
+  website?: string;
+  jobTitle?: string;
+  country?: string;
 };
 
 /**
@@ -70,6 +109,12 @@ export type DurableContactWrite = {
  * 20261108000001_app_users_identity.sql is applied, the upsert fails
  * (missing columns) and this returns false — the caller reports
  * contactDurable=false instead of pretending the save stuck.
+ *
+ * When companyName/website/jobTitle/country are part of the write and
+ * their migration (20261111000001) is not applied yet, the full upsert
+ * fails on the missing columns: the write is retried WITHOUT them so the
+ * pre-existing fields still land durably, but false is still returned —
+ * the new fields did not stick, and the caller must say so.
  */
 export async function writeDurableContact(
   userId: string,
@@ -87,9 +132,22 @@ export async function writeDurableContact(
     if (values.phone !== undefined) row.phone = values.phone;
     if (values.whatsapp !== undefined) row.whatsapp = values.whatsapp;
     if (values.replyEmail !== undefined) row.reply_email = values.replyEmail;
+    const hasNewColumns = values.companyName !== undefined || values.website !== undefined
+      || values.jobTitle !== undefined || values.country !== undefined;
+    if (values.companyName !== undefined) row.company_name = values.companyName;
+    if (values.website !== undefined) row.website = values.website;
+    if (values.jobTitle !== undefined) row.job_title = values.jobTitle;
+    if (values.country !== undefined) row.country = values.country;
     const { error } = await client.from('app_users').upsert(row, { onConflict: 'email_normalized' });
-    if (error) return false;
-    return true;
+    if (!error) return true;
+    if (!hasNewColumns) return false;
+    const legacyRow: Record<string, unknown> = { ...row };
+    delete legacyRow.company_name;
+    delete legacyRow.website;
+    delete legacyRow.job_title;
+    delete legacyRow.country;
+    await client.from('app_users').upsert(legacyRow, { onConflict: 'email_normalized' });
+    return false;
   } catch {
     return false;
   }
@@ -127,11 +185,14 @@ export async function resolveSenderContact(
  * (freshest on this instance), durable app_users row second. The reply
  * email falls back to the login email, matching the account's verified
  * default; the name has no fallback beyond the durable display name.
+ * Company and website come from the same two layers (AuthStore user
+ * record first, durable row second); they have no other home. So do job
+ * title and country.
  */
 export async function resolveAccountIdentity(
   email: string,
-  authUser: { name?: string | null; email?: string | null; replyEmail?: string | null; phone?: string | null; whatsApp?: string | null } | null,
-): Promise<{ fullName: string; replyEmail: string; phone: string; whatsApp: string }> {
+  authUser: { name?: string | null; email?: string | null; replyEmail?: string | null; phone?: string | null; whatsApp?: string | null; company?: string | null; website?: string | null; jobTitle?: string | null; country?: string | null } | null,
+): Promise<{ fullName: string; replyEmail: string; phone: string; whatsApp: string; companyName: string; website: string; jobTitle: string; country: string }> {
   const senderContact = await resolveSenderContact(email, authUser);
   const durable = await readDurableContact(email);
   const loginEmail = (authUser?.email || email || '').trim();
@@ -140,5 +201,9 @@ export async function resolveAccountIdentity(
     replyEmail: (authUser?.replyEmail || '').trim() || (durable?.replyEmail || '').trim() || loginEmail,
     phone: senderContact.phone,
     whatsApp: senderContact.whatsapp,
+    companyName: (authUser?.company || '').trim() || (durable?.companyName || '').trim(),
+    website: (authUser?.website || '').trim() || (durable?.website || '').trim(),
+    jobTitle: (authUser?.jobTitle || '').trim() || (durable?.jobTitle || '').trim(),
+    country: (authUser?.country || '').trim() || (durable?.country || '').trim(),
   };
 }
