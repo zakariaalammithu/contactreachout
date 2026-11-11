@@ -32,8 +32,15 @@ export async function POST(req: NextRequest) {
     const { campaignId, campaignName, lead, template, options = {} } = body;
 
     if (!lead || !lead.website || !lead.company_name) {
+      // Name the missing field(s): the old lumped message hid which one
+      // was absent, so a report showing the website could not explain
+      // that the company name was the missing piece.
+      const missing = [
+        !lead?.website ? 'website' : null,
+        !lead?.company_name ? 'company_name' : null,
+      ].filter(Boolean).join(', ');
       return NextResponse.json(
-        { error: 'Missing required lead details (website, company_name)' },
+        { error: `Missing required lead details: ${missing}` },
         { status: 400 }
       );
     }

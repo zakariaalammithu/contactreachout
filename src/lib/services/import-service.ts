@@ -153,6 +153,55 @@ export function sanitizeCellInput(value: any): any {
 }
 
 /**
+ * Headers that hold a company name even when the column was never mapped
+ * to company_name (e.g. "Business", "Organisation", "Brand"). Matched by
+ * exact normalized key so "Company Size" (headcount) or "Company
+ * Keywords" can never be mistaken for the name, and URL/domain values
+ * are skipped (a domain is not a company name).
+ */
+const COMPANY_LIKE_KEYS = new Set([
+  'company', 'companyname', 'organization', 'organisation',
+  'business', 'businessname', 'brand', 'brandname', 'client', 'clientname',
+]);
+
+export function findCompanyNameInCustomFields(customFields: Record<string, any>): string {
+  if (!customFields || typeof customFields !== 'object') return '';
+  for (const [key, val] of Object.entries(customFields)) {
+    const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!COMPANY_LIKE_KEYS.has(normalizedKey)) continue;
+    if (typeof val !== 'string' || !val.trim()) continue;
+    const value = val.trim();
+    if (/^(http|www\.)/i.test(value) || /\.(com|org|net|io|co)$/i.test(value)) continue;
+    return value;
+  }
+  return '';
+}
+
+/**
+ * Entry-point gate for imports: a lead without a website or a company
+ * name can never send (the campaign start guard and the process route
+ * both require them), so importing one only burns a row the user must
+ * fix later. Both columns must be mapped AND hold a value in at least
+ * one row. Returns the message to show, or null when the import may
+ * proceed. Used by the MatchDataModal and the /import page so the two
+ * entry points enforce the same rule.
+ */
+export function validateRequiredImportMappings(
+  mapping: { website?: string; company_name?: string },
+  rows: RawImportRow[],
+): string | null {
+  const websiteHeader = (mapping.website || '').trim();
+  if (!websiteHeader || !rows.some((row) => String(row[websiteHeader] ?? '').trim())) {
+    return 'Website is required. Please map a Website column before importing leads.';
+  }
+  const companyHeader = (mapping.company_name || '').trim();
+  if (!companyHeader || !rows.some((row) => String(row[companyHeader] ?? '').trim())) {
+    return 'Company Name is required. Please map a Company Name column before importing leads.';
+  }
+  return null;
+}
+
+/**
  * Heuristic fuzzy header matching to automatically detect and map detected spreadsheet columns,
  * even if columns are uploaded in completely random, jumbled, or reverse order.
  */
@@ -231,11 +280,17 @@ export function suggestColumnMappings(headers: string[]): Record<string, string>
     }
 
     // 3. Company Name vs First/Last Name
+    // Bare "Business" / "Brand" / "Client" are company-name headers too,
+    // and "Organisation" is the UK spelling — all were missed before, so
+    // the column stayed unmapped and the company silently vanished on
+    // import. Exact-match anchors (^...$) keep "Business Type" (industry)
+    // out of this matcher.
     if (!suggestions.company_name && (
-      /(companyname|company|organization|orgname|businessname|accountname|firmname|^account$)/i.test(h) ||
+      /(companyname|company|organization|organisation|orgname|businessname|^business$|accountname|firmname|brandname|^brand$|clientname|^client$|^account$)/i.test(h) ||
       /company.*name/i.test(raw) ||
       /company/i.test(raw) ||
-      /organization/i.test(raw)
+      /organization/i.test(raw) ||
+      /organisation/i.test(raw)
     )) {
       suggestions.company_name = header;
       continue;
@@ -549,12 +604,17 @@ export function processImportRows(
       customFields.annualRevenueInvalidValue = sanitizeCellInput(rawAnnualRevenue);
     }
 
+    // A company column the mapping missed still sits in customFields
+    // under its own header (e.g. "Organisation"): recover it instead of
+    // importing a nameless lead the campaign later rejects.
+    const finalCompanyName = companyName || findCompanyNameInCustomFields(customFields);
+
     // Construct Normalized Lead
     const lead: NormalizedLead = {
       firstName: rawFirstName ? String(sanitizeCellInput(rawFirstName)).trim() : '',
       lastName: rawLastName ? String(sanitizeCellInput(rawLastName)).trim() : '',
       title: rawTitle ? String(sanitizeCellInput(rawTitle)).trim() : '',
-      companyName: sanitizeCellInput(companyName),
+      companyName: sanitizeCellInput(finalCompanyName),
       companyKeywords: rawCompanyKeywords ? String(sanitizeCellInput(rawCompanyKeywords)).trim() : '',
       employeeCount,
       annualRevenue,

@@ -22,8 +22,12 @@ export async function POST(req: NextRequest) {
     const { lead, template, options } = body;
 
     if (!lead || !lead.website || !lead.company_name) {
+      const missing = [
+        !lead?.website ? 'website' : null,
+        !lead?.company_name ? 'company_name' : null,
+      ].filter(Boolean).join(', ');
       return NextResponse.json(
-        { error: 'Missing required lead details (website, company_name)' },
+        { error: `Missing required lead details: ${missing}` },
         { status: 400 }
       );
     }

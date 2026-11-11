@@ -42,6 +42,7 @@ import {
   ColumnMapping,
   ImportExecutionResult,
   suggestColumnMappings,
+  validateRequiredImportMappings,
 } from '@/lib/services/import-service';
 import { SAMPLE_DATASETS, downloadSampleCsv } from '@/lib/services/sample-templates';
 
@@ -315,6 +316,14 @@ export default function ImportLeadsPage() {
   // Execute Import & Validation
   const handleRunImport = () => {
     if (allRawRows.length === 0) return;
+    // Website AND Company Name are both required (the mapping UI marks
+    // them REQUIRED): a lead without either can never send, so the import
+    // is refused here instead of failing every lead later at campaign start.
+    const validationError = validateRequiredImportMappings(mapping, allRawRows);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
     setIsImporting(true);
 
     try {
@@ -492,8 +501,8 @@ export default function ImportLeadsPage() {
           <p className="text-xs text-zinc-400 mt-1 max-w-sm">
             Drag and drop your <strong>.csv</strong> or <strong>.xlsx</strong> file here, or click to browse.
           </p>
-          <p className="mt-2 max-w-md text-xs text-zinc-400">Website is required for campaigns. Add more fields for better AI personalization.</p>
-          <p className="mt-2 text-xs text-zinc-400">Website is required. Other fields are optional.</p>
+          <p className="mt-2 max-w-md text-xs text-zinc-400">Website and Company Name are required for campaigns. Add more fields for better AI personalization.</p>
+          <p className="mt-2 text-xs text-zinc-400">Website and Company Name are required. Other fields are optional.</p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 mt-6 text-xs text-zinc-400 font-mono">
             <span>✓ Scrambled Header Auto-Detection</span>

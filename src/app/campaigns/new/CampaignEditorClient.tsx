@@ -9,7 +9,7 @@ import { generateNextUniqueCampaignName } from '@/lib/utils';
 
 import type { CampaignSequenceStep, Lead, LeadList } from '@/types';
 import { downloadSampleCsv } from '@/lib/services/sample-templates';
-import { parseSpreadsheetPreview } from '@/lib/services/import-service';
+import { findCompanyNameInCustomFields, parseSpreadsheetPreview } from '@/lib/services/import-service';
 import { CANONICAL_DEFAULT_SAFETY_CONFIG, SendingScheduleConfig } from '@/lib/services/processing-controls-service';
 import { MatchDataModal } from '@/components/leads/MatchDataModal';
 import { CampaignMessageEditor } from './CampaignMessageEditor';
@@ -54,7 +54,12 @@ function normalizeLead(rawLead: any): Lead {
     customFields.company,
     customFields['Company Name'],
   ];
-  const companyName = companyCandidates.find((value) => typeof value === 'string' && value.trim())?.trim() || '';
+  const companyName = companyCandidates.find((value) => typeof value === 'string' && value.trim())?.trim()
+    // Already-imported leads may carry the company only inside customFields
+    // under its original header (e.g. "Business", "Organisation") when the
+    // import mapping missed it: recover it here so the lead shows its name
+    // and the campaign start guard passes without a re-upload.
+    || findCompanyNameInCustomFields(customFields);
 
   // Canonical Website / Domain Resolution
   const websiteCandidates = [
@@ -719,6 +724,18 @@ export default function CampaignEditorClient() {
         return !norm.website || norm.website.length < 4 || !norm.website.includes('.');
       })) {
         setError('Please map a Website column and ensure every selected lead has a valid website before starting.');
+        setActiveTab('prospects');
+        setIsStarting(false);
+        setIsSaving(false);
+        return;
+      }
+      // Company Name is required by the process route for every lead: a
+      // campaign whose leads have websites but no company names starts
+      // fine and then fails every lead with a 400, which the report
+      // cannot distinguish from a missing website. Block the start here
+      // instead, with the exact fix (add the Company Name per lead).
+      if (launch && selectedLeads.some((lead) => !normalizeLead(lead).companyName)) {
+        setError('Please add a Company Name for every selected lead before starting.');
         setActiveTab('prospects');
         setIsStarting(false);
         setIsSaving(false);

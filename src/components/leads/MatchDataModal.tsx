@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet, X, Check, Save } from 'lucide-react';
-import { normalizeOptionalNumericField, suggestColumnMappings, processImportRows } from '@/lib/services/import-service';
+import { normalizeOptionalNumericField, suggestColumnMappings, processImportRows, validateRequiredImportMappings } from '@/lib/services/import-service';
 import { findActiveLeadListNameConflict, generateUniqueLeadListName, normalizeLeadListName, StoredLeadList } from '@/lib/services/lead-list-service';
 
 
@@ -177,48 +177,53 @@ export function MatchDataModal({
       return;
     }
     const activeAccount = (localStorage.getItem('active_account_email') || '').trim().toLowerCase();
-    const websiteHeader = Object.entries(columnMappings).find(([, value]) => value === 'website')?.[0];
-    if (!websiteHeader || !allRawRows.some((row) => String(row[websiteHeader] ?? '').trim())) {
-      alert('Website is required. Please map a Website column before importing leads.');
+    // Re-construct mapping object expected by processImportRows (moved
+    // before validation so the required-columns gate can read it).
+    const mappingObj: any = {
+      first_name: '',
+      last_name: '',
+      title: '',
+      company_name: '',
+      company_keywords: '',
+      employees: '',
+      annual_revenue: '',
+      email: '',
+      industry: '',
+      person_linkedin_url: '',
+      website: '',
+      company_linkedin_url: '',
+      city: '',
+      state: '',
+      country: '',
+      phone: '',
+      custom_1: '',
+      custom_2: '',
+      custom_3: '',
+      custom_4: '',
+      custom_5: '',
+      custom_6: '',
+      custom_7: '',
+      custom_8: '',
+      custom_9: '',
+      custom_10: '',
+    };
+
+    Object.entries(columnMappings).forEach(([header, sysVal]) => {
+      if (sysVal && sysVal !== 'do_not_import') {
+        mappingObj[sysVal] = header;
+      }
+    });
+
+    // Website AND Company Name are both required: a lead without either
+    // can never send, so the import is refused here instead of failing
+    // every lead later at campaign start.
+    const validationError = validateRequiredImportMappings(mappingObj, allRawRows);
+    if (validationError) {
+      alert(validationError);
       return;
     }
     setIsSubmitting(true);
     try {
-      // Re-construct mapping object expected by processImportRows
-      const mappingObj: any = {
-        first_name: '',
-        last_name: '',
-        title: '',
-        company_name: '',
-        company_keywords: '',
-        employees: '',
-        annual_revenue: '',
-        email: '',
-        industry: '',
-        person_linkedin_url: '',
-        website: '',
-        company_linkedin_url: '',
-        city: '',
-        state: '',
-        country: '',
-        phone: '',
-        custom_1: '',
-        custom_2: '',
-        custom_3: '',
-        custom_4: '',
-        custom_5: '',
-        custom_6: '',
-        custom_7: '',
-        custom_8: '',
-        custom_9: '',
-        custom_10: '',
-      };
-
-      Object.entries(columnMappings).forEach(([header, sysVal]) => {
-        if (sysVal && sysVal !== 'do_not_import') {
-          mappingObj[sysVal] = header;
-        }
-      });
 
       // The toggle must actually skip the first row (e.g. a repeated
       // header row in a headerless export). Previously both branches
