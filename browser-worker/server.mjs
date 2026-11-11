@@ -1,17 +1,16 @@
 import http from 'node:http';
 import { chromium } from 'playwright';
 import { parseAllowedDomains, isHealthy, isTargetAllowed } from './allowlist.mjs';
+import { successPattern, visibleSuccessPattern, jsonIndicatesSuccess } from './success-patterns.mjs';
 
 const port = Number(process.env.PORT || 8080);
 const secret = process.env.BROWSER_WORKER_AUTH_SECRET;
 const allowedDomains = parseAllowedDomains(process.env.BROWSER_WORKER_ALLOWED_DOMAINS);
 const appUrl = (process.env.CONTACTREACHOUT_APP_URL || '').trim();
 const idempotency = new Map();
-const successPattern = /thank\s*you|message\s*(has been )?(sent|received|submitted)|inquiry\s*submitted|successfully\s*(sent|submitted)/i;
-// Visible-text-only phrases, matched against innerText (never page HTML),
-// so a matching string inside a <script> cannot verify a submission.
-// Mirrors the app's SUCCESS_SIGNATURES, minus bare "thanks".
-const visibleSuccessPattern = /thanks for (reaching out|contacting|getting in touch)|we('ll| will) be in touch|submission received|inquiry received|request received|successfully received|we have received your message|thank you for contacting us/i;
+// Success phrases + JSON acceptance live in success-patterns.mjs (shared
+// with the unit tests). The visible-text pattern mirrors the app's
+// SUCCESS_SIGNATURES, minus bare "thanks".
 const blockedPattern = /captcha|recaptcha|turnstile|hcaptcha|security check|verify you are human|access denied/i;
 
 function send(res, status, payload) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(payload)); }
@@ -582,8 +581,8 @@ http.createServer(async (req, res) => {
       // 1. Network evidence: the site's own backend accepted the submission.
       for (const body of submissionResponses) {
         let jsonSuccess = false;
-        try { const parsed = JSON.parse(body); jsonSuccess = parsed && parsed.success === true; } catch { /* not JSON */ }
-        if (jsonSuccess) return { kind: 'SUCCESS', confirmation: 'JSON success:true in form submission response' };
+        try { const parsed = JSON.parse(body); jsonSuccess = jsonIndicatesSuccess(parsed); } catch { /* not JSON */ }
+        if (jsonSuccess) return { kind: 'SUCCESS', confirmation: 'JSON success in form submission response' };
         const bodyMatch = body.match(successPattern);
         if (bodyMatch) return { kind: 'SUCCESS', confirmation: bodyMatch[0] };
       }
