@@ -747,6 +747,17 @@ export function parseContactFormsFromHtml(html: string, pageUrl: string): Parsed
       try { action = new URL(rawAction, pageUrl).href; } catch { action = rawAction; }
     }
     const method = (parseAttr(`<form ${openTag}>`, 'method') || 'post').toLowerCase();
+    // GoDaddy-style builders (and others) give inputs an id but no name,
+    // no aria-label and no placeholder — the human-readable label lives in
+    // a sibling `<label for="id">`. Build that map once per form so the
+    // classifier can see "Email" instead of an empty string.
+    const labelById = new Map<string, string>();
+    const labelRe = /<label\b[^>]*\bfor\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/label\s*>/gi;
+    let labelMatch: RegExpExecArray | null;
+    while ((labelMatch = labelRe.exec(inner)) !== null) {
+      const text = (labelMatch[2] || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+      if (text && !labelById.has(labelMatch[1])) labelById.set(labelMatch[1], text);
+    }
     const fields: DetectedFormField[] = [];
     const fieldRe = /<(input|textarea|select)\b([^>]*)>/gi;
     let fieldMatch: RegExpExecArray | null;
@@ -757,7 +768,25 @@ export function parseContactFormsFromHtml(html: string, pageUrl: string): Parsed
       if (typeAttr === 'submit' || typeAttr === 'button' || typeAttr === 'hidden') continue;
       const name = parseAttr(`<x ${attrs}>`, 'name') || '';
       const id = parseAttr(`<x ${attrs}>`, 'id') || '';
-      const label = parseAttr(`<x ${attrs}>`, 'aria-label') || parseAttr(`<x ${attrs}>`, 'placeholder') || '';
+      // Label fallback order: aria-label, placeholder (existing), then the
+      // sibling `<label for>`, then the builder's data-aid hint
+      // (CONTACT_FORM_EMAIL / CONTACT_FORM_NAME / CONTACT_FORM_MESSAGE).
+      // Without these, id-only inputs classify [unknown] and the mapper
+      // reports EMAIL_REQUIREMENT_NOT_MET even though the form has an
+      // email field (righttheredme.com, GoDaddy builder, Nov 2026).
+      const dataAid = parseAttr(`<x ${attrs}>`, 'data-aid') || '';
+      const aidLabel = /CONTACT_FORM_EMAIL/i.test(dataAid)
+        ? 'Email'
+        : /CONTACT_FORM_NAME/i.test(dataAid)
+          ? 'Name'
+          : /CONTACT_FORM_MESSAGE/i.test(dataAid)
+            ? 'Message'
+            : '';
+      const label =
+        parseAttr(`<x ${attrs}>`, 'aria-label') ||
+        parseAttr(`<x ${attrs}>`, 'placeholder') ||
+        (id ? labelById.get(id) || '' : '') ||
+        aidLabel;
       // Honeypot traps are never real fields: a name on the honeypot list
       // (e.g. Framer's `framer-noscript`) or a never-match pattern
       // (`pattern="(?!)`") must not count as a required field or be filled.

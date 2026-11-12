@@ -49,25 +49,48 @@ export function isHealthy({ secret, staticDomains, appUrl }) {
 }
 
 export async function verifyViaApp({ appUrl, secret, domain, fetchFn = fetch }) {
-  try {
-    const url = `${appUrl.replace(/\/$/, '')}/api/worker/verify-domain?domain=${encodeURIComponent(domain)}`;
-    const response = await fetchFn(url, {
-      method: 'GET',
-      headers: { authorization: `Bearer ${secret}` },
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!response.ok) return false;
-    const data = await response.json();
-    return data && data.allowed === true;
-  } catch {
-    return false;
+  const url = `${appUrl.replace(/\/$/, '')}/api/worker/verify-domain?domain=${encodeURIComponent(domain)}`;
+  // One retry on a thrown error (network failure or timeout) or a 503:
+  // the app function is often cold after hours idle, and the first call
+  // wakes it while the second lands warm. A definitive answer (200 with
+  // allowed:false, or any non-503 status such as 401) is never retried.
+  // Every attempt is logged: the Nov-11/12 denies recurred with zero
+  // visibility because neither side logged the callback, so the log line
+  // (domain + boolean + timing only, never secrets or lead data) is what
+  // makes the next denial diagnosable from Cloud Run logs.
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const startedAt = Date.now();
+    try {
+      const response = await fetchFn(url, {
+        method: 'GET',
+        headers: { authorization: `Bearer ${secret}` },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) {
+        console.log(`[worker-verify] domain=${domain} allowed=false attempt=${attempt} status=${response.status} ms=${Date.now() - startedAt}`);
+        if (response.status === 503 && attempt === 1) continue;
+        return false;
+      }
+      const data = await response.json();
+      const allowed = data && data.allowed === true;
+      console.log(`[worker-verify] domain=${domain} allowed=${allowed} attempt=${attempt} ms=${Date.now() - startedAt}`);
+      return allowed;
+    } catch (error) {
+      console.log(`[worker-verify] domain=${domain} allowed=false attempt=${attempt} error=${error instanceof Error ? error.name : 'unknown'} ms=${Date.now() - startedAt}`);
+      if (attempt === 1) continue;
+      return false;
+    }
   }
+  return false;
 }
 
 export async function isTargetAllowed({ staticDomains, appUrl, secret, url, fetchFn = fetch }) {
   const host = hostOf(url);
   if (!host) return false;
   if (hostMatches(host, staticDomains)) return true;
-  if (!appUrl) return false;
+  if (!appUrl) {
+    console.log(`[worker-verify] domain=${host} allowed=false reason=no-app-url`);
+    return false;
+  }
   return verifyViaApp({ appUrl, secret, domain: host, fetchFn });
 }

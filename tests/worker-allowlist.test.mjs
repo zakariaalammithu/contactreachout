@@ -93,4 +93,47 @@ describe('worker target authorization', () => {
     await expect(verifyViaApp({ appUrl: 'https://app.example', secret: 's', domain: 'a.com', fetchFn: ok })).resolves.toBe(true);
     await expect(verifyViaApp({ appUrl: 'https://app.example', secret: 's', domain: 'a.com', fetchFn: vague })).resolves.toBe(false);
   });
+
+  it('retries once when the verify call throws, then trusts the retry', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('down'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ allowed: true }), { status: 200 }));
+    const allowed = await isTargetAllowed({
+      staticDomains: [],
+      appUrl: 'https://app.example',
+      secret: 's',
+      url: 'https://newprospect.com/contact',
+      fetchFn: fetchMock,
+    });
+    expect(allowed).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries once on a 503, then trusts the retry', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('nope', { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ allowed: true }), { status: 200 }));
+    await expect(
+      verifyViaApp({ appUrl: 'https://app.example', secret: 's', domain: 'a.com', fetchFn: fetchMock }),
+    ).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('never retries a definitive answer (allowed:false, 401, or a second failure)', async () => {
+    const deny = vi.fn().mockResolvedValue(new Response(JSON.stringify({ allowed: false }), { status: 200 }));
+    await expect(verifyViaApp({ appUrl: 'https://app.example', secret: 's', domain: 'a.com', fetchFn: deny })).resolves.toBe(false);
+    expect(deny).toHaveBeenCalledTimes(1);
+    const unauthorized = vi.fn().mockResolvedValue(new Response('nope', { status: 401 }));
+    await expect(
+      verifyViaApp({ appUrl: 'https://app.example', secret: 's', domain: 'a.com', fetchFn: unauthorized }),
+    ).resolves.toBe(false);
+    expect(unauthorized).toHaveBeenCalledTimes(1);
+    const alwaysDown = vi.fn().mockRejectedValue(new Error('down'));
+    await expect(
+      verifyViaApp({ appUrl: 'https://app.example', secret: 's', domain: 'a.com', fetchFn: alwaysDown }),
+    ).resolves.toBe(false);
+    expect(alwaysDown).toHaveBeenCalledTimes(2);
+  });
 });
