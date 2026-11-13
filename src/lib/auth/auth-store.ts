@@ -37,6 +37,10 @@ export interface UserAccount {
   website?: string;
   jobTitle?: string;
   country?: string;
+  streetAddress?: string;
+  city?: string;
+  stateRegion?: string;
+  postalCode?: string;
   plan?: string;
   replyEmail?: string;
   unverifiedReplyEmail?: string;

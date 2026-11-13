@@ -36,6 +36,10 @@ export interface PipelineExecutionInput {
     website?: string | null;
     jobTitle?: string | null;
     country?: string | null;
+    streetAddress?: string | null;
+    city?: string | null;
+    stateRegion?: string | null;
+    postalCode?: string | null;
   };
   template: {
     id: string;

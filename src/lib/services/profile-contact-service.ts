@@ -9,9 +9,10 @@
  * (m.b2bgdc.com) kept landing in REVIEW even after the user "saved" a
  * number. The durable home is public.app_users (migration
  * 20261108000001 adds phone/whatsapp/reply_email columns; migration
- * 20261111000001 adds company_name/website/job_title/country; until a
- * migration is applied every function here degrades gracefully and
- * reports durable=false for saves that need it, never throwing).
+ * 20261111000001 adds company_name/website/job_title/country; migration
+ * 20261113000001 adds street_address/city/state_region/postal_code;
+ * until a migration is applied every function here degrades gracefully
+ * and reports durable=false for saves that need it, never throwing).
  *
  * Precedence everywhere: AuthStore value if non-empty (freshest on this
  * instance), else the durable row. Values are normalized to E.164 at
@@ -34,6 +35,10 @@ export type DurableContact = {
   website: string;
   jobTitle: string;
   country: string;
+  streetAddress: string;
+  city: string;
+  stateRegion: string;
+  postalCode: string;
 };
 
 /** Read the durable row. Null = table/columns unavailable (not an error). */
@@ -41,51 +46,59 @@ export async function readDurableContact(email: string): Promise<DurableContact 
   const client = getSupabaseAdminClient();
   if (!client) return null;
   const key = email.toLowerCase().trim();
+  const empty: DurableContact = { found: false, displayName: '', phone: '', whatsapp: '', replyEmail: '', companyName: '', website: '', jobTitle: '', country: '', streetAddress: '', city: '', stateRegion: '', postalCode: '' };
+  const toContact = (data: any, withCompany: boolean, withAddress: boolean): DurableContact => ({
+    found: true,
+    displayName: (data as any).display_name || '',
+    phone: (data as any).phone || '',
+    whatsapp: (data as any).whatsapp || '',
+    replyEmail: (data as any).reply_email || '',
+    companyName: withCompany ? (data as any).company_name || '' : '',
+    website: withCompany ? (data as any).website || '' : '',
+    jobTitle: withCompany ? (data as any).job_title || '' : '',
+    country: withCompany ? (data as any).country || '' : '',
+    streetAddress: withAddress ? (data as any).street_address || '' : '',
+    city: withAddress ? (data as any).city || '' : '',
+    stateRegion: withAddress ? (data as any).state_region || '' : '',
+    postalCode: withAddress ? (data as any).postal_code || '' : '',
+  });
   try {
     const { data, error } = await client
       .from('app_users')
-      .select('display_name, phone, whatsapp, reply_email, company_name, website, job_title, country')
+      .select('display_name, phone, whatsapp, reply_email, company_name, website, job_title, country, street_address, city, state_region, postal_code')
       .eq('email_normalized', key)
       .maybeSingle();
     if (error) throw error;
-    if (!data) return { found: false, displayName: '', phone: '', whatsapp: '', replyEmail: '', companyName: '', website: '', jobTitle: '', country: '' };
-    return {
-      found: true,
-      displayName: (data as any).display_name || '',
-      phone: (data as any).phone || '',
-      whatsapp: (data as any).whatsapp || '',
-      replyEmail: (data as any).reply_email || '',
-      companyName: (data as any).company_name || '',
-      website: (data as any).website || '',
-      jobTitle: (data as any).job_title || '',
-      country: (data as any).country || '',
-    };
+    if (!data) return empty;
+    return toContact(data, true, true);
   } catch {
-    // The sender-company migration (20261111000001) is not applied yet:
-    // the new columns do not exist, so the full select fails. Retry with
-    // the pre-existing columns so phone/WhatsApp/reply-email durability
-    // keeps working exactly as before.
+    // A migration is not applied yet, so the full select fails on the
+    // missing columns. Retry with the sender-company columns (migration
+    // 20261111000001) so those keep working exactly as before, then with
+    // the pre-existing columns so phone/WhatsApp durability never
+    // regresses. Each tier returns its own fields as ''.
     try {
       const { data, error } = await client
         .from('app_users')
-        .select('display_name, phone, whatsapp, reply_email')
+        .select('display_name, phone, whatsapp, reply_email, company_name, website, job_title, country')
         .eq('email_normalized', key)
         .maybeSingle();
-      if (error) return null;
-      if (!data) return { found: false, displayName: '', phone: '', whatsapp: '', replyEmail: '', companyName: '', website: '', jobTitle: '', country: '' };
-      return {
-        found: true,
-        displayName: (data as any).display_name || '',
-        phone: (data as any).phone || '',
-        whatsapp: (data as any).whatsapp || '',
-        replyEmail: (data as any).reply_email || '',
-        companyName: '',
-        website: '',
-        jobTitle: '',
-        country: '',
-      };
+      if (error) throw error;
+      if (!data) return empty;
+      return toContact(data, true, false);
     } catch {
-      return null;
+      try {
+        const { data, error } = await client
+          .from('app_users')
+          .select('display_name, phone, whatsapp, reply_email')
+          .eq('email_normalized', key)
+          .maybeSingle();
+        if (error) return null;
+        if (!data) return empty;
+        return toContact(data, false, false);
+      } catch {
+        return null;
+      }
     }
   }
 }
@@ -99,6 +112,10 @@ export type DurableContactWrite = {
   website?: string;
   jobTitle?: string;
   country?: string;
+  streetAddress?: string;
+  city?: string;
+  stateRegion?: string;
+  postalCode?: string;
 };
 
 /**
@@ -114,7 +131,11 @@ export type DurableContactWrite = {
  * their migration (20261111000001) is not applied yet, the full upsert
  * fails on the missing columns: the write is retried WITHOUT them so the
  * pre-existing fields still land durably, but false is still returned —
- * the new fields did not stick, and the caller must say so.
+ * the new fields did not stick, and the caller must say so. The address
+ * columns (migration 20261113000001) are a second, independent tier:
+ * when only they are missing, the retry drops just the address columns
+ * and keeps the company columns; when both migrations are missing, a
+ * further retry drops the company columns too.
  */
 export async function writeDurableContact(
   userId: string,
@@ -132,16 +153,38 @@ export async function writeDurableContact(
     if (values.phone !== undefined) row.phone = values.phone;
     if (values.whatsapp !== undefined) row.whatsapp = values.whatsapp;
     if (values.replyEmail !== undefined) row.reply_email = values.replyEmail;
-    const hasNewColumns = values.companyName !== undefined || values.website !== undefined
+    const hasCompanyColumns = values.companyName !== undefined || values.website !== undefined
       || values.jobTitle !== undefined || values.country !== undefined;
     if (values.companyName !== undefined) row.company_name = values.companyName;
     if (values.website !== undefined) row.website = values.website;
     if (values.jobTitle !== undefined) row.job_title = values.jobTitle;
     if (values.country !== undefined) row.country = values.country;
+    const hasAddressColumns = values.streetAddress !== undefined || values.city !== undefined
+      || values.stateRegion !== undefined || values.postalCode !== undefined;
+    if (values.streetAddress !== undefined) row.street_address = values.streetAddress;
+    if (values.city !== undefined) row.city = values.city;
+    if (values.stateRegion !== undefined) row.state_region = values.stateRegion;
+    if (values.postalCode !== undefined) row.postal_code = values.postalCode;
     const { error } = await client.from('app_users').upsert(row, { onConflict: 'email_normalized' });
     if (!error) return true;
-    if (!hasNewColumns) return false;
-    const legacyRow: Record<string, unknown> = { ...row };
+    if (!hasCompanyColumns && !hasAddressColumns) return false;
+    // Retry without the address columns first (keeps the company
+    // columns when only the address migration is missing); each retry
+    // that succeeds still returns false — the dropped fields did not
+    // stick, and the caller must say so.
+    let current = row;
+    if (hasAddressColumns) {
+      const withoutAddress: Record<string, unknown> = { ...row };
+      delete withoutAddress.street_address;
+      delete withoutAddress.city;
+      delete withoutAddress.state_region;
+      delete withoutAddress.postal_code;
+      const addressRetry = await client.from('app_users').upsert(withoutAddress, { onConflict: 'email_normalized' });
+      if (!addressRetry.error) return false;
+      current = withoutAddress;
+    }
+    if (!hasCompanyColumns) return false;
+    const legacyRow: Record<string, unknown> = { ...current };
     delete legacyRow.company_name;
     delete legacyRow.website;
     delete legacyRow.job_title;
@@ -191,8 +234,8 @@ export async function resolveSenderContact(
  */
 export async function resolveAccountIdentity(
   email: string,
-  authUser: { name?: string | null; email?: string | null; replyEmail?: string | null; phone?: string | null; whatsApp?: string | null; company?: string | null; website?: string | null; jobTitle?: string | null; country?: string | null } | null,
-): Promise<{ fullName: string; replyEmail: string; phone: string; whatsApp: string; companyName: string; website: string; jobTitle: string; country: string }> {
+  authUser: { name?: string | null; email?: string | null; replyEmail?: string | null; phone?: string | null; whatsApp?: string | null; company?: string | null; website?: string | null; jobTitle?: string | null; country?: string | null; streetAddress?: string | null; city?: string | null; stateRegion?: string | null; postalCode?: string | null } | null,
+): Promise<{ fullName: string; replyEmail: string; phone: string; whatsApp: string; companyName: string; website: string; jobTitle: string; country: string; streetAddress: string; city: string; stateRegion: string; postalCode: string }> {
   const senderContact = await resolveSenderContact(email, authUser);
   const durable = await readDurableContact(email);
   const loginEmail = (authUser?.email || email || '').trim();
@@ -205,5 +248,9 @@ export async function resolveAccountIdentity(
     website: (authUser?.website || '').trim() || (durable?.website || '').trim(),
     jobTitle: (authUser?.jobTitle || '').trim() || (durable?.jobTitle || '').trim(),
     country: (authUser?.country || '').trim() || (durable?.country || '').trim(),
+    streetAddress: (authUser?.streetAddress || '').trim() || (durable?.streetAddress || '').trim(),
+    city: (authUser?.city || '').trim() || (durable?.city || '').trim(),
+    stateRegion: (authUser?.stateRegion || '').trim() || (durable?.stateRegion || '').trim(),
+    postalCode: (authUser?.postalCode || '').trim() || (durable?.postalCode || '').trim(),
   };
 }

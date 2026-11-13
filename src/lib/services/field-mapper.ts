@@ -29,6 +29,10 @@ export interface LeadMappingContext {
     website?: string | null;
     jobTitle?: string | null;
     country?: string | null;
+    streetAddress?: string | null;
+    city?: string | null;
+    stateRegion?: string | null;
+    postalCode?: string | null;
   };
   [key: string]: any;
 }
@@ -47,6 +51,11 @@ export type MappingStrategy =
   | 'direct_company'
   | 'direct_website'
   | 'direct_job_title'
+  | 'direct_country'
+  | 'direct_state'
+  | 'direct_city'
+  | 'direct_street_address'
+  | 'direct_postal_code'
   | 'direct_subject'
   | 'rendered_message'
   | 'select_matching_option'
@@ -321,6 +330,36 @@ export function mapLeadToFormFields(
         }
         break;
 
+      case 'street_address':
+        if (lead.user_contact_identity?.streetAddress) {
+          valueToFill = String(lead.user_contact_identity.streetAddress).trim();
+          strategy = 'direct_street_address';
+          sourceLeadField = 'user_contact_identity.streetAddress';
+        } else {
+          valueToFill = '';
+        }
+        break;
+
+      case 'city':
+        if (lead.user_contact_identity?.city) {
+          valueToFill = String(lead.user_contact_identity.city).trim();
+          strategy = 'direct_city';
+          sourceLeadField = 'user_contact_identity.city';
+        } else {
+          valueToFill = '';
+        }
+        break;
+
+      case 'postal_code':
+        if (lead.user_contact_identity?.postalCode) {
+          valueToFill = String(lead.user_contact_identity.postalCode).trim();
+          strategy = 'direct_postal_code';
+          sourceLeadField = 'user_contact_identity.postalCode';
+        } else {
+          valueToFill = '';
+        }
+        break;
+
       case 'subject': {
         const renderedSubject = convertHtmlToPlainText(message.subject || fallbackSubject || 'Partnership Inquiry & Growth Solution').trim();
         if (field.options && field.options.length > 0) {
@@ -360,13 +399,35 @@ export function mapLeadToFormFields(
       case 'select':
       case 'country':
       case 'state': {
+        // Text inputs (no options) fill directly from the sender
+        // identity — a country/state text field has no dropdown to
+        // match against, and leaving it blank would fail a required
+        // field the profile already knows. The prospect's country/state
+        // is never used: it is the prospect's, not the sender's.
+        if (!field.options || field.options.length === 0) {
+          const directValue = field.normalizedType === 'country'
+            ? lead.user_contact_identity?.country
+            : field.normalizedType === 'state'
+              ? lead.user_contact_identity?.stateRegion
+              : null;
+          if (directValue) {
+            valueToFill = String(directValue).trim();
+            strategy = field.normalizedType === 'country' ? 'direct_country' : 'direct_state';
+            sourceLeadField = field.normalizedType === 'country'
+              ? 'user_contact_identity.country'
+              : 'user_contact_identity.stateRegion';
+          }
+          break;
+        }
         if (field.options && field.options.length > 0) {
-          // Only the sender's country can drive a choice. A generic
+          // Only the sender's country/state can drive a choice. A generic
           // select has no data source, and the prospect's country must
           // never pick the sender's answer.
           const matchValue = field.normalizedType === 'country'
             ? (lead.user_contact_identity?.country || null)
-            : null;
+            : field.normalizedType === 'state'
+              ? (lead.user_contact_identity?.stateRegion || null)
+              : null;
           const strictMatch = findSelectOptionMatch(field.options, matchValue);
           if (strictMatch) {
             valueToFill = strictMatch;

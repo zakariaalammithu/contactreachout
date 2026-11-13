@@ -16,6 +16,8 @@ export type NormalizedFieldType =
   | 'country'
   | 'state'
   | 'city'
+  | 'street_address'
+  | 'postal_code'
   | 'subject'
   | 'message'
   | 'checkbox'
@@ -153,6 +155,24 @@ export const FIELD_CLASSIFIERS: Array<{
     regex: /(e[_\-\s]*mail|mail|contact[_\-\s]*email|business[_\-\s]*email|work[_\-\s]*email)/i,
     autocomplete: /email/i,
     weight: 0.98,
+  },
+  {
+    // Postal address: "Street Address", "Address Line 1", a bare
+    // "Address". The lookbehinds keep "Email Address" (email, checked
+    // first) and "Website/Web/URL/Site Address" (website) out of this
+    // type — those are not street addresses. A "Company/Business
+    // Address" IS a street address: the sender's street, not the
+    // company name, belongs in it.
+    type: 'street_address',
+    regex: /(street[_\-\s]*address|address[_\-\s]*line|address[_\-\s]*[12]|(?<!e-?mail\s)(?<!website\s)(?<!web\s)(?<!url\s)(?<!site\s)\baddress\b)/i,
+    autocomplete: /address-line1|address-line2|street-address/i,
+    weight: 0.92,
+  },
+  {
+    type: 'postal_code',
+    regex: /(postal[_\-\s]*code|postcode|zip[_\-\s]*code|\bzip\b)/i,
+    autocomplete: /postal-code/i,
+    weight: 0.92,
   },
   {
     type: 'whatsApp',
@@ -717,8 +737,15 @@ export function classifyFetchField(tag: string, typeAttr: string, name: string, 
   // often absent or non-English (e.g. Arabic "رقم هاتف"), so the name
   // itself is the reliable signal.
   if (/\binput_mask\b/.test(hay)) return 'phone';
-  if (/company|organisation|organization/.test(hay)) return 'company';
   if (/website|url|site/.test(hay)) return 'website';
+  // Postal address. Checked after website (so "Website Address" stays a
+  // website field) and before company/message (so "Company Address" and
+  // "Address Details" are street addresses, not a company name or a
+  // message). The lookbehinds keep "Email Address" out — email is
+  // checked first, and the lookbehind is the second guard for it.
+  if (/street[_\-\s]*address|address[_\-\s]*line|address[_\-\s]*[12]|(?<!e-?mail\s)(?<!website\s)(?<!web\s)(?<!url\s)(?<!site\s)\baddress\b/.test(hay)) return 'street_address';
+  if (/postal[_\-\s]*code|postcode|zip[_\-\s]*code|\bzip\b/.test(hay)) return 'postal_code';
+  if (/company|organisation|organization/.test(hay)) return 'company';
   if (/\bmessage\b|comment|inquiry|enquiry|\bbody\b|details/.test(hay) || tag === 'textarea') return 'message';
   if (/subject|topic/.test(hay)) return 'subject';
   if (/country/.test(hay)) return 'country';

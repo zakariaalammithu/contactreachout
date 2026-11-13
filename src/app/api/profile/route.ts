@@ -29,6 +29,10 @@ export async function GET(request: NextRequest) {
   const website = user.website || durable?.website || '';
   const jobTitle = user.jobTitle || durable?.jobTitle || '';
   const country = user.country || durable?.country || '';
+  const streetAddress = user.streetAddress || durable?.streetAddress || '';
+  const city = user.city || durable?.city || '';
+  const stateRegion = user.stateRegion || durable?.stateRegion || '';
+  const postalCode = user.postalCode || durable?.postalCode || '';
 
   return NextResponse.json({
     user: {
@@ -40,6 +44,10 @@ export async function GET(request: NextRequest) {
       website,
       jobTitle,
       country,
+      streetAddress,
+      city,
+      stateRegion,
+      postalCode,
       avatarUrl: user.avatarUrl || '',
       replyEmail: activeReplyEmail,
       replyEmailVerified,
@@ -60,6 +68,10 @@ const profileSchema = z.object({
   website: z.string().trim().max(255).optional().default(''),
   jobTitle: z.string().trim().max(100).optional().default(''),
   country: z.string().trim().max(100).optional().default(''),
+  streetAddress: z.string().trim().max(200).optional().default(''),
+  city: z.string().trim().max(100).optional().default(''),
+  stateRegion: z.string().trim().max(100).optional().default(''),
+  postalCode: z.string().trim().max(20).optional().default(''),
   avatarUrl: z.string().max(1_500_000).optional(),
 });
 
@@ -98,6 +110,10 @@ export async function PATCH(request: NextRequest) {
     website: normalizedWebsite,
     jobTitle: parsed.data.jobTitle.trim(),
     country: parsed.data.country.trim(),
+    streetAddress: parsed.data.streetAddress.trim(),
+    city: parsed.data.city.trim(),
+    stateRegion: parsed.data.stateRegion.trim(),
+    postalCode: parsed.data.postalCode.trim(),
     // Preserve the stored avatar: ContactReply saves never send avatarUrl,
     // and the old zod default ('') used to wipe it on every contact save.
     ...(parsed.data.avatarUrl !== undefined ? { avatarUrl: parsed.data.avatarUrl } : {}),
@@ -107,7 +123,8 @@ export async function PATCH(request: NextRequest) {
   // default ('') would otherwise let a phone-only save wipe a stored
   // name. Reply email is NOT written here — it has its own verified
   // endpoint (/api/user/reply-email) and only verified values go durable.
-  // Company/website/job title/country follow the same non-empty-only rule.
+  // Company/website/job title/country/address follow the same
+  // non-empty-only rule.
   const contactDurable = await writeDurableContact(user.id, session.email, {
     ...(parsed.data.name.trim() ? { displayName: parsed.data.name.trim() } : {}),
     phone: normalizedPhone,
@@ -116,6 +133,10 @@ export async function PATCH(request: NextRequest) {
     ...(normalizedWebsite ? { website: normalizedWebsite } : {}),
     ...(parsed.data.jobTitle.trim() ? { jobTitle: parsed.data.jobTitle.trim() } : {}),
     ...(parsed.data.country.trim() ? { country: parsed.data.country.trim() } : {}),
+    ...(parsed.data.streetAddress.trim() ? { streetAddress: parsed.data.streetAddress.trim() } : {}),
+    ...(parsed.data.city.trim() ? { city: parsed.data.city.trim() } : {}),
+    ...(parsed.data.stateRegion.trim() ? { stateRegion: parsed.data.stateRegion.trim() } : {}),
+    ...(parsed.data.postalCode.trim() ? { postalCode: parsed.data.postalCode.trim() } : {}),
   });
   const activeReplyEmail = user.replyEmail || '';
   const replyEmailVerified = user.replyEmailVerified ?? user.isEmailVerified;
@@ -132,6 +153,10 @@ export async function PATCH(request: NextRequest) {
       website: user.website || '',
       jobTitle: user.jobTitle || '',
       country: user.country || '',
+      streetAddress: user.streetAddress || '',
+      city: user.city || '',
+      stateRegion: user.stateRegion || '',
+      postalCode: user.postalCode || '',
       avatarUrl: user.avatarUrl || '',
       replyEmail: activeReplyEmail,
       replyEmailVerified,

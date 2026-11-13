@@ -14,6 +14,10 @@ export function ContactReplySettings() {
   const [companyName, setCompanyName] = useState('');
   const [website, setWebsite] = useState('');
   const [jobTitle, setJobTitle] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [stateRegion, setStateRegion] = useState('');
+  const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('');
   // Country for each number (any country, not just the examples). The
   // selected dial code only matters for trunk-0 national numbers and
@@ -50,6 +54,10 @@ export function ContactReplySettings() {
           setCompanyName(pData.user.companyName || '');
           setWebsite(pData.user.website || '');
           setJobTitle(pData.user.jobTitle || '');
+          setStreetAddress(pData.user.streetAddress || '');
+          setCity(pData.user.city || '');
+          setStateRegion(pData.user.stateRegion || '');
+          setPostalCode(pData.user.postalCode || '');
           setCountry(pData.user.country || '');
           // Preselect the country from a stored E.164 value; default USA (+1).
           const phoneDial = inferDialCode(pData.user.phone || '');
@@ -129,6 +137,10 @@ export function ContactReplySettings() {
           companyName: companyName.trim(),
           website: website.trim(),
           jobTitle: jobTitle.trim(),
+          streetAddress: streetAddress.trim(),
+          city: city.trim(),
+          stateRegion: stateRegion.trim(),
+          postalCode: postalCode.trim(),
           country: country.trim(),
           phoneCountry,
           whatsAppCountry,
@@ -142,6 +154,10 @@ export function ContactReplySettings() {
         setCompanyName(data.user.companyName || '');
         setWebsite(data.user.website || '');
         setJobTitle(data.user.jobTitle || '');
+        setStreetAddress(data.user.streetAddress || '');
+        setCity(data.user.city || '');
+        setStateRegion(data.user.stateRegion || '');
+        setPostalCode(data.user.postalCode || '');
         setCountry(data.user.country || '');
         setSuccessMsg(
           data.contactDurable === false
@@ -161,6 +177,10 @@ export function ContactReplySettings() {
               companyName: companyName.trim(),
               website: website.trim(),
               jobTitle: jobTitle.trim(),
+              streetAddress: streetAddress.trim(),
+              city: city.trim(),
+              stateRegion: stateRegion.trim(),
+              postalCode: postalCode.trim(),
               country: country.trim(),
             })
           );
@@ -276,6 +296,10 @@ export function ContactReplySettings() {
     { label: 'Company', value: companyName, required: false },
     { label: 'Website', value: website, required: false },
     { label: 'Job title', value: jobTitle, required: false },
+    { label: 'Street address', value: streetAddress, required: false },
+    { label: 'City', value: city, required: false },
+    { label: 'State / Region', value: stateRegion, required: false },
+    { label: 'Postal code', value: postalCode, required: false },
     { label: 'Country', value: country, required: false },
   ];
   const identitySetCount = identityFields.filter((f) => f.value.trim()).length;
@@ -478,7 +502,67 @@ export function ContactReplySettings() {
               <p className="text-[11px] text-zinc-400">Your job title for target forms.</p>
             </div>
 
-            {/* 8. Country (sender) */}
+            {/* 8. Street Address (sender) — full width, addresses run long */}
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                Street Address
+              </label>
+              <input
+                type="text"
+                value={streetAddress}
+                onChange={(e) => setStreetAddress(e.target.value)}
+                placeholder="e.g. 124 Whitechapel Road"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="text-[11px] text-zinc-400">Your street address for target forms.</p>
+            </div>
+
+            {/* 9. City (sender) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                City
+              </label>
+              <input
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="e.g. London"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="text-[11px] text-zinc-400">Your city for target forms.</p>
+            </div>
+
+            {/* 10. State / Region (sender) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                State / Region
+              </label>
+              <input
+                type="text"
+                value={stateRegion}
+                onChange={(e) => setStateRegion(e.target.value)}
+                placeholder="e.g. Greater London"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="text-[11px] text-zinc-400">Your state or region for target forms.</p>
+            </div>
+
+            {/* 11. Postal Code (sender) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                Postal Code
+              </label>
+              <input
+                type="text"
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                placeholder="e.g. E1 1JE"
+                className="w-full rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-100 outline-none focus:border-[#0e6de4] focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="text-[11px] text-zinc-400">Your postal code for target forms.</p>
+            </div>
+
+            {/* 12. Country (sender) */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
                 Country
@@ -690,7 +774,7 @@ export function ContactReplySettings() {
           ))}
         </div>
         <p className="text-[11px] leading-relaxed text-zinc-400">
-          Live campaigns need Full name, Phone and WhatsApp. The other fields fill Company, Website, Job Title and Country on forms that ask for them.
+          Live campaigns need Full name, Phone and WhatsApp. The other fields fill Company, Website, Job Title and your address on forms that ask for them.
         </p>
       </div>
     </aside>

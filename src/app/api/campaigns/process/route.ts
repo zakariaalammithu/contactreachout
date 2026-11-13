@@ -142,15 +142,15 @@ export async function POST(req: NextRequest) {
     // durable app_users row second). There is no per-campaign override:
     // every campaign sends with the account identity, and a change to
     // the account identity applies to every campaign after it.
+    // Pass the WHOLE resolved identity: the mapper reads company,
+    // website, job title, country and the postal address from it, and a
+    // hand-listed subset silently drops every field added later (that
+    // is how company/website/job title/country never reached a form
+    // after they were added — fixed here alongside the address fields).
     const accountIdentity = await resolveAccountIdentity(session.email, userAccount);
     const userContactIdentity =
       accountIdentity.fullName || accountIdentity.replyEmail || accountIdentity.phone || accountIdentity.whatsApp
-        ? {
-            fullName: accountIdentity.fullName,
-            replyEmail: accountIdentity.replyEmail,
-            phone: accountIdentity.phone,
-            whatsApp: accountIdentity.whatsApp,
-          }
+        ? accountIdentity
         : undefined;
 
     // 2b. Start-time durable lead registration (BEFORE the pipeline).

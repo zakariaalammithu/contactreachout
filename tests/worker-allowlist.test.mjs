@@ -110,15 +110,23 @@ describe('worker target authorization', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('retries once on a 503, then trusts the retry', async () => {
+  it('retries once on a 5xx (500 or 503), then trusts the retry', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(new Response('nope', { status: 503 }))
+      .mockResolvedValueOnce(new Response('nope', { status: 500 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ allowed: true }), { status: 200 }));
     await expect(
       verifyViaApp({ appUrl: 'https://app.example', secret: 's', domain: 'a.com', fetchFn: fetchMock }),
     ).resolves.toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    const fetchMock503 = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('nope', { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ allowed: true }), { status: 200 }));
+    await expect(
+      verifyViaApp({ appUrl: 'https://app.example', secret: 's', domain: 'b.com', fetchFn: fetchMock503 }),
+    ).resolves.toBe(true);
+    expect(fetchMock503).toHaveBeenCalledTimes(2);
   });
 
   it('never retries a definitive answer (allowed:false, 401, or a second failure)', async () => {

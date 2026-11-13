@@ -50,10 +50,12 @@ export function isHealthy({ secret, staticDomains, appUrl }) {
 
 export async function verifyViaApp({ appUrl, secret, domain, fetchFn = fetch }) {
   const url = `${appUrl.replace(/\/$/, '')}/api/worker/verify-domain?domain=${encodeURIComponent(domain)}`;
-  // One retry on a thrown error (network failure or timeout) or a 503:
-  // the app function is often cold after hours idle, and the first call
-  // wakes it while the second lands warm. A definitive answer (200 with
-  // allowed:false, or any non-503 status such as 401) is never retried.
+  // One retry on a thrown error (network failure or timeout) or any
+  // 5xx: the app function is often cold after hours idle, and the first
+  // call wakes it while the second lands warm — and a cold function can
+  // answer 500/502/504 as well as 503, so retrying only 503 left those
+  // denies in place. A definitive answer (200 with allowed:false, or
+  // any non-5xx status such as 401) is never retried.
   // Every attempt is logged: the Nov-11/12 denies recurred with zero
   // visibility because neither side logged the callback, so the log line
   // (domain + boolean + timing only, never secrets or lead data) is what
@@ -68,7 +70,7 @@ export async function verifyViaApp({ appUrl, secret, domain, fetchFn = fetch }) 
       });
       if (!response.ok) {
         console.log(`[worker-verify] domain=${domain} allowed=false attempt=${attempt} status=${response.status} ms=${Date.now() - startedAt}`);
-        if (response.status === 503 && attempt === 1) continue;
+        if (response.status >= 500 && response.status <= 599 && attempt === 1) continue;
         return false;
       }
       const data = await response.json();
