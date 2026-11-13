@@ -56,7 +56,13 @@ export function MatchDataModal({
   onImportSuccess,
 }: MatchDataModalProps) {
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
-  const [ignoreFirstRow, setIgnoreFirstRow] = useState(true);
+  // OFF by default: the parser already treats the file's first row as
+  // the header, so allRawRows holds data rows only. Leaving this on
+  // silently drops the first real lead (2026-11-13: a 5-row file showed
+  // 3 leads — the first row was eaten here, the 5th was a domain
+  // duplicate). Only tick it when the first DATA row itself repeats
+  // the header row.
+  const [ignoreFirstRow, setIgnoreFirstRow] = useState(false);
   const [updateExistingCrm, setUpdateExistingCrm] = useState(false);
   const [listName, setListName] = useState('');
   const [folderName, setFolderName] = useState('Default');
@@ -547,7 +553,7 @@ export function MatchDataModal({
                 onChange={(e) => setIgnoreFirstRow(e.target.checked)}
                 className="h-4 w-4 rounded border-zinc-700 text-blue-400 focus:ring-blue-500 cursor-pointer shrink-0"
               />
-              <span>Ignore First Row When Importing (Only Select If CSV Has Header Row)</span>
+              <span>Skip First Data Row (only if the first row repeats the header — the header itself is already handled)</span>
             </label>
 
             <label className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 cursor-pointer font-semibold select-none transition-colors">
