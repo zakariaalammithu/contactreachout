@@ -75,6 +75,19 @@ describe('browser worker submission safety', () => {
     expect(fetchMock.mock.calls[0][1].headers['idempotency-key']).toBe(fetchMock.mock.calls[1][1].headers['idempotency-key']);
   });
 
+  it('maps a worker CAPTCHA_DETECTED to CAPTCHA_DETECTED, never FAILED', async () => {
+    process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
+    process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';
+    process.env.BROWSER_WORKER_ALLOWED_DOMAINS = 'example.test';
+    // The worker refuses the attempt at its pre-submit gate when the
+    // page carries a CAPTCHA (e.g. a reCAPTCHA WPForms page): nothing was
+    // sent, so the lead belongs in REVIEW, not FAILED.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: false }), { status: 200 })));
+    const result = await submitWithBrowserWorker(input);
+    expect(result).toMatchObject({ status: 'CAPTCHA_DETECTED', diagnosticCode: 'CAPTCHA_DETECTED', successVerified: false, submitAttempted: false });
+    expect(result.errorMessage).toContain('CAPTCHA');
+  });
+
   it('appends worker diagnostic evidence to an unverified failure message', async () => {
     process.env.BROWSER_WORKER_URL = 'https://worker.example.test/submit';
     process.env.BROWSER_WORKER_AUTH_SECRET = 'test-secret';

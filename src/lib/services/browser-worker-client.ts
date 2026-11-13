@@ -271,15 +271,26 @@ export async function submitWithBrowserWorker(input: {
       const result = await response.json() as Partial<SubmissionExecutionResult>;
       // Worker output is not trusted as delivery proof unless it supplies explicit verification.
       const workerFailed = result.successVerified !== true;
-      const baseError = workerFailed ? result.errorMessage || 'Worker did not provide verified success evidence.' : undefined;
+      // A submit-time CAPTCHA is not a failed send: the worker refused
+      // the attempt at its gate, so it must reach the orchestrator as
+      // CAPTCHA_DETECTED and land in REVIEW, not FAILED — otherwise the
+      // report blames the send and hides a lead the owner can still
+      // submit by hand. The local Playwright path already returns this
+      // status; the worker path collapsed it (2026-11-13: a reCAPTCHA
+      // WPForms lead reported FAILED with the generic "no verified
+      // success evidence" message instead of CAPTCHA / Review).
+      const workerCaptcha = result.status === 'CAPTCHA_DETECTED';
+      const baseError = workerCaptcha
+        ? 'The target page shows a CAPTCHA / bot challenge, so the submission was not attempted.'
+        : workerFailed ? result.errorMessage || 'Worker did not provide verified success evidence.' : undefined;
       return {
-        status: result.status === 'SUCCESS' && result.successVerified === true ? 'SUCCESS' : 'FAILED',
+        status: result.status === 'SUCCESS' && result.successVerified === true ? 'SUCCESS' : workerCaptcha ? 'CAPTCHA_DETECTED' : 'FAILED',
         isDryRun: false, isTestMode: false, httpStatus: result.httpStatus ?? null,
         fieldsFilledCount: result.fieldsFilledCount ?? fields.length,
         honeypotsNeutralizedCount: result.honeypotsNeutralizedCount ?? 0,
         confirmationMessage: result.successVerified === true ? result.confirmationMessage : undefined,
-        errorMessage: workerFailed ? `${baseError}${renderWorkerDiagnosticEvidence(result.diagnosticEvidence)}` : undefined,
-        diagnosticCode: result.successVerified === true ? result.diagnosticCode : result.diagnosticCode || 'SUCCESS_VERIFICATION_FAILED',
+        errorMessage: workerCaptcha ? baseError : workerFailed ? `${baseError}${renderWorkerDiagnosticEvidence(result.diagnosticEvidence)}` : undefined,
+        diagnosticCode: workerCaptcha ? 'CAPTCHA_DETECTED' : result.successVerified === true ? result.diagnosticCode : result.diagnosticCode || 'SUCCESS_VERIFICATION_FAILED',
         diagnosticEvidence: result.diagnosticEvidence,
         successVerified: result.successVerified === true,
         submitAttempted: result.submitAttempted === true,
