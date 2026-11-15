@@ -126,6 +126,16 @@ export const HONEYPOT_PATTERNS = [
 ];
 
 // Heuristic semantic classifiers for field types
+/** A Gravity-style bare sub-label: "First", "First *", "First (Required)". */
+function bareSubLabel(label: string | undefined): string {
+  return (label || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\*$/, '')
+    .replace(/\s*\(required\)$/, '')
+    .trim();
+}
+
 export const FIELD_CLASSIFIERS: Array<{
   type: NormalizedFieldType;
   regex: RegExp;
@@ -312,6 +322,15 @@ export function classifyFormField(
   }
 
   // Semantic Classifier Evaluation
+  // Gravity Forms bare "First" / "Last" name sub-inputs (same reason as
+  // in classifyFetchField): the label alone carries the meaning.
+  const bareLabel = bareSubLabel(attributes.label);
+  if (bareLabel === 'first') {
+    return { normalizedType: 'first_name', confidence: 0.95, isHoneypot: false };
+  }
+  if (bareLabel === 'last') {
+    return { normalizedType: 'last_name', confidence: 0.95, isHoneypot: false };
+  }
   for (const classifier of FIELD_CLASSIFIERS) {
     if (classifier.autocomplete && attributes.autocomplete && classifier.autocomplete.test(attributes.autocomplete)) {
       return { normalizedType: classifier.type, confidence: classifier.weight, isHoneypot: false };
@@ -752,6 +771,16 @@ export function classifyFetchField(tag: string, typeAttr: string, name: string, 
   if (/\bstate\b|province/.test(hay)) return 'state';
   if (/\bcity\b|\btown\b/.test(hay)) return 'city';
   if (/job|title|position/.test(hay)) return 'job_title';
+  // Gravity Forms splits a Name field into "First" / "Last" sub-inputs
+  // whose label is the bare word (no "Name" in it), so the usual
+  // first.?name / last.?name patterns never match and both required
+  // inputs land in REVIEW (brimbank, Campaign 1, 2026-11-15). A bare
+  // label is the only signal — and the only safe one: Gravity address
+  // sub-inputs share the same input_N.M numbering, so the field name
+  // alone cannot tell First from City.
+  const bareLabel = bareSubLabel(label);
+  if (bareLabel === 'first') return 'first_name';
+  if (bareLabel === 'last') return 'last_name';
   if (/first.?name|fname|given/.test(hay)) return 'first_name';
   if (/last.?name|lname|surname|family/.test(hay)) return 'last_name';
   if (/\bname\b|full.?name|your.?name|contact.?name/.test(hay)) return 'full_name';

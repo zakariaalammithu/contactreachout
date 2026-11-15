@@ -45,8 +45,9 @@ export async function ensureCampaignReplyLink(
     lead: CampaignReplyLeadInput;
   },
 ): Promise<void> {
+  let domain = '';
   try {
-    const domain = normalizeDomain(input.lead.website);
+    domain = normalizeDomain(input.lead.website) || '';
     if (!input.clientCampaignId || !domain) return;
     const campaign = await createCampaign(context, {
       name: (input.campaignName || '').trim() || `Campaign ${input.clientCampaignId}`,
@@ -70,7 +71,14 @@ export async function ensureCampaignReplyLink(
       // idempotent case, not a failure.
       if (!(error instanceof Error) || !/already associated/i.test(error.message)) throw error;
     }
-  } catch {
+  } catch (error) {
     // Best-effort only: the outreach result stands on its own.
+    // Log the cause: a silent registration failure denies every new
+    // domain at the worker (verify finds no rows), and without this line
+    // the next campaign run is undiagnosable from the outside
+    // (Campaign 1, 2026-11-15: 0 of 6 leads registered, no trace).
+    console.log(
+      `[register-lead] domain=${domain || 'unknown'} failed: ${error instanceof Error ? error.message : 'unknown'}`,
+    );
   }
 }
