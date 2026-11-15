@@ -3,6 +3,8 @@ import { AdminAuthGuard, type AppRole } from '@/lib/auth/admin-auth-guard';
 import { AuthStore, type UserAccount } from '@/lib/auth/auth-store';
 import { AuditLogService } from '@/lib/services/audit-log-service';
 import { CreditWalletServerService } from '@/lib/services/credit-wallet-server-service';
+import { deleteDurableUser, ensureUserInRegistry, syncDurableUsersIntoRegistry } from '@/lib/services/durable-users';
+import { writeDurableContact } from '@/lib/services/profile-contact-service';
 
 function countSuperAdmins(users: UserAccount[]): number {
   return users.filter((u) => u.role === 'SUPER_ADMIN' && !u.isSuspended).length;
@@ -81,6 +83,17 @@ export async function GET(req: NextRequest) {
   const sortOrder = url.searchParams.get('sortOrder') || 'desc';
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '25', 10)));
+
+  // Durable sync (2026-11-15): AuthStore is per-instance memory, so a
+  // user created on another instance is invisible here until their
+  // app_users row is materialized into this registry. Best-effort:
+  // when Supabase is unavailable the list falls back to AuthStore-only,
+  // exactly as before.
+  try {
+    await syncDurableUsersIntoRegistry();
+  } catch {
+    // Never fail the list on a sync problem.
+  }
 
   let users = AuthStore.getAllUsers();
 
@@ -220,6 +233,17 @@ export async function POST(req: NextRequest) {
       plan,
     });
 
+    // Durable copy (2026-11-15): without it an admin-created user is
+    // visible only on this instance, the same bug as self-signups.
+    try {
+      await writeDurableContact(user.id, user.email, {
+        displayName: user.name,
+        companyName: user.company,
+      });
+    } catch {
+      // Best-effort: the account still works on this instance.
+    }
+
     if (initialCredits && Number.isInteger(initialCredits) && initialCredits > 0) {
       AuthStore.addPaidCredits(user.id, initialCredits);
     }
@@ -256,6 +280,14 @@ export async function PATCH(req: NextRequest) {
 
     if (!email) {
       return NextResponse.json({ error: 'User email is required.' }, { status: 400 });
+    }
+
+    // Durable users materialize here so a listed user stays manageable
+    // even when this instance never saw their signup.
+    try {
+      await ensureUserInRegistry(email);
+    } catch {
+      // Fall through to the AuthStore lookup below.
     }
 
     const targetUser = AuthStore.getUserByEmail(email);
@@ -408,6 +440,14 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    // Durable users materialize here so a listed user can be deleted
+    // even when this instance never saw their signup.
+    try {
+      await ensureUserInRegistry(email);
+    } catch {
+      // Fall through to the AuthStore lookup below.
+    }
+
     const targetUser = AuthStore.getUserByEmail(email);
     if (!targetUser) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 });
@@ -446,6 +486,13 @@ export async function DELETE(req: NextRequest) {
 
     // Delete user from registry
     AuthStore.deleteUser(email);
+
+    // Delete the durable row too, or the next list sync resurrects them.
+    try {
+      await deleteDurableUser(email);
+    } catch {
+      // Best-effort: the registry delete already succeeded.
+    }
 
     AuditLogService.log({
       userId: session.userId,

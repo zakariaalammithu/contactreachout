@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { SessionManager } from '@/lib/auth/session';
 import { validateGoogleIdentityClaims } from '@/lib/auth/google-identity';
+import { writeDurableContact } from '@/lib/services/profile-contact-service';
 
 
 export async function GET(req: NextRequest) {
@@ -104,6 +105,20 @@ export async function GET(req: NextRequest) {
 
     if (user.isSuspended) {
       return NextResponse.redirect(new URL('/login?error=Account+is+suspended', req.url));
+    }
+
+    // Durable copy (2026-11-15): email signups write one in verify-otp,
+    // but Google signups wrote nothing — so a Google user had no durable
+    // row and could never appear in the Admin Users list. Best-effort:
+    // the account works even if the write fails.
+    try {
+      await writeDurableContact(user.id, cleanEmail, {
+        displayName: cleanName,
+        replyEmail: cleanEmail,
+      });
+    } catch {
+      // Best-effort: the account still works; the admin list syncs from
+      // the next durable write.
     }
 
     // 2. Create server session

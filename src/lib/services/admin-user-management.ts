@@ -21,6 +21,7 @@ import 'server-only';
 
 import { getSupabaseAdminClient } from '@/lib/supabase/admin-client';
 import { AuthStore } from '@/lib/auth/auth-store';
+import { ensureUserInRegistry } from '@/lib/services/durable-users';
 import { CreditWalletServerService as CreditWalletService } from './credit-wallet-server-service';
 import { CreditWalletService as InMemoryWallet } from './credit-wallet-service';
 import { AuditLogService } from './audit-log-service';
@@ -58,6 +59,11 @@ export async function resolveManagementTarget(email: string): Promise<ResolvedTa
   const normalized = email.toLowerCase().trim();
   const authUser = AuthStore.getUserByEmail(normalized) || null;
   if (authUser) return { email: authUser.email, authUser, isSuperAdmin: authUser.role === 'SUPER_ADMIN' };
+  // Durable row (2026-11-15): a user created on another instance has no
+  // AuthStore record here, but their app_users row materializes one, so
+  // credits / package / dates / history work for listed users.
+  const ensured = await ensureUserInRegistry(normalized);
+  if (ensured) return { email: ensured.email, authUser: ensured, isSuperAdmin: ensured.role === 'SUPER_ADMIN' };
   const client = getSupabaseAdminClient();
   if (client) {
     const { data } = await client.from('users').select('email, role').eq('email', normalized).maybeSingle();

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AdminAuthGuard } from '@/lib/auth/admin-auth-guard';
 import { AuthStore } from '@/lib/auth/auth-store';
+import { ensureUserInRegistry } from '@/lib/services/durable-users';
 import { AuditLogService } from '@/lib/services/audit-log-service';
 
 export async function POST(req: NextRequest) {
@@ -11,6 +12,14 @@ export async function POST(req: NextRequest) {
     const { email, newPassword } = await req.json();
     if (!email) {
       return NextResponse.json({ error: 'User email is required.' }, { status: 400 });
+    }
+
+    // Durable users materialize here so a listed user's password can be
+    // reset even when this instance never saw their signup.
+    try {
+      await ensureUserInRegistry(email);
+    } catch {
+      // Fall through to the AuthStore lookup below.
     }
 
     const targetUser = AuthStore.getUserByEmail(email);
