@@ -116,6 +116,14 @@ export type DurableContactWrite = {
   city?: string;
   stateRegion?: string;
   postalCode?: string;
+  // Password hash + salt (never the password itself). Stored only so an
+  // email user can sign in from a fresh serverless instance — without
+  // them the hash lives only in the signup instance's memory and every
+  // later sign-in answers "Invalid email or password" (2026-11-16).
+  // Migration 20261116000001 adds the columns; until it is applied the
+  // write retries without them, like the company/address tiers below.
+  passwordHash?: string;
+  passwordSalt?: string;
 };
 
 /**
@@ -165,16 +173,31 @@ export async function writeDurableContact(
     if (values.city !== undefined) row.city = values.city;
     if (values.stateRegion !== undefined) row.state_region = values.stateRegion;
     if (values.postalCode !== undefined) row.postal_code = values.postalCode;
+    const hasPasswordColumns = values.passwordHash !== undefined || values.passwordSalt !== undefined;
+    if (values.passwordHash !== undefined) row.password_hash = values.passwordHash;
+    if (values.passwordSalt !== undefined) row.password_salt = values.passwordSalt;
     const { error } = await client.from('app_users').upsert(row, { onConflict: 'email_normalized' });
     if (!error) return true;
-    if (!hasCompanyColumns && !hasAddressColumns) return false;
+    if (!hasCompanyColumns && !hasAddressColumns && !hasPasswordColumns) return false;
+    // Retry without the password columns first (keeps the identity
+    // columns when only the password migration is missing); each retry
+    // that succeeds still returns false — the dropped fields did not
+    // stick, and the caller must say so.
+    let current = row;
+    if (hasPasswordColumns) {
+      const withoutPassword: Record<string, unknown> = { ...row };
+      delete withoutPassword.password_hash;
+      delete withoutPassword.password_salt;
+      const passwordRetry = await client.from('app_users').upsert(withoutPassword, { onConflict: 'email_normalized' });
+      if (!passwordRetry.error) return false;
+      current = withoutPassword;
+    }
     // Retry without the address columns first (keeps the company
     // columns when only the address migration is missing); each retry
     // that succeeds still returns false — the dropped fields did not
     // stick, and the caller must say so.
-    let current = row;
     if (hasAddressColumns) {
-      const withoutAddress: Record<string, unknown> = { ...row };
+      const withoutAddress: Record<string, unknown> = { ...current };
       delete withoutAddress.street_address;
       delete withoutAddress.city;
       delete withoutAddress.state_region;

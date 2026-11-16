@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
+import { ensureUserInRegistry } from '@/lib/services/durable-users';
 
 const forgotSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -29,7 +30,13 @@ export async function POST(req: Request) {
     }
 
     const cleanEmail = parsed.data.email.toLowerCase().trim();
-    const user = AuthStore.getUserByEmail(cleanEmail);
+    // The record may live only as a durable row (signup on another
+    // instance): materialize it first, or no reset code is ever sent.
+    let user = AuthStore.getUserByEmail(cleanEmail);
+    if (!user) {
+      await ensureUserInRegistry(cleanEmail);
+      user = AuthStore.getUserByEmail(cleanEmail);
+    }
 
     if (user) {
       // Reuses the existing email OTP service (2-minute expiry, resend

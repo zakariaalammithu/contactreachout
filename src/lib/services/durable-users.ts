@@ -15,11 +15,14 @@
  *
  * Safety: a materialized record is created with a RANDOM unusable
  * password and isEmailVerified=true (a durable row only exists for a
- * verified signup or a profile save). The random password matters: the
- * signin route signs a verified user in directly when NO password hash
- * exists, so a password-less verified record would let anyone in with
- * any password. Google users sign in via the Google callback, which
- * links their googleSub onto the materialized record.
+ * verified signup or a profile save) — UNLESS the durable row carries
+ * a stored password hash (migration 20261116000001), in which case the
+ * materialized record installs that hash so the user can actually sign
+ * in with their real password from this instance. The random password
+ * matters: the signin route signs a verified user in directly when NO
+ * password hash exists, so a password-less verified record would let
+ * anyone in with any password. Google users sign in via the Google
+ * callback, which links their googleSub onto the materialized record.
  */
 import 'server-only';
 
@@ -32,6 +35,11 @@ export type DurableUserRow = {
   name: string;
   company: string;
   createdAt: string;
+  // Stored password hash + salt when the row has them (migration
+  // 20261116000001). Absent for Google users and for accounts created
+  // before the migration — those materialize with a random password.
+  passwordHash?: string;
+  passwordSalt?: string;
 };
 
 const MAX_SYNC_USERS = 500;
@@ -41,6 +49,8 @@ type RawRow = {
   display_name?: string | null;
   company_name?: string | null;
   created_at?: string | null;
+  password_hash?: string | null;
+  password_salt?: string | null;
 };
 
 function toRow(data: RawRow): DurableUserRow | null {
@@ -51,6 +61,8 @@ function toRow(data: RawRow): DurableUserRow | null {
     name: (data.display_name || '').trim(),
     company: (data.company_name || '').trim(),
     createdAt: (data.created_at || '').trim(),
+    passwordHash: (data.password_hash || '').trim() || undefined,
+    passwordSalt: (data.password_salt || '').trim() || undefined,
   };
 }
 
@@ -96,10 +108,18 @@ async function fetchDurableRow(email: string): Promise<DurableUserRow | null> {
   try {
     const full = await client
       .from('app_users')
-      .select('email_normalized, display_name, company_name, created_at')
+      .select('email_normalized, display_name, company_name, created_at, password_hash, password_salt')
       .eq('email_normalized', key)
       .maybeSingle();
     if (!full.error && full.data) return toRow(full.data as RawRow);
+    // password_hash/salt live behind migration 20261116000001; if it
+    // is not applied yet, the full select fails — retry without them.
+    const noPassword = await client
+      .from('app_users')
+      .select('email_normalized, display_name, company_name, created_at')
+      .eq('email_normalized', key)
+      .maybeSingle();
+    if (!noPassword.error && noPassword.data) return toRow(noPassword.data as RawRow);
     const legacy = await client
       .from('app_users')
       .select('email_normalized, display_name, created_at')
@@ -112,6 +132,22 @@ async function fetchDurableRow(email: string): Promise<DurableUserRow | null> {
   }
 }
 
+/**
+ * The durable password hash + salt for this email, if the row carries
+ * them. Null when there is no row, no hash, or Supabase is unavailable.
+ * Used by sign-in to heal a stale local record (password reset on
+ * another instance): a password that verifies against the durable hash
+ * is the current credential by definition, so the local record is
+ * updated to it. Never throws.
+ */
+export async function fetchDurableAuth(
+  email: string,
+): Promise<{ passwordHash: string; passwordSalt: string } | null> {
+  const row = await fetchDurableRow(email);
+  if (!row?.passwordHash || !row?.passwordSalt) return null;
+  return { passwordHash: row.passwordHash, passwordSalt: row.passwordSalt };
+}
+
 function materializeRow(row: DurableUserRow): UserAccount | null {
   try {
     const created = AuthStore.createUser({
@@ -119,11 +155,20 @@ function materializeRow(row: DurableUserRow): UserAccount | null {
       email: row.email,
       // Random unusable password (see header): a verified record with
       // no password hash would pass the signin route's fall-through.
+      // Replaced below by the stored hash when the durable row has one.
       password: randomBytes(32).toString('base64url'),
       company: row.company || undefined,
       isEmailVerified: true,
       plan: 'Free',
     });
+    if (row.passwordHash && row.passwordSalt) {
+      try {
+        AuthStore.updateUser(row.email, { passwordHash: row.passwordHash, salt: row.passwordSalt });
+      } catch {
+        // The random-password record stands: sign-in with the real
+        // password fails here, but no bypass is possible (a hash exists).
+      }
+    }
     if (row.createdAt) {
       try {
         AuthStore.updateUser(row.email, { createdAt: row.createdAt });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AdminAuthGuard } from '@/lib/auth/admin-auth-guard';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { ensureUserInRegistry } from '@/lib/services/durable-users';
+import { writeDurableContact } from '@/lib/services/profile-contact-service';
 import { AuditLogService } from '@/lib/services/audit-log-service';
 
 export async function POST(req: NextRequest) {
@@ -43,6 +44,22 @@ export async function POST(req: NextRequest) {
     }
 
     const result = AuthStore.resetPassword(email, newPassword);
+
+    // A direct reset sets a real password: store its hash durably, or
+    // the user still cannot sign in from another instance.
+    if (newPassword) {
+      try {
+        const updated = AuthStore.getUserByEmail(email);
+        if (updated?.passwordHash && updated?.salt) {
+          await writeDurableContact(updated.id, email, {
+            passwordHash: updated.passwordHash,
+            passwordSalt: updated.salt,
+          });
+        }
+      } catch {
+        // Best-effort: the new password still works on this instance.
+      }
+    }
 
     AuditLogService.log({
       userId: session.userId,

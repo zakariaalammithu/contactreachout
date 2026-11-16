@@ -41,12 +41,17 @@ export async function POST(req: Request) {
       // reply email) so it survives a redeploy once the app_users
       // identity migration is applied. Never blocks account creation:
       // the AuthStore record is the source of truth for this session.
+      // The password hash is stored with it (migration 20261116000001):
+      // without a durable hash the account cannot sign in from another
+      // instance — the hash lives only in this instance's memory.
       try {
         await writeDurableContact(user.id, user.email, {
           displayName: user.name,
           phone: user.phone,
           whatsapp: user.whatsApp,
           replyEmail: user.replyEmail,
+          passwordHash: user.passwordHash,
+          passwordSalt: user.salt,
         });
       } catch {
         // Durable store unavailable — the account still works.

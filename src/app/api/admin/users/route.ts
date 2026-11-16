@@ -235,10 +235,14 @@ export async function POST(req: NextRequest) {
 
     // Durable copy (2026-11-15): without it an admin-created user is
     // visible only on this instance, the same bug as self-signups.
+    // The password hash goes with it (migration 20261116000001), or the
+    // user cannot sign in from another instance.
     try {
       await writeDurableContact(user.id, user.email, {
         displayName: user.name,
         companyName: user.company,
+        passwordHash: user.passwordHash,
+        passwordSalt: user.salt,
       });
     } catch {
       // Best-effort: the account still works on this instance.

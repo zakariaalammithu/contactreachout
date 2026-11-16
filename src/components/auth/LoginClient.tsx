@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Check, KeyRound, ArrowRight, ShieldCheck, Mail, Lock, User, RefreshCw, AlertCircle, ChevronLeft } from 'lucide-react';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
+import { COUNTRY_DIAL_CODES, normalizePhoneNumber } from '@/lib/services/phone-normalization';
 
 export default function LoginClient() {
   const searchParams = useSearchParams();
@@ -23,6 +24,13 @@ export default function LoginClient() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState('1');
+  // Sender identity, collected at signup like the /signup form does:
+  // the API requires phone AND WhatsApp, and this tab used to send
+  // neither a WhatsApp field nor a country code — every signup from
+  // /login failed with the bare zod message "Required" (2026-11-16).
+  const [whatsApp, setWhatsApp] = useState('');
+  const [whatsAppCountry, setWhatsAppCountry] = useState('1');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -165,6 +173,20 @@ export default function LoginClient() {
       return;
     }
 
+    // Normalize both numbers to E.164 before sending; the server
+    // re-validates, but a bad number should stop here with a clear
+    // message instead of a failed signup.
+    const cleanPhone = normalizePhoneNumber(phone, phoneCountry);
+    if (!cleanPhone) {
+      setErrorMsg('Enter a valid phone number.');
+      return;
+    }
+    const cleanWhatsApp = normalizePhoneNumber(whatsApp, whatsAppCountry);
+    if (!cleanWhatsApp) {
+      setErrorMsg('Enter a valid WhatsApp number.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -172,7 +194,7 @@ export default function LoginClient() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, email, phone, password, confirmPassword, resendApiKey }),
+        body: JSON.stringify({ fullName, email, phone: cleanPhone, whatsApp: cleanWhatsApp, password, confirmPassword, resendApiKey }),
       });
 
       const data = await res.json();
@@ -468,15 +490,51 @@ export default function LoginClient() {
 
             <div className="space-y-1">
               <label className="text-xs font-bold text-zinc-200">
-                Phone Number
+                Phone Number <span className="text-rose-400">*</span>
               </label>
-              <input
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors font-mono"
-                placeholder="+1 (555) 000-0000"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={phoneCountry}
+                  onChange={(e) => setPhoneCountry(e.target.value)}
+                  aria-label="Phone country code"
+                  className="rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-2.5 text-xs font-bold text-zinc-200 focus:border-blue-600 focus:outline-none cursor-pointer"
+                >
+                  {COUNTRY_DIAL_CODES.map((c) => (<option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>))}
+                </select>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  className="min-w-0 flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors font-mono"
+                  placeholder={phoneCountry === '1' ? '(555) 234-5678' : `+${phoneCountry}...`}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-zinc-200">
+                WhatsApp Number <span className="text-rose-400">*</span>
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={whatsAppCountry}
+                  onChange={(e) => setWhatsAppCountry(e.target.value)}
+                  aria-label="WhatsApp country code"
+                  className="rounded-xl border border-zinc-700 bg-zinc-950 px-2 py-2.5 text-xs font-bold text-zinc-200 focus:border-blue-600 focus:outline-none cursor-pointer"
+                >
+                  {COUNTRY_DIAL_CODES.map((c) => (<option key={`${c.code}-${c.dial}`} value={c.dial}>{c.label}</option>))}
+                </select>
+                <input
+                  type="tel"
+                  value={whatsApp}
+                  onChange={(e) => setWhatsApp(e.target.value)}
+                  required
+                  className="min-w-0 flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-100 focus:border-blue-600 focus:outline-none transition-colors font-mono"
+                  placeholder={whatsAppCountry === '1' ? '(555) 234-5678' : `+${whatsAppCountry}...`}
+                />
+              </div>
+              <p className="text-[10px] text-zinc-500">Saved to your account and used as the default sender identity for every campaign.</p>
             </div>
 
             <div className="space-y-1">

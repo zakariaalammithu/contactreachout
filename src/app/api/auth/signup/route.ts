@@ -6,12 +6,15 @@ import { RiskEngine } from '@/lib/auth/risk-engine';
 import { normalizePhoneNumber } from '@/lib/services/phone-normalization';
 
 const signupSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  phone: z.string().min(1, 'Phone number is required for live campaigns'),
-  whatsApp: z.string().min(1, 'WhatsApp number is required for live campaigns'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string().min(6, 'Confirm password must be at least 6 characters'),
+  // required_error: a missing key reports the zod default "Required"
+  // with no field name — the /login signup form hit exactly that
+  // (it never sent whatsApp) and the banner showed the bare word.
+  fullName: z.string({ required_error: 'Full name is required' }).min(2, 'Full name must be at least 2 characters'),
+  email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address'),
+  phone: z.string({ required_error: 'Phone number is required for live campaigns' }).min(1, 'Phone number is required for live campaigns'),
+  whatsApp: z.string({ required_error: 'WhatsApp number is required for live campaigns' }).min(1, 'WhatsApp number is required for live campaigns'),
+  password: z.string({ required_error: 'Password is required' }).min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string({ required_error: 'Please confirm your password' }).min(6, 'Confirm password must be at least 6 characters'),
   resendApiKey: z.string().optional(),
   referralCode: z.string().trim().max(20).optional(),
 }).refine((data) => data.password === data.confirmPassword, {

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
+import { ensureUserInRegistry } from '@/lib/services/durable-users';
+import { writeDurableContact } from '@/lib/services/profile-contact-service';
 
 const resetSchema = z
   .object({
@@ -46,12 +48,30 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = AuthStore.getUserByEmail(cleanEmail);
+    let user = AuthStore.getUserByEmail(cleanEmail);
+    if (!user) {
+      await ensureUserInRegistry(cleanEmail);
+      user = AuthStore.getUserByEmail(cleanEmail);
+    }
     if (!user) {
       return NextResponse.json({ error: 'Invalid or expired reset code.' }, { status: 400 });
     }
 
     AuthStore.resetPassword(cleanEmail, newPassword);
+
+    // Durable copy of the new hash, or the next sign-in from another
+    // instance fails exactly like the old password did.
+    try {
+      const updated = AuthStore.getUserByEmail(cleanEmail);
+      if (updated?.passwordHash && updated?.salt) {
+        await writeDurableContact(updated.id, cleanEmail, {
+          passwordHash: updated.passwordHash,
+          passwordSalt: updated.salt,
+        });
+      }
+    } catch {
+      // Best-effort: the new password still works on this instance.
+    }
 
     // No session is created: the user signs in with the new password.
     return NextResponse.json({

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { AuthStore } from '@/lib/auth/auth-store';
 import { EmailVerificationService } from '@/lib/auth/email-verification-service';
 import { SessionManager } from '@/lib/auth/session';
+import { ensureUserInRegistry, fetchDurableAuth } from '@/lib/services/durable-users';
 
 const signinSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -34,8 +35,15 @@ export async function POST(req: Request) {
     const { email, password, resendApiKey, next } = parsed.data;
     const cleanEmail = email.toLowerCase().trim();
 
-    // 1. Verify credentials against AuthStore
-    const user = AuthStore.getUserByEmail(cleanEmail);
+    // 1. Verify credentials against AuthStore. The record may live only
+    // as a durable row (created by signup on another instance, or lost
+    // in a recycle): materialize it — with its stored password hash
+    // when one was saved — before answering "Invalid email or password."
+    let user = AuthStore.getUserByEmail(cleanEmail);
+    if (!user) {
+      await ensureUserInRegistry(cleanEmail);
+      user = AuthStore.getUserByEmail(cleanEmail);
+    }
     if (!user) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 400 });
     }
@@ -46,7 +54,24 @@ export async function POST(req: Request) {
 
     // Verify password if user has password set
     if (user.passwordHash && user.salt) {
-      const isMatch = AuthStore.verifyPassword(password, user.passwordHash, user.salt);
+      let isMatch = AuthStore.verifyPassword(password, user.passwordHash, user.salt);
+      if (!isMatch) {
+        // Stale local record (password reset on another instance): the
+        // durable hash is the current credential — a password that
+        // verifies against it heals this record and signs the user in.
+        const durableAuth = await fetchDurableAuth(cleanEmail);
+        if (
+          durableAuth
+          && (durableAuth.passwordHash !== user.passwordHash || durableAuth.passwordSalt !== user.salt)
+          && AuthStore.verifyPassword(password, durableAuth.passwordHash, durableAuth.passwordSalt)
+        ) {
+          AuthStore.updateUser(cleanEmail, {
+            passwordHash: durableAuth.passwordHash,
+            salt: durableAuth.passwordSalt,
+          });
+          isMatch = true;
+        }
+      }
       if (!isMatch) {
         return NextResponse.json({ error: 'Invalid email or password.' }, { status: 400 });
       }
