@@ -16,6 +16,15 @@ export const dynamic = 'force-dynamic';
  * Security: Bearer-gated with the shared worker secret (the same secret
  * that gates /submit), returns only a boolean, never lead data. An
  * unauthenticated, malformed, or unavailable request denies the target.
+ *
+ * Implementation (2026-11-17): candidates are fetched with filtered
+ * point lookups (in/ilike), NOT a full-table list. The old list scan of
+ * app_campaign_leads returned only 90 rows while the table has 120 (a
+ * frozen/truncated list view), so new campaign leads never verified.
+ * Point lookups DO see new rows — proven live 2026-11-17, when a point
+ * lookup for fxshouldersolutions.com found both the lead and its
+ * campaign link while the list still returned 90. The match itself is
+ * unchanged (hostMatchesLead, same as before).
  */
 
 function authorized(request: NextRequest): boolean {
@@ -55,7 +64,7 @@ function emailDomain(value: string | null | undefined): string | null {
   return normalizeDomain(email.slice(at + 1));
 }
 
-type LeadContact = { id: string; email: string | null; domain: string | null; website: string | null; created_at?: string | null };
+type LeadContact = { id: string; email: string | null; domain: string | null; website: string | null };
 
 function hostMatchesLead(host: string, lead: LeadContact): boolean {
   const candidates = [normalizeDomain(lead.domain), hostOfWebsite(lead.website), emailDomain(lead.email)].filter(
@@ -73,73 +82,57 @@ export async function GET(request: NextRequest) {
     // This log is the only visibility into the worker -> app callback:
     // the Nov-11/12 new-domain denies recurred with zero evidence after
     // the Nov-4 temporary log was removed, so it stays. Domain + boolean
-    // + row counts only; never secrets, emails, or lead data.
+    // + counts only; never secrets, emails, or lead data.
     console.log(`[verify-domain] domain=${domain} allowed=false error=no-client`);
     return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
   }
 
-  const links = await client.from('app_campaign_leads').select('app_lead_id');
-  if (links.error) {
-    console.log(`[verify-domain] domain=${domain} allowed=false error=links`);
-    return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
-  }
-  const leadIds = [...new Set(((links.data || []) as Array<{ app_lead_id: string }>).map((row) => row.app_lead_id))];
-  if (!leadIds.length) {
-    console.log(`[verify-domain] domain=${domain} allowed=false links=0 leads=0`);
-    return NextResponse.json({ allowed: false });
+  // Hosts to match: the host itself plus its parent domains, so a lead
+  // registered as example.com also verifies sub.example.com. The bare
+  // TLD is excluded (a '%com%' website filter would match everything).
+  const parentHosts = [domain];
+  let rest = domain;
+  while (rest.includes('.')) {
+    rest = rest.slice(rest.indexOf('.') + 1);
+    if (rest.includes('.')) parentHosts.push(rest);
   }
 
-  const leads = await client.from('app_leads').select('id, email, domain, website, created_at').in('id', leadIds);
-  if (leads.error) {
-    console.log(`[verify-domain] domain=${domain} allowed=false error=leads links=${leadIds.length}`);
+  const byDomain = await client.from('app_leads').select('id, email, domain, website').in('domain', parentHosts);
+  if (byDomain.error) {
+    console.log(`[verify-domain] domain=${domain} allowed=false error=leads`);
     return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
   }
-  const rows = (leads.data || []) as LeadContact[];
-  const allowed = rows.some((lead) => hostMatchesLead(domain, lead));
-  console.log(`[verify-domain] domain=${domain} allowed=${allowed} links=${leadIds.length} leads=${rows.length}`);
-  // TEMPORARY diagnostic (2026-11-17): verify sees only 90 of 118 linked
-  // leads while the table keeps growing. Log what the query actually
-  // returns so the freeze can be dated: row counts, the Supabase project
-  // the deployed function reads, and the created_at range of the rows it
-  // sees. Counts + timestamps only; never secrets, emails, or lead data.
-  // Remove after diagnosis (see 863a41a for the earlier temporary log).
-  const createdAts = rows
-    .map((lead) => lead.created_at)
-    .filter((value): value is string => Boolean(value))
-    .sort();
-  let projectHost = 'n/a';
-  try {
-    projectHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').hostname || 'n/a';
-  } catch {
-    projectHost = 'n/a';
-  }
-  console.log(
-    `[verify-domain-diag] project=${projectHost} linkRows=${(links.data || []).length} uniqueLinks=${leadIds.length} leadRows=${rows.length} oldestCreatedAt=${createdAts[0] || 'n/a'} newestCreatedAt=${createdAts[createdAts.length - 1] || 'n/a'}`,
-  );
-  // TEMPORARY diagnostic 2 (2026-11-17): the list query above returns only
-  // 90 rows while the table has 120. Test whether a POINT lookup (eq)
-  // sees a new lead the list misses: if it does, the list is truncated
-  // and verify can be rewritten around point lookups (the real bulk fix);
-  // if it does not, the view itself is frozen and the fix is Supabase-side.
-  // Counts only; never secrets, emails, or lead data. Remove after diagnosis.
-  try {
-    const byDomain = await client.from('app_leads').select('id').eq('domain', domain);
-    const foundLead = (byDomain.data || [])[0] as { id: string } | undefined;
-    let linkFound = 'n/a';
-    if (foundLead) {
-      const linkCheck = await client
-        .from('app_campaign_leads')
-        .select('app_lead_id')
-        .eq('app_lead_id', foundLead.id);
-      linkFound = String((linkCheck.data || []).length);
+  const candidatesById = new Map<string, LeadContact>();
+  for (const lead of (byDomain.data || []) as LeadContact[]) candidatesById.set(lead.id, lead);
+  let matched = [...candidatesById.values()].filter((lead) => hostMatchesLead(domain, lead));
+  if (!matched.length) {
+    // Fallback for leads whose domain field is empty but whose website
+    // or email domain matches — the same cases the old list scan covered.
+    // The broad ilike filter only gathers candidates; hostMatchesLead
+    // below still applies the precise match, so a substring hit never
+    // allows a non-lead domain.
+    const orFilter = [
+      ...parentHosts.map((host) => `website.ilike.%${host}%`),
+      ...parentHosts.map((host) => `email.ilike.%@${host}`),
+    ].join(',');
+    const byFallback = await client.from('app_leads').select('id, email, domain, website').or(orFilter);
+    if (byFallback.error) {
+      console.log(`[verify-domain] domain=${domain} allowed=false error=leads-fallback`);
+      return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
     }
-    console.log(
-      `[verify-domain-diag2] domain=${domain} pointLeadFound=${foundLead ? 1 : 0} pointLinkFound=${linkFound} pointError=${byDomain.error?.message || 'none'}`,
-    );
-  } catch (diagError) {
-    console.log(
-      `[verify-domain-diag2] domain=${domain} pointLookupFailed=${diagError instanceof Error ? diagError.message : 'unknown'}`,
-    );
+    for (const lead of (byFallback.data || []) as LeadContact[]) candidatesById.set(lead.id, lead);
+    matched = [...candidatesById.values()].filter((lead) => hostMatchesLead(domain, lead));
   }
+  const matchedIds = [...new Set(matched.map((lead) => lead.id))];
+  let allowed = false;
+  if (matchedIds.length) {
+    const links = await client.from('app_campaign_leads').select('app_lead_id').in('app_lead_id', matchedIds);
+    if (links.error) {
+      console.log(`[verify-domain] domain=${domain} allowed=false error=links`);
+      return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
+    }
+    allowed = (links.data || []).length > 0;
+  }
+  console.log(`[verify-domain] domain=${domain} allowed=${allowed} candidates=${candidatesById.size} matched=${matched.length}`);
   return NextResponse.json({ allowed });
 }

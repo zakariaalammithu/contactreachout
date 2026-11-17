@@ -18,6 +18,7 @@ function makeBuilder(result) {
     select: () => builder,
     eq: () => builder,
     in: () => builder,
+    or: () => builder,
     maybeSingle: async () => result,
     then: (resolve) => resolve(result),
   };
@@ -33,14 +34,17 @@ function request(domain, authorization) {
   });
 }
 
-function mockCampaignLead(lead) {
-  mocks.client.from
-    .mockImplementationOnce(() => makeBuilder({ data: [{ app_lead_id: lead.id }], error: null }))
-    .mockImplementationOnce(() => makeBuilder({ data: [lead], error: null }))
-    // TEMPORARY (2026-11-17, diag2): the route also runs a point lookup
-    // by domain after the list query; mock it with an empty result.
-    .mockImplementationOnce(() => makeBuilder({ data: [], error: null }));
+// Queue one mocked `from()` result per query the route makes, in order:
+// leads-by-domain, then (only when nothing matched) leads-by-fallback,
+// then (only when a lead matched) the campaign-link check.
+function mockSequence(...results) {
+  for (const result of results) {
+    mocks.client.from.mockImplementationOnce(() => makeBuilder(result));
+  }
 }
+
+const linkRow = (id) => ({ data: [{ app_lead_id: id }], error: null });
+const noRows = { data: [], error: null };
 
 describe('worker verify-domain route', () => {
   beforeEach(() => {
@@ -53,38 +57,49 @@ describe('worker verify-domain route', () => {
   });
 
   it('allows an exact campaign-lead domain', async () => {
-    mockCampaignLead({ id: 'lead-1', email: null, domain: 'acme.com', website: null });
+    const lead = { id: 'lead-1', email: null, domain: 'acme.com', website: null };
+    mockSequence({ data: [lead], error: null }, linkRow('lead-1'));
     const response = await GET(request('acme.com', 'Bearer test-secret'));
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ allowed: true });
   });
 
   it('allows subdomains of a campaign-lead domain', async () => {
-    mockCampaignLead({ id: 'lead-1', email: null, domain: 'acme.com', website: null });
+    const lead = { id: 'lead-1', email: null, domain: 'acme.com', website: null };
+    mockSequence({ data: [lead], error: null }, linkRow('lead-1'));
     const response = await GET(request('www.acme.com', 'Bearer test-secret'));
     await expect(response.json()).resolves.toEqual({ allowed: true });
   });
 
   it('allows a host matching the lead website hostname', async () => {
-    mockCampaignLead({ id: 'lead-1', email: null, domain: null, website: 'https://www.acme.com/contact' });
+    const lead = { id: 'lead-1', email: null, domain: null, website: 'https://www.acme.com/contact' };
+    mockSequence(noRows, { data: [lead], error: null }, linkRow('lead-1'));
     const response = await GET(request('acme.com', 'Bearer test-secret'));
     await expect(response.json()).resolves.toEqual({ allowed: true });
   });
 
   it('allows a host matching the lead email domain', async () => {
-    mockCampaignLead({ id: 'lead-1', email: 'boss@acme.com', domain: null, website: null });
+    const lead = { id: 'lead-1', email: 'boss@acme.com', domain: null, website: null };
+    mockSequence(noRows, { data: [lead], error: null }, linkRow('lead-1'));
     const response = await GET(request('acme.com', 'Bearer test-secret'));
     await expect(response.json()).resolves.toEqual({ allowed: true });
   });
 
   it('denies hosts with no campaign lead', async () => {
-    mockCampaignLead({ id: 'lead-1', email: null, domain: 'acme.com', website: null });
+    mockSequence(noRows, noRows);
     const response = await GET(request('other.com', 'Bearer test-secret'));
     await expect(response.json()).resolves.toEqual({ allowed: false });
   });
 
-  it('denies when no lead is attached to any campaign', async () => {
-    mocks.client.from.mockImplementationOnce(() => makeBuilder({ data: [], error: null }));
+  it('denies a lead that is not attached to any campaign', async () => {
+    const lead = { id: 'lead-1', email: null, domain: 'acme.com', website: null };
+    mockSequence({ data: [lead], error: null }, noRows);
+    const response = await GET(request('acme.com', 'Bearer test-secret'));
+    await expect(response.json()).resolves.toEqual({ allowed: false });
+  });
+
+  it('denies when no lead matches the host', async () => {
+    mockSequence(noRows, noRows);
     const response = await GET(request('acme.com', 'Bearer test-secret'));
     await expect(response.json()).resolves.toEqual({ allowed: false });
   });
