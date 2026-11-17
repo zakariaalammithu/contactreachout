@@ -55,7 +55,7 @@ function emailDomain(value: string | null | undefined): string | null {
   return normalizeDomain(email.slice(at + 1));
 }
 
-type LeadContact = { id: string; email: string | null; domain: string | null; website: string | null };
+type LeadContact = { id: string; email: string | null; domain: string | null; website: string | null; created_at?: string | null };
 
 function hostMatchesLead(host: string, lead: LeadContact): boolean {
   const candidates = [normalizeDomain(lead.domain), hostOfWebsite(lead.website), emailDomain(lead.email)].filter(
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ allowed: false });
   }
 
-  const leads = await client.from('app_leads').select('id, email, domain, website').in('id', leadIds);
+  const leads = await client.from('app_leads').select('id, email, domain, website, created_at').in('id', leadIds);
   if (leads.error) {
     console.log(`[verify-domain] domain=${domain} allowed=false error=leads links=${leadIds.length}`);
     return NextResponse.json({ error: 'Unavailable.' }, { status: 503 });
@@ -97,5 +97,24 @@ export async function GET(request: NextRequest) {
   const rows = (leads.data || []) as LeadContact[];
   const allowed = rows.some((lead) => hostMatchesLead(domain, lead));
   console.log(`[verify-domain] domain=${domain} allowed=${allowed} links=${leadIds.length} leads=${rows.length}`);
+  // TEMPORARY diagnostic (2026-11-17): verify sees only 90 of 118 linked
+  // leads while the table keeps growing. Log what the query actually
+  // returns so the freeze can be dated: row counts, the Supabase project
+  // the deployed function reads, and the created_at range of the rows it
+  // sees. Counts + timestamps only; never secrets, emails, or lead data.
+  // Remove after diagnosis (see 863a41a for the earlier temporary log).
+  const createdAts = rows
+    .map((lead) => lead.created_at)
+    .filter((value): value is string => Boolean(value))
+    .sort();
+  let projectHost = 'n/a';
+  try {
+    projectHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').hostname || 'n/a';
+  } catch {
+    projectHost = 'n/a';
+  }
+  console.log(
+    `[verify-domain-diag] project=${projectHost} linkRows=${(links.data || []).length} uniqueLinks=${leadIds.length} leadRows=${rows.length} oldestCreatedAt=${createdAts[0] || 'n/a'} newestCreatedAt=${createdAts[createdAts.length - 1] || 'n/a'}`,
+  );
   return NextResponse.json({ allowed });
 }
