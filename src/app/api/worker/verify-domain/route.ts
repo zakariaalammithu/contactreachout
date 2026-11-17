@@ -116,5 +116,30 @@ export async function GET(request: NextRequest) {
   console.log(
     `[verify-domain-diag] project=${projectHost} linkRows=${(links.data || []).length} uniqueLinks=${leadIds.length} leadRows=${rows.length} oldestCreatedAt=${createdAts[0] || 'n/a'} newestCreatedAt=${createdAts[createdAts.length - 1] || 'n/a'}`,
   );
+  // TEMPORARY diagnostic 2 (2026-11-17): the list query above returns only
+  // 90 rows while the table has 120. Test whether a POINT lookup (eq)
+  // sees a new lead the list misses: if it does, the list is truncated
+  // and verify can be rewritten around point lookups (the real bulk fix);
+  // if it does not, the view itself is frozen and the fix is Supabase-side.
+  // Counts only; never secrets, emails, or lead data. Remove after diagnosis.
+  try {
+    const byDomain = await client.from('app_leads').select('id').eq('domain', domain);
+    const foundLead = (byDomain.data || [])[0] as { id: string } | undefined;
+    let linkFound = 'n/a';
+    if (foundLead) {
+      const linkCheck = await client
+        .from('app_campaign_leads')
+        .select('app_lead_id')
+        .eq('app_lead_id', foundLead.id);
+      linkFound = String((linkCheck.data || []).length);
+    }
+    console.log(
+      `[verify-domain-diag2] domain=${domain} pointLeadFound=${foundLead ? 1 : 0} pointLinkFound=${linkFound} pointError=${byDomain.error?.message || 'none'}`,
+    );
+  } catch (diagError) {
+    console.log(
+      `[verify-domain-diag2] domain=${domain} pointLookupFailed=${diagError instanceof Error ? diagError.message : 'unknown'}`,
+    );
+  }
   return NextResponse.json({ allowed });
 }

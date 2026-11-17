@@ -36,7 +36,10 @@ function request(domain, authorization) {
 function mockCampaignLead(lead) {
   mocks.client.from
     .mockImplementationOnce(() => makeBuilder({ data: [{ app_lead_id: lead.id }], error: null }))
-    .mockImplementationOnce(() => makeBuilder({ data: [lead], error: null }));
+    .mockImplementationOnce(() => makeBuilder({ data: [lead], error: null }))
+    // TEMPORARY (2026-11-17, diag2): the route also runs a point lookup
+    // by domain after the list query; mock it with an empty result.
+    .mockImplementationOnce(() => makeBuilder({ data: [], error: null }));
 }
 
 describe('worker verify-domain route', () => {
