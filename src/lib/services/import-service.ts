@@ -81,6 +81,39 @@ export interface ImportExecutionResult {
   sanitizedFormulasCount: number;
   importedCount: number;
   validCount?: number;
+  // Every row that did NOT import, with the reason (2026-11-17: a
+  // 5-row file showed 1 lead and the UI said only "1 leads imported
+  // successfully" — the 4 dropped rows were invisible, so nobody
+  // could tell an invalid website from a duplicate domain).
+  skippedRows: SkippedImportRow[];
+}
+
+export interface SkippedImportRow {
+  /** 1-based data-row number in the processed rows. */
+  rowNumber: number;
+  website: string;
+  company: string;
+  reasons: string[];
+}
+
+/**
+ * One-line import report for the UI banner: how many imported, how many
+ * skipped, and why (first few rows, then a count). Pure.
+ */
+export function buildImportSummary(result: ImportExecutionResult): string {
+  const imported = result.validLeads.length;
+  const skipped = result.skippedRows?.length || 0;
+  const leadWord = imported === 1 ? 'lead' : 'leads';
+  if (skipped === 0) return `${imported} ${leadWord} imported successfully.`;
+  const shown = (result.skippedRows || []).slice(0, 5);
+  const details = shown
+    .map((row) => {
+      const who = row.website || row.company || `row ${row.rowNumber}`;
+      return `row ${row.rowNumber} (${who}) — ${row.reasons.join('; ')}`;
+    })
+    .join('; ');
+  const more = skipped > shown.length ? `; and ${skipped - shown.length} more` : '';
+  return `${imported} ${leadWord} imported successfully. ${skipped} row${skipped === 1 ? '' : 's'} skipped: ${details}${more}.`;
 }
 
 /**
@@ -520,11 +553,13 @@ export function processImportRows(
     : new Set<string>();
   const seenDomainsInFile = new Set<string>();
   const validLeads: NormalizedLead[] = [];
+  const skippedRows: SkippedImportRow[] = [];
   let invalidRowsCount = 0;
   let duplicateWebsitesCount = 0;
   let sanitizedFormulasCount = 0;
 
-  for (const rawRow of safeRows) {
+  for (let rowIndex = 0; rowIndex < safeRows.length; rowIndex += 1) {
+    const rawRow = safeRows[rowIndex];
     const errors: string[] = [];
 
     // Extract all 12 mapped fields
@@ -641,6 +676,12 @@ export function processImportRows(
       validLeads.push(lead);
     } else {
       invalidRowsCount++;
+      skippedRows.push({
+        rowNumber: rowIndex + 1,
+        website: String(rawWebsite || '').trim(),
+        company: companyName,
+        reasons: errors,
+      });
     }
   }
 
@@ -651,5 +692,6 @@ export function processImportRows(
     duplicateWebsitesCount,
     sanitizedFormulasCount,
     importedCount: validLeads.length,
+    skippedRows,
   };
 }

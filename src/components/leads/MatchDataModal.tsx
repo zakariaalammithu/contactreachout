@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet, X, Check, Save } from 'lucide-react';
-import { normalizeOptionalNumericField, suggestColumnMappings, processImportRows, validateRequiredImportMappings } from '@/lib/services/import-service';
+import { normalizeOptionalNumericField, suggestColumnMappings, processImportRows, validateRequiredImportMappings, buildImportSummary } from '@/lib/services/import-service';
 import { findActiveLeadListNameConflict, generateUniqueLeadListName, normalizeLeadListName, StoredLeadList } from '@/lib/services/lead-list-service';
 
 
@@ -400,6 +400,9 @@ export function MatchDataModal({
         count: validLeads.length,
         uploadedAt: new Date().toISOString(),
         ownerEmail: activeAccount,
+        // Skipped rows with their reasons, so the campaign page can
+        // tell the user exactly which rows did not import and why.
+        importSummary: buildImportSummary(result),
       };
 
       onImportSuccess(validLeads, listInfo);
