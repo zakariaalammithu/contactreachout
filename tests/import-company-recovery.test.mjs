@@ -50,8 +50,12 @@ describe('import company-name recovery', () => {
       [{ Organisation: 'acme.com', Website: 'https://acme.example' }],
       { website: 'Website' },
     );
-    expect(result.validLeads).toHaveLength(1);
-    expect(result.validLeads[0].companyName).toBe('');
+    // The domain is not a company, so the lead has no company name at
+    // all — and is dropped at import (2026-11-18) instead of being
+    // imported nameless and blocking the campaign at start.
+    expect(result.validLeads).toHaveLength(0);
+    expect(result.skippedRows).toHaveLength(1);
+    expect(result.skippedRows[0].reasons).toContain('Missing Company Name');
   });
 
   it('keeps the mapped company when one is mapped', () => {

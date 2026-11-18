@@ -93,4 +93,35 @@ describe('import skipped rows', () => {
     expect(result.duplicateWebsitesCount).toBe(1);
     expect(result.skippedRows[0].reasons.join(' ')).toContain('Duplicate domain');
   });
+
+  it('a row with a valid website but no company is dropped and named (2026-11-18)', () => {
+    const result = processImportRows(
+      [
+        row('Good', 'Good Co', 'good.com'),
+        row('Nameless', '', 'nameless.com'),
+        row('Blank', '   ', 'blank.com'),
+      ],
+      MAPPING,
+    );
+    expect(result.validLeads).toHaveLength(1);
+    expect(result.validLeads[0].companyName).toBe('Good Co');
+    expect(result.skippedRows).toHaveLength(2);
+    expect(result.skippedRows.map((r) => r.rowNumber)).toEqual([2, 3]);
+    expect(result.skippedRows[0].reasons).toContain('Missing Company Name');
+    expect(result.skippedRows[0].website).toBe('nameless.com');
+    const summary = buildImportSummary(result);
+    expect(summary).toContain('1 lead imported successfully');
+    expect(summary).toContain('2 rows skipped');
+    expect(summary).toContain('Missing Company Name');
+  });
+
+  it('a company under an unmapped Organisation header is still recovered, not dropped', () => {
+    const result = processImportRows(
+      [{ 'First Name': 'Org', 'Last Name': '', Organisation: 'Org Co', Website: 'org.com', Email: '' }],
+      MAPPING,
+    );
+    expect(result.validLeads).toHaveLength(1);
+    expect(result.validLeads[0].companyName).toBe('Org Co');
+    expect(result.skippedRows).toHaveLength(0);
+  });
 });

@@ -586,7 +586,10 @@ export function processImportRows(
 
     // Validate Required Fields
     const companyName = String(rawCompanyName || '').trim();
-    // Company name and website are optional at import time. Website is
+    // Company name is enforced at import time: a lead without one can
+    // never send (the message and the form both need it), so it is
+    // dropped here and named in skippedRows instead of blocking the
+    // campaign at start (2026-11-18, user decision). Website is still
     // enforced by campaign start validation, not by file ingestion.
 
     const { normalizedUrl, domain, isValid: isUrlValid } = normalizeWebsiteUrl(String(rawWebsite || ''));
@@ -643,6 +646,7 @@ export function processImportRows(
     // under its own header (e.g. "Organisation"): recover it instead of
     // importing a nameless lead the campaign later rejects.
     const finalCompanyName = companyName || findCompanyNameInCustomFields(customFields);
+    if (!finalCompanyName) errors.push('Missing Company Name');
 
     // Construct Normalized Lead
     const lead: NormalizedLead = {
