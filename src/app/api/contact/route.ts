@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ResendProvider } from '@/lib/services/email/resend-provider';
+import { verifyRecaptchaToken } from '@/lib/services/recaptcha';
 
 // Simple in-memory rate limiting map for contact submissions (max 5 requests per 15 mins per IP)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -29,6 +30,11 @@ const contactSchema = z.object({
   subject: z.string().trim().min(2, 'Subject must be at least 2 characters.').max(160, 'Subject is too long.'),
   message: z.string().trim().min(10, 'Message must be at least 10 characters long.').max(5000, 'Message cannot exceed 5000 characters.'),
   topic: z.enum(['contact', 'demo']).default('contact'),
+  // Google reCAPTCHA v2 token. Same field name in both submit paths: the
+  // widget writes it as a hidden input on the native form submit, and the
+  // JS submit sends it in the JSON body. Optional so the form still works
+  // until the keys are configured (the server then skips the check).
+  'g-recaptcha-response': z.string().trim().optional(),
 });
 
 const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, (character) => ({
@@ -89,6 +95,27 @@ export async function POST(request: NextRequest) {
   }
 
   const { name, email, company, website, subject, message, topic } = parsed.data;
+
+  // Bot-spam gate (2026-11-21): bots submit gibberish to this public form
+  // and burn the Resend daily quota. Once RECAPTCHA_SECRET_KEY is set, a
+  // missing/invalid token is rejected here and no email is sent; until the
+  // keys are configured the check is skipped (see recaptcha.ts). The token
+  // value is never logged.
+  const verification = await verifyRecaptchaToken(parsed.data['g-recaptcha-response']);
+  if (!verification.ok) {
+    console.warn('[recaptcha] contact submission rejected:', verification.reason);
+    if (verification.reason === 'verification-unavailable') {
+      return NextResponse.json(
+        { error: 'CAPTCHA verification is temporarily unavailable. Please try again shortly.', code: 'CAPTCHA_UNAVAILABLE' },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json(
+      { error: 'Please complete the CAPTCHA verification and try again.', code: 'CAPTCHA_REQUIRED' },
+      { status: 400 },
+    );
+  }
+
   // Public website contact requests have one dedicated support destination.
   // Campaign reply identities and unrelated mail settings must never affect it.
   const targetEmail = 'contactreachoutai@gmail.com';

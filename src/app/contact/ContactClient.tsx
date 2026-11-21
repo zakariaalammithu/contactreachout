@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import {
   ArrowRight,
   Building2,
@@ -52,6 +53,22 @@ const helpOptions: HelpOption[] = [
   },
 ];
 
+// Minimal shape of the Google reCAPTCHA v2 global used below.
+type RecaptchaGlobal = {
+  render: (
+    container: HTMLElement,
+    parameters: {
+      sitekey: string;
+      callback?: (token: string) => void;
+      'expired-callback'?: () => void;
+    },
+  ) => number;
+  reset: (widgetId?: number) => void;
+};
+
+const getRecaptcha = () =>
+  (window as unknown as { grecaptcha?: RecaptchaGlobal }).grecaptcha;
+
 export function ContactClient() {
   const [topic, setTopic] = useState<'contact' | 'demo'>('contact');
   const [formData, setFormData] = useState({
@@ -68,7 +85,36 @@ export function ContactClient() {
   const [sending, setSending] = useState(false);
   const [selectedTopicTitle, setSelectedTopicTitle] = useState('');
 
+  // Google reCAPTCHA v2 ("I'm not a robot") — bot-spam gate for this public
+  // form (2026-11-21). Only rendered when the public site key is configured;
+  // until the owner adds NEXT_PUBLIC_RECAPTCHA_SITE_KEY + RECAPTCHA_SECRET_KEY
+  // in Vercel, the form submits without a token and the server skips the
+  // check (fail open), exactly as today.
+  const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
+  const recaptchaContainerRef = useRef<HTMLDivElement>(null);
+  const recaptchaWidgetIdRef = useRef<number | null>(null);
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState('');
+
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    // The success view unmounts the form, so the widget DOM node is gone —
+    // forget the widget id so a fresh one renders when the form comes back.
+    if (!recaptchaSiteKey || successMessage) {
+      recaptchaWidgetIdRef.current = null;
+      return;
+    }
+    const grecaptcha = getRecaptcha();
+    if (!grecaptcha || !recaptchaContainerRef.current || recaptchaWidgetIdRef.current !== null) {
+      return;
+    }
+    recaptchaWidgetIdRef.current = grecaptcha.render(recaptchaContainerRef.current, {
+      sitekey: recaptchaSiteKey,
+      callback: (token: string) => setRecaptchaToken(token),
+      'expired-callback': () => setRecaptchaToken(''),
+    });
+  }, [recaptchaSiteKey, recaptchaReady, successMessage]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -144,6 +190,13 @@ export function ContactClient() {
       return;
     }
 
+    // CAPTCHA must be solved before sending once the widget is configured;
+    // without a site key there is no widget and the server skips the check.
+    if (recaptchaSiteKey && !recaptchaToken) {
+      setServerError('Please complete the CAPTCHA verification before sending your message.');
+      return;
+    }
+
     setSending(true);
 
     try {
@@ -158,6 +211,7 @@ export function ContactClient() {
           website: formData.website.trim(),
           subject: formData.subject.trim(),
           message: formData.message.trim(),
+          'g-recaptcha-response': recaptchaToken,
         }),
       });
 
@@ -174,6 +228,12 @@ export function ContactClient() {
           message: '',
         });
         setErrors({});
+        // The success view unmounts the form; clear the spent token so a
+        // fresh solve is required for the next message.
+        setRecaptchaToken('');
+        if (recaptchaWidgetIdRef.current !== null) {
+          getRecaptcha()?.reset(recaptchaWidgetIdRef.current);
+        }
       } else {
         setServerError(payload.error || 'Your message could not be sent right now. Please try again or email us directly.');
       }
@@ -409,6 +469,21 @@ export function ContactClient() {
                   />
                   {errors.message && <p className="mt-1 text-xs font-semibold text-rose-400">{errors.message}</p>}
                 </div>
+
+                {/* reCAPTCHA v2 — rendered only when the site key is configured.
+                    The widget writes its token into the form as
+                    g-recaptcha-response, so the native no-JS submit is gated
+                    by the same server check. */}
+                {recaptchaSiteKey ? (
+                  <>
+                    <Script
+                      src="https://www.google.com/recaptcha/api.js?render=explicit"
+                      strategy="afterInteractive"
+                      onLoad={() => setRecaptchaReady(true)}
+                    />
+                    <div ref={recaptchaContainerRef} />
+                  </>
+                ) : null}
 
                 {/* Submit Button */}
                 <button
